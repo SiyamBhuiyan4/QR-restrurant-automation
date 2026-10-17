@@ -1,0 +1,21 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+
+# Build artifacts
+dist/
+client/dist/
+
+# Local databases & uploads
+server/*.db
+server/*.db-wal
+server/*.db-shm
+server/uploads/voices/*
+!server/uploads/voices/.gitkeep
+server/certs/*.pem
+
+# Convex generated files are safe, but local deployment configs are ignored
+client/.env.local

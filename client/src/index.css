@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased min-h-screen;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Optimize touch target responsiveness on mobile */
+  button, a, input, select, textarea {
+    touch-action: manipulation;
+  }
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+/* Print Media Rules for QR Code Stickers & Table Tents */
+@media print {
+  /* Hide all interactive, non-printable UI elements */
+  nav,
+  header,
+  footer,
+  aside,
+  button,
+  .no-print,
+  .actions-bar,
+  .badge-status {
+    display: none !important;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Printable Grid Container for Stickers */
+  .qr-print-sheet {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12mm !important;
+    padding: 5mm !important;
+    page-break-inside: auto;
+  }
+
+  /* Individual Printable Sticker Card */
+  .qr-sticker-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    border: 2px dashed #000000 !important;
+    border-radius: 8px !important;
+    padding: 16px !important;
+    text-align: center !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    color: #000000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .qr-sticker-card canvas,
+  .qr-sticker-card img {
+    max-width: 180px !important;
+    height: auto !important;
+    margin: 8px auto !important;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
+
+  .qr-table-title {
+    font-size: 1.5rem !important;
+    font-weight: 800 !important;
+    margin-bottom: 4px !important;
+    color: #000000 !important;
+  }
+
+  .qr-instructions {
+    font-size: 0.85rem !important;
+    color: #333333 !important;
+    margin-top: 4px !important;
+  }
+
+  @page {
+    margin: 10mm;
+    size: auto;
+  }
+}

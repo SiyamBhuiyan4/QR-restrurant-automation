@@ -1,0 +1,863 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import Navbar from '../components/Navbar';
+import CategoryBar from '../components/CategoryBar';
+import MenuItemCard from '../components/MenuItemCard';
+import CartDrawer from '../components/CartDrawer';
+import { 
+  Search, 
+  X, 
+  Leaf, 
+  Flame, 
+  Zap, 
+  ShoppingBag, 
+  ArrowRight, 
+  Trash2, 
+  CheckCircle2, 
+  UtensilsCrossed, 
+  Sparkles,
+  Info
+} from 'lucide-react';
+
+// Default initial menu items for full offline or standalone browsing
+const DEFAULT_MENU_ITEMS = [
+  // Starters
+  {
+    id: 'starter-1',
+    name: 'Truffle Parmesan Fries',
+    description: 'Crispy skin-on fries tossed with white truffle oil, shaved aged parmesan, and fresh parsley with garlic aioli.',
+    price: 7.99,
+    category: 'Starters',
+    isVeg: true,
+    isSpicy: false,
+    isPopular: true,
+    prepTime: '10 min',
+    image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=600&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'starter-2',
+    name: 'Spicy Buffalo Wings',
+    description: 'Crispy chicken wings glazed in our chef signature fiery cayenne sauce, served with blue cheese and celery sticks.',
+    price: 10.99,
+    category: 'Starters',
+    isVeg: false,
+    isSpicy: true,
+    isPopular: true,
+    prepTime: '15 min',
+    image: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=600&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'starter-3',
+    name: 'Garlic Butter Cheesy Bread',
+    description: 'Freshly baked artisanal sourdough baguette filled with herb garlic butter and melted mozzarella cheese.',
+    price: 6.50,
+    category: 'Starters',
+    isVeg: true,
+    isSpicy: false,
+    prepTime: '8 min',
+    image: 'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=600&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'starter-4',
+    name: 'Crispy Salt & Pepper Calamari',
+    description: 'Tender Monterey squid lightly crusted with five-spice sea salt, served with lemon wedges and house tartar.',
+    price: 11.50,
+    category: 'Starters',
+    isVeg: false,
+    isSpicy: false,
+    prepTime: '12 min',
+    image: 'https://images.unsplash.com/photo-1604909052743-94e838986d24?w=600&auto=format&fit=crop&q=80'
+  },
+
+  // Mains
+  {
+    id: 'main-1',
+    name: 'Grilled Ribeye Steak (10oz)',
+    description: 'Prime dry-aged Angus ribeye char-grilled to perfection, accompanied by roasted garlic herb butter and rosemary baby potatoes.',
+    price: 24.99,
+    category: 'Mains',
+    isVeg: false,
+    isSpicy: false,
+    isPopular: true,
+    prepTime: '20 min',
+    image: 'https://images.unsplash.com/photo-1558030006-450675393462?w=600&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'main-2',
+    name: 'Fiery Peri-Peri Grilled Chicken',
+    description: 'Half chicken marinated 24 hours in authentic African bird eye peri-peri marinade, flame grilled with charred lime.',
+    price: 17.50,
+    category: 'Mains',
+    isVeg: false,
+    isSpicy: true,
+    isPopular: true,
+    prepTime: '18 min',
+    image: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=600&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'main-3',
+    name: 'Pan-Seared Atlantic Salmon',
+    description: 'Wild salmon fillet served over a bed of sautéed asparagus, cherry tomatoes, and saffron lemon-dill cream sauce.',
+    price: 21.99,
+    category: 'Mains',
+    isVeg: false,
+    isSpicy: false,
+    prepTime: '15 min',
+    image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'main-4',
+    name: 'Wild Forest Mushroom Risotto',
+    description: 'Arborio rice slowly simmered with porcini stock, shiitake mushrooms, white truffle oil, and aged Pecorino.',
+    price: 16.50,
+    category: 'Mains',
+    isVeg: true,
+    isSpicy: false,
+    prepTime: '18 min',
+    image: 'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=600&auto=format&fit=crop&q=80'
+  },
+
+  // Burgers
+  {
+    id: 'burger-1',
+    name: 'SmartDine Classic Smash Burger',
+    description: 'Two smashed prime beef patties, double American cheese, caramelized onions, crisp pickles, and secret burger spread on a brioche bun.',
+    price: 13.50,
+    category: 'Burgers',
+    isVeg: false,
+    isSpicy: false,
+    isPopular: true,
+    prepTime: '12 min',
+    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'burger-2',
+    name: 'The Volcano Jalapeño Burger',
+    description: 'Spiced beef patty topped with grilled pickled jalapeños, pepper jack cheese, crispy fried onion strings, and habanero lava mayo.',
+    price: 14.99,
+    category: 'Burgers',
+    isVeg: false,
+    isSpicy: true,
+    isPopular: true,
+    prepTime: '14 min',
+    image: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=600&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'burger-3',
+    name: 'Beyond Plant-Based Burger',
+    description: '100% plant-based grilled patty, vegan cheddar, butterhead lettuce, vine tomato, and avocado chimichurri on a toasted vegan potato bun.',
+    price: 14.50,
+    category: 'Burgers',
+    isVeg: true,
+    isSpicy: false,
+    prepTime: '12 min',
+    image: 'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=600&auto=format&fit=crop&q=80'
+  },
+
+  // Beverages
+  {
+    id: 'beverage-1',
+    name: 'Signature Sparkling Lemonade',
+    description: 'Freshly squeezed lemons with organic agave syrup, crushed mint, and sparkling mineral water.',
+    price: 4.50,
+    category: 'Beverages',
+    isVeg: true,
+    isSpicy: false,
+    prepTime: '3 min',
+    image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'beverage-2',
+    name: 'Fiery Ginger Spiced Cooler',
+    description: 'House brewed cold ginger root infusion, fresh lime, bird chili hint, crushed ice, and club soda.',
+    price: 4.99,
+    category: 'Beverages',
+    isVeg: true,
+    isSpicy: true,
+    prepTime: '4 min',
+    image: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=600&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'beverage-3',
+    name: 'Iced Matcha Green Tea Latte',
+    description: 'Ceremonial grade Japanese Uji matcha whisked with creamy oat milk and a touch of raw Madagascar vanilla.',
+    price: 5.50,
+    category: 'Beverages',
+    isVeg: true,
+    isSpicy: false,
+    prepTime: '4 min',
+    image: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600&auto=format&fit=crop&q=80'
+  },
+
+  // Desserts
+  {
+    id: 'dessert-1',
+    name: 'Molten Chocolate Lava Cake',
+    description: 'Warm Belgian dark chocolate cake with a gooey flowing center, paired with Madagascar vanilla bean ice cream.',
+    price: 7.99,
+    category: 'Desserts',
+    isVeg: true,
+    isSpicy: false,
+    isPopular: true,
+    prepTime: '10 min',
+    image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'dessert-2',
+    name: 'Classic Venetian Tiramisu',
+    description: 'Espresso dipped ladyfingers layered with whipped mascarpone cream and dusted with raw Dutch cocoa.',
+    price: 8.50,
+    category: 'Desserts',
+    isVeg: true,
+    isSpicy: false,
+    prepTime: '5 min',
+    image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&auto=format&fit=crop&q=80'
+  }
+];
+
+export default function CustomerMenu({
+  menuItems: propMenuItems,
+  onPlaceOrder,
+  tableFromProp
+}) {
+  // 1. Table Detection & Persistence
+  const [tableNumber, setTableNumber] = useState('');
+  const [isTableModalOpen, setIsTableModalOpen] = useState(false);
+  const [customTableInput, setCustomTableInput] = useState('');
+
+  // 2. Network state
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+
+  // 3. Search and Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [vegOnlyFilter, setVegOnlyFilter] = useState(false);
+  const [spicyFilter, setSpicyFilter] = useState(false);
+
+  // 4. Cart State { [itemId]: { item, quantity, note } }
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smartdine_cart_items');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // 5. Drawer & Modal States
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [orderSuccessModal, setOrderSuccessModal] = useState(null);
+  const [toastMessage, setToMessage] = useState(null);
+
+  // Monitor network online/offline events
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Save cart to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('smartdine_cart_items', JSON.stringify(cart));
+    } catch (e) {
+      console.warn('Could not save cart to localStorage', e);
+    }
+  }, [cart]);
+
+  // Detect table from URL or localStorage
+  useEffect(() => {
+    if (tableFromProp) {
+      setTableNumber(String(tableFromProp));
+      localStorage.setItem('smartdine_table', String(tableFromProp));
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlTable = searchParams.get('table') || searchParams.get('tableNumber') || searchParams.get('t');
+
+      if (urlTable) {
+        setTableNumber(urlTable);
+        localStorage.setItem('smartdine_table', urlTable);
+      } else {
+        const storedTable = localStorage.getItem('smartdine_table');
+        if (storedTable) {
+          setTableNumber(storedTable);
+        } else {
+          // No table found, prompt user with friendly modal
+          setIsTableModalOpen(true);
+        }
+      }
+    }
+  }, [tableFromProp]);
+
+  // Set selected table
+  const handleSelectTable = (num) => {
+    const chosen = String(num).trim();
+    if (!chosen) return;
+    setTableNumber(chosen);
+    localStorage.setItem('smartdine_table', chosen);
+    setIsTableModalOpen(false);
+    showToast(`Table set to Table ${chosen}! 🍽️`);
+  };
+
+  // Toast notification helper
+  const showToast = (msg) => {
+    setToMessage(msg);
+    setTimeout(() => {
+      setToMessage(null);
+    }, 4000);
+  };
+
+  // Cart operations
+  const handleAddToCart = (item) => {
+    setCart((prev) => {
+      const existing = prev[item.id];
+      const newQty = existing ? existing.quantity + 1 : 1;
+      return {
+        ...prev,
+        [item.id]: {
+          item,
+          quantity: newQty,
+          note: existing ? existing.note : ''
+        }
+      };
+    });
+  };
+
+  const handleUpdateQuantity = (itemId, newQty) => {
+    setCart((prev) => {
+      if (newQty <= 0) {
+        const updated = { ...prev };
+        delete updated[itemId];
+        return updated;
+      }
+      if (!prev[itemId]) return prev;
+      return {
+        ...prev,
+        [itemId]: {
+          ...prev[itemId],
+          quantity: newQty
+        }
+      };
+    });
+  };
+
+  const handleRemoveFromCart = (itemId) => {
+    setCart((prev) => {
+      const updated = { ...prev };
+      delete updated[itemId];
+      return updated;
+    });
+  };
+
+  const handleUpdateNote = (itemId, noteText) => {
+    setCart((prev) => {
+      if (!prev[itemId]) {
+        // If not in cart yet, add it with 1 qty and note
+        const found = allMenuItems.find((i) => i.id === itemId);
+        if (found) {
+          return {
+            ...prev,
+            [itemId]: { item: found, quantity: 1, note: noteText }
+          };
+        }
+        return prev;
+      }
+      return {
+        ...prev,
+        [itemId]: {
+          ...prev[itemId],
+          note: noteText
+        }
+      };
+    });
+    showToast('Dish preferences saved! ✨');
+  };
+
+  // Menu items list
+  const allMenuItems = useMemo(() => {
+    return propMenuItems && propMenuItems.length > 0 ? propMenuItems : DEFAULT_MENU_ITEMS;
+  }, [propMenuItems]);
+
+  // Filtered menu items
+  const filteredItems = useMemo(() => {
+    return allMenuItems.filter((dish) => {
+      // Category filter
+      if (selectedCategory && selectedCategory.toLowerCase() !== 'all') {
+        const dishCategory = (dish.category || '').toLowerCase();
+        if (dishCategory !== selectedCategory.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // Vegetarian filter
+      if (vegOnlyFilter) {
+        const isVeg = dish.isVeg === true || dish.veg === true || (Array.isArray(dish.tags) && dish.tags.some(t => /veg/i.test(t)));
+        if (!isVeg) return false;
+      }
+
+      // Spicy filter
+      if (spicyFilter) {
+        const isSpicy = dish.isSpicy === true || dish.spicy === true || (Array.isArray(dish.tags) && dish.tags.some(t => /spic/i.test(t)));
+        if (!isSpicy) return false;
+      }
+
+      // Search query filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+        const titleMatch = (dish.name || dish.title || '').toLowerCase().includes(query);
+        const descMatch = (dish.description || '').toLowerCase().includes(query);
+        const categoryMatch = (dish.category || '').toLowerCase().includes(query);
+        if (!titleMatch && !descMatch && !categoryMatch) return false;
+      }
+
+      return true;
+    });
+  }, [allMenuItems, selectedCategory, vegOnlyFilter, spicyFilter, searchQuery]);
+
+  // Category counts
+  const categoryCounts = useMemo(() => {
+    const counts = { All: allMenuItems.length };
+    allMenuItems.forEach((item) => {
+      const cat = item.category || 'Mains';
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    return counts;
+  }, [allMenuItems]);
+
+  // Categories list
+  const categoriesList = useMemo(() => {
+    const unique = Array.from(new Set(allMenuItems.map((item) => item.category || 'Mains')));
+    return ['All', ...unique];
+  }, [allMenuItems]);
+
+  // Cart summary calculations
+  const cartSummary = useMemo(() => {
+    const items = Object.values(cart);
+    const totalCount = items.reduce((acc, curr) => acc + curr.quantity, 0);
+    const subtotal = items.reduce((acc, curr) => {
+      const price = typeof curr.item.price === 'number' ? curr.item.price : parseFloat(curr.item.price) || 0;
+      return acc + price * curr.quantity;
+    }, 0);
+    const tax = subtotal * 0.05; // 5% estimated tax
+    const total = subtotal + tax;
+
+    return { totalCount, subtotal, tax, total, items };
+  }, [cart]);
+
+  // Handle Waiter Called from Navbar
+  const handleWaiterCalled = (reason, table) => {
+    showToast(`🛎️ Waiter called for Table ${table || tableNumber || 'your table'} (${reason})`);
+  };
+
+  // Submit Order handler
+  const handleCheckoutOrder = () => {
+    if (!tableNumber) {
+      setIsTableModalOpen(true);
+      return;
+    }
+    const orderPayload = {
+      orderId: `SD-${Date.now().toString().slice(-4)}`,
+      tableNumber,
+      items: cartSummary.items.map((i) => ({
+        id: i.item.id,
+        name: i.item.name || i.item.title,
+        price: i.item.price,
+        quantity: i.quantity,
+        note: i.note || ''
+      })),
+      subtotal: cartSummary.subtotal,
+      tax: cartSummary.tax,
+      total: cartSummary.total,
+      timestamp: new Date().toISOString(),
+      status: 'pending',
+      isOfflineSyncPending: !isOnline
+    };
+
+    if (onPlaceOrder) {
+      onPlaceOrder(orderPayload);
+    }
+
+    setOrderSuccessModal(orderPayload);
+    setCart({});
+    setIsCartOpen(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-neutral-50/60 text-neutral-900 pb-28">
+      
+      {/* 1. Header Navigation */}
+      <Navbar
+        tableNumber={tableNumber}
+        isOnline={isOnline}
+        onCallWaiter={handleWaiterCalled}
+        onChangeTable={() => setIsTableModalOpen(true)}
+        cartItemCount={cartSummary.totalCount}
+        onOpenCart={() => setIsCartOpen(true)}
+      />
+
+      {/* 2. Offline Notice Banner */}
+      {!isOnline && (
+        <div className="bg-amber-500 text-white px-4 py-2.5 shadow-xs border-b border-amber-600/30">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 fill-white shrink-0 animate-pulse" />
+              <span>
+                ⚡ You are offline! You can still browse the menu and add items to your cart.
+              </span>
+            </div>
+            <span className="hidden md:inline-block text-[11px] bg-amber-600/60 px-2 py-0.5 rounded-full font-medium">
+              Offline-First Activated
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Main Container */}
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4">
+        
+        {/* Search Bar & Dietary Filter Toggles */}
+        <section className="mb-4 space-y-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search delicious dishes, ingredients, drinks..."
+                className="w-full pl-9.5 pr-8 py-2.5 text-xs sm:text-sm bg-white rounded-2xl border border-neutral-200/80 shadow-2xs focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 placeholder:text-neutral-400 transition"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Dietary Toggle Pills */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Veg Only Toggle */}
+              <button
+                type="button"
+                onClick={() => setVegOnlyFilter((v) => !v)}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-2xs ${
+                  vegOnlyFilter
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-600/20'
+                    : 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200/80'
+                }`}
+              >
+                <Leaf className={`w-3.5 h-3.5 ${vegOnlyFilter ? 'fill-current' : 'text-emerald-600'}`} />
+                <span>Veg Only</span>
+              </button>
+
+              {/* Spicy Toggle */}
+              <button
+                type="button"
+                onClick={() => setSpicyFilter((s) => !s)}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-2xs ${
+                  spicyFilter
+                    ? 'bg-rose-600 text-white border-rose-600 shadow-rose-600/20'
+                    : 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200/80'
+                }`}
+              >
+                <Flame className={`w-3.5 h-3.5 ${spicyFilter ? 'fill-current' : 'text-rose-600'}`} />
+                <span>Spicy</span>
+              </button>
+            </div>
+
+          </div>
+        </section>
+
+        {/* Category Horizontal Pill Bar */}
+        <section className="mb-5 -mx-3 sm:mx-0">
+          <CategoryBar
+            categories={categoriesList}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            categoryCounts={categoryCounts}
+          />
+        </section>
+
+        {/* Results Info Bar */}
+        <div className="flex items-center justify-between mb-4 px-1">
+          <h2 className="text-base sm:text-lg font-bold text-neutral-900 flex items-center gap-2">
+            <span>{selectedCategory} Dishes</span>
+            <span className="text-xs font-semibold text-neutral-400 bg-neutral-200/70 px-2 py-0.5 rounded-full">
+              {filteredItems.length}
+            </span>
+          </h2>
+          {(searchQuery || vegOnlyFilter || spicyFilter) && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setVegOnlyFilter(false);
+                setSpicyFilter(false);
+              }}
+              className="text-xs text-amber-600 hover:text-amber-700 font-semibold cursor-pointer underline"
+            >
+              Reset Filters
+            </button>
+          )}
+        </div>
+
+        {/* Dishes Grid */}
+        {filteredItems.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+            {filteredItems.map((dish) => {
+              const inCart = cart[dish.id];
+              return (
+                <MenuItemCard
+                  key={dish.id}
+                  item={dish}
+                  cartQuantity={inCart ? inCart.quantity : 0}
+                  itemNote={inCart ? inCart.note : ''}
+                  onAddToCart={handleAddToCart}
+                  onUpdateQuantity={handleUpdateQuantity}
+                  onRemoveFromCart={handleRemoveFromCart}
+                  onUpdateNote={handleUpdateNote}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          /* Empty State */
+          <div className="bg-white rounded-3xl border border-neutral-200/80 p-8 sm:p-12 text-center max-w-md mx-auto my-8 shadow-xs">
+            <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 mx-auto flex items-center justify-center mb-3">
+              <UtensilsCrossed className="w-7 h-7" />
+            </div>
+            <h3 className="font-bold text-neutral-900 text-base mb-1">
+              No matching dishes found
+            </h3>
+            <p className="text-xs sm:text-sm text-neutral-500 mb-4">
+              Try adjusting your search or clearing dietary filters to view all menu choices.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setVegOnlyFilter(false);
+                setSpicyFilter(false);
+                setSelectedCategory('All');
+              }}
+              className="px-4 py-2 bg-neutral-900 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-neutral-800 transition"
+            >
+              View Full Menu
+            </button>
+          </div>
+        )}
+      </main>
+
+      {/* Floating Bottom Cart Summary Bar */}
+      {cartSummary.totalCount > 0 && (
+        <aside
+          aria-label="Order Cart Summary"
+          className="fixed bottom-0 left-0 right-0 z-40 p-3 sm:p-4 bg-gradient-to-t from-white via-white/95 to-transparent backdrop-blur-xs pointer-events-none"
+        >
+          <div className="max-w-xl mx-auto pointer-events-auto">
+            <div className="bg-neutral-900 text-white rounded-2xl p-3 sm:p-3.5 shadow-2xl shadow-neutral-950/30 flex items-center justify-between gap-3 border border-neutral-800/80 animate-slideUp">
+              
+              {/* Left: Cart Info */}
+              <div className="flex items-center gap-3">
+                <div className="relative w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-white shrink-0 shadow-sm shadow-amber-500/30">
+                  <ShoppingBag className="w-5 h-5" />
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-600 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center ring-2 ring-neutral-900">
+                    {cartSummary.totalCount}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-neutral-400 font-medium leading-tight">
+                    {cartSummary.totalCount} {cartSummary.totalCount === 1 ? 'item' : 'items'}
+                    {tableNumber ? ` • Table ${tableNumber}` : ''}
+                  </span>
+                  <span className="text-base sm:text-lg font-extrabold text-white leading-tight tracking-tight">
+                    ${cartSummary.total.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Right: View Order Button */}
+              <button
+                type="button"
+                onClick={() => setIsCartOpen(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-neutral-950 font-bold text-xs sm:text-sm transition-all shadow-md shadow-amber-500/20 cursor-pointer"
+              >
+                <span>View Order</span>
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+              </button>
+
+            </div>
+          </div>
+        </aside>
+      )}
+
+      {/* Cart & Voice Customization Drawer */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cartItems={cart}
+        tableNumber={tableNumber}
+        onUpdateQuantity={(itemId, newQty) => handleUpdateQuantity(itemId, newQty)}
+        onRemoveItem={(itemId) => handleRemoveFromCart(itemId)}
+        onUpdateNote={(itemId, noteText) => handleUpdateNote(itemId, noteText)}
+        onOrderSuccess={(order) => {
+          setOrderSuccessModal(order);
+          setCart({});
+          setIsCartOpen(false);
+        }}
+      />
+
+      {/* Table Selection Modal (Shown on first visit or when user taps Table badge) */}
+      {isTableModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-neutral-100 p-5 sm:p-6 transform transition-all animate-scaleUp">
+            
+            <div className="text-center mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 mx-auto flex items-center justify-center mb-2 shadow-xs">
+                <UtensilsCrossed className="w-6 h-6" />
+              </div>
+              <h3 className="font-extrabold text-neutral-900 text-lg sm:text-xl">
+                Welcome to SmartDine!
+              </h3>
+              <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+                Please select your table number to start browsing and ordering.
+              </p>
+            </div>
+
+            {/* Quick Grid 1 - 20 */}
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-2">
+                Select Table (1 - 20):
+              </label>
+              <div className="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1">
+                {Array.from({ length: 20 }, (_, i) => i + 1).map((num) => {
+                  const isCurrent = String(tableNumber) === String(num);
+                  return (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => handleSelectTable(num)}
+                      className={`h-11 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer ${
+                        isCurrent
+                          ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/25 scale-102'
+                          : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-800 border-neutral-200/80'
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Custom Table Number Input */}
+            <div className="pt-3 border-t border-neutral-100 mb-4">
+              <label className="block text-xs font-semibold text-neutral-600 mb-1.5">
+                Or enter custom table (Bar, Patio, VIP):
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customTableInput}
+                  onChange={(e) => setCustomTableInput(e.target.value)}
+                  placeholder="e.g. Bar 2, VIP 1, Patio"
+                  className="flex-1 px-3 py-2 text-xs sm:text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (customTableInput.trim()) {
+                      handleSelectTable(customTableInput.trim());
+                    }
+                  }}
+                  className="px-4 py-2 bg-neutral-900 text-white text-xs sm:text-sm font-bold rounded-xl hover:bg-neutral-800 cursor-pointer"
+                >
+                  Set
+                </button>
+              </div>
+            </div>
+
+            {tableNumber && (
+              <button
+                type="button"
+                onClick={() => setIsTableModalOpen(false)}
+                className="w-full py-2.5 rounded-xl border border-neutral-200 text-neutral-600 hover:bg-neutral-50 text-xs sm:text-sm font-semibold transition"
+              >
+                Keep Table {tableNumber}
+              </button>
+            )}
+
+          </div>
+        </div>
+      )}
+
+      {/* Order Success Modal */}
+      {orderSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-neutral-100 p-6 text-center transform transition-all animate-scaleUp">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center mb-3">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            <h3 className="font-extrabold text-neutral-900 text-lg">
+              Order Submitted!
+            </h3>
+            <p className="text-xs text-neutral-500 mt-1 mb-4">
+              Order #{orderSuccessModal.orderId} &bull; Table {orderSuccessModal.tableNumber}
+            </p>
+
+            <div className="bg-neutral-50 rounded-2xl p-3 text-left mb-4 space-y-1 text-xs">
+              <div className="flex justify-between font-semibold text-neutral-700">
+                <span>Items Ordered:</span>
+                <span>{orderSuccessModal.items.length} items</span>
+              </div>
+              <div className="flex justify-between font-extrabold text-neutral-900 pt-1 border-t border-neutral-200/50">
+                <span>Total:</span>
+                <span className="text-amber-600">${orderSuccessModal.total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {!isOnline && (
+              <div className="bg-amber-50 text-amber-800 text-[11px] p-2.5 rounded-xl mb-4 text-left border border-amber-200">
+                <span className="font-bold">Local Sync:</span> Your order is saved locally and sent over local Wi-Fi to the kitchen terminal.
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setOrderSuccessModal(null)}
+              className="w-full py-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs sm:text-sm transition cursor-pointer"
+            >
+              Back to Menu
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-18 left-1/2 -translate-x-1/2 z-50 bg-neutral-900 text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs sm:text-sm font-semibold flex items-center gap-2 border border-neutral-800 animate-fadeIn">
+          <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+    </div>
+  );
+}
