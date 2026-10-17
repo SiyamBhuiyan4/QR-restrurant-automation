@@ -9,6 +9,7 @@ export const getReviews = query({
     dishId: v.string(),
   },
   handler: async (ctx, { dishId }) => {
+    if (!dishId) return [];
     const reviews = await ctx.db
       .query("reviews")
       .withIndex("by_dish", (q) => q.eq("dishId", dishId))

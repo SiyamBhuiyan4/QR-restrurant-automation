@@ -132,7 +132,9 @@ export const seedMenu = mutation({
         imageUrl: "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=600&auto=format&fit=crop&q=80",
         images: [
           "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80",
-          "https://images.unsplash.com/photo-1604909052743-94e838986d24?w=900&auto=format&fit=crop&q=80"
+          "https://images.unsplash.com/photo-1604909052743-94e838986d24?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80"
         ],
         makingVideoUrl: defaultVideoReel,
         isVeg: false,
@@ -147,7 +149,9 @@ export const seedMenu = mutation({
         imageUrl: "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=600&auto=format&fit=crop&q=80",
         images: [
           "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=900&auto=format&fit=crop&q=80",
-          "https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=900&auto=format&fit=crop&q=80"
+          "https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1619535860434-ba1d8fa12536?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1509722747041-616f39b57569?w=900&auto=format&fit=crop&q=80"
         ],
         makingVideoUrl: defaultVideoReel,
         isVeg: true,
@@ -162,7 +166,9 @@ export const seedMenu = mutation({
         imageUrl: "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=600&auto=format&fit=crop&q=80",
         images: [
           "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=900&auto=format&fit=crop&q=80",
-          "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80"
+          "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1527477321005-4d01d75b2d5c?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80"
         ],
         makingVideoUrl: defaultVideoReel,
         isVeg: true,
@@ -177,7 +183,9 @@ export const seedMenu = mutation({
         imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80",
         images: [
           "https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80",
-          "https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80"
+          "https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1504973960431-1c467e159aa4?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=900&auto=format&fit=crop&q=80"
         ],
         makingVideoUrl: defaultVideoReel,
         isVeg: false,
@@ -192,7 +200,9 @@ export const seedMenu = mutation({
         imageUrl: "https://images.unsplash.com/photo-1621996346565-e3d5d6281290?w=600&auto=format&fit=crop&q=80",
         images: [
           "https://images.unsplash.com/photo-1621996346565-e3d5d6281290?w=900&auto=format&fit=crop&q=80",
-          "https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=900&auto=format&fit=crop&q=80"
+          "https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=900&auto=format&fit=crop&q=80"
         ],
         makingVideoUrl: defaultVideoReel,
         isVeg: true,
@@ -207,7 +217,9 @@ export const seedMenu = mutation({
         imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80",
         images: [
           "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80",
-          "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80"
+          "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=900&auto=format&fit=crop&q=80"
         ],
         makingVideoUrl: defaultVideoReel,
         isVeg: false,
@@ -222,7 +234,9 @@ export const seedMenu = mutation({
         imageUrl: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80",
         images: [
           "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80",
-          "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80"
+          "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80"
         ],
         makingVideoUrl: defaultVideoReel,
         isVeg: true,
@@ -237,7 +251,9 @@ export const seedMenu = mutation({
         imageUrl: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80",
         images: [
           "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80",
-          "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80"
+          "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1587314168485-3236d6710814?w=900&auto=format&fit=crop&q=80"
         ],
         makingVideoUrl: defaultVideoReel,
         isVeg: true,

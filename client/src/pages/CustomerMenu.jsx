@@ -23,7 +23,9 @@ import {
   Lock,
   ChefHat,
   Clock,
-  BellRing
+  BellRing,
+  LayoutGrid,
+  Rows3
 } from 'lucide-react';
 
 // Default initial menu items for full offline or standalone browsing
@@ -43,7 +45,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1585109649139-366815a0d713?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['Yukon Gold Potatoes', 'White Truffle Oil', 'Aged Reggiano Parmesan', 'Fresh Flat Parsley', 'Sea Salt Flakes', 'Roasted Garlic Aioli']
@@ -62,7 +65,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1527477321005-4d01d75b2d5c?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['Farm Fresh Wings', 'Fiery Cayenne Glaze', 'Wisconsin Blue Cheese Dip', 'Crisp Celery Sticks', 'Garlic Butter']
@@ -80,7 +84,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1619535860434-ba1d8fa12536?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1509722747041-616f39b57569?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1509722747041-616f39b57569?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['Artisanal Sourdough', 'Roasted Garlic Butter', 'Fior di Latte Mozzarella', 'Oregano', 'Virgin Olive Oil']
@@ -98,7 +103,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1604909052743-94e838986d24?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['Monterey Squid Rings', 'Five-Spice Sea Salt', 'Fresh Lemon Wedges', 'House Pickled Tartar', 'Micro Greens']
@@ -119,7 +125,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1504973960431-1c467e159aa4?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1504973960431-1c467e159aa4?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['Prime Angus Ribeye Cut', 'Herb Garlic Confit Butter', 'Rosemary Roasted Baby Potatoes', 'Charred Asparagus', 'Flaky Maldon Salt']
@@ -138,7 +145,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1527477321005-4d01d75b2d5c?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['Free-Range Half Chicken', 'African Bird Eye Peri-Peri', 'Smoked Sweet Paprika', 'Charred Key Lime', 'Garlic Herb Glaze']
@@ -156,7 +164,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['Wild Atlantic Salmon Fillet', 'Fresh Sautéed Asparagus', 'Heirloom Cherry Tomatoes', 'Saffron Dill Velouté', 'Lemon Zest']
@@ -174,7 +183,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1621996346565-e3d5d6281290?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['Italian Arborio Rice', 'Dried Porcini & Shiitake Stock', 'White Truffle Essence', 'Aged Pecorino Romano', 'Fresh Thyme']
@@ -195,7 +205,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['Double Angus Beef Patties', 'Melted American Sharp Cheese', 'Slow Caramelized Onions', 'Dill Pickles', 'Signature Truffle Mayo', 'Brioche Bun']
@@ -214,7 +225,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1521305916504-4a1121188589?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1521305916504-4a1121188589?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['Spiced Angus Beef Patty', 'Grilled Pickled Jalapeños', 'Melted Pepper Jack Cheese', 'Crispy Onion Strings', 'Habanero Lava Aioli']
@@ -232,7 +244,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1520072959219-c595dc870360?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['100% Plant-Based Patty', 'Vegan Aged Cheddar', 'Butterhead Lettuce', 'Ripe Vine Tomato', 'Avocado Chimichurri', 'Potato Bun']
@@ -252,7 +265,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['Eureka Fresh Lemons', 'Organic Blue Agave', 'Garden Mint Sprigs', 'Sparkling San Pellegrino', 'Crushed Ice']
@@ -270,7 +284,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1536935338788-846bb9981813?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['Fresh Cold-Pressed Ginger', 'Key Lime Juice', 'Subtle Bird Chili Kiss', 'Club Soda', 'Raw Turbinado Sugar']
@@ -291,7 +306,8 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80'
     ],
     makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
     ingredients: ['70% Belgian Dark Chocolate', 'European Sweet Butter', 'Madagascar Bourbon Vanilla Gelato', 'Dutch Cocoa Dust', 'Fresh Raspberries']
@@ -309,18 +325,77 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1586040140372-b424ae30a290?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1534432182912-63863115e106?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
-    ingredients: ['Savoiardi Ladyfingers', 'Single-Origin Espresso', 'Creamy Italian Mascarpone', 'Pasture Eggs', 'Dark Cocoa Powder']
   }
 ];
+
+// Canonical Michelin-grade Bistro Category Definitions
+export const CANONICAL_CATEGORIES = [
+  {
+    key: 'starters',
+    id: 'Starters',
+    title: 'Starters & Appetizers',
+    icon: '🥗',
+    subtitle: 'Crispy appetizers, signature bites, and table warmups'
+  },
+  {
+    key: 'mains',
+    id: 'Mains',
+    title: "Chef's Signature Mains",
+    icon: '🥩',
+    subtitle: 'Prime dry-aged steaks, flame-grilled specialties, and fresh catches'
+  },
+  {
+    key: 'burgers',
+    id: 'Burgers',
+    title: 'Artisan Burgers & Sandwiches',
+    icon: '🍔',
+    subtitle: 'Artisan smashed wagyu patties, melted cheese, and toasted brioche'
+  },
+  {
+    key: 'desserts',
+    id: 'Desserts',
+    title: 'Decadent Desserts',
+    icon: '🍰',
+    subtitle: 'Warm lava cakes, artisanal tiramisu, and house sweets'
+  },
+  {
+    key: 'beverages',
+    id: 'Beverages',
+    title: 'Refreshing Beverages & Mocktails',
+    icon: '🍹',
+    subtitle: 'Hand-crafted iced coolers, spritzers, and organic teas'
+  }
+];
+
+export const getCategoryMetadata = (categoryName = '') => {
+  const lower = String(categoryName).toLowerCase().trim();
+  if (lower.includes('start') || lower.includes('appetiz')) return CANONICAL_CATEGORIES[0];
+  if (lower.includes('main') || lower.includes('steak') || lower.includes('meat') || lower.includes('entree')) return CANONICAL_CATEGORIES[1];
+  if (lower.includes('burger') || lower.includes('sandwich')) return CANONICAL_CATEGORIES[2];
+  if (lower.includes('dessert') || lower.includes('sweet') || lower.includes('cake')) return CANONICAL_CATEGORIES[3];
+  if (lower.includes('beverage') || lower.includes('drink') || lower.includes('cocktail') || lower.includes('mocktail')) return CANONICAL_CATEGORIES[4];
+  
+  return {
+    key: lower.replace(/[^a-z0-9]+/g, '-'),
+    id: categoryName,
+    title: categoryName,
+    icon: '🍽️',
+    subtitle: 'Chef curated creations prepared fresh to order'
+  };
+};
 
 export default function CustomerMenu({
   menuItems: propMenuItems,
   onPlaceOrder,
   tableFromProp
 }) {
+  // 0. Layout View Mode ('grid' for 2-column compact modern, 'list' for horizontal rows)
+  const [layoutMode, setLayoutMode] = useState('grid');
+  const [activeScrollCategory, setActiveScrollCategory] = useState('All');
+
   // 1. Fixed Table Detection & Locking (No automatic table selection modal)
   const [tableNumber, setTableNumber] = useState('');
   const [isTableLocked, setIsTableLocked] = useState(false);
@@ -665,57 +740,129 @@ export default function CustomerMenu({
     return counts;
   }, [allMenuItems]);
 
-  // Categories list
+  // Categories list sorted canonically with rich metadata
   const categoriesList = useMemo(() => {
-    const unique = Array.from(new Set(allMenuItems.map((item) => item.category || 'Mains')));
-    return ['All', ...unique];
+    const rawCategories = Array.from(new Set(allMenuItems.map((item) => item.category || 'Mains')));
+    
+    // Canonical ordering: Starters, Mains, Burgers, Desserts, Beverages
+    const orderMap = { starters: 1, mains: 2, burgers: 3, desserts: 4, beverages: 5 };
+    rawCategories.sort((a, b) => {
+      const ordA = orderMap[getCategoryMetadata(a).key] || 99;
+      const ordB = orderMap[getCategoryMetadata(b).key] || 99;
+      return ordA - ordB;
+    });
+
+    const list = [
+      { id: 'All', name: 'All Dishes', icon: '✨', count: allMenuItems.length }
+    ];
+
+    rawCategories.forEach((cat) => {
+      const meta = getCategoryMetadata(cat);
+      const count = allMenuItems.filter((i) => (i.category || '').toLowerCase() === cat.toLowerCase()).length;
+      list.push({
+        id: cat,
+        name: meta.title,
+        icon: meta.icon,
+        count
+      });
+    });
+
+    return list;
   }, [allMenuItems]);
 
-  // Group filtered items into structured Category sections
+  // Group filtered items into canonical structured Category sections
   const categorizedSections = useMemo(() => {
     const map = new Map();
-    // Maintain category ordering from categoriesList
-    categoriesList.filter((c) => c !== 'All').forEach((cat) => {
-      map.set(cat, []);
+
+    // Initialize canonical sections in exact order
+    CANONICAL_CATEGORIES.forEach((cat) => {
+      map.set(cat.key, {
+        categoryKey: cat.key,
+        canonicalId: cat.id,
+        title: cat.title,
+        icon: cat.icon,
+        subtitle: cat.subtitle,
+        items: []
+      });
     });
 
     filteredItems.forEach((dish) => {
-      const cat = dish.category || 'Mains';
-      if (!map.has(cat)) {
-        map.set(cat, []);
+      const meta = getCategoryMetadata(dish.category || 'Mains');
+      if (!map.has(meta.key)) {
+        map.set(meta.key, {
+          categoryKey: meta.key,
+          canonicalId: meta.id,
+          title: meta.title,
+          icon: meta.icon,
+          subtitle: meta.subtitle,
+          items: []
+        });
       }
-      map.get(cat).push(dish);
+      map.get(meta.key).items.push(dish);
     });
 
-    return Array.from(map.entries())
-      .filter(([_, items]) => items.length > 0)
-      .map(([category, items]) => ({
-        category,
-        items
-      }));
-  }, [filteredItems, categoriesList]);
+    return Array.from(map.values()).filter((section) => section.items.length > 0);
+  }, [filteredItems]);
 
-  // Category Icon helper
-  const getCategoryIcon = (category = '') => {
-    const lower = category.toLowerCase();
-    if (lower.includes('start') || lower.includes('appetiz')) return '🥗';
-    if (lower.includes('main') || lower.includes('steak') || lower.includes('meat')) return '🥩';
-    if (lower.includes('burger') || lower.includes('sandwich')) return '🍔';
-    if (lower.includes('dessert') || lower.includes('sweet') || lower.includes('cake')) return '🍰';
-    if (lower.includes('beverage') || lower.includes('drink') || lower.includes('cocktail')) return '🍹';
-    if (lower.includes('pizza') || lower.includes('pasta')) return '🍕';
-    return '🍽️';
-  };
+  // Scroll spy to highlight active CategoryBar pill when in 'All' mode
+  useEffect(() => {
+    if (selectedCategory !== 'All') return;
 
-  // Category Subtitle helper
-  const getCategorySubtitle = (category = '') => {
-    const lower = category.toLowerCase();
-    if (lower.includes('start')) return 'Crispy appetizers, signature bites, and table warmups';
-    if (lower.includes('main')) return 'Prime dry-aged steaks, flame-grilled specialties, and fresh catches';
-    if (lower.includes('burger')) return 'Double-smashed wagyu burgers on toasted brioche';
-    if (lower.includes('dessert')) return 'Decadent sweet creations crafted by our pastry chef';
-    if (lower.includes('beverage')) return 'Hand-crafted iced coolers, spritzers, and organic teas';
-    return 'Chef curated creations prepared fresh to order';
+    const handleScroll = () => {
+      const scrollPos = window.scrollY + 180;
+      let currentId = 'All';
+
+      for (const section of categorizedSections) {
+        const el = document.getElementById(`cat-section-${section.categoryKey}`);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPos >= top && scrollPos < top + height) {
+            currentId = section.canonicalId;
+            break;
+          }
+        }
+      }
+
+      if (window.scrollY < 220) {
+        currentId = 'All';
+      }
+
+      setActiveScrollCategory(currentId);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [selectedCategory, categorizedSections]);
+
+  // Smooth scroll or cleanly filter when CategoryBar pills are clicked
+  const handleSelectCategory = (catId) => {
+    if (catId === 'All') {
+      setSelectedCategory('All');
+      const root = document.getElementById('menu-content-root');
+      if (root) {
+        root.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
+
+    const meta = getCategoryMetadata(catId);
+    const sectionEl = document.getElementById(`cat-section-${meta.key}`);
+
+    if (selectedCategory === 'All' && sectionEl) {
+      // Smooth scroll directly to that category section
+      sectionEl.scrollIntoView({ behavior: 'smooth' });
+      setActiveScrollCategory(catId);
+    } else {
+      // Cleanly filter to that category
+      setSelectedCategory(catId);
+      const root = document.getElementById('menu-content-root');
+      if (root) {
+        root.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
   };
 
   // Cart summary calculations
@@ -1018,87 +1165,129 @@ export default function CustomerMenu({
           </div>
         </section>
 
-        {/* Category Horizontal Pill Bar */}
-        <section className="mb-5 -mx-3 sm:mx-0">
+        {/* Category Horizontal Sticky Pill Bar */}
+        <section className="sticky top-16 z-30 -mx-3 sm:mx-0 mb-4 bg-[#faf8f5]/95 backdrop-blur-md pt-1 pb-1.5 border-b border-stone-200/60 shadow-2xs">
           <CategoryBar
             categories={categoriesList}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
+            selectedCategory={selectedCategory === 'All' ? activeScrollCategory : selectedCategory}
+            onSelectCategory={handleSelectCategory}
             categoryCounts={categoryCounts}
           />
         </section>
 
-        {/* Results Info Bar */}
-        <div className="flex items-center justify-between mb-4 px-1">
-          <h2 className="text-base sm:text-lg font-black text-stone-900 tracking-tight flex items-center gap-2.5">
-            <span>{selectedCategory} Dishes</span>
-            <span className="text-xs font-bold font-mono text-stone-700 bg-stone-200/80 px-2.5 py-0.5 rounded-full">
-              {filteredItems.length}
-            </span>
-          </h2>
-          {(searchQuery || vegOnlyFilter || spicyFilter) && (
+        {/* Results Info Bar & Layout Switcher */}
+        <div id="menu-content-root" className="flex items-center justify-between mb-4 px-1 scroll-mt-32">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <h2 className="text-base sm:text-lg font-black text-stone-900 tracking-tight flex items-center gap-2">
+              <span>{selectedCategory === 'All' ? 'All Menu Choices' : `${getCategoryMetadata(selectedCategory).title}`}</span>
+              <span className="text-xs font-bold font-mono text-amber-800 bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 rounded-full shadow-2xs">
+                {filteredItems.length}
+              </span>
+            </h2>
+            {(searchQuery || vegOnlyFilter || spicyFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setVegOnlyFilter(false);
+                  setSpicyFilter(false);
+                }}
+                className="text-xs text-amber-700 hover:text-amber-800 font-bold cursor-pointer underline decoration-amber-400 underline-offset-2 ml-1"
+              >
+                Reset Filters
+              </button>
+            )}
+          </div>
+
+          {/* View Mode Toggle: Grid (2-col) / List (Compact) */}
+          <div className="flex items-center bg-stone-200/80 p-0.5 rounded-xl border border-stone-300/70 shadow-2xs">
             <button
               type="button"
-              onClick={() => {
-                setSearchQuery('');
-                setVegOnlyFilter(false);
-                setSpicyFilter(false);
-              }}
-              className="text-xs text-amber-700 hover:text-amber-800 font-bold cursor-pointer underline decoration-amber-400 underline-offset-2"
+              onClick={() => setLayoutMode('grid')}
+              className={`p-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                layoutMode === 'grid'
+                  ? 'bg-white text-stone-950 shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+              title="2-Column Compact Grid"
+              aria-label="2-Column Grid View"
             >
-              Reset Filters
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline-block text-[11px] font-semibold">Grid</span>
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => setLayoutMode('list')}
+              className={`p-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                layoutMode === 'list'
+                  ? 'bg-white text-stone-950 shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+              title="Compact List View"
+              aria-label="List View"
+            >
+              <Rows3 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline-block text-[11px] font-semibold">List</span>
+            </button>
+          </div>
         </div>
 
         {/* Categorized Dishes Sections / Filtered Grid */}
         {filteredItems.length > 0 ? (
           <div className="space-y-8 sm:space-y-10">
             {selectedCategory === 'All' ? (
-              // Categorized Grouped View
-              categorizedSections.map(({ category, items }) => (
+              // Categorized Grouped View (Starters -> Mains -> Burgers -> Desserts -> Beverages)
+              categorizedSections.map((section) => (
                 <section
-                  key={category}
-                  id={`cat-section-${category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-                  className="space-y-3.5 scroll-mt-28"
+                  key={section.categoryKey}
+                  id={`cat-section-${section.categoryKey}`}
+                  className="space-y-3.5 scroll-mt-32 pt-1"
                 >
-                  {/* Category Header */}
-                  <div className="flex items-center justify-between pb-2 border-b border-stone-200/90">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-amber-100/90 text-amber-900 flex items-center justify-center text-lg shadow-2xs">
-                        {getCategoryIcon(category)}
+                  {/* Category Header with Icon, Title, Dish Count Pill, and Subtitle */}
+                  <div className="flex items-center justify-between pb-2.5 border-b border-stone-200/90">
+                    <div className="flex items-center gap-2.5 sm:gap-3">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 flex items-center justify-center text-lg sm:text-xl shadow-2xs shrink-0">
+                        {section.icon}
                       </div>
                       <div>
-                        <h3 className="text-base sm:text-lg font-black text-stone-900 tracking-tight flex items-center gap-2">
-                          <span>{category}</span>
-                          <span className="text-[11px] font-bold font-mono text-stone-600 bg-stone-100 border border-stone-200/80 px-2 py-0.5 rounded-full">
-                            {items.length} {items.length === 1 ? 'item' : 'items'}
+                        <h3 className="text-base sm:text-lg lg:text-xl font-black text-stone-900 tracking-tight flex items-center gap-2">
+                          <span>{section.title}</span>
+                          <span className="text-[11px] sm:text-xs font-bold font-mono text-amber-800 bg-amber-500/15 border border-amber-500/30 px-2 sm:px-2.5 py-0.5 rounded-full shadow-2xs">
+                            {section.items.length} {section.items.length === 1 ? 'dish' : 'dishes'}
                           </span>
                         </h3>
-                        <p className="text-[11px] sm:text-xs text-stone-500 font-medium">
-                          {getCategorySubtitle(category)}
+                        <p className="text-[11px] sm:text-xs text-stone-500 font-medium line-clamp-1 mt-0.5">
+                          {section.subtitle}
                         </p>
                       </div>
                     </div>
 
                     <button
                       type="button"
-                      onClick={() => setSelectedCategory(category)}
-                      className="text-xs font-bold text-amber-700 hover:text-amber-800 transition flex items-center gap-1 cursor-pointer hover:underline"
+                      onClick={() => {
+                        setSelectedCategory(section.canonicalId);
+                        window.scrollTo({ top: 160, behavior: 'smooth' });
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-amber-500/15 hover:border-amber-500/30 text-stone-700 hover:text-amber-900 border border-stone-200/90 text-xs font-bold transition-all shadow-2xs cursor-pointer shrink-0"
                     >
                       <span>Filter</span>
-                      <ArrowRight className="w-3 h-3" />
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
-                  {/* Compact Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                    {items.map((dish) => {
+                  {/* Compact Responsive Grid: 2-col on mobile, 3 on tablet, 4 on desktop */}
+                  <div className={
+                    layoutMode === 'list'
+                      ? "flex flex-col gap-2.5 sm:gap-3"
+                      : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 lg:gap-4"
+                  }>
+                    {section.items.map((dish) => {
                       const inCart = cart[dish.id];
                       return (
                         <MenuItemCard
                           key={dish.id}
                           item={dish}
+                          layout={layoutMode}
                           cartQuantity={inCart ? inCart.quantity : 0}
                           itemNote={inCart ? inCart.note : ''}
                           onAddToCart={handleAddToCart}
@@ -1114,54 +1303,68 @@ export default function CustomerMenu({
               ))
             ) : (
               // Filtered Single Category View
-              <section className="space-y-3.5">
-                <div className="flex items-center justify-between pb-2 border-b border-stone-200/90">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-amber-100/90 text-amber-900 flex items-center justify-center text-lg shadow-2xs">
-                      {getCategoryIcon(selectedCategory)}
-                    </div>
-                    <div>
-                      <h3 className="text-base sm:text-lg font-black text-stone-900 tracking-tight flex items-center gap-2">
-                        <span>{selectedCategory}</span>
-                        <span className="text-[11px] font-bold font-mono text-stone-600 bg-stone-100 border border-stone-200/80 px-2 py-0.5 rounded-full">
-                          {filteredItems.length} items
-                        </span>
-                      </h3>
-                      <p className="text-[11px] sm:text-xs text-stone-500 font-medium">
-                        {getCategorySubtitle(selectedCategory)}
-                      </p>
-                    </div>
-                  </div>
+              (() => {
+                const activeMeta = getCategoryMetadata(selectedCategory);
+                return (
+                  <section className="space-y-3.5">
+                    <div className="flex items-center justify-between pb-2.5 border-b border-stone-200/90">
+                      <div className="flex items-center gap-2.5 sm:gap-3">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 flex items-center justify-center text-lg sm:text-xl shadow-2xs shrink-0">
+                          {activeMeta.icon}
+                        </div>
+                        <div>
+                          <h3 className="text-base sm:text-lg lg:text-xl font-black text-stone-900 tracking-tight flex items-center gap-2">
+                            <span>{activeMeta.title}</span>
+                            <span className="text-[11px] sm:text-xs font-bold font-mono text-amber-800 bg-amber-500/15 border border-amber-500/30 px-2 sm:px-2.5 py-0.5 rounded-full shadow-2xs">
+                              {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'}
+                            </span>
+                          </h3>
+                          <p className="text-[11px] sm:text-xs text-stone-500 font-medium line-clamp-1 mt-0.5">
+                            {activeMeta.subtitle}
+                          </p>
+                        </div>
+                      </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCategory('All')}
-                    className="text-xs font-bold text-stone-700 hover:text-stone-950 bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-xl transition cursor-pointer border border-stone-200"
-                  >
-                    View All Categories
-                  </button>
-                </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory('All');
+                          window.scrollTo({ top: 160, behavior: 'smooth' });
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-white text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        <span>View All Categories</span>
+                      </button>
+                    </div>
 
-                {/* Compact Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                  {filteredItems.map((dish) => {
-                    const inCart = cart[dish.id];
-                    return (
-                      <MenuItemCard
-                        key={dish.id}
-                        item={dish}
-                        cartQuantity={inCart ? inCart.quantity : 0}
-                        itemNote={inCart ? inCart.note : ''}
-                        onAddToCart={handleAddToCart}
-                        onUpdateQuantity={handleUpdateQuantity}
-                        onRemoveFromCart={handleRemoveFromCart}
-                        onUpdateNote={handleUpdateNote}
-                        onSelectDish={(selected) => setSelectedDishModal(selected)}
-                      />
-                    );
-                  })}
-                </div>
-              </section>
+                    {/* Compact Responsive Grid: 2-col on mobile, 3 on tablet, 4 on desktop */}
+                    <div className={
+                      layoutMode === 'list'
+                        ? "flex flex-col gap-2.5 sm:gap-3"
+                        : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 lg:gap-4"
+                    }>
+                      {filteredItems.map((dish) => {
+                        const inCart = cart[dish.id];
+                        return (
+                          <MenuItemCard
+                            key={dish.id}
+                            item={dish}
+                            layout={layoutMode}
+                            cartQuantity={inCart ? inCart.quantity : 0}
+                            itemNote={inCart ? inCart.note : ''}
+                            onAddToCart={handleAddToCart}
+                            onUpdateQuantity={handleUpdateQuantity}
+                            onRemoveFromCart={handleRemoveFromCart}
+                            onUpdateNote={handleUpdateNote}
+                            onSelectDish={(selected) => setSelectedDishModal(selected)}
+                          />
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })()
             )}
           </div>
         ) : (

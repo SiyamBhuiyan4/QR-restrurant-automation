@@ -25,73 +25,225 @@ import {
   ShieldCheck,
   Send,
   ThumbsUp,
-  UserCheck
+  UserCheck,
+  ChefHat,
+  Maximize2,
+  RotateCcw
 } from 'lucide-react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import VoiceRecorder from './VoiceRecorder';
 
 /**
- * Curated gourmet angles matching food categories to guarantee
- * rich multi-photo carousel experience for every dish!
+ * Curated gourmet angles matching food categories and dish keywords to guarantee
+ * rich 3-4 photo carousel experience for every dish!
  */
-const CATEGORY_COMPLEMENTARY_PHOTOS = {
-  starters: [
+export const FOOD_ANGLE_POOLS = {
+  // Starters & Sides
+  fries: [
     'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1585109649139-366815a0d713?w=900&auto=format&fit=crop&q=80'
   ],
-  mains: [
+  wings: [
+    'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1527477321005-4d01d75b2d5c?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=900&auto=format&fit=crop&q=80'
+  ],
+  bread: [
+    'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1619535860434-ba1d8fa12536?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1509722747041-616f39b57569?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=900&auto=format&fit=crop&q=80'
+  ],
+  calamari: [
+    'https://images.unsplash.com/photo-1604909052743-94e838986d24?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80'
+  ],
+  // Mains
+  steak: [
     'https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1504973960431-1c467e159aa4?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=900&auto=format&fit=crop&q=80'
   ],
-  burgers: [
+  chicken: [
+    'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1527477321005-4d01d75b2d5c?w=900&auto=format&fit=crop&q=80'
+  ],
+  salmon: [
+    'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80'
+  ],
+  pasta: [
+    'https://images.unsplash.com/photo-1621996346565-e3d5d6281290?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=900&auto=format&fit=crop&q=80'
+  ],
+  risotto: [
+    'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1621996346565-e3d5d6281290?w=900&auto=format&fit=crop&q=80'
+  ],
+  // Burgers
+  burger: [
     'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=900&auto=format&fit=crop&q=80'
   ],
-  desserts: [
-    'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80'
+  jalapeno: [
+    'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1521305916504-4a1121188589?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80'
+  ],
+  vegan: [
+    'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1520072959219-c595dc870360?w=900&auto=format&fit=crop&q=80'
+  ],
+  // Beverages
+  lemonade: [
+    'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80'
   ],
   beverages: [
     'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1536935338788-846bb9981813?w=900&auto=format&fit=crop&q=80'
+  ],
+  // Desserts
+  chocolate: [
+    'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80'
+  ],
+  tiramisu: [
+    'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1586040140372-b424ae30a290?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1534432182912-63863115e106?w=900&auto=format&fit=crop&q=80'
+  ],
+  desserts: [
+    'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=900&auto=format&fit=crop&q=80'
+  ],
+  starters: [
+    'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1604909052743-94e838986d24?w=900&auto=format&fit=crop&q=80'
+  ],
+  mains: [
+    'https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1504973960431-1c467e159aa4?w=900&auto=format&fit=crop&q=80'
   ]
 };
 
 /**
- * Returns a guaranteed array of 3+ high-res gourmet photos for this dish
+ * Returns a guaranteed array of 3-4 high-res gourmet photos for any dish
  */
-function resolveDishPhotos(dish) {
+export function resolveDishPhotos(dish) {
   if (!dish) return [];
   const primary = dish.image || dish.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900';
   
   let explicitList = [];
   if (Array.isArray(dish.images) && dish.images.length > 0) {
-    explicitList = dish.images.filter(Boolean);
+    explicitList = dish.images.filter((u) => typeof u === 'string' && u.trim().length > 0);
   }
 
-  if (explicitList.length >= 2) {
-    return explicitList;
+  // Deduplicate starting with primary + explicitList
+  const uniqueExplicit = Array.from(new Set([primary, ...explicitList]));
+
+  // If already has 4 distinct photos, return them
+  if (uniqueExplicit.length >= 4) {
+    return uniqueExplicit.slice(0, 4);
   }
 
-  // Resolve category fallback angles
-  const catKey = (dish.category || '').toLowerCase();
-  let complementary = CATEGORY_COMPLEMENTARY_PHOTOS.mains;
-  for (const [key, photos] of Object.entries(CATEGORY_COMPLEMENTARY_PHOTOS)) {
-    if (catKey.includes(key) || catKey.includes(key.slice(0, 4))) {
-      complementary = photos;
+  // Match keyword in priority order from dish name, category, or description
+  const text = `${dish.name || ''} ${dish.title || ''} ${dish.category || ''} ${dish.description || ''}`.toLowerCase();
+  let matchedPool = null;
+
+  const keywordOrder = [
+    'fries', 'wing', 'calamari', 'bread', 'bruschetta',
+    'steak', 'ribeye', 'salmon', 'fish', 'chicken', 'peri',
+    'risotto', 'pasta', 'tagliatelle',
+    'jalapeno', 'spicy burger', 'vegan', 'plant', 'burger', 'smash',
+    'lemonade', 'mojito', 'cooler', 'beverage', 'drink',
+    'lava', 'chocolate', 'tiramisu', 'dessert', 'cake',
+    'starter', 'appetizer', 'main'
+  ];
+
+  for (const kw of keywordOrder) {
+    if (text.includes(kw)) {
+      if (kw === 'fries') matchedPool = FOOD_ANGLE_POOLS.fries;
+      else if (kw === 'wing') matchedPool = FOOD_ANGLE_POOLS.wings;
+      else if (kw === 'calamari') matchedPool = FOOD_ANGLE_POOLS.calamari;
+      else if (kw === 'bread' || kw === 'bruschetta') matchedPool = FOOD_ANGLE_POOLS.bread;
+      else if (kw === 'steak' || kw === 'ribeye') matchedPool = FOOD_ANGLE_POOLS.steak;
+      else if (kw === 'salmon' || kw === 'fish') matchedPool = FOOD_ANGLE_POOLS.salmon;
+      else if (kw === 'chicken' || kw === 'peri') matchedPool = FOOD_ANGLE_POOLS.chicken;
+      else if (kw === 'risotto') matchedPool = FOOD_ANGLE_POOLS.risotto;
+      else if (kw === 'pasta' || kw === 'tagliatelle') matchedPool = FOOD_ANGLE_POOLS.pasta;
+      else if (kw === 'jalapeno' || kw === 'spicy burger') matchedPool = FOOD_ANGLE_POOLS.jalapeno;
+      else if (kw === 'vegan' || kw === 'plant') matchedPool = FOOD_ANGLE_POOLS.vegan;
+      else if (kw === 'burger' || kw === 'smash') matchedPool = FOOD_ANGLE_POOLS.burger;
+      else if (kw === 'lemonade' || kw === 'mojito') matchedPool = FOOD_ANGLE_POOLS.lemonade;
+      else if (kw === 'cooler' || kw === 'beverage' || kw === 'drink') matchedPool = FOOD_ANGLE_POOLS.beverages;
+      else if (kw === 'lava' || kw === 'chocolate') matchedPool = FOOD_ANGLE_POOLS.chocolate;
+      else if (kw === 'tiramisu') matchedPool = FOOD_ANGLE_POOLS.tiramisu;
+      else if (kw === 'dessert' || kw === 'cake') matchedPool = FOOD_ANGLE_POOLS.desserts;
+      else if (kw === 'starter' || kw === 'appetizer') matchedPool = FOOD_ANGLE_POOLS.starters;
+      else if (kw === 'main') matchedPool = FOOD_ANGLE_POOLS.mains;
       break;
     }
   }
 
-  const combined = [primary, ...explicitList.filter(u => u !== primary), ...complementary];
-  // Deduplicate URLs
-  return Array.from(new Set(combined)).slice(0, 4);
+  if (!matchedPool) {
+    matchedPool = FOOD_ANGLE_POOLS.mains;
+  }
+
+  // Combine uniqueExplicit with matchedPool
+  const combined = Array.from(new Set([...uniqueExplicit, ...matchedPool]));
+  
+  // Guarantee minimum 3 angles
+  if (combined.length < 3) {
+    FOOD_ANGLE_POOLS.mains.forEach((p) => {
+      if (!combined.includes(p)) combined.push(p);
+    });
+  }
+
+  return combined.slice(0, 4);
+}
+
+/**
+ * Format video seconds into readable MM:SS
+ */
+function formatTime(seconds) {
+  if (isNaN(seconds) || seconds < 0) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
 /**
@@ -128,6 +280,7 @@ export default function FoodDetailModal({
   // Review & Comment Form state
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
   const [reviewAuthor, setReviewAuthor] = useState('');
   const [reviewComment, setReviewComment] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
@@ -135,8 +288,24 @@ export default function FoodDetailModal({
 
   // Touch swipe tracking state
   const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
   const touchEndX = useRef(null);
+  const touchEndY = useRef(null);
+
+  // Top Video Reel Player state
   const videoRef = useRef(null);
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [videoProgress, setVideoProgress] = useState(0);
+
+  // Body Embedded Kitchen Reel Player state
+  const bodyVideoRef = useRef(null);
+  const [isBodyVideoPlaying, setIsBodyVideoPlaying] = useState(false);
+  const [isBodyVideoMuted, setIsBodyVideoMuted] = useState(true);
+  const [bodyVideoCurrentTime, setBodyVideoCurrentTime] = useState(0);
+  const [bodyVideoDuration, setBodyVideoDuration] = useState(0);
+  const [bodyVideoProgress, setBodyVideoProgress] = useState(0);
+  const [showBodyPlayOverlay, setShowBodyPlayOverlay] = useState(false);
 
   const dishId = dish ? String(dish.id || dish._id || dish.name) : '';
 
@@ -165,14 +334,24 @@ export default function FoodDetailModal({
             rating: 5,
             date: 'Yesterday',
             comment: 'Absolutely phenomenal! Cooked exactly to perfection with balanced seasonings.',
-            verified: true
+            verified: true,
+            createdAt: Date.now() - 86400000
           },
           {
             author: 'David Chen',
             rating: 5,
             date: '3 days ago',
             comment: 'One of the best dishes here. The portion size and presentation are top notch!',
-            verified: true
+            verified: true,
+            createdAt: Date.now() - 86400000 * 3
+          },
+          {
+            author: 'Marcus Vance',
+            rating: 5,
+            date: 'Last week',
+            comment: 'Incredible taste! Will definitely be ordering this again next time.',
+            verified: true,
+            createdAt: Date.now() - 86400000 * 7
           }
         ];
         setLocalReviews(defaultReviews);
@@ -180,23 +359,66 @@ export default function FoodDetailModal({
     } catch (_) {}
   }, [dishId]);
 
-  // Combined real-time reviews list
+  // Combined real-time reviews list (Local + Convex unified)
   const combinedReviews = useMemo(() => {
-    if (convexReviews && Array.isArray(convexReviews) && convexReviews.length > 0) {
-      return convexReviews.map(r => ({
-        author: r.author,
-        rating: r.rating,
-        comment: r.comment,
-        date: r.createdAt ? new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Recently',
-        verified: true
-      }));
+    const list = [];
+    const seen = new Set();
+
+    // 1. First include localReviews (new submissions appear immediately at the top)
+    if (Array.isArray(localReviews)) {
+      localReviews.forEach(r => {
+        const key = `${r.author}_${r.comment}_${r.rating}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push(r);
+        }
+      });
     }
-    return localReviews;
+
+    // 2. Merge Convex real-time database reviews
+    if (Array.isArray(convexReviews)) {
+      convexReviews.forEach(r => {
+        const key = `${r.author}_${r.comment}_${r.rating}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push({
+            author: r.author,
+            rating: r.rating,
+            comment: r.comment,
+            date: r.createdAt ? new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Recently',
+            verified: true,
+            createdAt: r.createdAt
+          });
+        }
+      });
+    }
+
+    // 3. Fallback sample reviews if completely empty
+    if (list.length === 0) {
+      return [
+        {
+          author: 'Sophia Martinez',
+          rating: 5,
+          date: 'Yesterday',
+          comment: 'Absolutely phenomenal! Cooked exactly to perfection with balanced seasonings.',
+          verified: true
+        },
+        {
+          author: 'David Chen',
+          rating: 5,
+          date: '3 days ago',
+          comment: 'One of the best dishes here. The portion size and presentation are top notch!',
+          verified: true
+        }
+      ];
+    }
+
+    return list;
   }, [convexReviews, localReviews]);
 
   // Average Rating
   const averageRating = useMemo(() => {
-    if (!combinedReviews || combinedReviews.length === 0) return 4.9;
+    if (!combinedReviews || combinedReviews.length === 0) return '4.9';
     const sum = combinedReviews.reduce((acc, r) => acc + (r.rating || 5), 0);
     return (sum / combinedReviews.length).toFixed(1);
   }, [combinedReviews]);
@@ -219,32 +441,83 @@ export default function FoodDetailModal({
       setCustomNote(dish.customNote || dish.note || '');
       setVoiceNoteUrl(dish.voiceNoteUrl || null);
       const lockedTable = typeof window !== 'undefined' ? localStorage.getItem('smartdine_table') : '';
-      setReviewAuthor(lockedTable ? `Diner (Table ${lockedTable})` : 'Verified Diner');
+      const tableNum = lockedTable ? (lockedTable.length === 1 ? `0${lockedTable}` : lockedTable) : '01';
+      setReviewAuthor(`Table ${tableNum} Diner`);
+
+      if (dish.openReviews) {
+        setIsReviewFormOpen(true);
+        setTimeout(() => {
+          const el = document.getElementById('reviews-section');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+      }
     }
   }, [dish, cartQuantity]);
 
+  // Keyboard navigation for carousel and modal
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowRight') {
+        setSelectedImageIndex((prev) => (prev + 1) % photos.length);
+      } else if (e.key === 'ArrowLeft') {
+        setSelectedImageIndex((prev) => (prev - 1 + photos.length) % photos.length);
+      } else if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, photos.length, onClose]);
+
+  // Pause top video when tab switched to photos
+  useEffect(() => {
+    if (activeMediaTab === 'photos') {
+      if (videoRef.current) videoRef.current.pause();
+      setIsVideoPlaying(false);
+    }
+  }, [activeMediaTab]);
+
+  // Pause both videos when modal closes or unmounts
+  useEffect(() => {
+    if (!isOpen) {
+      if (videoRef.current) videoRef.current.pause();
+      if (bodyVideoRef.current) bodyVideoRef.current.pause();
+      setIsVideoPlaying(false);
+      setIsBodyVideoPlaying(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen || !dish) return null;
 
-  // Swipe gesture handlers
+  // Touch swipe gesture handlers with clear directional threshold
   const handleTouchStart = (e) => {
     touchStartX.current = e.targetTouches[0].clientX;
+    touchStartY.current = e.targetTouches[0].clientY;
     touchEndX.current = null;
+    touchEndY.current = null;
   };
 
   const handleTouchMove = (e) => {
     touchEndX.current = e.targetTouches[0].clientX;
+    touchEndY.current = e.targetTouches[0].clientY;
   };
 
   const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
-    const diff = touchStartX.current - touchEndX.current;
-    const threshold = 40; // min swipe distance in px
-    if (diff > threshold) {
-      // Swiped Left -> Next Photo
-      setSelectedImageIndex((prev) => (prev + 1) % photos.length);
-    } else if (diff < -threshold) {
-      // Swiped Right -> Previous Photo
-      setSelectedImageIndex((prev) => (prev - 1 + photos.length) % photos.length);
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    const diffX = touchStartX.current - touchEndX.current;
+    const diffY = (touchStartY.current || 0) - (touchEndY.current || 0);
+    const threshold = 35; // clear directional threshold
+
+    // Ensure horizontal swipe is dominant over vertical scroll
+    if (Math.abs(diffX) > threshold && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX > 0) {
+        // Swiped Left -> Next Photo
+        setSelectedImageIndex((prev) => (prev + 1) % photos.length);
+      } else {
+        // Swiped Right -> Previous Photo
+        setSelectedImageIndex((prev) => (prev - 1 + photos.length) % photos.length);
+      }
     }
   };
 
@@ -258,6 +531,7 @@ export default function FoodDetailModal({
     setSelectedImageIndex((prev) => (prev - 1 + photos.length) % photos.length);
   };
 
+  // Top Video Reel Controls
   const toggleVideoPlay = () => {
     if (!videoRef.current) return;
     if (isVideoPlaying) {
@@ -276,6 +550,74 @@ export default function FoodDetailModal({
     if (!videoRef.current) return;
     videoRef.current.muted = !isVideoMuted;
     setIsVideoMuted(!isVideoMuted);
+  };
+
+  const handleVideoTimeUpdate = () => {
+    if (!videoRef.current) return;
+    const cur = videoRef.current.currentTime || 0;
+    const dur = videoRef.current.duration || 0;
+    setVideoCurrentTime(cur);
+    setVideoDuration(dur);
+    if (dur > 0) {
+      setVideoProgress((cur / dur) * 100);
+    }
+  };
+
+  const handleVideoSeek = (e) => {
+    const val = parseFloat(e.target.value);
+    setVideoProgress(val);
+    if (videoRef.current && videoRef.current.duration) {
+      videoRef.current.currentTime = (val / 100) * videoRef.current.duration;
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.requestFullscreen) {
+      videoRef.current.requestFullscreen();
+    } else if (videoRef.current.webkitRequestFullscreen) {
+      videoRef.current.webkitRequestFullscreen();
+    }
+  };
+
+  // Body Embedded Kitchen Reel Controls
+  const toggleBodyVideoPlay = () => {
+    if (!bodyVideoRef.current) return;
+    if (isBodyVideoPlaying) {
+      bodyVideoRef.current.pause();
+      setIsBodyVideoPlaying(false);
+    } else {
+      bodyVideoRef.current.play().catch(() => {});
+      setIsBodyVideoPlaying(true);
+    }
+    setShowBodyPlayOverlay(true);
+    setTimeout(() => setShowBodyPlayOverlay(false), 700);
+  };
+
+  const toggleBodyVideoMute = (e) => {
+    e.stopPropagation();
+    if (!bodyVideoRef.current) return;
+    bodyVideoRef.current.muted = !isBodyVideoMuted;
+    setIsBodyVideoMuted(!isBodyVideoMuted);
+  };
+
+  const handleBodyVideoTimeUpdate = () => {
+    if (!bodyVideoRef.current) return;
+    const cur = bodyVideoRef.current.currentTime || 0;
+    const dur = bodyVideoRef.current.duration || 0;
+    setBodyVideoCurrentTime(cur);
+    setBodyVideoDuration(dur);
+    if (dur > 0) {
+      setBodyVideoProgress((cur / dur) * 100);
+    }
+  };
+
+  const handleBodyVideoSeek = (e) => {
+    const val = parseFloat(e.target.value);
+    setBodyVideoProgress(val);
+    if (bodyVideoRef.current && bodyVideoRef.current.duration) {
+      bodyVideoRef.current.currentTime = (val / 100) * bodyVideoRef.current.duration;
+    }
   };
 
   const handleShare = () => {
@@ -471,15 +813,19 @@ export default function FoodDetailModal({
           <div className="relative bg-black select-none">
             
             {/* Mode Switcher Tabs */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-stone-950 border-b border-white/10">
-              <div className="flex p-0.5 bg-stone-900 rounded-xl border border-white/10 text-xs font-semibold">
+            <div className="flex items-center justify-between px-3 sm:px-4 py-2 bg-stone-950 border-b border-white/10">
+              <div className="flex p-0.5 bg-stone-900/90 rounded-xl border border-white/10 text-xs font-semibold">
                 <button
                   type="button"
-                  onClick={() => setActiveMediaTab('photos')}
+                  onClick={() => {
+                    setActiveMediaTab('photos');
+                    if (videoRef.current) videoRef.current.pause();
+                    setIsVideoPlaying(false);
+                  }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     activeMediaTab === 'photos'
-                      ? 'bg-amber-500 text-stone-950 font-bold shadow-md shadow-amber-500/20'
-                      : 'text-stone-400 hover:text-white'
+                      ? 'bg-amber-500 text-stone-950 font-black shadow-md shadow-amber-500/30 scale-[1.02]'
+                      : 'text-stone-300 hover:text-white'
                   }`}
                 >
                   <ImageIcon className="w-3.5 h-3.5" />
@@ -488,11 +834,19 @@ export default function FoodDetailModal({
 
                 <button
                   type="button"
-                  onClick={() => setActiveMediaTab('video')}
+                  onClick={() => {
+                    setActiveMediaTab('video');
+                    setTimeout(() => {
+                      if (videoRef.current) {
+                        videoRef.current.play().catch(() => {});
+                        setIsVideoPlaying(true);
+                      }
+                    }, 60);
+                  }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     activeMediaTab === 'video'
-                      ? 'bg-amber-500 text-stone-950 font-bold shadow-md shadow-amber-500/20'
-                      : 'text-stone-400 hover:text-white'
+                      ? 'bg-amber-500 text-stone-950 font-black shadow-md shadow-amber-500/30 scale-[1.02]'
+                      : 'text-stone-300 hover:text-white'
                   }`}
                 >
                   <Video className="w-3.5 h-3.5" />
@@ -500,10 +854,27 @@ export default function FoodDetailModal({
                 </button>
               </div>
 
-              {/* Slide Counter Indicator */}
-              {activeMediaTab === 'photos' && (
-                <span className="text-[11px] font-mono font-medium text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
-                  Slide {selectedImageIndex + 1} of {photos.length}
+              {/* Status Indicator / Quick Action */}
+              {activeMediaTab === 'photos' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMediaTab('video');
+                    setTimeout(() => {
+                      if (videoRef.current) {
+                        videoRef.current.play().catch(() => {});
+                        setIsVideoPlaying(true);
+                      }
+                    }, 60);
+                  }}
+                  className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded-lg border border-amber-500/25 transition cursor-pointer"
+                >
+                  <Play className="w-3 h-3 fill-current" />
+                  <span>Watch Reel</span>
+                </button>
+              ) : (
+                <span className="text-[11px] font-bold text-purple-300 bg-purple-500/15 px-2.5 py-1 rounded-lg border border-purple-500/25">
+                  👨‍🍳 Behind The Kitchen
                 </span>
               )}
             </div>
@@ -516,91 +887,115 @@ export default function FoodDetailModal({
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
               >
-                {/* Story-Style Progress Bars */}
+                {/* Story-Style Progress Bars at the top */}
                 {photos.length > 1 && (
-                  <div className="absolute top-2.5 left-4 right-4 z-20 flex gap-1.5 pointer-events-none">
+                  <div className="absolute top-2.5 left-3 right-3 sm:left-4 sm:right-4 z-20 flex items-center gap-1.5">
                     {photos.map((_, idx) => (
-                      <div
+                      <button
                         key={idx}
-                        className="flex-1 h-1 rounded-full overflow-hidden bg-white/20 backdrop-blur-sm"
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedImageIndex(idx);
+                        }}
+                        className="flex-1 h-1 sm:h-1.5 rounded-full overflow-hidden bg-white/25 hover:bg-white/40 backdrop-blur-sm transition-colors cursor-pointer py-1 -my-1"
+                        aria-label={`Jump to photo ${idx + 1}`}
                       >
                         <div
-                          className={`h-full bg-amber-400 transition-all duration-300 ${
+                          className={`h-full rounded-full transition-all duration-300 ${
                             selectedImageIndex === idx
-                              ? 'w-full opacity-100'
+                              ? 'bg-amber-400 shadow-xs shadow-amber-400 w-full'
                               : selectedImageIndex > idx
-                                ? 'w-full opacity-50'
+                                ? 'bg-amber-400/80 w-full'
                                 : 'w-0'
                           }`}
                         />
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
 
-                {/* Main Slide Photo */}
+                {/* Floating Photo Counter Badge */}
+                <div className="absolute top-5 sm:top-6 right-3 sm:right-4 z-20 pointer-events-none">
+                  <span className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-amber-300 bg-stone-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-amber-400/30 shadow-lg">
+                    <ImageIcon className="w-3 h-3 text-amber-400" />
+                    <span>Slide {selectedImageIndex + 1} of {photos.length}</span>
+                  </span>
+                </div>
+
+                {/* Main Slide Photo with Smooth Crossfade */}
                 <img
+                  key={selectedImageIndex}
                   src={photos[selectedImageIndex]}
                   alt={`${dish.name || 'Dish'} view ${selectedImageIndex + 1}`}
-                  className="w-full h-full object-cover transition-all duration-500 ease-out"
+                  className="w-full h-full object-cover transition-opacity duration-300 ease-out animate-fadeIn"
                 />
 
                 {/* Gradient Vignette */}
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-900/90 via-transparent to-black/30 pointer-events-none" />
 
-                {/* Left & Right Chevron Buttons */}
+                {/* Large Floating Chevron Navigation Buttons */}
                 {photos.length > 1 && (
                   <>
                     <button
                       type="button"
                       onClick={handlePrevPhoto}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-90 z-20 cursor-pointer shadow-lg"
+                      className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-stone-950/75 hover:bg-black text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
                       aria-label="Previous photo"
-                      title="Previous photo"
+                      title="Previous photo (Left arrow)"
                     >
-                      <ChevronLeft className="w-5 h-5 -translate-x-0.5" />
+                      <ChevronLeft className="w-6 h-6 -translate-x-0.5" />
                     </button>
 
                     <button
                       type="button"
                       onClick={handleNextPhoto}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-90 z-20 cursor-pointer shadow-lg"
+                      className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-stone-950/75 hover:bg-black text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
                       aria-label="Next photo"
-                      title="Next photo"
+                      title="Next photo (Right arrow)"
                     >
-                      <ChevronRight className="w-5 h-5 translate-x-0.5" />
+                      <ChevronRight className="w-6 h-6 translate-x-0.5" />
                     </button>
                   </>
                 )}
 
                 {/* Swipe Guidance Pill (Mobile hint) */}
-                <div className="absolute top-10 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-black/50 backdrop-blur-sm text-[10px] text-stone-300 border border-white/10 pointer-events-none sm:hidden">
-                  👈 Swipe left/right to browse 👉
+                <div className="absolute top-11 sm:top-12 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-[10px] text-stone-300 border border-white/10 pointer-events-none sm:hidden">
+                  👈 Swipe left/right to browse {photos.length} photos 👉
                 </div>
 
-                {/* Thumbnail Strip */}
+                {/* Bottom Thumbnail Dock */}
                 {photos.length > 1 && (
-                  <div className="absolute bottom-3 left-0 right-0 flex justify-center items-center gap-2 px-4 z-20">
-                    {photos.map((img, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setSelectedImageIndex(idx)}
-                        className={`w-12 h-9 sm:w-14 sm:h-10 rounded-xl overflow-hidden border-2 transition-all transform cursor-pointer ${
-                          selectedImageIndex === idx
-                            ? 'border-amber-400 scale-110 shadow-lg shadow-amber-500/30 opacity-100 ring-2 ring-amber-400/40'
-                            : 'border-white/25 opacity-60 hover:opacity-100 hover:scale-105'
-                        }`}
-                      >
-                        <img src={img} alt="thumbnail" className="w-full h-full object-cover" />
-                      </button>
-                    ))}
+                  <div className="absolute bottom-2.5 sm:bottom-3 left-0 right-0 flex justify-center items-center z-20 px-3 pointer-events-none">
+                    <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-stone-950/85 backdrop-blur-md border border-white/15 shadow-2xl pointer-events-auto max-w-full overflow-x-auto scrollbar-none">
+                      {photos.map((img, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedImageIndex(idx);
+                          }}
+                          className={`relative w-12 h-9 sm:w-16 sm:h-11 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer shrink-0 ${
+                            selectedImageIndex === idx
+                              ? 'border-amber-400 scale-105 shadow-md shadow-amber-500/40 opacity-100 ring-2 ring-amber-400/50'
+                              : 'border-white/20 opacity-60 hover:opacity-100 hover:scale-102'
+                          }`}
+                          aria-label={`Jump to photo ${idx + 1}`}
+                        >
+                          <img src={img} alt={`Angle ${idx + 1}`} className="w-full h-full object-cover" />
+                          <span className="absolute bottom-0.5 right-1 text-[9px] font-mono font-bold text-white drop-shadow-md">
+                            {idx + 1}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
             ) : (
-              /* TAB B: SEPARATED KITCHEN VIDEO REEL VIEW */
-              <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-black flex items-center justify-center">
+              /* TAB B: DEDICATED KITCHEN VIDEO REEL VIEW */
+              <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-black flex items-center justify-center group">
                 <video
                   ref={videoRef}
                   src={videoUrl}
@@ -608,44 +1003,88 @@ export default function FoodDetailModal({
                   autoPlay
                   loop
                   muted={isVideoMuted}
+                  onTimeUpdate={handleVideoTimeUpdate}
                   onClick={toggleVideoPlay}
                   className="w-full h-full object-cover cursor-pointer"
                 />
 
                 {/* Play/Pause Overlay Flash */}
                 {showPlayOverlay && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/30 animate-fadeOut">
-                    <div className="w-16 h-16 rounded-full bg-black/75 backdrop-blur-md flex items-center justify-center text-white border border-white/20 scale-110 transition-transform">
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/35 animate-fadeOut">
+                    <div className="w-16 h-16 rounded-full bg-black/80 backdrop-blur-md flex items-center justify-center text-white border border-white/20 scale-110 transition-transform shadow-2xl">
                       {isVideoPlaying ? <Play className="w-8 h-8 fill-current translate-x-0.5" /> : <Pause className="w-8 h-8 fill-current" />}
                     </div>
                   </div>
                 )}
 
-                {/* Video Controls Bar */}
-                <div className="absolute bottom-3 left-4 right-4 z-20 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={toggleVideoPlay}
-                      className="px-3 py-1.5 rounded-full bg-black/65 backdrop-blur-md border border-white/20 text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-black/85 cursor-pointer"
-                    >
-                      {isVideoPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                      <span>{isVideoPlaying ? 'Pause' : 'Play'}</span>
-                    </button>
+                {/* Big Center Play Button when paused */}
+                {!isVideoPlaying && !showPlayOverlay && (
+                  <div
+                    onClick={toggleVideoPlay}
+                    className="absolute inset-0 bg-black/40 backdrop-blur-2xs flex items-center justify-center cursor-pointer"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center shadow-xl shadow-amber-500/40 hover:scale-110 active:scale-95 transition-transform">
+                      <Play className="w-7 h-7 fill-current translate-x-0.5" />
+                    </div>
+                  </div>
+                )}
 
-                    <button
-                      type="button"
-                      onClick={toggleVideoMute}
-                      className="p-1.5 rounded-full bg-black/65 backdrop-blur-md border border-white/20 text-white hover:bg-black/85 cursor-pointer"
-                      title={isVideoMuted ? 'Unmute' : 'Mute'}
-                    >
-                      {isVideoMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-                    </button>
+                {/* Dedicated Video Controls Dock */}
+                <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/95 via-black/70 to-transparent flex flex-col gap-2 z-20">
+                  {/* Scrubber Progress Bar */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={videoProgress}
+                      onChange={handleVideoSeek}
+                      className="flex-1 h-1.5 rounded-lg appearance-none bg-white/25 accent-amber-400 cursor-pointer"
+                      aria-label="Seek video position"
+                    />
+                    <span className="text-[10px] font-mono font-semibold text-stone-300 shrink-0">
+                      {formatTime(videoCurrentTime)} / {formatTime(videoDuration)}
+                    </span>
                   </div>
 
-                  <span className="text-[11px] font-bold text-amber-300 bg-black/65 backdrop-blur-md px-2.5 py-1 rounded-full border border-amber-400/30">
-                    👨‍🍳 Kitchen Making Reel
-                  </span>
+                  {/* Buttons Row */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={toggleVideoPlay}
+                        className="px-3 py-1.5 rounded-xl bg-stone-900/80 hover:bg-stone-800 text-white text-xs font-bold border border-white/10 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform"
+                      >
+                        {isVideoPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                        <span>{isVideoPlaying ? 'Pause' : 'Play'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={toggleVideoMute}
+                        className="p-1.5 rounded-xl bg-stone-900/80 hover:bg-stone-800 text-white border border-white/10 flex items-center gap-1 cursor-pointer active:scale-95 transition-transform"
+                        title={isVideoMuted ? 'Unmute audio' : 'Mute audio'}
+                      >
+                        {isVideoMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+                        <span className="text-[10px] font-semibold text-stone-300 pr-1">
+                          {isVideoMuted ? 'Muted' : 'Sound On'}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={toggleFullscreen}
+                        className="p-1.5 rounded-xl bg-stone-900/80 hover:bg-stone-800 text-white border border-white/10 cursor-pointer active:scale-95 transition-transform"
+                        title="Fullscreen"
+                      >
+                        <Maximize2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <span className="text-[11px] font-bold text-amber-300 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-amber-400/30">
+                      👨‍🍳 Kitchen Making Reel
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
@@ -661,16 +1100,26 @@ export default function FoodDetailModal({
                 <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
                   {dish.name || dish.title}
                 </h2>
-                <div className="flex items-center gap-2.5 mt-1.5">
-                  {/* Star Rating Badge */}
-                  <div className="flex items-center gap-1 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-lg text-amber-300 text-xs font-bold">
+                <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                  {/* Star Rating Badge & Quick Review Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsReviewFormOpen(true);
+                      const el = document.getElementById('reviews-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="flex items-center gap-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 px-2.5 py-1 rounded-xl text-amber-300 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                    title="Click to view reviews or write a comment"
+                  >
                     <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
-                    <span>{averageRating}</span>
-                    <span className="text-stone-400 font-normal">({combinedReviews.length} reviews)</span>
-                  </div>
+                    <span>{averageRating} / 5</span>
+                    <span className="text-stone-300 font-normal">({combinedReviews.length} ratings)</span>
+                    <span className="text-amber-400 text-[11px] underline ml-1 font-semibold">✍️ Review</span>
+                  </button>
 
                   {dish.prepTime && (
-                    <div className="flex items-center gap-1 text-xs text-stone-400 font-medium">
+                    <div className="flex items-center gap-1 text-xs text-stone-400 font-medium bg-stone-800/60 px-2 py-0.5 rounded-lg border border-white/5">
                       <Clock className="w-3.5 h-3.5 text-amber-400" />
                       <span>{dish.prepTime}</span>
                     </div>
@@ -717,6 +1166,145 @@ export default function FoodDetailModal({
                   <span>{ing}</span>
                 </span>
               ))}
+            </div>
+          </div>
+
+          {/* ----------------------------------------------------------------
+              DEDICATED CHEF'S KITCHEN REEL IN SCROLLABLE BODY
+             ---------------------------------------------------------------- */}
+          <div className="p-4 sm:p-5 space-y-3 bg-stone-950/70 border-t border-white/5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <ChefHat className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white flex items-center gap-2">
+                    <span>Chef&apos;s Kitchen Reel &amp; Cooking Secrets</span>
+                    <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.2 rounded-full border border-rose-500/30 uppercase font-bold">
+                      Live Reel
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-stone-400">
+                    Watch how Chef freshly prepares {dish.name || dish.title}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMediaTab('video');
+                  const modalContainer = document.querySelector('.overflow-y-auto');
+                  if (modalContainer) modalContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                  setTimeout(() => {
+                    if (videoRef.current) {
+                      videoRef.current.play().catch(() => {});
+                      setIsVideoPlaying(true);
+                    }
+                  }, 100);
+                }}
+                className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold border border-white/10 transition cursor-pointer active:scale-95"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span>Full Reel</span>
+              </button>
+            </div>
+
+            {/* Body Embedded Reel Player */}
+            <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-black border border-white/10 shadow-xl group">
+              <video
+                ref={bodyVideoRef}
+                src={videoUrl}
+                playsInline
+                loop
+                muted={isBodyVideoMuted}
+                onTimeUpdate={handleBodyVideoTimeUpdate}
+                onClick={toggleBodyVideoPlay}
+                className="w-full h-full object-cover cursor-pointer"
+              />
+
+              {/* Center Play/Pause Flash */}
+              {showBodyPlayOverlay && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/35 animate-fadeOut">
+                  <div className="w-14 h-14 rounded-full bg-black/80 backdrop-blur-md flex items-center justify-center text-white border border-white/20 scale-110 transition-transform">
+                    {isBodyVideoPlaying ? <Play className="w-7 h-7 fill-current translate-x-0.5" /> : <Pause className="w-7 h-7 fill-current" />}
+                  </div>
+                </div>
+              )}
+
+              {/* Big Center Play Button when paused */}
+              {!isBodyVideoPlaying && !showBodyPlayOverlay && (
+                <div 
+                  onClick={toggleBodyVideoPlay}
+                  className="absolute inset-0 bg-black/45 backdrop-blur-2xs flex items-center justify-center cursor-pointer"
+                >
+                  <div className="w-14 h-14 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center shadow-xl shadow-amber-500/40 hover:scale-110 active:scale-95 transition-transform">
+                    <Play className="w-6 h-6 fill-current translate-x-0.5" />
+                  </div>
+                </div>
+              )}
+
+              {/* Body Video Controls Bar */}
+              <div className="absolute bottom-0 inset-x-0 p-2.5 bg-gradient-to-t from-black/90 via-black/60 to-transparent flex items-center gap-2 z-20">
+                <button
+                  type="button"
+                  onClick={toggleBodyVideoPlay}
+                  className="p-1.5 rounded-lg bg-stone-900/80 hover:bg-stone-800 text-white border border-white/10 cursor-pointer active:scale-90"
+                  aria-label={isBodyVideoPlaying ? 'Pause video' : 'Play video'}
+                >
+                  {isBodyVideoPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                </button>
+
+                {/* Scrubber */}
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={bodyVideoProgress}
+                  onChange={handleBodyVideoSeek}
+                  className="flex-1 h-1.5 rounded-lg appearance-none bg-white/25 accent-amber-400 cursor-pointer"
+                  aria-label="Seek video"
+                />
+
+                <span className="text-[10px] font-mono font-medium text-stone-300 shrink-0">
+                  {formatTime(bodyVideoCurrentTime)} / {formatTime(bodyVideoDuration)}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={toggleBodyVideoMute}
+                  className="p-1.5 rounded-lg bg-stone-900/80 hover:bg-stone-800 text-white border border-white/10 cursor-pointer active:scale-90"
+                  aria-label={isBodyVideoMuted ? 'Unmute' : 'Mute'}
+                >
+                  {isBodyVideoMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Chef Kitchen Highlights Pill Strip */}
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              <div className="p-2 rounded-xl bg-stone-900/80 border border-white/5 text-center">
+                <span className="block text-[10px] text-stone-400 uppercase font-semibold">Prep Time</span>
+                <span className="text-xs font-bold text-amber-300 flex items-center justify-center gap-1 mt-0.5">
+                  <Clock className="w-3 h-3 text-amber-400" />
+                  {dish.prepTime || '10-15 min'}
+                </span>
+              </div>
+              <div className="p-2 rounded-xl bg-stone-900/80 border border-white/5 text-center">
+                <span className="block text-[10px] text-stone-400 uppercase font-semibold">Technique</span>
+                <span className="text-xs font-bold text-emerald-300 flex items-center justify-center gap-1 mt-0.5">
+                  <Sparkles className="w-3 h-3 text-emerald-400" />
+                  Fresh Made
+                </span>
+              </div>
+              <div className="p-2 rounded-xl bg-stone-900/80 border border-white/5 text-center">
+                <span className="block text-[10px] text-stone-400 uppercase font-semibold">Quality</span>
+                <span className="text-xs font-bold text-amber-300 flex items-center justify-center gap-1 mt-0.5">
+                  <ShieldCheck className="w-3 h-3 text-amber-400" />
+                  100% Artisan
+                </span>
+              </div>
             </div>
           </div>
 
@@ -803,31 +1391,40 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               6. INTERACTIVE REVIEWS & LEAVE A COMMENT SECTION
              ---------------------------------------------------------------- */}
-          <div className="p-4 sm:p-5 space-y-3.5 bg-stone-900/80">
-            <div className="flex items-center justify-between">
+          <div id="reviews-section" className="p-4 sm:p-5 space-y-4 bg-stone-900/80 scroll-mt-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/10">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-300 flex items-center gap-1.5">
-                  <Star className="w-3.5 h-3.5 text-amber-400 fill-current" />
+                <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-stone-200 flex items-center gap-1.5">
+                  <Star className="w-4 h-4 text-amber-400 fill-current" />
                   <span>Diner Reviews &amp; Comments</span>
                 </h3>
-                <p className="text-[11px] text-stone-400 mt-0.5">
-                  {combinedReviews.length} verified ratings • {averageRating} average
-                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center text-amber-400">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-3.5 h-3.5 ${star <= Math.round(Number(averageRating)) ? 'fill-current text-amber-400' : 'text-stone-600'}`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs font-bold text-amber-300 font-mono">{averageRating} / 5</span>
+                  <span className="text-[11px] text-stone-400">• {combinedReviews.length} verified ratings</span>
+                </div>
               </div>
 
-              {/* Write Review CTA Button */}
+              {/* Interactive Write Review / Leave a Comment Button */}
               <button
                 type="button"
                 onClick={() => setIsReviewFormOpen(!isReviewFormOpen)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold shadow-md shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-stone-950 text-xs font-black shadow-md shadow-amber-500/20 transition-all cursor-pointer"
               >
-                <span>{isReviewFormOpen ? 'Cancel' : '✍️ Write Review'}</span>
+                <span>{isReviewFormOpen ? '✖ Close Form' : '✍️ Write Review / Leave a Comment'}</span>
               </button>
             </div>
 
-            {/* Success Toast */}
+            {/* Success Confirmation Toast */}
             {reviewSuccessMsg && (
-              <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-2 animate-fadeIn">
+              <div className="p-3.5 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-2.5 animate-fadeIn shadow-md">
                 <Check className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>{reviewSuccessMsg}</span>
               </div>
@@ -835,65 +1432,77 @@ export default function FoodDetailModal({
 
             {/* EXPANDABLE REVIEW / COMMENT FORM */}
             {isReviewFormOpen && (
-              <form onSubmit={handleSubmitReview} className="p-4 bg-stone-800/90 rounded-2xl border border-amber-500/30 space-y-3 animate-fadeIn">
-                <div className="flex items-center justify-between">
+              <form onSubmit={handleSubmitReview} className="p-4 sm:p-5 bg-stone-800/90 rounded-2xl border border-amber-500/40 space-y-3.5 animate-fadeIn shadow-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-stone-700/60">
                   <span className="text-xs font-bold text-stone-200 uppercase tracking-wide">
-                    Rate This Dish:
+                    Rate Your Experience:
                   </span>
-                  {/* Interactive Star Picker */}
-                  <div className="flex items-center gap-1 text-amber-400">
+                  
+                  {/* Interactive Star Rating Selector (Hover & Tap) */}
+                  <div 
+                    className="flex items-center gap-1 text-amber-400"
+                    onMouseLeave={() => setHoverRating(0)}
+                  >
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
                         key={star}
                         type="button"
                         onClick={() => setReviewRating(star)}
+                        onMouseEnter={() => setHoverRating(star)}
+                        onTouchStart={() => setHoverRating(star)}
                         className="p-1 hover:scale-125 transition-transform cursor-pointer"
                         title={`${star} Star`}
                       >
-                        <Star className={`w-5 h-5 ${star <= reviewRating ? 'fill-current text-amber-400' : 'text-stone-600'}`} />
+                        <Star 
+                          className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors ${
+                            star <= (hoverRating || reviewRating)
+                              ? 'fill-current text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]'
+                              : 'text-stone-600 hover:text-stone-400'
+                          }`} 
+                        />
                       </button>
                     ))}
-                    <span className="ml-1 text-xs font-bold text-amber-300 font-mono">
-                      {reviewRating}.0
+                    <span className="ml-2 text-xs sm:text-sm font-extrabold text-amber-300 font-mono">
+                      {(hoverRating || reviewRating)}.0
                     </span>
                   </div>
                 </div>
 
-                {/* Reviewer Name */}
+                {/* Author Name Input (Prefilled with "Table XX Diner") */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-stone-400 mb-1">
-                    Your Name or Table:
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-300 mb-1">
+                    Your Name or Diner Table:
                   </label>
                   <input
                     type="text"
                     value={reviewAuthor}
                     onChange={(e) => setReviewAuthor(e.target.value)}
-                    placeholder="e.g. Table 01 Guest / John"
-                    className="w-full px-3 py-1.5 text-xs bg-stone-900 border border-stone-700 rounded-xl text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 transition"
+                    placeholder="e.g. Table 01 Diner"
+                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-stone-900 border border-stone-700 rounded-xl text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 transition"
                   />
                 </div>
 
-                {/* Quick Comment Chips */}
-                <div className="space-y-1">
-                  <span className="text-[10px] text-stone-400 font-medium">Quick compliments:</span>
-                  <div className="flex flex-wrap gap-1">
+                {/* Quick Compliment Chips */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] text-stone-400 font-medium">Quick compliment chips (tap to add):</span>
+                  <div className="flex flex-wrap gap-1.5">
                     {[
                       'Delicious flavor! 😋',
                       'Cooked to perfection! 🔥',
                       'Super fresh 🌱',
                       'Must order again! ⭐',
-                      'Best dish on the menu! 🏆'
-                    ].map((tag) => (
+                      'Best in town! 🏆'
+                    ].map((chip) => (
                       <button
-                        key={tag}
+                        key={chip}
                         type="button"
                         onClick={() => {
                           const separator = reviewComment.trim() ? ' ' : '';
-                          setReviewComment((prev) => `${prev}${separator}${tag}`);
+                          setReviewComment((prev) => `${prev}${separator}${chip}`);
                         }}
-                        className="px-2 py-0.5 rounded-md text-[10px] bg-stone-700/80 hover:bg-stone-600 text-stone-200 border border-stone-600/60 cursor-pointer active:scale-95 transition"
+                        className="px-2.5 py-1 rounded-lg text-xs bg-stone-700/80 hover:bg-stone-600 text-stone-200 border border-stone-600/70 cursor-pointer active:scale-95 transition-all font-medium"
                       >
-                        + {tag}
+                        + {chip}
                       </button>
                     ))}
                   </div>
@@ -901,74 +1510,80 @@ export default function FoodDetailModal({
 
                 {/* Comment Textarea */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-stone-400 mb-1">
-                    Your Experience &amp; Comments:
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-300 mb-1">
+                    Your Review &amp; Comments:
                   </label>
                   <textarea
-                    rows={2}
+                    rows={3}
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder="What did you love most about this dish? Taste, texture, aroma..."
-                    className="w-full px-3 py-2 text-xs bg-stone-900 border border-stone-700 rounded-xl text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 transition resize-none"
+                    placeholder="What did you love most about this dish? Taste, texture, aroma, presentation..."
+                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-stone-900 border border-stone-700 rounded-xl text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 transition resize-none"
                     required
                   />
                 </div>
 
+                {/* Submit Actions */}
                 <div className="flex items-center justify-end gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => setIsReviewFormOpen(false)}
-                    className="px-3 py-1.5 rounded-xl border border-stone-700 text-stone-400 hover:text-white text-xs font-semibold"
+                    className="px-3.5 py-1.5 rounded-xl border border-stone-700 text-stone-400 hover:text-white text-xs font-semibold cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingReview || !reviewComment.trim()}
-                    className="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-stone-950 text-xs font-bold shadow-md shadow-amber-500/20 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-stone-950 text-xs font-black shadow-md shadow-amber-500/20 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
                   >
-                    <Send className="w-3 h-3" />
-                    <span>{isSubmittingReview ? 'Posting...' : 'Post Review'}</span>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{isSubmittingReview ? 'Publishing...' : 'Publish Review'}</span>
                   </button>
                 </div>
               </form>
             )}
 
             {/* Reviews List */}
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {combinedReviews.map((rev, i) => (
                 <div 
                   key={i} 
-                  className="p-3 bg-stone-800/70 border border-stone-700/50 rounded-2xl space-y-1 hover:border-stone-600/70 transition-colors shadow-xs"
+                  className="p-3.5 bg-stone-800/70 border border-stone-700/50 rounded-2xl space-y-2 hover:border-stone-600/70 transition-colors shadow-xs"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-500 to-amber-700 flex items-center justify-center text-stone-950 font-black text-[11px]">
-                        {rev.author.charAt(0)}
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 to-amber-700 flex items-center justify-center text-stone-950 font-black text-xs shadow-xs uppercase">
+                        {(rev.author || 'D').charAt(0)}
                       </div>
-                      <span className="font-bold text-xs text-white flex items-center gap-1.5">
-                        {rev.author}
-                        {rev.verified && (
-                          <span className="text-[9px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.2 rounded-full border border-emerald-500/20 flex items-center gap-0.5">
-                            <UserCheck className="w-2.5 h-2.5" /> Verified
-                          </span>
-                        )}
-                      </span>
+                      <div>
+                        <div className="font-bold text-xs text-white flex items-center gap-1.5">
+                          <span>{rev.author}</span>
+                          {rev.verified && (
+                            <span className="text-[9px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/20 flex items-center gap-0.5">
+                              <UserCheck className="w-2.5 h-2.5" /> Verified Diner
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-stone-400">
+                          {rev.date || 'Recently'}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="flex items-center text-amber-400 text-xs">
-                      {Array.from({ length: rev.rating || 5 }).map((_, idx) => (
-                        <Star key={idx} className="w-3 h-3 fill-current" />
+                      {Array.from({ length: 5 }).map((_, idx) => (
+                        <Star 
+                          key={idx} 
+                          className={`w-3.5 h-3.5 ${idx < (rev.rating || 5) ? 'fill-current text-amber-400' : 'text-stone-600'}`} 
+                        />
                       ))}
                     </div>
                   </div>
 
-                  <p className="text-xs text-stone-300 italic pl-8 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-stone-300 italic pl-9 leading-relaxed font-normal">
                     &ldquo;{rev.comment}&rdquo;
                   </p>
-                  <div className="text-[10px] text-stone-500 text-right pr-1">
-                    {rev.date}
-                  </div>
                 </div>
               ))}
             </div>
