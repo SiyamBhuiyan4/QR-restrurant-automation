@@ -132,7 +132,8 @@ export default function WaiterPanel() {
   // Sync Convex calls
   useEffect(() => {
     if (convexCalls && Array.isArray(convexCalls)) {
-      setCalls(convexCalls);
+      // Convex docs expose `_id`, while the rest of this panel keys on `id`.
+      setCalls(convexCalls.map((c) => ({ ...c, id: c.id ?? c._id })));
       setIsLoading(false);
     }
   }, [convexCalls]);

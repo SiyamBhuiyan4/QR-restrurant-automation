@@ -28,12 +28,13 @@ export default function CategoryBar({
       : selectedCategory;
 
     const activeEl = pillRefs.current[activeKey];
-    if (activeEl && scrollContainerRef.current) {
-      activeEl.scrollIntoView({
-        behavior: 'smooth',
-        inline: 'center',
-        block: 'nearest'
-      });
+    const container = scrollContainerRef.current;
+    if (activeEl && container) {
+      // Scroll only the pill row horizontally; scrollIntoView would also move the whole page
+      const cRect = container.getBoundingClientRect();
+      const eRect = activeEl.getBoundingClientRect();
+      const delta = (eRect.left + eRect.width / 2) - (cRect.left + cRect.width / 2);
+      container.scrollBy({ left: delta, behavior: 'smooth' });
     }
   }, [selectedCategory]);
 
