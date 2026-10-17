@@ -352,7 +352,8 @@ export default function MenuItemCard({
               )}
             </div>
 
-            {/* Floating 360° Orbital Camera HUD Pill (Allows viewing from all angles) */}
+            {/* Floating 360° Orbital Camera HUD Pill (only when real multi-angle photos exist) */}
+            {angleImages.length > 1 && (
             <div className="absolute -bottom-3 sm:-bottom-4 left-1/2 -translate-x-1/2 bg-[#121216]/95 backdrop-blur-md border border-zinc-700/80 px-3 sm:px-4 py-1.5 rounded-2xl shadow-2xl flex items-center gap-2 sm:gap-2.5 z-20">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#FF5A26] animate-ping" />
@@ -385,6 +386,7 @@ export default function MenuItemCard({
                 {ANGLE_LABELS[currentAngleIndex] || 'Perspective'}
               </span>
             </div>
+            )}
 
             {/* Floating Review & Time Pill */}
             <div className="absolute top-2 right-4 sm:right-6 bg-[#161619]/95 backdrop-blur-md border border-zinc-800/80 px-3 py-1.5 rounded-2xl shadow-xl flex items-center gap-2 z-10">
