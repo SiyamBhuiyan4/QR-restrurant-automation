@@ -20,3 +20,4 @@ server/certs/*.pem
 # Convex generated files are safe, but local deployment configs are ignored
 client/.env.local
 .vercel
+.env*
