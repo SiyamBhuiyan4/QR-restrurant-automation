@@ -121,7 +121,7 @@ export const seedMenu = mutation({
       categoryMap[cat.slug] = id;
     }
 
-    const defaultVideoReel = "https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4";
+    const defaultVideoReel = "/videos/reel-chef.mp4";
 
     const defaultItems = [
       {
@@ -279,4 +279,22 @@ export const getDishById = query({
     return await ctx.db.get(id);
   },
 });
+
+export const repairMediaUrls = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const items = await ctx.db.query("menuItems").collect();
+    let updatedCount = 0;
+    for (const item of items) {
+      if (!item.makingVideoUrl || item.makingVideoUrl.includes("mixkit.co")) {
+        await ctx.db.patch(item._id, {
+          makingVideoUrl: "/videos/reel-chef.mp4",
+        });
+        updatedCount++;
+      }
+    }
+    return { success: true, updatedCount };
+  },
+});
+
 

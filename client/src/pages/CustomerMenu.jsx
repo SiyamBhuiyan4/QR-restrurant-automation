@@ -48,7 +48,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1585109649139-366815a0d713?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['Yukon Gold Potatoes', 'White Truffle Oil', 'Aged Reggiano Parmesan', 'Fresh Flat Parsley', 'Sea Salt Flakes', 'Roasted Garlic Aioli']
   },
   {
@@ -68,7 +68,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['Farm Fresh Wings', 'Fiery Cayenne Glaze', 'Wisconsin Blue Cheese Dip', 'Crisp Celery Sticks', 'Garlic Butter']
   },
   {
@@ -87,7 +87,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1509722747041-616f39b57569?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['Artisanal Sourdough', 'Roasted Garlic Butter', 'Fior di Latte Mozzarella', 'Oregano', 'Virgin Olive Oil']
   },
   {
@@ -106,7 +106,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['Monterey Squid Rings', 'Five-Spice Sea Salt', 'Fresh Lemon Wedges', 'House Pickled Tartar', 'Micro Greens']
   },
 
@@ -128,7 +128,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1504973960431-1c467e159aa4?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['Prime Angus Ribeye Cut', 'Herb Garlic Confit Butter', 'Rosemary Roasted Baby Potatoes', 'Charred Asparagus', 'Flaky Maldon Salt']
   },
   {
@@ -148,7 +148,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1527477321005-4d01d75b2d5c?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['Free-Range Half Chicken', 'African Bird Eye Peri-Peri', 'Smoked Sweet Paprika', 'Charred Key Lime', 'Garlic Herb Glaze']
   },
   {
@@ -167,7 +167,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['Wild Atlantic Salmon Fillet', 'Fresh Sautéed Asparagus', 'Heirloom Cherry Tomatoes', 'Saffron Dill Velouté', 'Lemon Zest']
   },
   {
@@ -186,7 +186,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1621996346565-e3d5d6281290?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['Italian Arborio Rice', 'Dried Porcini & Shiitake Stock', 'White Truffle Essence', 'Aged Pecorino Romano', 'Fresh Thyme']
   },
 
@@ -208,7 +208,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['Double Angus Beef Patties', 'Melted American Sharp Cheese', 'Slow Caramelized Onions', 'Dill Pickles', 'Signature Truffle Mayo', 'Brioche Bun']
   },
   {
@@ -228,7 +228,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1521305916504-4a1121188589?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['Spiced Angus Beef Patty', 'Grilled Pickled Jalapeños', 'Melted Pepper Jack Cheese', 'Crispy Onion Strings', 'Habanero Lava Aioli']
   },
   {
@@ -247,7 +247,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1520072959219-c595dc870360?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['100% Plant-Based Patty', 'Vegan Aged Cheddar', 'Butterhead Lettuce', 'Ripe Vine Tomato', 'Avocado Chimichurri', 'Potato Bun']
   },
 
@@ -268,7 +268,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['Eureka Fresh Lemons', 'Organic Blue Agave', 'Garden Mint Sprigs', 'Sparkling San Pellegrino', 'Crushed Ice']
   },
   {
@@ -287,7 +287,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1536935338788-846bb9981813?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['Fresh Cold-Pressed Ginger', 'Key Lime Juice', 'Subtle Bird Chili Kiss', 'Club Soda', 'Raw Turbinado Sugar']
   },
 
@@ -309,7 +309,7 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80'
     ],
-    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    makingVideoUrl: '/videos/reel-chef.mp4',
     ingredients: ['70% Belgian Dark Chocolate', 'European Sweet Butter', 'Madagascar Bourbon Vanilla Gelato', 'Dutch Cocoa Dust', 'Fresh Raspberries']
   },
   {
@@ -684,7 +684,9 @@ export default function CustomerMenu({
           images: Array.isArray(item.images) && item.images.length > 0
             ? item.images
             : (item.imageUrl ? [item.imageUrl] : []),
-          makingVideoUrl: item.makingVideoUrl || null,
+          makingVideoUrl: (item.makingVideoUrl && !item.makingVideoUrl.includes('mixkit.co'))
+            ? item.makingVideoUrl
+            : '/videos/reel-chef.mp4',
         });
       });
     });

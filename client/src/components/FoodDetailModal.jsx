@@ -428,8 +428,11 @@ export default function FoodDetailModal({
     return resolveDishPhotos(dish);
   }, [dish]);
 
-  // Kitchen video reel URL
-  const videoUrl = dish?.makingVideoUrl || dish?.videoUrl || 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4';
+  // Kitchen video reel URL (always fallback to local self-hosted reel-chef.mp4 if mixkit or empty)
+  const rawVideo = dish?.makingVideoUrl || dish?.videoUrl;
+  const videoUrl = rawVideo && typeof rawVideo === 'string' && !rawVideo.includes('mixkit.co')
+    ? rawVideo
+    : '/videos/reel-chef.mp4';
 
   // Sync initial quantity & prefilled author on open
   useEffect(() => {
