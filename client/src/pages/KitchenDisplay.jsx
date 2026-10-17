@@ -23,6 +23,8 @@ import {
 import OrderCard from '../components/OrderCard.jsx';
 import SocketContext, { resolveServerUrl } from '../context/SocketContext.jsx';
 import { io } from 'socket.io-client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../convexApi';
 
 /**
  * Web Audio API Kitchen Alert Synthesis
@@ -124,6 +126,22 @@ export default function KitchenDisplay() {
   const [isLoading, setIsLoading] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const [recentAlertMessage, setRecentAlertMessage] = useState(null);
+
+  // Convex Cloud real-time orders query and status mutation
+  let convexOrders = null;
+  let updateConvexStatus = null;
+  try {
+    convexOrders = useQuery(api.orders.getOrders, {});
+    updateConvexStatus = useMutation(api.orders.updateOrderStatus);
+  } catch (_) {}
+
+  // Sync Convex orders into KDS
+  useEffect(() => {
+    if (convexOrders && Array.isArray(convexOrders)) {
+      setOrders(convexOrders);
+      setIsLoading(false);
+    }
+  }, [convexOrders]);
 
   // Live Digital Clock state
   const [currentTimeStr, setCurrentTimeStr] = useState('');
@@ -384,6 +402,13 @@ export default function KitchenDisplay() {
     // Emit via Socket so other kitchen devices/screens update immediately
     if (activeSocket) {
       activeSocket.emit('order:status_update', { id: orderId, status: nextStatus });
+    }
+
+    // Persist to Convex Cloud if available
+    if (updateConvexStatus && orderId && typeof orderId === 'string' && !orderId.startsWith('ord_')) {
+      try {
+        await updateConvexStatus({ orderId, status: nextStatus });
+      } catch (_) {}
     }
 
     // Persist to REST API

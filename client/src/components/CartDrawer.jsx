@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useNetwork } from '../context/NetworkContext';
+import { useMutation } from 'convex/react';
+import { api } from '../convexApi';
 import { enqueueOrder as idbEnqueueOrder } from '../db/indexedDb.js';
 import VoiceRecorder from './VoiceRecorder';
 
@@ -62,6 +64,12 @@ export default function CartDrawer({
   } catch (_) {
     networkCtx = null;
   }
+
+  // Convex Cloud order mutation
+  let createConvexOrder = null;
+  try {
+    createConvexOrder = useMutation(api.orders.createOrder);
+  } catch (_) {}
 
   // Resolve Drawer Open/Close state
   const isOpen = propIsOpen !== undefined ? propIsOpen : (cartCtx?.isCartOpen ?? false);
@@ -215,34 +223,56 @@ export default function CartDrawer({
         timestamp: Date.now()
       };
 
-      // 4. Send via NetworkContext or fallback
+      // 4. Send via Convex Cloud, NetworkContext or offline IndexedDB fallback
       let result = null;
-      if (networkCtx?.submitOrder) {
-        result = await networkCtx.submitOrder(orderPayload);
-      } else {
-        // Direct attempt or fallback to IndexedDB
-        const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-        if (isOnline) {
-          try {
-            const res = await fetch('/api/orders', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(orderPayload)
-            });
-            if (res.ok) {
-              const data = await res.json().catch(() => ({}));
-              result = { success: true, offline: false, data };
-            } else {
-              throw new Error(`Server returned status ${res.status}`);
+      if (createConvexOrder) {
+        try {
+          const convexRes = await createConvexOrder({
+            tableNumber: Number(finalTable) || 1,
+            items: orderPayload.items.map((i) => ({
+              name: i.name,
+              price: Number(i.price) || 0,
+              quantity: Number(i.quantity) || 1,
+              note: i.note || undefined
+            })),
+            totalAmount: parseFloat(grandTotal.toFixed(2)),
+            generalNote: generalNote.trim() || undefined,
+            voiceNoteUrl: base64Voice || undefined
+          });
+          result = { success: true, offline: false, data: convexRes };
+        } catch (convexErr) {
+          console.warn('[CartDrawer] Convex order submit failed, falling back:', convexErr);
+        }
+      }
+
+      if (!result) {
+        if (networkCtx?.submitOrder) {
+          result = await networkCtx.submitOrder(orderPayload);
+        } else {
+          // Direct attempt or fallback to IndexedDB
+          const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+          if (isOnline) {
+            try {
+              const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderPayload)
+              });
+              if (res.ok) {
+                const data = await res.json().catch(() => ({}));
+                result = { success: true, offline: false, data };
+              } else {
+                throw new Error(`Server returned status ${res.status}`);
+              }
+            } catch (netErr) {
+              console.warn('[CartDrawer] Network submit failed, saving to IndexedDB:', netErr);
+              const queued = await idbEnqueueOrder(orderPayload);
+              result = { success: true, offline: true, localId: queued.localId };
             }
-          } catch (netErr) {
-            console.warn('[CartDrawer] Network submit failed, saving to IndexedDB:', netErr);
+          } else {
             const queued = await idbEnqueueOrder(orderPayload);
             result = { success: true, offline: true, localId: queued.localId };
           }
-        } else {
-          const queued = await idbEnqueueOrder(orderPayload);
-          result = { success: true, offline: true, localId: queued.localId };
         }
       }
 

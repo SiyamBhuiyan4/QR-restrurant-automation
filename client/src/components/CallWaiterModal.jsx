@@ -12,6 +12,8 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
+import { useMutation } from 'convex/react';
+import { api } from '../convexApi';
 
 // Quick one-tap preset reasons specified in system requirements
 export const PRESET_REASONS = [
@@ -67,6 +69,12 @@ export default function CallWaiterModal({
   const [isOfflineQueued, setIsOfflineQueued] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [dismissCountdown, setDismissCountdown] = useState(4);
+
+  // Convex Cloud mutation
+  let createConvexCall = null;
+  try {
+    createConvexCall = useMutation(api.waiter.createCall);
+  } catch (_) {}
 
   // Optional socket helper
   let socketHelpers = null;
@@ -165,19 +173,27 @@ export default function CallWaiterModal({
         throw new Error('Device is offline');
       }
 
-      // 1. Submit to API endpoint
-      const response = await fetch('/api/waiter/call', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
+      // 1. Submit to Convex Cloud if available
+      let convexSuccess = false;
+      if (createConvexCall) {
+        try {
+          await createConvexCall({ tableNumber: finalTable, reason: formattedReason });
+          convexSuccess = true;
+        } catch (_) {}
+      }
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server responded with ${response.status}`);
+      // 2. Submit to local API endpoint as fallback or companion
+      try {
+        await fetch('/api/waiter/call', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        if (!convexSuccess) throw err;
       }
 
       // Also trigger socket emit if connected as immediate fail-safe

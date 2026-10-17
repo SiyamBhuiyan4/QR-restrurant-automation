@@ -24,6 +24,8 @@ import {
   UtensilsCrossed
 } from 'lucide-react';
 import { useSocket, useSocketListener } from '../context/SocketContext';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../convexApi';
 
 /**
  * High-fidelity restaurant desk calling bell synthesizer using Web Audio API.
@@ -117,6 +119,22 @@ export default function WaiterPanel() {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [acknowledgedIds, setAcknowledgedIds] = useState(new Set());
   const [bannerAlert, setBannerAlert] = useState(null);
+
+  // Convex Cloud real-time waiter calls subscription
+  let convexCalls = null;
+  let resolveConvexCall = null;
+  try {
+    convexCalls = useQuery(api.waiter.getCalls, { status: 'pending' });
+    resolveConvexCall = useMutation(api.waiter.resolveCall);
+  } catch (_) {}
+
+  // Sync Convex calls
+  useEffect(() => {
+    if (convexCalls && Array.isArray(convexCalls)) {
+      setCalls(convexCalls);
+      setIsLoading(false);
+    }
+  }, [convexCalls]);
 
   // Socket Context
   const { isConnected, socket } = useSocket();
@@ -270,6 +288,13 @@ export default function WaiterPanel() {
       next.delete(callId);
       return next;
     });
+
+    // Resolve in Convex Cloud if available
+    if (resolveConvexCall && typeof callId === 'string' && !String(callId).startsWith('call_')) {
+      try {
+        await resolveConvexCall({ callId });
+      } catch (_) {}
+    }
 
     try {
       const res = await fetch(`/api/waiter/calls/${callId}/resolve`, {

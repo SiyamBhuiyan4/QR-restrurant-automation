@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '../convexApi';
 import Navbar from '../components/Navbar';
 import CategoryBar from '../components/CategoryBar';
 import MenuItemCard from '../components/MenuItemCard';
@@ -384,10 +386,34 @@ export default function CustomerMenu({
     showToast('Dish preferences saved! ✨');
   };
 
-  // Menu items list
+  // Query real-time Convex menu
+  const convexMenu = useQuery(api.menu.getMenu);
+
+  const convexFormattedItems = useMemo(() => {
+    if (!convexMenu || !Array.isArray(convexMenu) || convexMenu.length === 0) return null;
+    const list = [];
+    convexMenu.forEach((cat) => {
+      (cat.items || []).forEach((item) => {
+        list.push({
+          id: item._id,
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          category: cat.name,
+          isVeg: Boolean(item.isVeg),
+          isSpicy: Boolean(item.isSpicy),
+          isAvailable: item.isAvailable !== false,
+          image: item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600'
+        });
+      });
+    });
+    return list.length > 0 ? list : null;
+  }, [convexMenu]);
+
+  // Menu items list (Convex Cloud -> Props -> Default Offline)
   const allMenuItems = useMemo(() => {
-    return propMenuItems && propMenuItems.length > 0 ? propMenuItems : DEFAULT_MENU_ITEMS;
-  }, [propMenuItems]);
+    return convexFormattedItems || (propMenuItems && propMenuItems.length > 0 ? propMenuItems : DEFAULT_MENU_ITEMS);
+  }, [convexFormattedItems, propMenuItems]);
 
   // Filtered menu items
   const filteredItems = useMemo(() => {
