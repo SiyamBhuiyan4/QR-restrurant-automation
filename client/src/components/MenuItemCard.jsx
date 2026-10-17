@@ -60,6 +60,10 @@ export default function MenuItemCard({
   const hasVideo = Boolean(item.makingVideoUrl || item.videoUrl);
   const photoCount = Array.isArray(item.images) && item.images.length > 0 ? item.images.length : 4;
 
+  const safeDishImage = (item.image && typeof item.image === 'string' && item.image.includes('photo-1604909052743'))
+    ? 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80'
+    : item.image;
+
   const handleAdd = (e) => {
     e.stopPropagation();
     if (!isAvailable) return;
@@ -243,10 +247,10 @@ export default function MenuItemCard({
 
             {/* Circular Plate Image with Slow Continuous 360 Rotation */}
             <div className="relative w-56 h-56 sm:w-64 sm:h-64 md:w-76 md:h-76 rounded-full overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.95)] drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)] border border-white/10 bg-zinc-950 transition-all duration-500">
-              {item.image && !imageError ? (
+              {safeDishImage && !imageError ? (
                 <div className="w-full h-full animate-dish-spin">
                   <img
-                    src={item.image}
+                    src={safeDishImage}
                     alt={dishTitle}
                     onError={() => setImageError(true)}
                     loading="lazy"

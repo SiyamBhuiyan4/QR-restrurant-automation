@@ -6,12 +6,33 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App.jsx';
 import './index.css';
 
+// Force fresh cache busting for UI update
+const LATEST_BUILD_TAG = 'v2026.10.17.2355';
+try {
+  const currentTag = localStorage.getItem('smartdine_build_tag');
+  if (currentTag !== LATEST_BUILD_TAG) {
+    localStorage.setItem('smartdine_build_tag', LATEST_BUILD_TAG);
+    if ('caches' in window) {
+      caches.keys().then((keys) => {
+        for (const key of keys) {
+          caches.delete(key);
+        }
+      });
+    }
+  }
+} catch (e) {}
+
 // Automatically activate and update service worker across all active client tabs
-registerSW({
+const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    window.location.reload();
+    updateSW(true);
   },
+  onRegisteredSW(swUrl, r) {
+    if (r) {
+      r.update();
+    }
+  }
 });
 
 ReactDOM.createRoot(document.getElementById('root')).render(

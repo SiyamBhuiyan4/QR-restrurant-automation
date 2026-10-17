@@ -664,9 +664,19 @@ export default function CustomerMenu({
 
   const convexFormattedItems = useMemo(() => {
     if (!convexMenu || !Array.isArray(convexMenu) || convexMenu.length === 0) return null;
+    const cleanImg = (url) => {
+      if (!url || typeof url !== 'string') return 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900';
+      if (url.includes('photo-1604909052743')) {
+        return 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80';
+      }
+      return url;
+    };
+
     const list = [];
     convexMenu.forEach((cat) => {
       (cat.items || []).forEach((item) => {
+        const primaryImg = cleanImg(item.imageUrl || item.image);
+        const allImgs = (Array.isArray(item.images) && item.images.length > 0 ? item.images : [primaryImg]).map(cleanImg);
         list.push({
           id: item._id,
           _id: item._id,
@@ -679,11 +689,9 @@ export default function CustomerMenu({
           isVeg: Boolean(item.isVeg),
           isSpicy: Boolean(item.isSpicy),
           isAvailable: item.isAvailable !== false,
-          image: item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
-          imageUrl: item.imageUrl,
-          images: Array.isArray(item.images) && item.images.length > 0
-            ? item.images
-            : (item.imageUrl ? [item.imageUrl] : []),
+          image: primaryImg,
+          imageUrl: primaryImg,
+          images: allImgs,
           makingVideoUrl: (item.makingVideoUrl && !item.makingVideoUrl.includes('mixkit.co'))
             ? item.makingVideoUrl
             : '/videos/reel-chef.mp4',
