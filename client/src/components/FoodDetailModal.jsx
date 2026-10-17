@@ -21,7 +21,6 @@ import {
   Video,
   Image as ImageIcon,
   Heart,
-  Share2,
   ShieldCheck,
   Send,
   ThumbsUp,
@@ -270,7 +269,6 @@ export default function FoodDetailModal({
   const [voiceNoteUrl, setVoiceNoteUrl] = useState(null);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
   const [isAddedAnimation, setIsAddedAnimation] = useState(false);
 
   // Review & Comment Form state
@@ -563,19 +561,6 @@ export default function FoodDetailModal({
     }
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: dish.name || dish.title,
-        text: `Check out ${dish.name || dish.title} at SmartDine!`,
-        url: window.location.href
-      }).catch(() => {});
-    } else {
-      navigator.clipboard?.writeText?.(window.location.href);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    }
-  };
 
   // Submit Customer Review
   const handleSubmitReview = async (e) => {
@@ -707,18 +692,7 @@ export default function FoodDetailModal({
               </span>
             )}
           </div>
-
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Share */}
-            <button
-              type="button"
-              onClick={handleShare}
-              className="p-2 text-stone-400 hover:text-white bg-stone-800/80 hover:bg-stone-700/80 rounded-full transition-all border border-white/5 active:scale-95"
-              title="Share dish"
-            >
-              {isCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
-            </button>
-
             {/* Like */}
             <button
               type="button"
