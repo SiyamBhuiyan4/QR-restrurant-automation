@@ -10,6 +10,7 @@
 
 import type * as menu from "../menu.js";
 import type * as orders from "../orders.js";
+import type * as reviews from "../reviews.js";
 import type * as waiter from "../waiter.js";
 
 import type {
@@ -21,6 +22,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   menu: typeof menu;
   orders: typeof orders;
+  reviews: typeof reviews;
   waiter: typeof waiter;
 }>;
 

@@ -61,16 +61,25 @@ export const getOrderById = query({
     orderId: v.string(),
   },
   handler: async (ctx, { orderId }) => {
+    if (!orderId || typeof orderId !== "string" || orderId.trim() === "") {
+      return null;
+    }
+    const cleanId = orderId.trim();
     let order = null;
-    try {
-      order = await ctx.db.get(orderId);
-    } catch (_) {}
 
+    // 1. Check by orderNumber first (e.g. ORD-T1-1234 or SD-1234)
+    order = await ctx.db
+      .query("orders")
+      .filter((q) => q.eq(q.field("orderNumber"), cleanId))
+      .first();
+
+    // 2. If not found by orderNumber, check if it matches a Convex _id
     if (!order) {
-      order = await ctx.db
-        .query("orders")
-        .filter((q) => q.eq(q.field("orderNumber"), orderId))
-        .first();
+      try {
+        order = await ctx.db.get(cleanId);
+      } catch (_) {
+        order = null;
+      }
     }
 
     if (!order) return null;

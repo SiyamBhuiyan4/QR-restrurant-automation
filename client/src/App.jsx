@@ -66,6 +66,19 @@ class ErrorBoundary extends React.Component {
             >
               Reload
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  localStorage.removeItem('smartdine_active_order');
+                  sessionStorage.clear();
+                } catch (_) {}
+                window.location.href = '/';
+              }}
+              className="px-4 py-2 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-sm font-semibold transition"
+            >
+              Reset Session
+            </button>
           </div>
         </div>
       );

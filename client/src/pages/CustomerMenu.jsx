@@ -600,10 +600,13 @@ export default function CustomerMenu({
   );
 
   // Direct subscription to the customer's specific active order by ID or orderNumber
-  const activeOrderSearchId = activeOrder?.orderNumber || activeOrder?.orderId || activeOrder?._id;
+  const rawSearchId = activeOrder?.orderNumber || activeOrder?.orderId || activeOrder?._id;
+  const activeOrderSearchId = typeof rawSearchId === 'string' && rawSearchId.trim().length > 0
+    ? rawSearchId.trim()
+    : (rawSearchId ? String(rawSearchId) : null);
   const liveOrder = useQuery(
     api.orders.getOrderById,
-    activeOrderSearchId ? { orderId: String(activeOrderSearchId) } : 'skip'
+    activeOrderSearchId ? { orderId: activeOrderSearchId } : 'skip'
   );
 
   // Synchronize activeOrder status when KDS updates it in Convex
