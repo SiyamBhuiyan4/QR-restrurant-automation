@@ -16,6 +16,8 @@ export default defineSchema({
     description: v.string(),
     price: v.number(),
     imageUrl: v.string(),
+    images: v.optional(v.array(v.string())),
+    makingVideoUrl: v.optional(v.string()),
     isVeg: v.boolean(),
     isSpicy: v.boolean(),
     isAvailable: v.boolean(),
@@ -55,5 +57,7 @@ export default defineSchema({
     resolvedAt: v.optional(v.number()),
   })
     .index("by_status", ["status"])
-    .index("by_created_at", ["createdAt"]),
+    .index("by_created_at", ["createdAt"])
+    .index("by_table", ["tableNumber"]),
 });
+

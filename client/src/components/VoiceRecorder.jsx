@@ -15,9 +15,13 @@ import { useCart } from '../context/CartContext';
  */
 export default function VoiceRecorder({
   onVoiceChange,
+  onRecordingComplete,
+  initialUrl = null,
+  standalone = false,
+  theme = 'light',
   className = ''
 }) {
-  // Try using CartContext if mounted, otherwise graceful standalone fallback
+  // Try using CartContext if mounted and not standalone
   let cart = null;
   try {
     cart = useCart();
@@ -39,17 +43,20 @@ export default function VoiceRecorder({
   // Sync with CartContext or props when recording completes
   useEffect(() => {
     if (audioBlob && audioUrl) {
-      if (cart?.setVoiceNote) {
+      if (!standalone && cart?.setVoiceNote) {
         cart.setVoiceNote(audioBlob, audioUrl);
       }
       if (onVoiceChange) {
         onVoiceChange(audioBlob, audioUrl);
       }
+      if (onRecordingComplete) {
+        onRecordingComplete(audioBlob, audioUrl);
+      }
     }
-  }, [audioBlob, audioUrl, cart, onVoiceChange]);
+  }, [audioBlob, audioUrl, cart, onVoiceChange, onRecordingComplete, standalone]);
 
-  // Determine current active audio (either newly recorded or existing from CartContext)
-  const activeUrl = audioUrl || cart?.voiceUrl || null;
+  // Determine current active audio
+  const activeUrl = audioUrl || initialUrl || (!standalone ? cart?.voiceUrl : null) || null;
 
   // Audio playback state
   const audioRef = useRef(null);
@@ -116,16 +123,25 @@ export default function VoiceRecorder({
     setPlaybackProgress(0);
     resetRecording();
 
-    if (cart?.clearVoiceNote) {
+    if (!standalone && cart?.clearVoiceNote) {
       cart.clearVoiceNote();
     }
     if (onVoiceChange) {
       onVoiceChange(null, null);
     }
+    if (onRecordingComplete) {
+      onRecordingComplete(null, null);
+    }
   };
 
+  const isDark = theme === 'dark';
+
   return (
-    <div className={`w-full bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 transition-all ${className}`}>
+    <div className={`w-full rounded-2xl p-4 transition-all ${
+      isDark 
+        ? 'bg-slate-900/90 border border-slate-700/80 text-slate-100 shadow-xl' 
+        : 'bg-slate-50/80 border border-slate-200/90 text-neutral-800'
+    } ${className}`}>
       
       {/* Hidden audio element for preview */}
       {activeUrl && (
@@ -141,21 +157,29 @@ export default function VoiceRecorder({
 
       {/* Header section with icon & title */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
+            isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-600'
+          }`}>
             🎙️
           </div>
           <div>
-            <h4 className="text-sm font-bold text-neutral-800">Voice Instructions</h4>
-            <p className="text-[11px] text-neutral-500 font-medium">
+            <h4 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-neutral-800'}`}>
+              Voice Instructions
+            </h4>
+            <p className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-neutral-500'}`}>
               Record specific cooking instructions for the kitchen
             </p>
           </div>
         </div>
 
         {activeUrl && !isRecording && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200/80">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+            isDark
+              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+              : 'bg-emerald-100 text-emerald-800 border-emerald-200/80'
+          }`}>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
             Audio Attached
           </span>
         )}
@@ -163,10 +187,14 @@ export default function VoiceRecorder({
 
       {/* Explanatory Tip Banner */}
       {!activeUrl && !isRecording && (
-        <div className="mb-3.5 px-3 py-2 bg-amber-50/90 border border-amber-200/70 rounded-xl text-xs text-amber-900 flex items-start gap-2">
+        <div className={`mb-3.5 px-3 py-2 rounded-xl text-xs flex items-start gap-2 border ${
+          isDark
+            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+            : 'bg-amber-50/90 border-amber-200/70 text-amber-900'
+        }`}>
           <span className="text-sm shrink-0">💡</span>
           <span className="leading-snug">
-            <strong>Tell the chef how you like your food:</strong> (e.g., &ldquo;extra crispy fries&rdquo;, &ldquo;dressing strictly on the side&rdquo;, &ldquo;make the curry very mild&rdquo;).
+            <strong>Tell the chef how you like your food:</strong> (e.g., &ldquo;extra crispy fries&rdquo;, &ldquo;dressing strictly on the side&rdquo;, &ldquo;make it very mild&rdquo;).
           </span>
         </div>
       )}
@@ -181,10 +209,10 @@ export default function VoiceRecorder({
 
       {/* STATE 1: Active Recording UI */}
       {isRecording && (
-        <div className="bg-rose-500/10 border border-rose-400/40 rounded-xl p-4 flex flex-col items-center justify-center gap-3 animate-pulse">
+        <div className="bg-rose-500/15 border border-rose-400/40 rounded-xl p-4 flex flex-col items-center justify-center gap-3 animate-pulse">
           
           {/* Animated Waveform Visualizer */}
-          <div className="flex items-center justify-center gap-1 h-8">
+          <div className="flex items-center justify-center gap-1.5 h-8">
             <span className="w-1.5 h-3 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
             <span className="w-1.5 h-6 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
             <span className="w-1.5 h-8 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -199,10 +227,10 @@ export default function VoiceRecorder({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-600"></span>
             </span>
-            <span className="text-xs font-bold text-rose-800 tracking-wide uppercase">
+            <span className="text-xs font-bold text-rose-400 tracking-wide uppercase">
               Recording Voice
             </span>
-            <span className="font-mono text-xs font-bold text-rose-900 bg-rose-200/80 px-2 py-0.5 rounded-md">
+            <span className="font-mono text-xs font-bold text-rose-200 bg-rose-950/60 border border-rose-800/60 px-2 py-0.5 rounded-md">
               {recordingTime}
             </span>
           </div>
@@ -221,13 +249,21 @@ export default function VoiceRecorder({
 
       {/* STATE 2: Recorded Audio Preview & Playback UI */}
       {!isRecording && activeUrl && (
-        <div className="bg-white border border-neutral-200/90 rounded-xl p-3 shadow-2xs flex flex-col gap-2.5">
+        <div className={`rounded-xl p-3 shadow-sm flex flex-col gap-2.5 border ${
+          isDark
+            ? 'bg-slate-800/90 border-slate-700'
+            : 'bg-white border-neutral-200/90'
+        }`}>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-neutral-700 flex items-center gap-1.5">
-              <Volume2 className="w-3.5 h-3.5 text-neutral-500" />
+            <span className={`text-xs font-semibold flex items-center gap-1.5 ${
+              isDark ? 'text-slate-200' : 'text-neutral-700'
+            }`}>
+              <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
               Kitchen Voice Note Preview
             </span>
-            <span className="text-xs font-mono font-medium text-neutral-500">
+            <span className={`text-xs font-mono font-medium ${
+              isDark ? 'text-slate-400' : 'text-neutral-500'
+            }`}>
               {playbackTime} / {totalDuration}
             </span>
           </div>
@@ -237,8 +273,12 @@ export default function VoiceRecorder({
             <button
               type="button"
               onClick={togglePlayback}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center text-white transition active:scale-95 shrink-0 shadow-xs cursor-pointer ${
-                isPlaying ? 'bg-amber-600 hover:bg-amber-700' : 'bg-neutral-900 hover:bg-neutral-800'
+              className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold transition active:scale-95 shrink-0 shadow-sm cursor-pointer ${
+                isPlaying
+                  ? 'bg-amber-500 hover:bg-amber-600 text-slate-950'
+                  : isDark
+                    ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+                    : 'bg-neutral-900 hover:bg-neutral-800 text-white'
               }`}
               title={isPlaying ? 'Pause' : 'Play audio preview'}
             >
@@ -258,14 +298,22 @@ export default function VoiceRecorder({
               value={playbackProgress}
               onChange={handleSeek}
               aria-label="Seek audio preview"
-              className="flex-1 h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-amber-500 hover:accent-amber-600"
+              className={`flex-1 h-2 rounded-lg appearance-none cursor-pointer ${
+                isDark
+                  ? 'bg-slate-700 accent-emerald-400'
+                  : 'bg-neutral-200 accent-amber-500 hover:accent-amber-600'
+              }`}
             />
 
             {/* Delete / Re-record Button */}
             <button
               type="button"
               onClick={handleDeleteAudio}
-              className="p-2 rounded-xl text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition active:scale-95 shrink-0 cursor-pointer"
+              className={`p-2 rounded-xl transition active:scale-95 shrink-0 cursor-pointer ${
+                isDark
+                  ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/10'
+                  : 'text-neutral-400 hover:text-rose-600 hover:bg-rose-50'
+              }`}
               title="Delete and re-record"
             >
               <Trash2 className="w-4 h-4" />
@@ -279,9 +327,15 @@ export default function VoiceRecorder({
         <button
           type="button"
           onClick={startRecording}
-          className="w-full py-3 px-4 rounded-xl bg-white hover:bg-amber-50 active:bg-amber-100 text-amber-700 border-2 border-dashed border-amber-300/80 hover:border-amber-400 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-2xs transition-all active:scale-98 cursor-pointer group"
+          className={`w-full py-3 px-4 rounded-xl border-2 border-dashed font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer group ${
+            isDark
+              ? 'bg-slate-800/70 hover:bg-slate-800 active:bg-slate-700 text-emerald-300 border-emerald-500/30 hover:border-emerald-500/60 shadow-sm'
+              : 'bg-white hover:bg-amber-50 active:bg-amber-100 text-amber-700 border-amber-300/80 hover:border-amber-400 shadow-2xs'
+          }`}
         >
-          <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform ${
+            isDark ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-amber-500 text-white'
+          }`}>
             <Mic className="w-4 h-4" />
           </div>
           <span>Tap to Record Voice Instruction</span>

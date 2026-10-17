@@ -7,15 +7,30 @@ export const getOrders = query({
     tableNumber: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let ordersQuery = ctx.db.query("orders");
+    let orders;
 
-    if (args.status) {
-      ordersQuery = ordersQuery.withIndex("by_status", (q) => q.eq("status", args.status));
+    if (args.tableNumber !== undefined) {
+      orders = await ctx.db
+        .query("orders")
+        .withIndex("by_table", (q) => q.eq("tableNumber", args.tableNumber))
+        .order("desc")
+        .take(50);
+      if (args.status) {
+        orders = orders.filter((o) => o.status === args.status);
+      }
+    } else if (args.status) {
+      orders = await ctx.db
+        .query("orders")
+        .withIndex("by_status", (q) => q.eq("status", args.status))
+        .order("desc")
+        .take(50);
     } else {
-      ordersQuery = ordersQuery.withIndex("by_created_at");
+      orders = await ctx.db
+        .query("orders")
+        .withIndex("by_created_at")
+        .order("desc")
+        .take(50);
     }
-
-    const orders = await ordersQuery.order("desc").take(50);
 
     const ordersWithItems = await Promise.all(
       orders.map(async (order) => {
@@ -40,6 +55,44 @@ export const getOrders = query({
     return ordersWithItems;
   },
 });
+
+export const getOrderById = query({
+  args: {
+    orderId: v.string(),
+  },
+  handler: async (ctx, { orderId }) => {
+    let order = null;
+    try {
+      order = await ctx.db.get(orderId);
+    } catch (_) {}
+
+    if (!order) {
+      order = await ctx.db
+        .query("orders")
+        .filter((q) => q.eq(q.field("orderNumber"), orderId))
+        .first();
+    }
+
+    if (!order) return null;
+
+    const items = await ctx.db
+      .query("orderItems")
+      .withIndex("by_order", (q) => q.eq("orderId", order._id))
+      .collect();
+
+    let voiceUrl = order.voiceNoteUrl;
+    if (!voiceUrl && order.voiceStorageId) {
+      voiceUrl = await ctx.storage.getUrl(order.voiceStorageId);
+    }
+
+    return {
+      ...order,
+      items,
+      voiceNoteUrl: voiceUrl || order.voiceNoteUrl,
+    };
+  },
+});
+
 
 export const createOrder = mutation({
   args: {
@@ -91,15 +144,37 @@ export const createOrder = mutation({
 
 export const updateOrderStatus = mutation({
   args: {
-    orderId: v.id("orders"),
+    orderId: v.string(),
     status: v.string(),
   },
   handler: async (ctx, { orderId, status }) => {
-    await ctx.db.patch(orderId, {
-      status,
-      updatedAt: Date.now(),
-    });
-    return true;
+    // 1. Try finding by Convex ID directly
+    try {
+      const existing = await ctx.db.get(orderId);
+      if (existing) {
+        await ctx.db.patch(existing._id, {
+          status,
+          updatedAt: Date.now(),
+        });
+        return true;
+      }
+    } catch (_) {}
+
+    // 2. Try finding by orderNumber (e.g. ORD-T1-1234 or SD-1234)
+    const byOrderNum = await ctx.db
+      .query("orders")
+      .filter((q) => q.eq(q.field("orderNumber"), orderId))
+      .first();
+
+    if (byOrderNum) {
+      await ctx.db.patch(byOrderNum._id, {
+        status,
+        updatedAt: Date.now(),
+      });
+      return true;
+    }
+
+    return false;
   },
 });
 
@@ -109,3 +184,4 @@ export const generateUploadUrl = mutation({
     return await ctx.storage.generateUploadUrl();
   },
 });
+

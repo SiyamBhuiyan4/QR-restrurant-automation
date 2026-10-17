@@ -77,6 +77,16 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_waiter_calls_status ON waiter_calls(status);
 `);
 
+// Migration: Ensure making_video_url column exists on menu_items
+try {
+  const cols = db.prepare('PRAGMA table_info(menu_items)').all();
+  if (!cols.some(c => c.name === 'making_video_url')) {
+    db.exec('ALTER TABLE menu_items ADD COLUMN making_video_url TEXT;');
+  }
+} catch (e) {
+  // Column already exists or table setup error
+}
+
 /**
  * -------------------------------------------------------------
  * Query Functions
@@ -139,14 +149,14 @@ function getMenuItemById(id) {
   return stmt.get(Number(id)) || null;
 }
 
-function createMenuItem({ category_id, name, description = '', price, image_url = '', is_veg = 0, is_spicy = 0, is_available = 1 }) {
+function createMenuItem({ category_id, name, description = '', price, image_url = '', making_video_url = '', is_veg = 0, is_spicy = 0, is_available = 1 }) {
   if (!name || price === undefined || price === null) {
     throw new Error('Menu item name and price are required');
   }
 
   const stmt = db.prepare(`
-    INSERT INTO menu_items (category_id, name, description, price, image_url, is_veg, is_spicy, is_available)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO menu_items (category_id, name, description, price, image_url, making_video_url, is_veg, is_spicy, is_available)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const result = stmt.run(
@@ -155,6 +165,7 @@ function createMenuItem({ category_id, name, description = '', price, image_url 
     String(description || '').trim(),
     Number(price),
     String(image_url || '').trim(),
+    String(making_video_url || '').trim(),
     is_veg ? 1 : 0,
     is_spicy ? 1 : 0,
     is_available ? 1 : 0
@@ -169,7 +180,7 @@ function updateMenuItem(id, updates = {}) {
     return null;
   }
 
-  const fields = ['category_id', 'name', 'description', 'price', 'image_url', 'is_veg', 'is_spicy', 'is_available'];
+  const fields = ['category_id', 'name', 'description', 'price', 'image_url', 'making_video_url', 'is_veg', 'is_spicy', 'is_available'];
   const setClauses = [];
   const values = [];
 

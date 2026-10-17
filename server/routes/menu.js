@@ -222,6 +222,8 @@ router.post('/', (req, res) => {
       description,
       image_url,
       imageUrl,
+      making_video_url,
+      makingVideoUrl,
       category_id,
       categoryId,
       is_veg,
@@ -263,6 +265,7 @@ router.post('/', (req, res) => {
     }
 
     const resolvedImageUrl = image_url !== undefined ? image_url : imageUrl;
+    const resolvedVideoUrl = making_video_url !== undefined ? making_video_url : makingVideoUrl;
     const resolvedIsVeg = is_veg !== undefined ? is_veg : isVeg;
     const resolvedIsSpicy = is_spicy !== undefined ? is_spicy : isSpicy;
     const resolvedIsAvailable = is_available !== undefined ? is_available : isAvailable;
@@ -273,6 +276,7 @@ router.post('/', (req, res) => {
       description: description ? String(description).trim() : '',
       price: Number(price),
       image_url: resolvedImageUrl ? String(resolvedImageUrl).trim() : '',
+      making_video_url: resolvedVideoUrl ? String(resolvedVideoUrl).trim() : '',
       is_veg: resolvedIsVeg ? 1 : 0,
       is_spicy: resolvedIsSpicy ? 1 : 0,
       is_available: resolvedIsAvailable !== undefined ? (resolvedIsAvailable ? 1 : 0) : 1
@@ -321,6 +325,8 @@ router.put('/:id', (req, res) => {
       description,
       image_url,
       imageUrl,
+      making_video_url,
+      makingVideoUrl,
       category_id,
       categoryId,
       is_veg,
@@ -346,6 +352,9 @@ router.put('/:id', (req, res) => {
 
     if (image_url !== undefined) updates.image_url = String(image_url).trim();
     else if (imageUrl !== undefined) updates.image_url = String(imageUrl).trim();
+
+    if (making_video_url !== undefined) updates.making_video_url = String(making_video_url).trim();
+    else if (makingVideoUrl !== undefined) updates.making_video_url = String(makingVideoUrl).trim();
 
     if (category_id !== undefined || categoryId !== undefined) {
       const rawCatId = category_id !== undefined ? category_id : categoryId;

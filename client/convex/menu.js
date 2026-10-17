@@ -33,6 +33,8 @@ export const createMenuItem = mutation({
     description: v.string(),
     price: v.number(),
     imageUrl: v.string(),
+    images: v.optional(v.array(v.string())),
+    makingVideoUrl: v.optional(v.string()),
     isVeg: v.boolean(),
     isSpicy: v.boolean(),
     isAvailable: v.boolean(),
@@ -57,6 +59,8 @@ export const updateMenuItem = mutation({
     description: v.optional(v.string()),
     price: v.optional(v.number()),
     imageUrl: v.optional(v.string()),
+    images: v.optional(v.array(v.string())),
+    makingVideoUrl: v.optional(v.string()),
     isVeg: v.optional(v.boolean()),
     isSpicy: v.optional(v.boolean()),
     isAvailable: v.optional(v.boolean()),
@@ -117,6 +121,8 @@ export const seedMenu = mutation({
       categoryMap[cat.slug] = id;
     }
 
+    const defaultVideoReel = "https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4";
+
     const defaultItems = [
       {
         categorySlug: "starters",
@@ -124,6 +130,11 @@ export const seedMenu = mutation({
         description: "Tender flash-fried calamari tossed in roasted garlic and served with lemon-herb aioli.",
         price: 11.99,
         imageUrl: "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=600&auto=format&fit=crop&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1604909052743-94e838986d24?w=900&auto=format&fit=crop&q=80"
+        ],
+        makingVideoUrl: defaultVideoReel,
         isVeg: false,
         isSpicy: false,
         isAvailable: true,
@@ -134,6 +145,11 @@ export const seedMenu = mutation({
         description: "Toasted sourdough slices topped with vine-ripened tomatoes, sweet basil, garlic, and aged balsamic glaze.",
         price: 8.50,
         imageUrl: "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=600&auto=format&fit=crop&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=900&auto=format&fit=crop&q=80"
+        ],
+        makingVideoUrl: defaultVideoReel,
         isVeg: true,
         isSpicy: false,
         isAvailable: true,
@@ -144,6 +160,11 @@ export const seedMenu = mutation({
         description: "Crispy battered cauliflower florets coated in house fiery buffalo sauce, served with cool vegan ranch.",
         price: 9.75,
         imageUrl: "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=600&auto=format&fit=crop&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80"
+        ],
+        makingVideoUrl: defaultVideoReel,
         isVeg: true,
         isSpicy: true,
         isAvailable: true,
@@ -154,6 +175,11 @@ export const seedMenu = mutation({
         description: "10oz prime ribeye grilled to perfection with rosemary-infused butter and roasted fingerling potatoes.",
         price: 24.99,
         imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80"
+        ],
+        makingVideoUrl: defaultVideoReel,
         isVeg: false,
         isSpicy: false,
         isAvailable: true,
@@ -164,6 +190,11 @@ export const seedMenu = mutation({
         description: "Handmade pasta ribbons enveloped in a rich black truffle and parmesan cream sauce with wild forest mushrooms.",
         price: 17.50,
         imageUrl: "https://images.unsplash.com/photo-1621996346565-e3d5d6281290?w=600&auto=format&fit=crop&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1621996346565-e3d5d6281290?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=900&auto=format&fit=crop&q=80"
+        ],
+        makingVideoUrl: defaultVideoReel,
         isVeg: true,
         isSpicy: false,
         isAvailable: true,
@@ -174,6 +205,11 @@ export const seedMenu = mutation({
         description: "Double 4oz wagyu beef patties, melted sharp cheddar, caramelized shallots, crisp butter lettuce, and house brioche.",
         price: 15.99,
         imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80"
+        ],
+        makingVideoUrl: defaultVideoReel,
         isVeg: false,
         isSpicy: false,
         isAvailable: true,
@@ -184,6 +220,11 @@ export const seedMenu = mutation({
         description: "Muddled garden mint, zesty fresh lime juice, raw cane sugar, sparkling soda, and crushed ice (Alcohol-free).",
         price: 5.50,
         imageUrl: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80"
+        ],
+        makingVideoUrl: defaultVideoReel,
         isVeg: true,
         isSpicy: false,
         isAvailable: true,
@@ -194,6 +235,11 @@ export const seedMenu = mutation({
         description: "Rich dark Belgian chocolate cake with a molten center, accompanied by Madagascar vanilla bean gelato.",
         price: 8.75,
         imageUrl: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80"
+        ],
+        makingVideoUrl: defaultVideoReel,
         isVeg: true,
         isSpicy: false,
         isAvailable: true,
@@ -210,3 +256,11 @@ export const seedMenu = mutation({
     return { seeded: true, count: defaultItems.length };
   },
 });
+
+export const getDishById = query({
+  args: { id: v.id("menuItems") },
+  handler: async (ctx, { id }) => {
+    return await ctx.db.get(id);
+  },
+});
+

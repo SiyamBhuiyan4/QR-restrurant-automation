@@ -46,30 +46,44 @@ export default function CategoryBar({
     }
   };
 
-  // Default icons for typical restaurant categories
+  // Michelin-grade Bistro category icons
   const defaultCategoryIcons = {
     all: '✨',
     starters: '🥗',
+    appetizers: '🫒',
     mains: '🥩',
+    entrees: '🍽️',
     burgers: '🍔',
     pizza: '🍕',
-    sides: '🍟',
-    beverages: '🍹',
-    drinks: '🥤',
+    pasta: '🍝',
+    seafood: '🐟',
+    fish: '🦞',
+    grill: '🔥',
+    salads: '🥗',
+    soups: '🍲',
+    beverages: '🥂',
+    drinks: '🍹',
+    cocktails: '🍸',
+    wine: '🍷',
+    coffee: '☕',
     desserts: '🍰',
+    sweets: '🍨',
     specials: '⭐',
-    combos: '🍱'
+    combos: '🍱',
+    sides: '🍟',
+    vegan: '🌱',
+    vegetarian: '🥑'
   };
 
   return (
-    <div className={`relative w-full bg-white/90 backdrop-blur-xs py-2 border-b border-neutral-100 ${className}`}>
+    <div className={`relative w-full bg-white/90 backdrop-blur-md py-2.5 border-b border-stone-200/70 transition-all ${className}`}>
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 relative flex items-center">
         
         {/* Left Scroll Button (Desktop / larger screens) */}
         <button
           type="button"
-          onClick={() => scrollByAmount(-200)}
-          className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white border border-neutral-200/80 shadow-xs text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 transition shrink-0 mr-1 z-10 cursor-pointer"
+          onClick={() => scrollByAmount(-220)}
+          className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white/95 backdrop-blur-xs border border-stone-200/90 shadow-sm text-stone-600 hover:text-neutral-900 hover:bg-stone-50 hover:shadow-md active:scale-95 transition-all shrink-0 mr-1.5 z-10 cursor-pointer"
           aria-label="Scroll left"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -108,23 +122,25 @@ export default function CategoryBar({
                 ref={(el) => { pillRefs.current[categoryId] = el; }}
                 type="button"
                 onClick={() => onSelectCategory && onSelectCategory(categoryId)}
-                className={`group inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight transition-all duration-200 shrink-0 select-none cursor-pointer ${
+                className={`group inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight transition-all duration-200 shrink-0 select-none cursor-pointer ${
                   isSelected
-                    ? 'bg-neutral-900 text-white shadow-md shadow-neutral-900/15 scale-102 ring-2 ring-neutral-900/10'
-                    : 'bg-neutral-100 hover:bg-neutral-200/70 text-neutral-700 border border-neutral-200/40 hover:scale-101'
+                    ? 'bg-neutral-950 text-white shadow-lg shadow-neutral-950/25 ring-1 ring-amber-500/50 scale-[1.02]'
+                    : 'bg-stone-100/90 hover:bg-stone-200/80 text-stone-700 hover:text-stone-900 border border-stone-200/70 hover:border-stone-300 shadow-2xs hover:scale-[1.01]'
                 }`}
               >
-                <span className="text-base leading-none transition-transform group-hover:scale-110">
+                <span className="text-base leading-none transition-transform duration-200 group-hover:scale-115">
                   {icon}
                 </span>
-                <span className="whitespace-nowrap">{categoryName}</span>
+                <span className="whitespace-nowrap font-medium tracking-tight">
+                  {categoryName}
+                </span>
                 
                 {count !== undefined && (
                   <span
-                    className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold leading-none transition-colors ${
+                    className={`ml-0.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold font-mono leading-none transition-all ${
                       isSelected
-                        ? 'bg-white/20 text-white'
-                        : 'bg-neutral-200/90 text-neutral-600 group-hover:bg-neutral-300'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/35 shadow-xs'
+                        : 'bg-stone-200/90 text-stone-600 group-hover:bg-stone-300 group-hover:text-stone-800'
                     }`}
                   >
                     {count}
@@ -138,8 +154,8 @@ export default function CategoryBar({
         {/* Right Scroll Button (Desktop / larger screens) */}
         <button
           type="button"
-          onClick={() => scrollByAmount(200)}
-          className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white border border-neutral-200/80 shadow-xs text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 transition shrink-0 ml-1 z-10 cursor-pointer"
+          onClick={() => scrollByAmount(220)}
+          className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white/95 backdrop-blur-xs border border-stone-200/90 shadow-sm text-stone-600 hover:text-neutral-900 hover:bg-stone-50 hover:shadow-md active:scale-95 transition-all shrink-0 ml-1.5 z-10 cursor-pointer"
           aria-label="Scroll right"
         >
           <ChevronRight className="w-4 h-4" />

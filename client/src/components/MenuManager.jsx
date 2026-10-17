@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
   Plus, 
   Search, 
@@ -18,8 +18,15 @@ import {
   EyeOff,
   Tag,
   CheckCircle2,
-  UtensilsCrossed
+  UtensilsCrossed,
+  Send,
+  Video,
+  Play,
+  Upload
 } from 'lucide-react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../convexApi';
+import { uploadPhotoToTelegram, uploadVideoToTelegram } from '../services/telegramClient';
 import { resolveServerUrl } from '../context/SocketContext';
 import { getCachedMenu, cacheMenu } from '../db/indexedDb';
 
@@ -33,6 +40,7 @@ const INITIAL_SAMPLE_DISHES = [
     price: 15.99,
     description: 'Brioche bun, grilled portobello, aged gruyere cheese, black truffle aioli, arugula.',
     image_url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
+    making_video_url: '',
     is_veg: 1,
     is_spicy: 0,
     is_available: 1
@@ -45,6 +53,7 @@ const INITIAL_SAMPLE_DISHES = [
     price: 12.50,
     description: 'Crispy chicken wings tossed in our signature habanero sauce, served with blue cheese dip.',
     image_url: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=600&auto=format&fit=crop&q=80',
+    making_video_url: '',
     is_veg: 0,
     is_spicy: 1,
     is_available: 1
@@ -57,6 +66,7 @@ const INITIAL_SAMPLE_DISHES = [
     price: 18.00,
     description: 'San Marzano tomatoes, fresh buffalo mozzarella, extra virgin olive oil, sweet basil.',
     image_url: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=600&auto=format&fit=crop&q=80',
+    making_video_url: '',
     is_veg: 1,
     is_spicy: 0,
     is_available: 1
@@ -69,6 +79,7 @@ const INITIAL_SAMPLE_DISHES = [
     price: 29.50,
     description: '300g prime grass-fed ribeye, roasted rosemary garlic butter, charred asparagus.',
     image_url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+    making_video_url: '',
     is_veg: 0,
     is_spicy: 0,
     is_available: 1
@@ -81,6 +92,7 @@ const INITIAL_SAMPLE_DISHES = [
     price: 11.25,
     description: 'Stone ground tortilla chips, melted cheddar blend, pickeled jalapeños, pico de gallo, guacamole.',
     image_url: 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=600&auto=format&fit=crop&q=80',
+    making_video_url: '',
     is_veg: 1,
     is_spicy: 1,
     is_available: 1
@@ -93,6 +105,7 @@ const INITIAL_SAMPLE_DISHES = [
     price: 6.50,
     description: 'Fresh passionfruit pulp, crushed mint, lime juice, sparkling soda water.',
     image_url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80',
+    making_video_url: '',
     is_veg: 1,
     is_spicy: 0,
     is_available: 1
@@ -105,6 +118,7 @@ const INITIAL_SAMPLE_DISHES = [
     price: 8.95,
     description: 'Warm rich dark chocolate cake with a molten center, Madagascar vanilla bean gelato.',
     image_url: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80',
+    making_video_url: '',
     is_veg: 1,
     is_spicy: 0,
     is_available: 0
@@ -139,6 +153,7 @@ export default function MenuManager({ className = '' }) {
     price: '',
     description: '',
     image_url: '',
+    making_video_url: '',
     is_veg: false,
     is_spicy: false,
     is_available: true
@@ -146,16 +161,36 @@ export default function MenuManager({ className = '' }) {
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Normalizes dish object to handle both snake_case and camelCase
+  // Telegram Channel Media Upload states & file refs
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const photoInputRef = useRef(null);
+  const videoInputRef = useRef(null);
+
+  // Convex Real-Time Menu & Mutations (Convex = structured text database, Telegram = free media storage CDN)
+  const convexMenu = useQuery(api.menu.getMenu);
+  const createConvexItem = useMutation(api.menu.createMenuItem);
+  const updateConvexItem = useMutation(api.menu.updateMenuItem);
+  const deleteConvexItem = useMutation(api.menu.deleteMenuItem);
+  const toggleConvexAvailability = useMutation(api.menu.toggleAvailability);
+
+  // Normalizes dish object to handle both snake_case, camelCase and Convex fields
   const normalizeDish = useCallback((item) => {
+    const isConvexId = typeof item._id === 'string' || (typeof item.id === 'string' && item.id.startsWith('j'));
+    const convexId = item._id || (isConvexId ? item.id : item.convexId || null);
+
     return {
       id: item.id || item._id,
+      convexId,
       name: item.name || item.title || 'Untitled Dish',
       category: item.category || item.category_name || item.categoryName || 'Mains',
       category_id: item.category_id || item.categoryId || null,
+      categorySlug: item.categorySlug || (item.category ? item.category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : 'mains'),
       price: typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0,
       description: item.description || '',
-      image_url: item.image_url || item.image || '',
+      image_url: item.image_url || item.imageUrl || item.image || '',
+      making_video_url: item.making_video_url || item.makingVideoUrl || '',
       is_veg: item.is_veg === 1 || item.is_veg === true || item.isVeg === true || item.veg === true ? 1 : 0,
       is_spicy: item.is_spicy === 1 || item.is_spicy === true || item.isSpicy === true || item.spicy === true ? 1 : 0,
       is_available: item.is_available === 0 || item.is_available === false || item.isAvailable === false || item.available === false ? 0 : 1
@@ -266,20 +301,91 @@ export default function MenuManager({ className = '' }) {
     });
   }, [dishes, selectedCategory, searchQuery, filterType]);
 
+  // Real-time synchronization with Convex Cloud Database
+  useEffect(() => {
+    if (convexMenu && Array.isArray(convexMenu) && convexMenu.length > 0) {
+      const list = [];
+      convexMenu.forEach((cat) => {
+        (cat.items || []).forEach((item) => {
+          list.push(normalizeDish({
+            ...item,
+            id: item._id,
+            convexId: item._id,
+            category: cat.name,
+            categorySlug: cat.slug || item.categorySlug,
+            categoryId: cat._id
+          }));
+        });
+      });
+      if (list.length > 0) {
+        setDishes(list);
+        setLoading(false);
+        cacheMenu(list).catch(() => {});
+      }
+    }
+  }, [convexMenu, normalizeDish]);
+
   // Overall quick stats
   const stats = useMemo(() => {
     const total = dishes.length;
     const inStock = dishes.filter(d => d.is_available).length;
     const outOfStock = total - inStock;
     const vegCount = dishes.filter(d => d.is_veg).length;
-    return { total, inStock, outOfStock, vegCount };
+    const tgMediaCount = dishes.filter(d => (d.image_url || '').includes('telegram') || (d.making_video_url || '').includes('telegram')).length;
+    return { total, inStock, outOfStock, vegCount, tgMediaCount };
   }, [dishes]);
 
-  // Toggle item availability immediately
+  // Upload Dish Photo to Telegram Channel Media CDN
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPhoto(true);
+    setUploadError('');
+    try {
+      const result = await uploadPhotoToTelegram(file);
+      if (result.cdnUrl) {
+        setFormData((prev) => ({ ...prev, image_url: result.cdnUrl }));
+        triggerSuccess('Photo hosted on Telegram Channel (@Restaurant Media)! 📸');
+      }
+    } catch (err) {
+      console.error('[MenuManager] Telegram photo upload failed:', err);
+      setUploadError(err.message || 'Failed to upload photo to Telegram Channel');
+    } finally {
+      setUploadingPhoto(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  // Upload Kitchen Reel Video to Telegram Channel Media CDN
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingVideo(true);
+    setUploadError('');
+    try {
+      const result = await uploadVideoToTelegram(file);
+      if (result.cdnUrl) {
+        setFormData((prev) => ({ ...prev, making_video_url: result.cdnUrl }));
+        triggerSuccess('Kitchen reel hosted on Telegram Channel (@Restaurant Media)! 🎥');
+      }
+    } catch (err) {
+      console.error('[MenuManager] Telegram video upload failed:', err);
+      setUploadError(err.message || 'Failed to upload video to Telegram Channel');
+    } finally {
+      setUploadingVideo(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  // Toggle item availability immediately (Convex + SQLite + IndexedDB)
   const handleToggleAvailability = async (dishId, currentStatus, e) => {
     if (e) e.stopPropagation();
 
     const newStatus = currentStatus === 1 ? 0 : 1;
+    const targetDish = dishes.find(d => d.id === dishId);
+
     const updatedDishes = dishes.map((d) => 
       d.id === dishId ? { ...d, is_available: newStatus } : d
     );
@@ -288,7 +394,19 @@ export default function MenuManager({ className = '' }) {
     // Save to IndexedDB
     await cacheMenu(updatedDishes);
 
-    // Sync with Server API
+    // 1. Sync to Convex Cloud Database
+    if (toggleConvexAvailability && targetDish?.convexId) {
+      try {
+        await toggleConvexAvailability({
+          id: targetDish.convexId,
+          isAvailable: newStatus === 1
+        });
+      } catch (convexErr) {
+        console.warn('[MenuManager] Convex toggle availability failed:', convexErr.message);
+      }
+    }
+
+    // 2. Sync with SQLite Server API
     try {
       const serverUrl = resolveServerUrl();
       const res = await fetch(`${serverUrl}/api/menu/${dishId}/availability`, {
@@ -298,7 +416,6 @@ export default function MenuManager({ className = '' }) {
       });
 
       if (!res.ok) {
-        // Fallback try standard PUT if PATCH endpoint not configured
         await fetch(`${serverUrl}/api/menu/${dishId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -322,11 +439,13 @@ export default function MenuManager({ className = '' }) {
       price: '',
       description: '',
       image_url: '',
+      making_video_url: '',
       is_veg: false,
       is_spicy: false,
       is_available: true
     });
     setFormError('');
+    setUploadError('');
     setIsModalOpen(true);
   };
 
@@ -339,16 +458,18 @@ export default function MenuManager({ className = '' }) {
       category: dish.category || 'Mains',
       price: dish.price !== undefined ? String(dish.price) : '',
       description: dish.description || '',
-      image_url: dish.image_url || '',
+      image_url: dish.image_url || dish.imageUrl || '',
+      making_video_url: dish.making_video_url || dish.makingVideoUrl || '',
       is_veg: Boolean(dish.is_veg),
       is_spicy: Boolean(dish.is_spicy),
       is_available: Boolean(dish.is_available)
     });
     setFormError('');
+    setUploadError('');
     setIsModalOpen(true);
   };
 
-  // Save Dish (Add or Edit)
+  // Save Dish (Add or Edit) -> Persists to Convex Cloud AND SQLite Local Server
   const handleSaveDish = async (e) => {
     e.preventDefault();
     setFormError('');
@@ -368,14 +489,19 @@ export default function MenuManager({ className = '' }) {
     setSubmitting(true);
     const serverUrl = resolveServerUrl();
 
+    const categoryName = formData.category.trim() || 'Mains';
+    const categorySlug = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'mains';
+
     const payload = {
       name: trimmedName,
-      category: formData.category.trim() || 'Mains',
-      category_name: formData.category.trim() || 'Mains',
+      category: categoryName,
+      category_name: categoryName,
+      categorySlug,
       price: Math.round(parsedPrice * 100) / 100,
       description: formData.description.trim(),
       image_url: formData.image_url.trim(),
       image: formData.image_url.trim(),
+      making_video_url: formData.making_video_url.trim(),
       is_veg: formData.is_veg ? 1 : 0,
       is_spicy: formData.is_spicy ? 1 : 0,
       is_available: formData.is_available ? 1 : 0
@@ -385,13 +511,37 @@ export default function MenuManager({ className = '' }) {
 
     try {
       if (modalMode === 'add') {
-        // Try server POST
+        // 1. Save structured record to Convex Cloud Database
+        let convexNewId = null;
+        if (createConvexItem) {
+          try {
+            convexNewId = await createConvexItem({
+              categorySlug,
+              name: trimmedName,
+              description: formData.description.trim(),
+              price: Math.round(parsedPrice * 100) / 100,
+              imageUrl: formData.image_url.trim(),
+              makingVideoUrl: formData.making_video_url.trim() || undefined,
+              isVeg: Boolean(formData.is_veg),
+              isSpicy: Boolean(formData.is_spicy),
+              isAvailable: Boolean(formData.is_available)
+            });
+          } catch (convexErr) {
+            console.warn('[MenuManager] Convex create failed:', convexErr.message);
+          }
+        }
+
+        // 2. Save into SQLite Local Server
         let newDishObj = null;
         try {
           const res = await fetch(`${serverUrl}/api/menu`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+              ...payload,
+              making_video_url: formData.making_video_url.trim(),
+              convex_id: convexNewId || undefined
+            })
           });
           if (res.ok) {
             const result = await res.json();
@@ -401,33 +551,79 @@ export default function MenuManager({ className = '' }) {
           console.warn('[MenuManager] Server POST failed, saving locally:', postErr.message);
         }
 
-        // If server failed or gave no id, generate local unique id
+        // 3. Fallback ID resolution
         if (!newDishObj || !newDishObj.id) {
           const maxId = dishes.reduce((max, d) => Math.max(max, Number(d.id) || 0), 0);
           newDishObj = {
             ...payload,
-            id: maxId + 1
+            id: convexNewId || (maxId + 1),
+            convexId: convexNewId
           };
+        } else if (convexNewId) {
+          newDishObj.convexId = convexNewId;
         }
 
         updatedList = [normalizeDish(newDishObj), ...updatedList];
-        triggerSuccess(`"${trimmedName}" added to menu!`);
+        triggerSuccess(`"${trimmedName}" saved to Convex & Menu! ✨`);
       } else {
         // Edit existing dish
+        const currentDish = dishes.find(d => d.id === editingDishId);
+        const targetConvexId = currentDish?.convexId;
+
+        // 1. Update in Convex Cloud Database
+        if (targetConvexId && updateConvexItem) {
+          try {
+            await updateConvexItem({
+              id: targetConvexId,
+              name: trimmedName,
+              description: formData.description.trim(),
+              price: Math.round(parsedPrice * 100) / 100,
+              imageUrl: formData.image_url.trim(),
+              makingVideoUrl: formData.making_video_url.trim() || undefined,
+              isVeg: Boolean(formData.is_veg),
+              isSpicy: Boolean(formData.is_spicy),
+              isAvailable: Boolean(formData.is_available)
+            });
+          } catch (convexErr) {
+            console.warn('[MenuManager] Convex update failed:', convexErr.message);
+          }
+        } else if (!targetConvexId && createConvexItem) {
+          // If dish was previously only in SQLite, insert into Convex
+          try {
+            await createConvexItem({
+              categorySlug,
+              name: trimmedName,
+              description: formData.description.trim(),
+              price: Math.round(parsedPrice * 100) / 100,
+              imageUrl: formData.image_url.trim(),
+              makingVideoUrl: formData.making_video_url.trim() || undefined,
+              isVeg: Boolean(formData.is_veg),
+              isSpicy: Boolean(formData.is_spicy),
+              isAvailable: Boolean(formData.is_available)
+            });
+          } catch (cErr) {
+            console.warn('[MenuManager] Convex push failed:', cErr.message);
+          }
+        }
+
+        // 2. Update in SQLite Local Server
         try {
           await fetch(`${serverUrl}/api/menu/${editingDishId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+              ...payload,
+              making_video_url: formData.making_video_url.trim()
+            })
           });
         } catch (putErr) {
           console.warn('[MenuManager] Server PUT failed, saving locally:', putErr.message);
         }
 
         updatedList = updatedList.map((d) => 
-          d.id === editingDishId ? normalizeDish({ ...d, ...payload, id: editingDishId }) : d
+          d.id === editingDishId ? normalizeDish({ ...d, ...payload, id: editingDishId, convexId: targetConvexId }) : d
         );
-        triggerSuccess(`"${trimmedName}" updated!`);
+        triggerSuccess(`"${trimmedName}" updated! ✨`);
       }
 
       setDishes(updatedList);
@@ -440,16 +636,25 @@ export default function MenuManager({ className = '' }) {
     }
   };
 
-  // Confirm and Execute Deletion
+  // Confirm and Execute Deletion (Convex + SQLite + IndexedDB)
   const handleDeleteDish = async () => {
     if (!dishToDelete) return;
-    const { id, name } = dishToDelete;
+    const { id, convexId, name } = dishToDelete;
 
     const updatedList = dishes.filter(d => d.id !== id);
     setDishes(updatedList);
     await cacheMenu(updatedList);
 
-    // Send DELETE to server
+    // 1. Delete in Convex
+    if (deleteConvexItem && convexId) {
+      try {
+        await deleteConvexItem({ id: convexId });
+      } catch (convexErr) {
+        console.warn('[MenuManager] Convex delete failed:', convexErr.message);
+      }
+    }
+
+    // 2. Send DELETE to SQLite server
     try {
       const serverUrl = resolveServerUrl();
       await fetch(`${serverUrl}/api/menu/${id}`, {
@@ -469,16 +674,22 @@ export default function MenuManager({ className = '' }) {
       {/* Top Banner / Actions Bar */}
       <div className="bg-white rounded-2xl border border-neutral-200/80 p-4 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
               Menu Management
             </h2>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
               Admin
             </span>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800 border border-sky-200 flex items-center gap-1">
+              <Send className="w-3 h-3 -rotate-45" /> Telegram CDN
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+              <Sparkles className="w-3 h-3" /> Convex Cloud DB
+            </span>
           </div>
           <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-            Create, update dish pricing, and toggle instant item availability in real-time.
+            Media hosted on Telegram Channel (@Restaurant Media) • Structured text records stored in Convex Cloud Database.
           </p>
         </div>
 
@@ -523,7 +734,7 @@ export default function MenuManager({ className = '' }) {
       )}
 
       {/* Quick Metrics Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-white p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
           <span className="text-xs font-medium text-neutral-500">Total Items</span>
           <div className="text-xl sm:text-2xl font-bold text-neutral-900 mt-1">
@@ -552,6 +763,15 @@ export default function MenuManager({ className = '' }) {
           </span>
           <div className="text-xl sm:text-2xl font-bold text-neutral-900 mt-1">
             {stats.vegCount}
+          </div>
+        </div>
+        <div className="col-span-2 sm:col-span-1 bg-white p-4 rounded-xl border border-sky-200/80 shadow-2xs">
+          <span className="text-xs font-medium text-sky-600 flex items-center gap-1">
+            <Send className="w-3.5 h-3.5 -rotate-45" /> Telegram CDN
+          </span>
+          <div className="text-xl sm:text-2xl font-bold text-sky-700 mt-1 flex items-baseline gap-1">
+            <span>{stats.tgMediaCount || 0}</span>
+            <span className="text-[10px] text-neutral-400 font-normal">hosted</span>
           </div>
         </div>
       </div>
@@ -716,6 +936,18 @@ export default function MenuManager({ className = '' }) {
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-600 text-white shadow-2xs">
                           <Flame className="w-2.5 h-2.5 fill-current" />
                           Spicy
+                        </span>
+                      )}
+                      {Boolean(dish.image_url && (dish.image_url.includes('telegram') || dish.image_url.includes('api.telegram.org'))) && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-sky-600 text-white shadow-2xs" title="Photo hosted on Telegram Channel CDN">
+                          <Send className="w-2.5 h-2.5 -rotate-45" />
+                          TG Media
+                        </span>
+                      )}
+                      {Boolean(dish.making_video_url || dish.makingVideoUrl) && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-600 text-white shadow-2xs" title="Includes kitchen reel video">
+                          <Video className="w-2.5 h-2.5 fill-current" />
+                          Reel
                         </span>
                       )}
                     </div>
@@ -908,33 +1140,212 @@ export default function MenuManager({ className = '' }) {
                 />
               </div>
 
-              {/* Image URL */}
-              <div>
-                <label className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-1">
-                  Image URL
-                </label>
-                <div className="flex gap-2">
+              {/* ========================================================= */}
+              {/* MEDIA STORAGE: TELEGRAM CHANNEL CDN + CONVEX TEXT DB     */}
+              {/* ========================================================= */}
+              <div className="p-4 bg-gradient-to-br from-sky-50/70 via-blue-50/30 to-purple-50/40 rounded-2xl border border-sky-200/80 space-y-4">
+                
+                {/* Section Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-sky-500 text-white flex items-center justify-center shadow-xs">
+                      <Send className="w-3.5 h-3.5 -rotate-45" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Telegram Media Storage & CDN</span>
+                        <span className="text-[10px] font-semibold text-sky-700 bg-sky-100 px-1.5 py-0.2 rounded-full border border-sky-200">
+                          Free Cloud CDN
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-neutral-500">
+                        Photos & kitchen reels host on <strong className="text-neutral-700">@Restaurant Media</strong>; records in <strong className="text-neutral-700">Convex</strong>.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {uploadError && (
+                  <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{uploadError}</span>
+                  </div>
+                )}
+
+                {/* 1. FOOD PHOTO SECTION */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    <label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5 text-sky-600" />
+                      <span>Food Dish Photo</span>
+                    </label>
+
+                    {(formData.image_url?.includes('telegram') || formData.image_url?.includes('api.telegram.org')) && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 animate-fadeIn">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                        <span>✅ Hosted on Telegram Channel</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Hidden photo file input */}
                   <input
-                    type="url"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    placeholder="https://images.unsplash.com/..."
-                    className="flex-1 px-3.5 py-2 rounded-xl text-xs sm:text-sm border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                    type="file"
+                    ref={photoInputRef}
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
                   />
+
+                  {/* Upload button and URL field */}
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={uploadingPhoto}
+                      className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 active:scale-95 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                      {uploadingPhoto ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Send className="w-3.5 h-3.5 -rotate-45" />
+                      )}
+                      <span>{uploadingPhoto ? 'Uploading to Telegram Channel...' : 'Upload Photo to Telegram'}</span>
+                    </button>
+
+                    <div className="relative flex-1">
+                      <input
+                        type="url"
+                        value={formData.image_url}
+                        onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                        placeholder="Telegram CDN URL or external photo link..."
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition font-mono truncate"
+                      />
+                      {formData.image_url && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, image_url: '' })}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 text-xs p-1"
+                          title="Clear photo"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Photo Preview Box */}
                   {formData.image_url && (
-                    <div className="w-10 h-10 rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0">
-                      <img
-                        src={formData.image_url}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.target.style.display = 'none'; }}
+                    <div className="flex items-center gap-3 p-2 bg-white/80 rounded-xl border border-neutral-200">
+                      <div className="w-14 h-14 rounded-lg overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0">
+                        <img
+                          src={formData.image_url}
+                          alt="Dish Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-bold text-neutral-800 truncate">
+                          {formData.name || 'Dish Photo Preview'}
+                        </p>
+                        <p className="text-[10px] text-neutral-500 truncate font-mono mt-0.5">
+                          {formData.image_url}
+                        </p>
+                        {(formData.image_url.includes('telegram') || formData.image_url.includes('api.telegram.org')) && (
+                          <span className="text-[10px] text-sky-600 font-medium flex items-center gap-1 mt-0.5">
+                            <Send className="w-2.5 h-2.5 -rotate-45" /> Channel: @Restaurant Media (Telegram CDN)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. KITCHEN REEL VIDEO SECTION */}
+                <div className="space-y-2 pt-2 border-t border-sky-100">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    <label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
+                      <Video className="w-3.5 h-3.5 text-purple-600" />
+                      <span>Kitchen Reel / Making Video <span className="text-[10px] text-neutral-400 font-normal">(Optional)</span></span>
+                    </label>
+
+                    {(formData.making_video_url?.includes('telegram') || formData.making_video_url?.includes('api.telegram.org')) && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 animate-fadeIn">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                        <span>✅ Hosted on Telegram Channel</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Hidden video file input */}
+                  <input
+                    type="file"
+                    ref={videoInputRef}
+                    accept="video/*"
+                    onChange={handleVideoUpload}
+                    className="hidden"
+                  />
+
+                  {/* Upload button and URL field */}
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      type="button"
+                      onClick={() => videoInputRef.current?.click()}
+                      disabled={uploadingVideo}
+                      className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                      {uploadingVideo ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Video className="w-3.5 h-3.5" />
+                      )}
+                      <span>{uploadingVideo ? 'Uploading to Telegram Channel...' : 'Upload Video to Telegram'}</span>
+                    </button>
+
+                    <div className="relative flex-1">
+                      <input
+                        type="url"
+                        value={formData.making_video_url}
+                        onChange={(e) => setFormData({ ...formData, making_video_url: e.target.value })}
+                        placeholder="Telegram Video CDN URL or .mp4 reel link..."
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition font-mono truncate"
+                      />
+                      {formData.making_video_url && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, making_video_url: '' })}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 text-xs p-1"
+                          title="Clear video"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Video Player Preview */}
+                  {formData.making_video_url && (
+                    <div className="p-2.5 bg-white/80 rounded-xl border border-neutral-200 space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-neutral-700">
+                        <span className="flex items-center gap-1 text-purple-700">
+                          <Play className="w-3 h-3 fill-current" /> Reel Video Preview
+                        </span>
+                        <span className="text-[10px] text-neutral-400 font-mono truncate max-w-xs">
+                          {formData.making_video_url}
+                        </span>
+                      </div>
+                      <video
+                        src={formData.making_video_url}
+                        controls
+                        muted
+                        playsInline
+                        className="w-full max-h-40 rounded-lg bg-black object-contain border border-neutral-200"
                       />
                     </div>
                   )}
                 </div>
-                <p className="text-[11px] text-neutral-400 mt-1">
-                  Paste a direct link to an image. (Supports Unsplash, CDN, or uploaded images)
-                </p>
+
               </div>
 
               {/* Dietary Flags & Stock Switch */}

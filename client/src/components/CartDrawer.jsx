@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   ShoppingBag,
   X,
@@ -14,7 +14,12 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
-  Receipt
+  Receipt,
+  Volume2,
+  Play,
+  Pause,
+  RotateCcw,
+  Check
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useNetwork } from '../context/NetworkContext';
@@ -27,17 +32,120 @@ import { sendOrderToTelegramChannel } from '../services/telegramClient';
 const TAX_RATE = 0.05; // 5% Estimated Tax
 
 /**
+ * Compact inline audio player for dish-level voice instructions
+ */
+function ItemAudioPlayer({ url, onRemove }) {
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  const togglePlay = (e) => {
+    e.stopPropagation();
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+      if (!duration && audioRef.current.duration) {
+        setDuration(audioRef.current.duration);
+      }
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration || 0);
+    }
+  };
+
+  const handleEnded = () => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+  };
+
+  const formatSec = (s) => {
+    if (!s || isNaN(s)) return '0:00';
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+  };
+
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  return (
+    <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-50 border border-amber-200/80 text-neutral-800 transition-all">
+      <audio
+        ref={audioRef}
+        src={url}
+        preload="metadata"
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={handleEnded}
+      />
+      <button
+        type="button"
+        onClick={togglePlay}
+        className="w-7 h-7 rounded-lg bg-amber-500 hover:bg-amber-600 active:scale-95 text-white flex items-center justify-center shrink-0 transition shadow-2xs cursor-pointer"
+        title={isPlaying ? 'Pause' : 'Play dish voice note'}
+      >
+        {isPlaying ? (
+          <Pause className="w-3.5 h-3.5 fill-current" />
+        ) : (
+          <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
+        )}
+      </button>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between text-[11px] font-semibold text-amber-950 leading-none mb-1">
+          <span className="flex items-center gap-1 font-bold">
+            <Volume2 className="w-3 h-3 text-amber-600" />
+            Chef Voice Note
+          </span>
+          <span className="font-mono text-neutral-500 text-[10px]">
+            {formatSec(currentTime)} / {formatSec(duration)}
+          </span>
+        </div>
+        <div className="w-full h-1.5 bg-amber-200/90 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-amber-500 transition-all duration-100" 
+            style={{ width: `${progress}%` }} 
+          />
+        </div>
+      </div>
+
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="p-1 rounded-md text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+          title="Remove voice note"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
  * CartDrawer Component
  * 
- * Full mobile-first slide-over drawer showing:
- * - Selected dishes with quantity steppers (+ / - / delete)
- * - Individual dish customization notes (e.g., "Less spicy", "No onions")
- * - General Instructions / Special Requests for the kitchen
- * - Embedded VoiceRecorder for customer audio notes
- * - Bill breakdown (Subtotal, Tax, Total)
- * - Table number validation and quick-selector
- * - "Confirm & Send Order" button with offline-first NetworkContext integration
- * - Smooth order confirmation feedback animation
+ * Mobile-first slide-over drawer showing:
+ * - Selected dishes with clean typography and quantity steppers (+ / - / delete)
+ * - Individual dish customization notes with quick tags & accordion editor
+ * - In-line audio playback for dish-level voice notes
+ * - Table-wide general instructions & embedded VoiceRecorder
+ * - Clean bill breakdown (Subtotal, Tax, Total)
+ * - Quick table selector & validation
+ * - Instant "Confirm & Send Order" with offline-first feedback
  */
 export default function CartDrawer({
   isOpen: propIsOpen,
@@ -79,18 +187,23 @@ export default function CartDrawer({
     if (cartCtx?.closeCart) cartCtx.closeCart();
   };
 
-  // Resolve Cart Items
+  // Resolve Cart Items with voice note support
   const rawCartItems = propCartItems !== undefined ? propCartItems : (cartCtx?.cartItems ?? []);
-  // Normalize items to array of { item, quantity, itemNote }
   const items = useMemo(() => {
     if (Array.isArray(rawCartItems)) {
-      return rawCartItems;
+      return rawCartItems.map((entry) => ({
+        item: entry.item || entry,
+        quantity: Number(entry.quantity) || 1,
+        itemNote: entry.note || entry.itemNote || '',
+        voiceNoteUrl: entry.voiceNoteUrl || entry.voiceUrl || entry.item?.voiceNoteUrl || null
+      }));
     }
     if (typeof rawCartItems === 'object' && rawCartItems !== null) {
       return Object.values(rawCartItems).map((entry) => ({
         item: entry.item || entry,
-        quantity: entry.quantity || 1,
-        itemNote: entry.note || entry.itemNote || ''
+        quantity: Number(entry.quantity) || 1,
+        itemNote: entry.note || entry.itemNote || '',
+        voiceNoteUrl: entry.voiceNoteUrl || entry.voiceUrl || entry.item?.voiceNoteUrl || null
       }));
     }
     return [];
@@ -102,7 +215,7 @@ export default function CartDrawer({
   const [tableError, setTableError] = useState(false);
 
   // Synchronize table input if prop/context changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentTable) {
       setTableInput(currentTable);
     }
@@ -210,7 +323,8 @@ export default function CartDrawer({
           name: ci.item?.name || ci.item?.title || 'Dish',
           price: Number(ci.item?.price) || 0,
           quantity: Number(ci.quantity) || 1,
-          note: ci.itemNote || ''
+          note: ci.itemNote || '',
+          voiceNoteUrl: ci.voiceNoteUrl || null
         })),
         subtotal: parseFloat(subtotal.toFixed(2)),
         tax: parseFloat(tax.toFixed(2)),
@@ -224,7 +338,7 @@ export default function CartDrawer({
         timestamp: Date.now()
       };
 
-      // Forward to Telegram Channel database / notifications feed
+      // Forward to Telegram Channel
       sendOrderToTelegramChannel(orderPayload).catch((e) => {
         console.warn('[Telegram Channel send error]:', e);
       });
@@ -246,6 +360,13 @@ export default function CartDrawer({
             voiceNoteUrl: base64Voice || undefined
           });
           result = { success: true, offline: false, data: convexRes };
+          if (convexRes?.orderNumber) {
+            orderPayload.orderNumber = convexRes.orderNumber;
+            orderPayload.orderId = convexRes.orderNumber;
+          }
+          if (convexRes?.orderId) {
+            orderPayload._id = convexRes.orderId;
+          }
         } catch (convexErr) {
           console.warn('[CartDrawer] Convex order submit failed, falling back:', convexErr);
         }
@@ -255,7 +376,6 @@ export default function CartDrawer({
         if (networkCtx?.submitOrder) {
           result = await networkCtx.submitOrder(orderPayload);
         } else {
-          // Direct attempt or fallback to IndexedDB
           const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
           if (isOnline) {
             try {
@@ -308,7 +428,7 @@ export default function CartDrawer({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-hidden"
+      className="fixed inset-0 z-50 overflow-hidden font-sans"
       role="dialog"
       aria-modal="true"
       aria-labelledby="cart-drawer-title"
@@ -316,19 +436,19 @@ export default function CartDrawer({
       {/* Backdrop overlay */}
       <div
         onClick={handleClose}
-        className="fixed inset-0 bg-neutral-950/60 backdrop-blur-xs transition-opacity animate-fadeIn"
+        className="fixed inset-0 bg-neutral-950/65 backdrop-blur-xs transition-opacity duration-300"
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
         <div
-          className={`w-screen max-w-md bg-white shadow-2xl flex flex-col border-l border-neutral-200/80 transform transition-all ease-in-out duration-300 animate-slideLeft ${className}`}
+          className={`w-screen max-w-md bg-white shadow-2xl flex flex-col border-l border-neutral-200/80 transform transition-all ease-in-out duration-300 ${className}`}
         >
           
           {/* ========================================================
               STATE A: ORDER CONFIRMATION / CELEBRATION FEEDBACK
              ======================================================== */}
           {orderConfirmation ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-scaleUp">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
               <div className="relative mb-5">
                 <div
                   className={`w-20 h-20 rounded-3xl flex items-center justify-center text-white shadow-xl ${
@@ -352,31 +472,31 @@ export default function CartDrawer({
                 {orderConfirmation.isOfflineQueued ? 'Order Saved Offline!' : 'Order Sent to Kitchen!'}
               </h3>
 
-              <p className="text-xs sm:text-sm text-neutral-500 mt-1.5 max-w-xs font-medium">
+              <p className="text-xs sm:text-sm text-neutral-500 mt-1.5 max-w-xs font-medium leading-relaxed">
                 {orderConfirmation.isOfflineQueued
-                  ? `Table ${orderConfirmation.tableNumber} order is safely cached on your phone and will automatically push to the kitchen the moment Wi-Fi reconnects.`
-                  : `Your order has been printed on the kitchen display. The chefs are getting ready!`}
+                  ? `Table ${orderConfirmation.tableNumber} order is safely cached and will automatically push to the kitchen display the moment Wi-Fi reconnects.`
+                  : `Your order has been printed on the kitchen display. The chefs are preparing your meal now!`}
               </p>
 
               {/* Order Receipt Box */}
-              <div className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl p-4 my-5 text-left text-xs space-y-2">
-                <div className="flex justify-between items-center pb-2 border-b border-neutral-200 font-bold text-neutral-800">
+              <div className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl p-4 my-5 text-left text-xs space-y-2.5 shadow-2xs">
+                <div className="flex justify-between items-center pb-2.5 border-b border-neutral-200 font-bold text-neutral-800">
                   <span className="flex items-center gap-1.5">
                     <Receipt className="w-4 h-4 text-amber-600" />
                     Order #{orderConfirmation.orderId}
                   </span>
-                  <span className="px-2 py-0.5 rounded-full bg-neutral-200/80 text-neutral-700 text-[11px]">
+                  <span className="px-2.5 py-0.5 rounded-full bg-neutral-200/80 text-neutral-800 text-[11px] font-bold">
                     Table {orderConfirmation.tableNumber}
                   </span>
                 </div>
 
-                <div className="space-y-1.5 py-1 max-h-36 overflow-y-auto">
+                <div className="space-y-1.5 py-1 max-h-40 overflow-y-auto">
                   {orderConfirmation.items.map((i, idx) => (
-                    <div key={idx} className="flex justify-between text-neutral-600 font-medium">
+                    <div key={idx} className="flex justify-between text-neutral-700 font-medium">
                       <span className="truncate pr-2">
                         {i.quantity}x {i.name}
                       </span>
-                      <span className="font-semibold text-neutral-900 shrink-0">
+                      <span className="font-bold text-neutral-900 shrink-0">
                         ${(i.price * i.quantity).toFixed(2)}
                       </span>
                     </div>
@@ -385,7 +505,9 @@ export default function CartDrawer({
 
                 <div className="pt-2 border-t border-neutral-200 flex justify-between font-black text-sm text-neutral-900">
                   <span>Total Amount</span>
-                  <span className="text-amber-600">${orderConfirmation.total.toFixed(2)}</span>
+                  <span className="text-amber-600 font-extrabold text-base">
+                    ${orderConfirmation.total.toFixed(2)}
+                  </span>
                 </div>
               </div>
 
@@ -407,21 +529,21 @@ export default function CartDrawer({
             <>
               {/* Drawer Header */}
               <div className="p-4 sm:p-5 border-b border-neutral-100 flex items-center justify-between shrink-0 bg-white">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500/15 to-orange-500/15 text-amber-600 flex items-center justify-center font-bold border border-amber-500/20 shadow-xs">
                     <ShoppingBag className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 id="cart-drawer-title" className="font-extrabold text-neutral-900 text-base sm:text-lg leading-tight flex items-center gap-2">
+                    <h2 id="cart-drawer-title" className="font-extrabold text-neutral-900 text-base sm:text-lg leading-tight flex items-center gap-2 tracking-tight">
                       Your Order
                       {totalItemCount > 0 && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200/80">
                           {totalItemCount}
                         </span>
                       )}
                     </h2>
-                    <p className="text-xs text-neutral-500 font-medium">
-                      {currentTable ? `Table ${currentTable}` : 'Choose table below'} &bull; Touch &amp; Customization
+                    <p className="text-xs text-neutral-500 font-medium mt-0.5">
+                      {currentTable ? `Table ${currentTable}` : 'Select table below'} &bull; Dine-In Experience
                     </p>
                   </div>
                 </div>
@@ -429,30 +551,32 @@ export default function CartDrawer({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="w-9 h-9 rounded-xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition cursor-pointer"
+                  className="w-9 h-9 rounded-xl bg-neutral-100 hover:bg-neutral-200/80 active:scale-95 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition cursor-pointer"
                   aria-label="Close cart drawer"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4 stroke-[2.5]" />
                 </button>
               </div>
 
               {/* Scrollable Content Container */}
-              <div className="flex-1 overflow-y-auto divide-y divide-neutral-100">
+              <div className="flex-1 overflow-y-auto divide-y divide-neutral-100 scrollbar-thin scrollbar-thumb-neutral-300">
                 
                 {/* 1. Empty Cart State */}
                 {items.length === 0 ? (
-                  <div className="py-16 px-6 text-center flex flex-col items-center justify-center">
-                    <div className="w-16 h-16 rounded-3xl bg-neutral-100 text-neutral-400 flex items-center justify-center mb-3">
-                      <ShoppingBag className="w-8 h-8" />
+                  <div className="py-20 px-6 text-center flex flex-col items-center justify-center">
+                    <div className="w-20 h-20 rounded-3xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 border border-amber-100 shadow-xs">
+                      <ShoppingBag className="w-10 h-10 stroke-[1.5]" />
                     </div>
-                    <h3 className="font-bold text-neutral-900 text-base mb-1">Your cart is empty</h3>
-                    <p className="text-xs text-neutral-500 max-w-xs mb-5">
-                      Explore our delicious appetizers, steaks, burgers, drinks, and desserts to add items to your table order.
+                    <h3 className="font-extrabold text-neutral-900 text-lg mb-1 tracking-tight">
+                      Your cart is empty
+                    </h3>
+                    <p className="text-xs text-neutral-500 max-w-xs mb-6 leading-relaxed">
+                      Explore our delicious appetizers, chef specials, beverages, and desserts to add items to your table order.
                     </p>
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="px-5 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-xs"
+                      className="px-6 py-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-white font-bold text-xs sm:text-sm transition shadow-md shadow-neutral-900/15 cursor-pointer"
                     >
                       Browse Menu
                     </button>
@@ -462,14 +586,14 @@ export default function CartDrawer({
                     {/* 2. Selected Dishes List */}
                     <div className="p-4 sm:p-5 space-y-3.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
                           Selected Dishes ({items.length})
                         </span>
                         {cartCtx?.clearCart && (
                           <button
                             type="button"
                             onClick={() => cartCtx.clearCart()}
-                            className="text-[11px] text-rose-600 hover:text-rose-700 font-semibold cursor-pointer"
+                            className="text-[11px] text-rose-600 hover:text-rose-700 font-semibold cursor-pointer transition active:scale-95"
                           >
                             Clear All
                           </button>
@@ -485,14 +609,15 @@ export default function CartDrawer({
                           const quantity = Number(cartItem.quantity) || 1;
                           const itemTotal = (dishPrice * quantity).toFixed(2);
                           const note = cartItem.itemNote || '';
+                          const voiceUrl = cartItem.voiceNoteUrl || null;
                           const isNoteOpen = expandedNotes[dishId] || Boolean(note);
 
                           return (
                             <div
                               key={dishId}
-                              className="bg-neutral-50/80 border border-neutral-200/70 rounded-2xl p-3 sm:p-3.5 transition-all hover:border-neutral-300"
+                              className="bg-neutral-50/80 border border-neutral-200/70 rounded-2xl p-3.5 transition-all hover:border-neutral-300/90 shadow-2xs"
                             >
-                              <div className="flex items-start justify-between gap-2.5">
+                              <div className="flex items-start justify-between gap-3">
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-bold text-neutral-900 text-sm leading-snug truncate">
                                     {dishName}
@@ -523,7 +648,7 @@ export default function CartDrawer({
                                       )}
                                     </button>
 
-                                    <span className="w-7 text-center text-xs font-bold text-neutral-900">
+                                    <span className="w-7 text-center text-xs font-black text-neutral-900">
                                       {quantity}
                                     </span>
 
@@ -540,8 +665,15 @@ export default function CartDrawer({
                                 </div>
                               </div>
 
+                              {/* Dish-Level Voice Note Player */}
+                              {voiceUrl && (
+                                <div className="mt-2.5">
+                                  <ItemAudioPlayer url={voiceUrl} />
+                                </div>
+                              )}
+
                               {/* Individual Dish Customization Accordion */}
-                              <div className="mt-2.5 pt-2 border-t border-neutral-200/50">
+                              <div className="mt-2.5 pt-2 border-t border-neutral-200/60">
                                 {!isNoteOpen ? (
                                   <button
                                     type="button"
@@ -549,31 +681,51 @@ export default function CartDrawer({
                                     className="inline-flex items-center gap-1.5 text-xs text-neutral-500 hover:text-amber-600 font-medium transition cursor-pointer"
                                   >
                                     <MessageSquare className="w-3.5 h-3.5 text-neutral-400" />
-                                    <span>Add note for this dish (e.g. &ldquo;less spicy&rdquo;)</span>
+                                    <span>Add note for chef (e.g. &ldquo;less spicy&rdquo;)</span>
                                   </button>
                                 ) : (
-                                  <div className="space-y-1">
+                                  <div className="space-y-2">
                                     <div className="flex items-center justify-between">
-                                      <label className="text-[11px] font-semibold text-neutral-600 flex items-center gap-1">
+                                      <label className="text-[11px] font-bold text-neutral-600 flex items-center gap-1">
                                         <MessageSquare className="w-3 h-3 text-amber-500" />
-                                        Customization note:
+                                        <span>Cooking instructions:</span>
                                       </label>
                                       {!note && (
                                         <button
                                           type="button"
                                           onClick={() => toggleNoteExpand(dishId)}
-                                          className="text-[10px] text-neutral-400 hover:text-neutral-600 font-medium cursor-pointer"
+                                          className="text-[10px] text-neutral-400 hover:text-neutral-600 font-semibold cursor-pointer"
                                         >
                                           Collapse
                                         </button>
                                       )}
                                     </div>
+
+                                    {/* Quick Preset Tags */}
+                                    <div className="flex flex-wrap gap-1 text-[11px]">
+                                      {['Less spicy', 'Extra sauce', 'No onions', 'Crispy', 'Gluten conscious'].map((preset) => (
+                                        <button
+                                          key={preset}
+                                          type="button"
+                                          onClick={() => {
+                                            const separator = note.trim() ? ', ' : '';
+                                            if (!note.includes(preset)) {
+                                              handleItemNoteChange(dishId, `${note}${separator}${preset}`);
+                                            }
+                                          }}
+                                          className="px-2 py-0.5 rounded-lg bg-white border border-neutral-200 text-neutral-600 hover:border-amber-400 hover:text-amber-700 transition active:scale-95 cursor-pointer"
+                                        >
+                                          + {preset}
+                                        </button>
+                                      ))}
+                                    </div>
+
                                     <input
                                       type="text"
                                       value={note}
                                       onChange={(e) => handleItemNoteChange(dishId, e.target.value)}
                                       placeholder="e.g. Extra sauce, no onions, well-done"
-                                      className="w-full px-2.5 py-1.5 text-xs bg-white rounded-xl border border-neutral-200 focus:outline-none focus:ring-1.5 focus:ring-amber-500 focus:border-amber-500 placeholder:text-neutral-400 transition"
+                                      className="w-full px-3 py-1.5 text-xs bg-white rounded-xl border border-neutral-200 focus:outline-none focus:ring-1.5 focus:ring-amber-500 focus:border-amber-500 placeholder:text-neutral-400 transition"
                                     />
                                   </div>
                                 )}
@@ -586,32 +738,32 @@ export default function CartDrawer({
 
                     {/* 3. General Special Instructions Section */}
                     <div className="p-4 sm:p-5 space-y-2">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500">
-                        General Special Requests
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                        General Special Requests for Table
                       </label>
                       <textarea
                         rows={2}
                         value={generalNote}
                         onChange={(e) => setGeneralNote(e.target.value)}
-                        placeholder="Any table requests? (e.g., serve starters first, extra napkins, allergic to peanuts...)"
+                        placeholder="Any general requests? (e.g. bring appetizers together, extra napkins, allergic to nuts...)"
                         className="w-full p-3 text-xs bg-neutral-50 rounded-2xl border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 placeholder:text-neutral-400 resize-none transition"
                       />
                     </div>
 
-                    {/* 4. Voice Customization Section */}
+                    {/* 4. Table-wide Voice Customization Section */}
                     <div className="p-4 sm:p-5">
                       <VoiceRecorder />
                     </div>
 
                     {/* 5. Table Number Selector / Validator */}
-                    <div className="p-4 sm:p-5 bg-neutral-50/60 space-y-2">
+                    <div className="p-4 sm:p-5 bg-neutral-50/70 space-y-2.5">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider flex items-center gap-1.5">
                           <span>Table Assignment:</span>
-                          <span className="text-rose-500">*</span>
+                          <span className="text-rose-500 font-black">*</span>
                         </label>
                         {tableInput && (
-                          <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200/80">
                             Table {tableInput}
                           </span>
                         )}
@@ -629,16 +781,16 @@ export default function CartDrawer({
                             }
                           }}
                           placeholder="Enter Table # (e.g. 4, Bar 2)"
-                          className={`flex-1 px-3 py-2 text-xs sm:text-sm bg-white rounded-xl border font-semibold ${
+                          className={`flex-1 px-3.5 py-2 text-xs sm:text-sm bg-white rounded-xl border font-bold transition ${
                             tableError
-                              ? 'border-rose-400 ring-2 ring-rose-200'
-                              : 'border-neutral-200 focus:ring-2 focus:ring-amber-500'
+                              ? 'border-rose-400 ring-2 ring-rose-200 text-rose-900'
+                              : 'border-neutral-200 focus:ring-2 focus:ring-amber-500 text-neutral-900'
                           }`}
                         />
 
                         {/* Quick 1-6 picker chips */}
                         <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((num) => (
+                          {[1, 2, 3, 4, 5, 6].map((num) => (
                             <button
                               key={num}
                               type="button"
@@ -649,7 +801,7 @@ export default function CartDrawer({
                                   cartCtx.setTableNumber(String(num));
                                 }
                               }}
-                              className={`w-7 h-7 rounded-lg text-xs font-bold transition active:scale-95 cursor-pointer ${
+                              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl text-xs font-black transition active:scale-95 cursor-pointer ${
                                 String(tableInput) === String(num)
                                   ? 'bg-amber-500 text-white shadow-xs'
                                   : 'bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-100'
@@ -664,7 +816,7 @@ export default function CartDrawer({
                       {tableError && (
                         <p className="text-xs text-rose-600 font-semibold flex items-center gap-1 mt-1">
                           <AlertTriangle className="w-3.5 h-3.5" />
-                          Please enter your table number before submitting your order!
+                          Please enter or pick your table number before submitting your order!
                         </p>
                       )}
                     </div>
@@ -674,24 +826,24 @@ export default function CartDrawer({
 
               {/* Drawer Footer: Bill Breakdown & Submit Button */}
               {items.length > 0 && (
-                <div className="p-4 sm:p-5 bg-white border-t border-neutral-100 shrink-0 space-y-3 shadow-lg">
+                <div className="p-4 sm:p-5 bg-white border-t border-neutral-100 shrink-0 space-y-3 shadow-xl">
                   
                   {/* Bill Breakdown */}
                   <div className="space-y-1.5 text-xs text-neutral-600 font-medium">
                     <div className="flex justify-between">
                       <span>Items Subtotal</span>
-                      <span>${subtotal.toFixed(2)}</span>
+                      <span className="font-semibold text-neutral-800">${subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="flex items-center gap-1">
                         Estimated Tax (5%)
                         <span className="text-[10px] text-neutral-400">(Local rate)</span>
                       </span>
-                      <span>${tax.toFixed(2)}</span>
+                      <span className="font-semibold text-neutral-800">${tax.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-base font-black text-neutral-900 pt-2 border-t border-neutral-100">
                       <span>Total Amount</span>
-                      <span className="text-amber-600 font-extrabold text-lg">
+                      <span className="text-amber-600 font-black text-xl">
                         ${grandTotal.toFixed(2)}
                       </span>
                     </div>
@@ -702,10 +854,10 @@ export default function CartDrawer({
                     type="button"
                     onClick={handleConfirmOrder}
                     disabled={isSubmitting || items.length === 0}
-                    className={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg transition-all active:scale-98 cursor-pointer ${
+                    className={`w-full py-4 px-5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg transition-all active:scale-98 cursor-pointer ${
                       isSubmitting
                         ? 'bg-amber-400 text-white cursor-wait'
-                        : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-orange-500/25'
+                        : 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white shadow-orange-500/25'
                     }`}
                   >
                     {isSubmitting ? (
@@ -716,12 +868,12 @@ export default function CartDrawer({
                     ) : (
                       <>
                         <span>Confirm &amp; Send Order</span>
-                        <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                        <ArrowRight className="w-4 h-4 stroke-[3]" />
                       </>
                     )}
                   </button>
 
-                  <p className="text-[10px] text-center text-neutral-400 font-medium">
+                  <p className="text-[11px] text-center text-neutral-400 font-medium">
                     ⚡ Offline-First Active &bull; Instant Kitchen Display Push
                   </p>
                 </div>

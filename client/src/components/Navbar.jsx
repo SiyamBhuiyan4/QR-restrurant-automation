@@ -70,25 +70,25 @@ export default function Navbar({
   return (
     <>
       <header
-        className={`sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-neutral-200/80 shadow-xs transition-colors ${className}`}
+        className={`sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-stone-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-colors ${className}`}
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-2">
             
             {/* Left: Brand Identity */}
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-orange-500/20 shrink-0">
-                <UtensilsCrossed className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-600 to-amber-700 flex items-center justify-center text-neutral-950 shadow-md shadow-amber-500/20 shrink-0 ring-1 ring-amber-400/40">
+                <UtensilsCrossed className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div className="flex flex-col truncate">
-                <span className="text-lg font-bold tracking-tight text-neutral-900 leading-none flex items-center gap-1.5">
+                <span className="text-lg font-black tracking-tight text-stone-900 leading-none flex items-center gap-1.5">
                   SmartDine
-                  <span className="hidden sm:inline-block text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded">
-                    Express
+                  <span className="hidden sm:inline-block text-[10px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 bg-amber-500/15 border border-amber-500/30 text-amber-800 rounded">
+                    Bistro
                   </span>
                 </span>
-                <span className="text-xs text-neutral-500 font-medium truncate mt-0.5">
-                  Fresh &amp; Local First
+                <span className="text-xs text-stone-500 font-medium truncate mt-0.5">
+                  Artisanal Table Service
                 </span>
               </div>
             </div>
@@ -100,8 +100,8 @@ export default function Navbar({
               <div
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
                   isOnline
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200/70'
-                    : 'bg-amber-50 text-amber-800 border-amber-300 animate-pulse'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
+                    : 'bg-amber-50 text-amber-900 border-amber-300 animate-pulse'
                 }`}
                 title={isOnline ? 'System is online and connected' : 'Operating in offline local-first mode'}
               >
@@ -112,12 +112,12 @@ export default function Navbar({
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
                     <Wifi className="w-3.5 h-3.5 hidden sm:inline" />
-                    <span className="text-[11px] font-medium tracking-tight">Online</span>
+                    <span className="text-[11px] font-semibold tracking-tight">Online</span>
                   </>
                 ) : (
                   <>
                     <WifiOff className="w-3.5 h-3.5 text-amber-600" />
-                    <span className="text-[11px] font-medium tracking-tight">Offline Mode</span>
+                    <span className="text-[11px] font-semibold tracking-tight">Offline Mode</span>
                   </>
                 )}
               </div>
@@ -126,7 +126,7 @@ export default function Navbar({
               <button
                 type="button"
                 onClick={onChangeTable}
-                className="group inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200/80 active:scale-95 text-neutral-800 font-semibold text-xs sm:text-sm border border-neutral-200/60 transition-all cursor-pointer shadow-2xs"
+                className="group inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200/80 active:scale-95 text-stone-900 font-bold text-xs sm:text-sm border border-stone-200/80 transition-all cursor-pointer shadow-2xs"
                 title="Tap to change table"
               >
                 <span className="text-base leading-none">🍽️</span>
@@ -134,7 +134,7 @@ export default function Navbar({
                   {tableNumber ? `Table ${tableNumber}` : 'Set Table'}
                 </span>
                 {onChangeTable && (
-                  <span className="text-[10px] text-neutral-400 group-hover:text-neutral-700 font-normal hidden sm:inline">
+                  <span className="text-[10px] text-stone-400 group-hover:text-stone-700 font-normal hidden sm:inline">
                     (Edit)
                   </span>
                 )}
@@ -144,10 +144,10 @@ export default function Navbar({
               <button
                 type="button"
                 onClick={() => setShowWaiterModal(true)}
-                className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium text-xs sm:text-sm transition-all active:scale-95 shadow-xs cursor-pointer ${
+                className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 shadow-sm cursor-pointer border ${
                   waiterCalled
-                    ? 'bg-emerald-600 text-white shadow-emerald-600/30 ring-2 ring-emerald-400/50'
-                    : 'bg-neutral-900 hover:bg-neutral-800 text-white'
+                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-600/30 ring-2 ring-emerald-400/50'
+                    : 'bg-neutral-950 hover:bg-neutral-900 text-white border-neutral-900'
                 }`}
                 title="Call waiter to your table"
               >
@@ -159,7 +159,7 @@ export default function Navbar({
                   </>
                 ) : (
                   <>
-                    <BellRing className="w-4 h-4 text-amber-400 animate-wiggle" />
+                    <BellRing className="w-4 h-4 text-amber-400" />
                     <span className="hidden sm:inline">Call Waiter</span>
                     <span className="sm:hidden">Waiter</span>
                   </>

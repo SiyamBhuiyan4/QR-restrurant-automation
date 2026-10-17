@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import Navbar from '../components/Navbar';
 import CategoryBar from '../components/CategoryBar';
@@ -415,6 +415,14 @@ export default function CustomerMenu({
   // Query real-time Convex menu
   const convexMenu = useQuery(api.menu.getMenu);
 
+  // Auto-seed Convex menu if connected and empty
+  const seedMenuMutation = useMutation(api.menu.seedMenu);
+  useEffect(() => {
+    if (Array.isArray(convexMenu) && convexMenu.length === 0) {
+      seedMenuMutation().catch(() => {});
+    }
+  }, [convexMenu, seedMenuMutation]);
+
   // Convex live order subscription for this table
   const tableNumParsed = Number(tableNumber) || (tableNumber ? parseInt(String(tableNumber).replace(/\D/g, ''), 10) : undefined);
   const liveTableOrders = useQuery(
@@ -422,18 +430,56 @@ export default function CustomerMenu({
     tableNumParsed ? { tableNumber: tableNumParsed } : 'skip'
   );
 
+  // Direct subscription to the customer's specific active order by ID or orderNumber
+  const activeOrderSearchId = activeOrder?.orderNumber || activeOrder?.orderId || activeOrder?._id;
+  const liveOrder = useQuery(
+    api.orders.getOrderById,
+    activeOrderSearchId ? { orderId: String(activeOrderSearchId) } : 'skip'
+  );
+
   // Synchronize activeOrder status when KDS updates it in Convex
   useEffect(() => {
+    // 1. Prioritize direct liveOrder match
+    if (liveOrder) {
+      setActiveOrder((prev) => {
+        const updated = {
+          ...(prev || {}),
+          _id: liveOrder._id,
+          orderId: liveOrder.orderNumber || liveOrder._id,
+          orderNumber: liveOrder.orderNumber,
+          status: liveOrder.status, // 'pending' | 'preparing' | 'ready' | 'served'
+          totalAmount: liveOrder.totalAmount,
+          items: liveOrder.items || prev?.items || []
+        };
+        try {
+          localStorage.setItem('smartdine_active_order', JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
+      return;
+    }
+
+    // 2. Otherwise match from liveTableOrders
     if (liveTableOrders && liveTableOrders.length > 0) {
-      const latestOrder = liveTableOrders[0];
-      if (latestOrder) {
+      let match = null;
+      if (activeOrder) {
+        match = liveTableOrders.find(
+          (o) => o._id === activeOrder._id || o.orderNumber === activeOrder.orderId || o.orderNumber === activeOrder.orderNumber
+        );
+      }
+      if (!match) {
+        match = liveTableOrders.find((o) => o.status !== 'served') || liveTableOrders[0];
+      }
+      if (match) {
         setActiveOrder((prev) => {
           const updated = {
             ...(prev || {}),
-            orderId: latestOrder.orderNumber || latestOrder._id,
-            status: latestOrder.status, // 'pending' | 'preparing' | 'ready' | 'served'
-            totalAmount: latestOrder.totalAmount,
-            items: latestOrder.items || prev?.items || []
+            _id: match._id,
+            orderId: match.orderNumber || match._id,
+            orderNumber: match.orderNumber,
+            status: match.status,
+            totalAmount: match.totalAmount,
+            items: match.items || prev?.items || []
           };
           try {
             localStorage.setItem('smartdine_active_order', JSON.stringify(updated));
@@ -442,7 +488,7 @@ export default function CustomerMenu({
         });
       }
     }
-  }, [liveTableOrders]);
+  }, [liveOrder, liveTableOrders]);
 
   const convexFormattedItems = useMemo(() => {
     if (!convexMenu || !Array.isArray(convexMenu) || convexMenu.length === 0) return null;
@@ -451,19 +497,28 @@ export default function CustomerMenu({
       (cat.items || []).forEach((item) => {
         list.push({
           id: item._id,
+          _id: item._id,
           name: item.name,
+          title: item.name,
           description: item.description,
           price: item.price,
           category: cat.name,
+          categorySlug: cat.slug || item.categorySlug,
           isVeg: Boolean(item.isVeg),
           isSpicy: Boolean(item.isSpicy),
           isAvailable: item.isAvailable !== false,
-          image: item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600'
+          image: item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
+          imageUrl: item.imageUrl,
+          images: Array.isArray(item.images) && item.images.length > 0
+            ? item.images
+            : (item.imageUrl ? [item.imageUrl] : []),
+          makingVideoUrl: item.makingVideoUrl || null,
         });
       });
     });
     return list.length > 0 ? list : null;
   }, [convexMenu]);
+
 
   // Menu items list (Convex Cloud -> Props -> Default Offline)
   const allMenuItems = useMemo(() => {
@@ -580,7 +635,9 @@ export default function CustomerMenu({
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50/60 text-neutral-900 pb-28">
+    <div className="min-h-screen bg-[#faf8f5] text-stone-900 pb-32 selection:bg-amber-500 selection:text-white relative">
+      {/* Warm Ambient Bistro Glow */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(217,119,6,0.05),rgba(250,248,245,0))] z-0" />
       
       {/* 1. Header Navigation */}
       <Navbar
@@ -610,155 +667,176 @@ export default function CustomerMenu({
       )}
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 relative z-10">
 
-        {/* 1. Fixed Table QR Banner (Shown if Diner accesses app without scanning table QR) */}
-        {!tableNumber && (
-          <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-500/30 rounded-2xl p-4 mb-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs animate-fadeIn">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
-                <QrCode className="w-5 h-5" />
+        {/* 1. Dining Lounge Hero Banner & Fixed Table QR Badge */}
+        <div className="relative mb-6 rounded-3xl overflow-hidden bg-gradient-to-br from-neutral-950 via-stone-900 to-neutral-950 text-white p-5 sm:p-7 shadow-xl border border-stone-800/90 animate-fadeIn">
+          {/* Subtle Ambient Gold Glow in Background */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-semibold mb-2.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span className="tracking-wide uppercase text-[10px] font-bold">Artisanal Bistro &amp; Table Dining</span>
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5">
-                  <span>Table QR Code Required to Order</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold uppercase">Scan Table</span>
-                </h3>
-                <p className="text-xs text-neutral-600 mt-0.5">
-                  Each dining table has a unique QR code. Scan the QR code on your table to lock in your table number automatically.
-                </p>
-              </div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
+                Chef's Table Experience
+              </h1>
+              <p className="text-xs sm:text-sm text-stone-400 mt-1 max-w-lg leading-relaxed">
+                Hand-crafted seasonal specialties, sommelier pairings, and personalized tableside ordering directly to our kitchen.
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={() => handleSelectTable('1')}
-              className="shrink-0 px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1.5"
-            >
-              <span>Demo: Use Table 01</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
 
-        {/* 2. Live Customer Order Status Tracker (Order Received -> Cooking -> Ready to Serve -> Served) */}
-        {activeOrder && activeOrder.status !== 'served' && (
-          <div className="mb-5 bg-white border border-neutral-200/90 rounded-2xl p-4 shadow-sm animate-fadeIn">
-            <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-neutral-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs">
-                  {tableNumber ? `T${tableNumber}` : 'ORD'}
+            {/* Dining Lounge Badge: Locked via QR OR Prompt to Pair Table */}
+            {tableNumber ? (
+              <div className="shrink-0 bg-white/10 backdrop-blur-md border border-white/15 px-4.5 py-3.5 rounded-2xl flex items-center gap-3.5 shadow-lg shadow-neutral-950/30">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-neutral-950 font-black text-base flex items-center justify-center shadow-md shadow-amber-500/25 ring-2 ring-amber-300/30">
+                  {tableNumber}
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-neutral-900 flex items-center gap-1.5">
-                    <span>Live Order Tracker</span>
+                  <div className="text-[10px] uppercase tracking-wider text-emerald-400 font-extrabold flex items-center gap-1.5">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
-                  </h4>
-                  <span className="text-[11px] text-neutral-500">
-                    Order #{activeOrder.orderId || activeOrder.orderNumber || 'Active'} &bull; Table {tableNumber || activeOrder.tableNumber}
-                  </span>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-xs font-extrabold text-emerald-600 uppercase tracking-wider">
-                  {activeOrder.status === 'preparing' ? '🔥 Cooking in Kitchen' : activeOrder.status === 'ready' ? '🛎️ Ready to Serve' : '⏳ Order Received'}
-                </span>
-              </div>
-            </div>
-
-            {/* Stepper Progress Bar */}
-            <div className="grid grid-cols-4 gap-2 pt-1 text-center">
-              {[
-                { id: 'pending', label: 'Received', icon: CheckCircle2 },
-                { id: 'preparing', label: 'Cooking', icon: ChefHat },
-                { id: 'ready', label: 'Ready', icon: BellRing },
-                { id: 'served', label: 'Served', icon: UtensilsCrossed }
-              ].map((step, idx) => {
-                const stepOrder = ['pending', 'preparing', 'ready', 'served'];
-                const currentIndex = stepOrder.indexOf(activeOrder.status || 'pending');
-                const isCompleted = currentIndex >= idx;
-                const isCurrent = currentIndex === idx;
-                const StepIcon = step.icon;
-
-                return (
-                  <div key={step.id} className="flex flex-col items-center">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all ${
-                        isCurrent
-                          ? 'bg-amber-500 text-white ring-4 ring-amber-500/20 font-bold scale-110 shadow-sm'
-                          : isCompleted
-                          ? 'bg-emerald-500 text-white font-medium'
-                          : 'bg-neutral-100 text-neutral-400'
-                      }`}
-                    >
-                      <StepIcon className="w-4 h-4" />
-                    </div>
-                    <span className={`text-[10px] mt-1 font-semibold ${isCurrent ? 'text-amber-600' : isCompleted ? 'text-neutral-800' : 'text-neutral-400'}`}>
-                      {step.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* 3. Restaurant Welcome & Table Badge Hero Banner */}
-        <div className="relative mb-6 rounded-3xl overflow-hidden bg-gradient-to-br from-neutral-900 via-neutral-900 to-amber-950 text-white p-5 sm:p-7 shadow-xl border border-neutral-800 animate-fadeIn">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-semibold mb-2">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Smart Restaurant Experience</span>
-              </div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white">
-                Fresh Gourmet &amp; Table Dining
-              </h1>
-              <p className="text-xs sm:text-sm text-neutral-400 mt-1 max-w-lg">
-                Browse our chef-crafted menu, watch kitchen making-reels, customize with voice notes, and order seamlessly.
-              </p>
-            </div>
-
-            {tableNumber && (
-              <div className="shrink-0 bg-white/10 backdrop-blur-md border border-white/15 px-4 py-3 rounded-2xl flex items-center gap-3 shadow-md">
-                <div className="w-10 h-10 rounded-xl bg-amber-500 text-neutral-950 font-black text-sm flex items-center justify-center shadow-md">
-                  {tableNumber}
-                </div>
-                <div>
-                  <div className="text-[11px] uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1">
                     <Lock className="w-3 h-3" /> Locked via QR
                   </div>
-                  <div className="text-sm font-extrabold text-white">
+                  <div className="text-sm sm:text-base font-black text-white tracking-tight mt-0.5">
                     Table {tableNumber}
                   </div>
                 </div>
+              </div>
+            ) : (
+              <div className="shrink-0 bg-amber-500/15 border border-amber-500/30 backdrop-blur-md px-4.5 py-3 rounded-2xl flex items-center justify-between gap-3 shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500 text-neutral-950 flex items-center justify-center font-bold shrink-0 shadow-sm">
+                    <QrCode className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-amber-400 font-extrabold">
+                      Scan Table QR
+                    </div>
+                    <div className="text-xs text-stone-300">
+                      Scan table to order
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSelectTable('1')}
+                  className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-neutral-950 text-xs font-extrabold rounded-xl transition shadow-sm cursor-pointer flex items-center gap-1"
+                >
+                  <span>Demo: T01</span>
+                  <ArrowRight className="w-3 h-3 stroke-[2.5]" />
+                </button>
               </div>
             )}
           </div>
         </div>
 
+        {/* 2. Live Customer Order Status Tracker (Order Received -> Cooking -> Ready to Serve -> Served) */}
+        {activeOrder && activeOrder.status !== 'served' && (
+          <div className="mb-6 bg-white border border-stone-200/90 rounded-3xl p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] animate-fadeIn">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-stone-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-700 flex items-center justify-center font-black text-xs shadow-2xs">
+                  {tableNumber ? `T${tableNumber}` : 'ORD'}
+                </div>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-extrabold text-stone-900 flex items-center gap-2">
+                    <span>Live Kitchen Tracker</span>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                  </h4>
+                  <span className="text-[11px] text-stone-500 font-medium">
+                    Order #{activeOrder.orderId || activeOrder.orderNumber || 'Active'} &bull; Table {tableNumber || activeOrder.tableNumber}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/80 shadow-2xs">
+                  {activeOrder.status === 'preparing' ? '🔥 Cooking in Kitchen' : activeOrder.status === 'ready' ? '🛎️ Ready to Serve' : '⏳ Order Received'}
+                </span>
+              </div>
+            </div>
+
+            {/* Stepper Progress Bar with Connecting Animated Line */}
+            {(() => {
+              const stepOrder = ['pending', 'preparing', 'ready', 'served'];
+              const currentIndex = Math.max(0, stepOrder.indexOf(activeOrder.status || 'pending'));
+              const progressPercent = (currentIndex / (stepOrder.length - 1)) * 100;
+
+              return (
+                <div className="relative pt-2 pb-1">
+                  {/* Background Track Line */}
+                  <div className="absolute top-6 left-8 right-8 h-1 bg-stone-200/80 -translate-y-1/2 z-0 rounded-full" />
+                  {/* Active Gradient Glow Line */}
+                  <div
+                    className="absolute top-6 left-8 h-1 bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-500 -translate-y-1/2 z-0 rounded-full transition-all duration-700 shadow-xs"
+                    style={{ width: `calc((100% - 4rem) * ${progressPercent / 100})` }}
+                  />
+
+                  {/* Stepper Nodes */}
+                  <div className="relative z-10 grid grid-cols-4 gap-2 text-center">
+                    {[
+                      { id: 'pending', label: 'Received', icon: CheckCircle2 },
+                      { id: 'preparing', label: 'Cooking', icon: ChefHat },
+                      { id: 'ready', label: 'Plated', icon: BellRing },
+                      { id: 'served', label: 'Served', icon: UtensilsCrossed }
+                    ].map((step, idx) => {
+                      const isCompleted = currentIndex >= idx;
+                      const isCurrent = currentIndex === idx;
+                      const StepIcon = step.icon;
+
+                      return (
+                        <div key={step.id} className="flex flex-col items-center">
+                          <div
+                            className={`w-9 h-9 rounded-full flex items-center justify-center text-xs transition-all duration-300 ${
+                              isCurrent
+                                ? 'bg-amber-500 text-neutral-950 ring-4 ring-amber-500/25 font-bold scale-110 shadow-lg shadow-amber-500/30'
+                                : isCompleted
+                                ? 'bg-emerald-600 text-white font-medium shadow-md shadow-emerald-600/25'
+                                : 'bg-stone-100 text-stone-400 border border-stone-200/90'
+                            }`}
+                          >
+                            <StepIcon className="w-4 h-4" />
+                          </div>
+                          <span className={`text-[11px] mt-1.5 font-bold tracking-tight ${isCurrent ? 'text-amber-700 font-extrabold' : isCompleted ? 'text-stone-800' : 'text-stone-400'}`}>
+                            {step.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         {/* Search Bar & Dietary Filter Toggles */}
         <section className="mb-4 space-y-3">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
             
-            {/* Search Input */}
+            {/* High-Contrast Luxury Search Input */}
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search delicious dishes, ingredients, drinks..."
-                className="w-full pl-9.5 pr-8 py-2.5 text-xs sm:text-sm bg-white rounded-2xl border border-neutral-200/80 shadow-2xs focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 placeholder:text-neutral-400 transition"
+                className="w-full pl-10 pr-9 py-2.5 sm:py-3 text-xs sm:text-sm bg-white rounded-2xl border border-stone-200/90 shadow-2xs focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 placeholder:text-stone-400 text-stone-900 transition-all"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -771,24 +849,24 @@ export default function CustomerMenu({
               <button
                 type="button"
                 onClick={() => setVegOnlyFilter((v) => !v)}
-                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-2xs ${
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-2xs ${
                   vegOnlyFilter
-                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-600/20'
-                    : 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200/80'
+                    ? 'bg-emerald-700 text-white border-emerald-700 shadow-md shadow-emerald-700/20 ring-1 ring-emerald-500/30'
+                    : 'bg-white hover:bg-stone-100 text-stone-700 border-stone-200/90'
                 }`}
               >
                 <Leaf className={`w-3.5 h-3.5 ${vegOnlyFilter ? 'fill-current' : 'text-emerald-600'}`} />
-                <span>Veg Only</span>
+                <span>Vegetarian</span>
               </button>
 
               {/* Spicy Toggle */}
               <button
                 type="button"
                 onClick={() => setSpicyFilter((s) => !s)}
-                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-2xs ${
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-2xs ${
                   spicyFilter
-                    ? 'bg-rose-600 text-white border-rose-600 shadow-rose-600/20'
-                    : 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200/80'
+                    ? 'bg-rose-700 text-white border-rose-700 shadow-md shadow-rose-700/20 ring-1 ring-rose-500/30'
+                    : 'bg-white hover:bg-stone-100 text-stone-700 border-stone-200/90'
                 }`}
               >
                 <Flame className={`w-3.5 h-3.5 ${spicyFilter ? 'fill-current' : 'text-rose-600'}`} />
@@ -811,9 +889,9 @@ export default function CustomerMenu({
 
         {/* Results Info Bar */}
         <div className="flex items-center justify-between mb-4 px-1">
-          <h2 className="text-base sm:text-lg font-bold text-neutral-900 flex items-center gap-2">
+          <h2 className="text-base sm:text-lg font-black text-stone-900 tracking-tight flex items-center gap-2.5">
             <span>{selectedCategory} Dishes</span>
-            <span className="text-xs font-semibold text-neutral-400 bg-neutral-200/70 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-bold font-mono text-stone-700 bg-stone-200/80 px-2.5 py-0.5 rounded-full">
               {filteredItems.length}
             </span>
           </h2>
@@ -825,7 +903,7 @@ export default function CustomerMenu({
                 setVegOnlyFilter(false);
                 setSpicyFilter(false);
               }}
-              className="text-xs text-amber-600 hover:text-amber-700 font-semibold cursor-pointer underline"
+              className="text-xs text-amber-700 hover:text-amber-800 font-bold cursor-pointer underline decoration-amber-400 underline-offset-2"
             >
               Reset Filters
             </button>
@@ -834,7 +912,7 @@ export default function CustomerMenu({
 
         {/* Dishes Grid */}
         {filteredItems.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredItems.map((dish) => {
               const inCart = cart[dish.id];
               return (
@@ -854,15 +932,15 @@ export default function CustomerMenu({
           </div>
         ) : (
           /* Empty State */
-          <div className="bg-white rounded-3xl border border-neutral-200/80 p-8 sm:p-12 text-center max-w-md mx-auto my-8 shadow-xs">
-            <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 mx-auto flex items-center justify-center mb-3">
-              <UtensilsCrossed className="w-7 h-7" />
+          <div className="bg-white rounded-3xl border border-stone-200/90 p-8 sm:p-12 text-center max-w-md mx-auto my-10 shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 mx-auto flex items-center justify-center mb-3.5 shadow-2xs">
+              <UtensilsCrossed className="w-8 h-8 stroke-[1.8]" />
             </div>
-            <h3 className="font-bold text-neutral-900 text-base mb-1">
+            <h3 className="font-black text-stone-900 text-lg mb-1 tracking-tight">
               No matching dishes found
             </h3>
-            <p className="text-xs sm:text-sm text-neutral-500 mb-4">
-              Try adjusting your search or clearing dietary filters to view all menu choices.
+            <p className="text-xs sm:text-sm text-stone-500 mb-5 leading-relaxed">
+              Try adjusting your search query or reset dietary filters to view all chef-crafted menu choices.
             </p>
             <button
               type="button"
@@ -872,7 +950,7 @@ export default function CustomerMenu({
                 setSpicyFilter(false);
                 setSelectedCategory('All');
               }}
-              className="px-4 py-2 bg-neutral-900 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-neutral-800 transition"
+              className="px-5 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer"
             >
               View Full Menu
             </button>
@@ -884,25 +962,25 @@ export default function CustomerMenu({
       {cartSummary.totalCount > 0 && (
         <aside
           aria-label="Order Cart Summary"
-          className="fixed bottom-0 left-0 right-0 z-40 p-3 sm:p-4 bg-gradient-to-t from-white via-white/95 to-transparent backdrop-blur-xs pointer-events-none"
+          className="fixed bottom-0 left-0 right-0 z-40 p-3 sm:p-4 bg-gradient-to-t from-stone-100 via-stone-100/95 to-transparent backdrop-blur-xs pointer-events-none"
         >
           <div className="max-w-xl mx-auto pointer-events-auto">
-            <div className="bg-neutral-900 text-white rounded-2xl p-3 sm:p-3.5 shadow-2xl shadow-neutral-950/30 flex items-center justify-between gap-3 border border-neutral-800/80 animate-slideUp">
+            <div className="bg-neutral-950/95 backdrop-blur-md text-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 shadow-2xl shadow-neutral-950/40 flex items-center justify-between gap-3.5 border border-stone-800 ring-1 ring-white/10 animate-slideUp">
               
               {/* Left: Cart Info */}
-              <div className="flex items-center gap-3">
-                <div className="relative w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-white shrink-0 shadow-sm shadow-amber-500/30">
-                  <ShoppingBag className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-600 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center ring-2 ring-neutral-900">
+              <div className="flex items-center gap-3.5">
+                <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 flex items-center justify-center text-neutral-950 shrink-0 shadow-md shadow-amber-500/30">
+                  <ShoppingBag className="w-5 h-5 stroke-[2.2]" />
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-600 text-white text-[10px] font-black rounded-full flex items-center justify-center ring-2 ring-neutral-950 shadow-sm">
                     {cartSummary.totalCount}
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs text-neutral-400 font-medium leading-tight">
-                    {cartSummary.totalCount} {cartSummary.totalCount === 1 ? 'item' : 'items'}
+                  <span className="text-xs text-stone-400 font-medium leading-tight">
+                    {cartSummary.totalCount} {cartSummary.totalCount === 1 ? 'dish' : 'dishes'}
                     {tableNumber ? ` • Table ${tableNumber}` : ''}
                   </span>
-                  <span className="text-base sm:text-lg font-extrabold text-white leading-tight tracking-tight">
+                  <span className="text-base sm:text-lg font-black text-white leading-tight tracking-tight mt-0.5">
                     ${cartSummary.total.toFixed(2)}
                   </span>
                 </div>
@@ -912,7 +990,7 @@ export default function CustomerMenu({
               <button
                 type="button"
                 onClick={() => setIsCartOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-neutral-950 font-bold text-xs sm:text-sm transition-all shadow-md shadow-amber-500/20 cursor-pointer"
+                className="inline-flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-neutral-950 font-black text-xs sm:text-sm transition-all shadow-md shadow-amber-500/25 cursor-pointer"
               >
                 <span>View Order</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -943,7 +1021,7 @@ export default function CustomerMenu({
         }}
       />
 
-      {/* Interactive Food Details & Multimedia Modal (Photos Carousel, Kitchen Video Reel, Ingredients & Voice/Text Note) */}
+      {/* Interactive Food Details & Multimedia Modal */}
       <FoodDetailModal
         isOpen={!!selectedDishModal}
         dish={selectedDishModal}
@@ -968,26 +1046,26 @@ export default function CustomerMenu({
         onUpdateQuantity={(itemId, qty) => handleUpdateQuantity(itemId, qty)}
       />
 
-      {/* Table Selection Modal (Shown on first visit or when user taps Table badge) */}
+      {/* Table Selection Modal */}
       {isTableModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-neutral-100 p-5 sm:p-6 transform transition-all animate-scaleUp">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-xs animate-fadeIn">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-stone-200/90 p-6 sm:p-7 transform transition-all animate-scaleUp">
             
             <div className="text-center mb-5">
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 mx-auto flex items-center justify-center mb-2 shadow-xs">
-                <UtensilsCrossed className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-700 mx-auto flex items-center justify-center mb-2.5 shadow-2xs">
+                <UtensilsCrossed className="w-6 h-6 stroke-[1.8]" />
               </div>
-              <h3 className="font-extrabold text-neutral-900 text-lg sm:text-xl">
-                Welcome to SmartDine!
+              <h3 className="font-black text-stone-900 text-lg sm:text-xl tracking-tight">
+                Dine-in Table Selection
               </h3>
-              <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-                Please select your table number to start browsing and ordering.
+              <p className="text-xs sm:text-sm text-stone-500 mt-1">
+                Select your dining table number to synchronize orders with our kitchen.
               </p>
             </div>
 
             {/* Quick Grid 1 - 20 */}
             <div className="mb-4">
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-2">
+              <label className="block text-[11px] font-bold text-stone-600 uppercase tracking-wider mb-2">
                 Select Table (1 - 20):
               </label>
               <div className="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1">
@@ -1000,8 +1078,8 @@ export default function CustomerMenu({
                       onClick={() => handleSelectTable(num)}
                       className={`h-11 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer ${
                         isCurrent
-                          ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/25 scale-102'
-                          : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-800 border-neutral-200/80'
+                          ? 'bg-neutral-950 text-white border-neutral-950 shadow-md shadow-neutral-950/20 ring-2 ring-amber-500/40 scale-102'
+                          : 'bg-stone-50 hover:bg-stone-100 text-stone-800 border-stone-200/80'
                       }`}
                     >
                       {num}
@@ -1012,17 +1090,17 @@ export default function CustomerMenu({
             </div>
 
             {/* Custom Table Number Input */}
-            <div className="pt-3 border-t border-neutral-100 mb-4">
-              <label className="block text-xs font-semibold text-neutral-600 mb-1.5">
-                Or enter custom table (Bar, Patio, VIP):
+            <div className="pt-3.5 border-t border-stone-100 mb-4">
+              <label className="block text-xs font-semibold text-stone-600 mb-1.5">
+                Or enter custom dining area (Bar, Patio, VIP):
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={customTableInput}
                   onChange={(e) => setCustomTableInput(e.target.value)}
-                  placeholder="e.g. Bar 2, VIP 1, Patio"
-                  className="flex-1 px-3 py-2 text-xs sm:text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="e.g. Bar 02, VIP Lounge, Terrace 1"
+                  className="flex-1 px-3.5 py-2 text-xs sm:text-sm bg-stone-50 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition"
                 />
                 <button
                   type="button"
@@ -1031,9 +1109,9 @@ export default function CustomerMenu({
                       handleSelectTable(customTableInput.trim());
                     }
                   }}
-                  className="px-4 py-2 bg-neutral-900 text-white text-xs sm:text-sm font-bold rounded-xl hover:bg-neutral-800 cursor-pointer"
+                  className="px-4 py-2 bg-neutral-950 text-white text-xs sm:text-sm font-bold rounded-xl hover:bg-neutral-900 cursor-pointer shadow-xs"
                 >
-                  Set
+                  Set Table
                 </button>
               </div>
             </div>
@@ -1042,7 +1120,7 @@ export default function CustomerMenu({
               <button
                 type="button"
                 onClick={() => setIsTableModalOpen(false)}
-                className="w-full py-2.5 rounded-xl border border-neutral-200 text-neutral-600 hover:bg-neutral-50 text-xs sm:text-sm font-semibold transition"
+                className="w-full py-2.5 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs sm:text-sm font-semibold transition cursor-pointer"
               >
                 Keep Table {tableNumber}
               </button>
@@ -1054,39 +1132,39 @@ export default function CustomerMenu({
 
       {/* Order Success Modal */}
       {orderSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-neutral-100 p-6 text-center transform transition-all animate-scaleUp">
-            <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center mb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-xs animate-fadeIn">
+          <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-stone-200/90 p-6 sm:p-7 text-center transform transition-all animate-scaleUp">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 mx-auto flex items-center justify-center mb-3 shadow-2xs">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h3 className="font-extrabold text-neutral-900 text-lg">
-              Order Submitted!
+            <h3 className="font-black text-stone-900 text-lg tracking-tight">
+              Order Dispatched to Kitchen!
             </h3>
-            <p className="text-xs text-neutral-500 mt-1 mb-4">
+            <p className="text-xs text-stone-500 mt-1 mb-4 font-medium">
               Order #{orderSuccessModal.orderId} &bull; Table {orderSuccessModal.tableNumber}
             </p>
 
-            <div className="bg-neutral-50 rounded-2xl p-3 text-left mb-4 space-y-1 text-xs">
-              <div className="flex justify-between font-semibold text-neutral-700">
-                <span>Items Ordered:</span>
+            <div className="bg-stone-50 rounded-2xl p-3.5 text-left mb-4 space-y-1.5 text-xs border border-stone-100">
+              <div className="flex justify-between font-semibold text-stone-600">
+                <span>Items Placed:</span>
                 <span>{orderSuccessModal.items.length} items</span>
               </div>
-              <div className="flex justify-between font-extrabold text-neutral-900 pt-1 border-t border-neutral-200/50">
-                <span>Total:</span>
-                <span className="text-amber-600">${orderSuccessModal.total.toFixed(2)}</span>
+              <div className="flex justify-between font-extrabold text-stone-900 pt-1.5 border-t border-stone-200/60">
+                <span>Total Amount:</span>
+                <span className="text-amber-700 font-black">${orderSuccessModal.total.toFixed(2)}</span>
               </div>
             </div>
 
             {!isOnline && (
-              <div className="bg-amber-50 text-amber-800 text-[11px] p-2.5 rounded-xl mb-4 text-left border border-amber-200">
-                <span className="font-bold">Local Sync:</span> Your order is saved locally and sent over local Wi-Fi to the kitchen terminal.
+              <div className="bg-amber-50 text-amber-900 text-[11px] p-3 rounded-xl mb-4 text-left border border-amber-200/90 leading-relaxed">
+                <span className="font-bold">Offline Resilience:</span> Your order is secured locally and relayed over local Wi-Fi to the kitchen display.
               </div>
             )}
 
             <button
               type="button"
               onClick={() => setOrderSuccessModal(null)}
-              className="w-full py-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs sm:text-sm transition cursor-pointer"
+              className="w-full py-3 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs sm:text-sm transition cursor-pointer shadow-sm"
             >
               Back to Menu
             </button>
@@ -1096,7 +1174,7 @@ export default function CustomerMenu({
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-18 left-1/2 -translate-x-1/2 z-50 bg-neutral-900 text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs sm:text-sm font-semibold flex items-center gap-2 border border-neutral-800 animate-fadeIn">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-neutral-950/95 backdrop-blur-md text-white px-4.5 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-bold flex items-center gap-2.5 border border-stone-800 ring-1 ring-amber-500/20 animate-fadeIn">
           <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
