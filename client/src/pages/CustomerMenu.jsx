@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import CategoryBar from '../components/CategoryBar';
 import MenuItemCard from '../components/MenuItemCard';
 import CartDrawer from '../components/CartDrawer';
+import FoodDetailModal from '../components/FoodDetailModal';
 import { 
   Search, 
   X, 
@@ -17,7 +18,12 @@ import {
   CheckCircle2, 
   UtensilsCrossed, 
   Sparkles,
-  Info
+  Info,
+  QrCode,
+  Lock,
+  ChefHat,
+  Clock,
+  BellRing
 } from 'lucide-react';
 
 // Default initial menu items for full offline or standalone browsing
@@ -221,23 +227,37 @@ export default function CustomerMenu({
   onPlaceOrder,
   tableFromProp
 }) {
-  // 1. Table Detection & Persistence
+  // 1. Fixed Table Detection & Locking (No automatic table selection modal)
   const [tableNumber, setTableNumber] = useState('');
+  const [isTableLocked, setIsTableLocked] = useState(false);
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [customTableInput, setCustomTableInput] = useState('');
 
-  // 2. Network state
+  // 2. Interactive Food Details & Multimedia Modal
+  const [selectedDishModal, setSelectedDishModal] = useState(null);
+
+  // 3. Live Customer Order Status Tracking
+  const [activeOrder, setActiveOrder] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smartdine_active_order');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // 4. Network state
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
 
-  // 3. Search and Filters
+  // 5. Search and Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [vegOnlyFilter, setVegOnlyFilter] = useState(false);
   const [spicyFilter, setSpicyFilter] = useState(false);
 
-  // 4. Cart State { [itemId]: { item, quantity, note } }
+  // 6. Cart State { [itemId]: { item, quantity, note, voiceNoteUrl } }
   const [cart, setCart] = useState(() => {
     try {
       const saved = localStorage.getItem('smartdine_cart_items');
@@ -247,7 +267,7 @@ export default function CustomerMenu({
     }
   });
 
-  // 5. Drawer & Modal States
+  // 7. Drawer & Modal States
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [orderSuccessModal, setOrderSuccessModal] = useState(null);
   const [toastMessage, setToMessage] = useState(null);
@@ -275,11 +295,13 @@ export default function CustomerMenu({
     }
   }, [cart]);
 
-  // Detect table from URL or localStorage
+  // Fixed Table QR Code Detection: automatically lock table ID from URL query param
   useEffect(() => {
     if (tableFromProp) {
-      setTableNumber(String(tableFromProp));
-      localStorage.setItem('smartdine_table', String(tableFromProp));
+      const tbl = String(tableFromProp);
+      setTableNumber(tbl);
+      setIsTableLocked(true);
+      localStorage.setItem('smartdine_table', tbl);
       return;
     }
 
@@ -289,27 +311,31 @@ export default function CustomerMenu({
 
       if (urlTable) {
         setTableNumber(urlTable);
+        setIsTableLocked(true);
         localStorage.setItem('smartdine_table', urlTable);
       } else {
         const storedTable = localStorage.getItem('smartdine_table');
         if (storedTable) {
           setTableNumber(storedTable);
+          setIsTableLocked(true);
         } else {
-          // No table found, prompt user with friendly modal
-          setIsTableModalOpen(true);
+          // Fixed QR workflow: No table prompt popup for customers!
+          // We show an unobtrusive notice at the top with a demo override.
+          setIsTableLocked(false);
         }
       }
     }
   }, [tableFromProp]);
 
-  // Set selected table
+  // Set selected table manually (for testing/demo)
   const handleSelectTable = (num) => {
     const chosen = String(num).trim();
     if (!chosen) return;
     setTableNumber(chosen);
+    setIsTableLocked(true);
     localStorage.setItem('smartdine_table', chosen);
     setIsTableModalOpen(false);
-    showToast(`Table set to Table ${chosen}! 🍽️`);
+    showToast(`Table locked to Table ${chosen}! 🍽️`);
   };
 
   // Toast notification helper
@@ -388,6 +414,35 @@ export default function CustomerMenu({
 
   // Query real-time Convex menu
   const convexMenu = useQuery(api.menu.getMenu);
+
+  // Convex live order subscription for this table
+  const tableNumParsed = Number(tableNumber) || (tableNumber ? parseInt(String(tableNumber).replace(/\D/g, ''), 10) : undefined);
+  const liveTableOrders = useQuery(
+    api.orders.getOrders,
+    tableNumParsed ? { tableNumber: tableNumParsed } : 'skip'
+  );
+
+  // Synchronize activeOrder status when KDS updates it in Convex
+  useEffect(() => {
+    if (liveTableOrders && liveTableOrders.length > 0) {
+      const latestOrder = liveTableOrders[0];
+      if (latestOrder) {
+        setActiveOrder((prev) => {
+          const updated = {
+            ...(prev || {}),
+            orderId: latestOrder.orderNumber || latestOrder._id,
+            status: latestOrder.status, // 'pending' | 'preparing' | 'ready' | 'served'
+            totalAmount: latestOrder.totalAmount,
+            items: latestOrder.items || prev?.items || []
+          };
+          try {
+            localStorage.setItem('smartdine_active_order', JSON.stringify(updated));
+          } catch (e) {}
+          return updated;
+        });
+      }
+    }
+  }, [liveTableOrders]);
 
   const convexFormattedItems = useMemo(() => {
     if (!convexMenu || !Array.isArray(convexMenu) || convexMenu.length === 0) return null;
@@ -514,6 +569,11 @@ export default function CustomerMenu({
       onPlaceOrder(orderPayload);
     }
 
+    setActiveOrder(orderPayload);
+    try {
+      localStorage.setItem('smartdine_active_order', JSON.stringify(orderPayload));
+    } catch (e) {}
+
     setOrderSuccessModal(orderPayload);
     setCart({});
     setIsCartOpen(false);
@@ -551,7 +611,100 @@ export default function CustomerMenu({
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4">
-        
+
+        {/* 1. Fixed Table QR Banner (Shown if Diner accesses app without scanning table QR) */}
+        {!tableNumber && (
+          <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-500/30 rounded-2xl p-4 mb-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs animate-fadeIn">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <QrCode className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5">
+                  <span>Table QR Code Required to Order</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold uppercase">Scan Table</span>
+                </h3>
+                <p className="text-xs text-neutral-600 mt-0.5">
+                  Each dining table has a unique QR code. Scan the QR code on your table to lock in your table number automatically.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleSelectTable('1')}
+              className="shrink-0 px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Demo: Use Table 01</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* 2. Live Customer Order Status Tracker (Order Received -> Cooking -> Ready to Serve -> Served) */}
+        {activeOrder && activeOrder.status !== 'served' && (
+          <div className="mb-5 bg-white border border-neutral-200/90 rounded-2xl p-4 shadow-sm animate-fadeIn">
+            <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-neutral-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs">
+                  {tableNumber ? `T${tableNumber}` : 'ORD'}
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-neutral-900 flex items-center gap-1.5">
+                    <span>Live Order Tracker</span>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                  </h4>
+                  <span className="text-[11px] text-neutral-500">
+                    Order #{activeOrder.orderId || activeOrder.orderNumber || 'Active'} &bull; Table {tableNumber || activeOrder.tableNumber}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-xs font-extrabold text-emerald-600 uppercase tracking-wider">
+                  {activeOrder.status === 'preparing' ? '🔥 Cooking in Kitchen' : activeOrder.status === 'ready' ? '🛎️ Ready to Serve' : '⏳ Order Received'}
+                </span>
+              </div>
+            </div>
+
+            {/* Stepper Progress Bar */}
+            <div className="grid grid-cols-4 gap-2 pt-1 text-center">
+              {[
+                { id: 'pending', label: 'Received', icon: CheckCircle2 },
+                { id: 'preparing', label: 'Cooking', icon: ChefHat },
+                { id: 'ready', label: 'Ready', icon: BellRing },
+                { id: 'served', label: 'Served', icon: UtensilsCrossed }
+              ].map((step, idx) => {
+                const stepOrder = ['pending', 'preparing', 'ready', 'served'];
+                const currentIndex = stepOrder.indexOf(activeOrder.status || 'pending');
+                const isCompleted = currentIndex >= idx;
+                const isCurrent = currentIndex === idx;
+                const StepIcon = step.icon;
+
+                return (
+                  <div key={step.id} className="flex flex-col items-center">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all ${
+                        isCurrent
+                          ? 'bg-amber-500 text-white ring-4 ring-amber-500/20 font-bold scale-110 shadow-sm'
+                          : isCompleted
+                          ? 'bg-emerald-500 text-white font-medium'
+                          : 'bg-neutral-100 text-neutral-400'
+                      }`}
+                    >
+                      <StepIcon className="w-4 h-4" />
+                    </div>
+                    <span className={`text-[10px] mt-1 font-semibold ${isCurrent ? 'text-amber-600' : isCompleted ? 'text-neutral-800' : 'text-neutral-400'}`}>
+                      {step.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Search Bar & Dietary Filter Toggles */}
         <section className="mb-4 space-y-3">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
@@ -659,6 +812,7 @@ export default function CustomerMenu({
                   onUpdateQuantity={handleUpdateQuantity}
                   onRemoveFromCart={handleRemoveFromCart}
                   onUpdateNote={handleUpdateNote}
+                  onSelectDish={(selected) => setSelectedDishModal(selected)}
                 />
               );
             })}
@@ -745,9 +899,38 @@ export default function CustomerMenu({
         onUpdateNote={(itemId, noteText) => handleUpdateNote(itemId, noteText)}
         onOrderSuccess={(order) => {
           setOrderSuccessModal(order);
+          setActiveOrder(order);
+          try {
+            localStorage.setItem('smartdine_active_order', JSON.stringify(order));
+          } catch (e) {}
           setCart({});
           setIsCartOpen(false);
         }}
+      />
+
+      {/* Interactive Food Details & Multimedia Modal (Photos Carousel, Kitchen Video Reel, Ingredients & Voice/Text Note) */}
+      <FoodDetailModal
+        isOpen={!!selectedDishModal}
+        dish={selectedDishModal}
+        onClose={() => setSelectedDishModal(null)}
+        cartQuantity={selectedDishModal && cart[selectedDishModal.id] ? cart[selectedDishModal.id].quantity : 0}
+        onAddToCart={(item, qty, note, voiceUrl) => {
+          setCart((prev) => {
+            const existing = prev[item.id];
+            const newQty = (existing?.quantity || 0) + (qty || 1);
+            return {
+              ...prev,
+              [item.id]: {
+                item,
+                quantity: newQty,
+                note: note || existing?.note || '',
+                voiceNoteUrl: voiceUrl || existing?.voiceNoteUrl || null
+              }
+            };
+          });
+          showToast(`Added ${item.name || item.title} to order! 🌟`);
+        }}
+        onUpdateQuantity={(itemId, qty) => handleUpdateQuantity(itemId, qty)}
       />
 
       {/* Table Selection Modal (Shown on first visit or when user taps Table badge) */}

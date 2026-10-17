@@ -30,7 +30,8 @@ export default function MenuItemCard({
   onRemoveFromCart,
   itemNote = '',
   onUpdateNote,
-  currency = '$'
+  currency = '$',
+  onSelectDish
 }) {
   const [imageError, setImageError] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
@@ -116,7 +117,8 @@ export default function MenuItemCard({
   return (
     <>
       <div
-        className={`group flex flex-col justify-between bg-white rounded-2xl border border-neutral-200/70 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 ${
+        onClick={() => onSelectDish && onSelectDish(item)}
+        className={`group flex flex-col justify-between bg-white rounded-2xl border border-neutral-200/70 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer ${
           !isAvailable ? 'opacity-70 bg-neutral-50/70' : 'hover:-translate-y-0.5'
         }`}
       >
