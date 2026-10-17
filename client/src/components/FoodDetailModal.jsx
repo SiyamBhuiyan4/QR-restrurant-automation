@@ -264,11 +264,7 @@ export default function FoodDetailModal({
   onUpdateQuantity,
   currency = '$'
 }) {
-  const [activeMediaTab, setActiveMediaTab] = useState('photos'); // 'photos' | 'video'
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
-  const [isVideoMuted, setIsVideoMuted] = useState(true);
-  const [showPlayOverlay, setShowPlayOverlay] = useState(false);
   const [quantity, setQuantity] = useState(cartQuantity > 0 ? cartQuantity : 1);
   const [customNote, setCustomNote] = useState('');
   const [voiceNoteUrl, setVoiceNoteUrl] = useState(null);
@@ -291,12 +287,6 @@ export default function FoodDetailModal({
   const touchStartY = useRef(null);
   const touchEndX = useRef(null);
   const touchEndY = useRef(null);
-
-  // Top Video Reel Player state
-  const videoRef = useRef(null);
-  const [videoCurrentTime, setVideoCurrentTime] = useState(0);
-  const [videoDuration, setVideoDuration] = useState(0);
-  const [videoProgress, setVideoProgress] = useState(0);
 
   // Body Embedded Kitchen Reel Player state
   const bodyVideoRef = useRef(null);
@@ -473,20 +463,10 @@ export default function FoodDetailModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, photos.length, onClose]);
 
-  // Pause top video when tab switched to photos
-  useEffect(() => {
-    if (activeMediaTab === 'photos') {
-      if (videoRef.current) videoRef.current.pause();
-      setIsVideoPlaying(false);
-    }
-  }, [activeMediaTab]);
-
-  // Pause both videos when modal closes or unmounts
+  // Pause video when modal closes or unmounts
   useEffect(() => {
     if (!isOpen) {
-      if (videoRef.current) videoRef.current.pause();
       if (bodyVideoRef.current) bodyVideoRef.current.pause();
-      setIsVideoPlaying(false);
       setIsBodyVideoPlaying(false);
     }
   }, [isOpen]);
@@ -534,52 +514,12 @@ export default function FoodDetailModal({
     setSelectedImageIndex((prev) => (prev - 1 + photos.length) % photos.length);
   };
 
-  // Top Video Reel Controls
-  const toggleVideoPlay = () => {
-    if (!videoRef.current) return;
-    if (isVideoPlaying) {
-      videoRef.current.pause();
-      setIsVideoPlaying(false);
-    } else {
-      videoRef.current.play().catch(() => {});
-      setIsVideoPlaying(true);
-    }
-    setShowPlayOverlay(true);
-    setTimeout(() => setShowPlayOverlay(false), 700);
-  };
-
-  const toggleVideoMute = (e) => {
-    e.stopPropagation();
-    if (!videoRef.current) return;
-    videoRef.current.muted = !isVideoMuted;
-    setIsVideoMuted(!isVideoMuted);
-  };
-
-  const handleVideoTimeUpdate = () => {
-    if (!videoRef.current) return;
-    const cur = videoRef.current.currentTime || 0;
-    const dur = videoRef.current.duration || 0;
-    setVideoCurrentTime(cur);
-    setVideoDuration(dur);
-    if (dur > 0) {
-      setVideoProgress((cur / dur) * 100);
-    }
-  };
-
-  const handleVideoSeek = (e) => {
-    const val = parseFloat(e.target.value);
-    setVideoProgress(val);
-    if (videoRef.current && videoRef.current.duration) {
-      videoRef.current.currentTime = (val / 100) * videoRef.current.duration;
-    }
-  };
-
-  const toggleFullscreen = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.requestFullscreen) {
-      videoRef.current.requestFullscreen();
-    } else if (videoRef.current.webkitRequestFullscreen) {
-      videoRef.current.webkitRequestFullscreen();
+  const toggleBodyFullscreen = () => {
+    if (!bodyVideoRef.current) return;
+    if (bodyVideoRef.current.requestFullscreen) {
+      bodyVideoRef.current.requestFullscreen();
+    } else if (bodyVideoRef.current.webkitRequestFullscreen) {
+      bodyVideoRef.current.webkitRequestFullscreen();
     }
   };
 
@@ -813,87 +753,98 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               2. SEPARATED MULTIMEDIA SECTION: PHOTOS VS KITCHEN REEL
              ---------------------------------------------------------------- */}
+          {/* ----------------------------------------------------------------
+              2. MULTI-PHOTO SLIDER WITH TOUCH SWIPE & THUMBNAILS (ON TOP)
+             ---------------------------------------------------------------- */}
           <div className="relative bg-black select-none">
-            
-            {/* Mode Switcher Tabs */}
-            <div className="flex items-center justify-between px-3 sm:px-4 py-2 bg-stone-950 border-b border-white/10">
-              <div className="flex p-0.5 bg-stone-900/90 rounded-xl border border-white/10 text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveMediaTab('photos');
-                    if (videoRef.current) videoRef.current.pause();
-                    setIsVideoPlaying(false);
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    activeMediaTab === 'photos'
-                      ? 'bg-amber-500 text-stone-950 font-black shadow-md shadow-amber-500/30 scale-[1.02]'
-                      : 'text-stone-300 hover:text-white'
-                  }`}
-                >
-                  <ImageIcon className="w-3.5 h-3.5" />
-                  <span>📸 Photo Gallery ({photos.length})</span>
-                </button>
+            <div 
+              className="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-stone-950 flex items-center justify-center touch-pan-y"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              {/* Story-Style Progress Bars at the top */}
+              {photos.length > 1 && (
+                <div className="absolute top-2.5 left-3 right-3 sm:left-4 sm:right-4 z-20 flex items-center gap-1.5">
+                  {photos.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImageIndex(idx);
+                      }}
+                      className="flex-1 h-1 sm:h-1.5 rounded-full overflow-hidden bg-white/25 hover:bg-white/40 backdrop-blur-sm transition-colors cursor-pointer py-1 -my-1"
+                      aria-label={`Jump to photo ${idx + 1}`}
+                    >
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          selectedImageIndex === idx
+                            ? 'bg-amber-400 shadow-xs shadow-amber-400 w-full'
+                            : selectedImageIndex > idx
+                              ? 'bg-amber-400/80 w-full'
+                              : 'w-0'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveMediaTab('video');
-                    setTimeout(() => {
-                      if (videoRef.current) {
-                        videoRef.current.play().catch(() => {});
-                        setIsVideoPlaying(true);
-                      }
-                    }, 60);
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    activeMediaTab === 'video'
-                      ? 'bg-amber-500 text-stone-950 font-black shadow-md shadow-amber-500/30 scale-[1.02]'
-                      : 'text-stone-300 hover:text-white'
-                  }`}
-                >
-                  <Video className="w-3.5 h-3.5" />
-                  <span>🎥 Kitchen Reel</span>
-                </button>
+              {/* Floating Photo Counter Badge */}
+              <div className="absolute top-5 sm:top-6 right-3 sm:right-4 z-20 pointer-events-none">
+                <span className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-amber-300 bg-stone-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-amber-400/30 shadow-lg">
+                  <ImageIcon className="w-3 h-3 text-amber-400" />
+                  <span>Slide {selectedImageIndex + 1} of {photos.length}</span>
+                </span>
               </div>
 
-              {/* Status Indicator / Quick Action */}
-              {activeMediaTab === 'photos' ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveMediaTab('video');
-                    setTimeout(() => {
-                      if (videoRef.current) {
-                        videoRef.current.play().catch(() => {});
-                        setIsVideoPlaying(true);
-                      }
-                    }, 60);
-                  }}
-                  className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded-lg border border-amber-500/25 transition cursor-pointer"
-                >
-                  <Play className="w-3 h-3 fill-current" />
-                  <span>Watch Reel</span>
-                </button>
-              ) : (
-                <span className="text-[11px] font-bold text-purple-300 bg-purple-500/15 px-2.5 py-1 rounded-lg border border-purple-500/25">
-                  👨‍🍳 Behind The Kitchen
-                </span>
-              )}
-            </div>
+              {/* Main Slide Photo with Smooth Crossfade */}
+              <img
+                key={selectedImageIndex}
+                src={photos[selectedImageIndex]}
+                alt={`${dish.name || 'Dish'} view ${selectedImageIndex + 1}`}
+                className="w-full h-full object-cover transition-opacity duration-300 ease-out animate-fadeIn"
+              />
 
-            {/* TAB A: MULTI-PHOTO SLIDER WITH TOUCH SWIPE & THUMBNAILS */}
-            {activeMediaTab === 'photos' ? (
-              <div 
-                className="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-stone-950 flex items-center justify-center touch-pan-y"
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                {/* Story-Style Progress Bars at the top */}
-                {photos.length > 1 && (
-                  <div className="absolute top-2.5 left-3 right-3 sm:left-4 sm:right-4 z-20 flex items-center gap-1.5">
-                    {photos.map((_, idx) => (
+              {/* Gradient Vignette */}
+              <div className="absolute inset-0 bg-gradient-to-t from-stone-900/90 via-transparent to-black/30 pointer-events-none" />
+
+              {/* Large Floating Chevron Navigation Buttons */}
+              {photos.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePrevPhoto}
+                    className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-stone-950/75 hover:bg-black text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
+                    aria-label="Previous photo"
+                    title="Previous photo (Left arrow)"
+                  >
+                    <ChevronLeft className="w-6 h-6 -translate-x-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleNextPhoto}
+                    className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-stone-950/75 hover:bg-black text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
+                    aria-label="Next photo"
+                    title="Next photo (Right arrow)"
+                  >
+                    <ChevronRight className="w-6 h-6 translate-x-0.5" />
+                  </button>
+                </>
+              )}
+
+              {/* Swipe Guidance Pill (Mobile hint) */}
+              <div className="absolute top-11 sm:top-12 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-[10px] text-stone-300 border border-white/10 pointer-events-none sm:hidden">
+                👈 Swipe left/right to browse {photos.length} photos 👉
+              </div>
+
+              {/* Bottom Thumbnail Dock */}
+              {photos.length > 1 && (
+                <div className="absolute bottom-2.5 sm:bottom-3 left-0 right-0 flex justify-center items-center z-20 px-3 pointer-events-none">
+                  <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-stone-950/85 backdrop-blur-md border border-white/15 shadow-2xl pointer-events-auto max-w-full overflow-x-auto scrollbar-none">
+                    {photos.map((img, idx) => (
                       <button
                         key={idx}
                         type="button"
@@ -901,197 +852,23 @@ export default function FoodDetailModal({
                           e.stopPropagation();
                           setSelectedImageIndex(idx);
                         }}
-                        className="flex-1 h-1 sm:h-1.5 rounded-full overflow-hidden bg-white/25 hover:bg-white/40 backdrop-blur-sm transition-colors cursor-pointer py-1 -my-1"
+                        className={`relative w-12 h-9 sm:w-16 sm:h-11 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer shrink-0 ${
+                          selectedImageIndex === idx
+                            ? 'border-amber-400 scale-105 shadow-md shadow-amber-500/40 opacity-100 ring-2 ring-amber-400/50'
+                            : 'border-white/20 opacity-60 hover:opacity-100 hover:scale-102'
+                        }`}
                         aria-label={`Jump to photo ${idx + 1}`}
                       >
-                        <div
-                          className={`h-full rounded-full transition-all duration-300 ${
-                            selectedImageIndex === idx
-                              ? 'bg-amber-400 shadow-xs shadow-amber-400 w-full'
-                              : selectedImageIndex > idx
-                                ? 'bg-amber-400/80 w-full'
-                                : 'w-0'
-                          }`}
-                        />
+                        <img src={img} alt={`Angle ${idx + 1}`} className="w-full h-full object-cover" />
+                        <span className="absolute bottom-0.5 right-1 text-[9px] font-mono font-bold text-white drop-shadow-md">
+                          {idx + 1}
+                        </span>
                       </button>
                     ))}
                   </div>
-                )}
-
-                {/* Floating Photo Counter Badge */}
-                <div className="absolute top-5 sm:top-6 right-3 sm:right-4 z-20 pointer-events-none">
-                  <span className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-amber-300 bg-stone-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-amber-400/30 shadow-lg">
-                    <ImageIcon className="w-3 h-3 text-amber-400" />
-                    <span>Slide {selectedImageIndex + 1} of {photos.length}</span>
-                  </span>
                 </div>
-
-                {/* Main Slide Photo with Smooth Crossfade */}
-                <img
-                  key={selectedImageIndex}
-                  src={photos[selectedImageIndex]}
-                  alt={`${dish.name || 'Dish'} view ${selectedImageIndex + 1}`}
-                  className="w-full h-full object-cover transition-opacity duration-300 ease-out animate-fadeIn"
-                />
-
-                {/* Gradient Vignette */}
-                <div className="absolute inset-0 bg-gradient-to-t from-stone-900/90 via-transparent to-black/30 pointer-events-none" />
-
-                {/* Large Floating Chevron Navigation Buttons */}
-                {photos.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handlePrevPhoto}
-                      className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-stone-950/75 hover:bg-black text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
-                      aria-label="Previous photo"
-                      title="Previous photo (Left arrow)"
-                    >
-                      <ChevronLeft className="w-6 h-6 -translate-x-0.5" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleNextPhoto}
-                      className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-stone-950/75 hover:bg-black text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
-                      aria-label="Next photo"
-                      title="Next photo (Right arrow)"
-                    >
-                      <ChevronRight className="w-6 h-6 translate-x-0.5" />
-                    </button>
-                  </>
-                )}
-
-                {/* Swipe Guidance Pill (Mobile hint) */}
-                <div className="absolute top-11 sm:top-12 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-[10px] text-stone-300 border border-white/10 pointer-events-none sm:hidden">
-                  👈 Swipe left/right to browse {photos.length} photos 👉
-                </div>
-
-                {/* Bottom Thumbnail Dock */}
-                {photos.length > 1 && (
-                  <div className="absolute bottom-2.5 sm:bottom-3 left-0 right-0 flex justify-center items-center z-20 px-3 pointer-events-none">
-                    <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-stone-950/85 backdrop-blur-md border border-white/15 shadow-2xl pointer-events-auto max-w-full overflow-x-auto scrollbar-none">
-                      {photos.map((img, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedImageIndex(idx);
-                          }}
-                          className={`relative w-12 h-9 sm:w-16 sm:h-11 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer shrink-0 ${
-                            selectedImageIndex === idx
-                              ? 'border-amber-400 scale-105 shadow-md shadow-amber-500/40 opacity-100 ring-2 ring-amber-400/50'
-                              : 'border-white/20 opacity-60 hover:opacity-100 hover:scale-102'
-                          }`}
-                          aria-label={`Jump to photo ${idx + 1}`}
-                        >
-                          <img src={img} alt={`Angle ${idx + 1}`} className="w-full h-full object-cover" />
-                          <span className="absolute bottom-0.5 right-1 text-[9px] font-mono font-bold text-white drop-shadow-md">
-                            {idx + 1}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* TAB B: DEDICATED KITCHEN VIDEO REEL VIEW */
-              <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-black flex items-center justify-center group">
-                <video
-                  ref={videoRef}
-                  src={videoUrl}
-                  playsInline
-                  autoPlay
-                  loop
-                  muted={isVideoMuted}
-                  onTimeUpdate={handleVideoTimeUpdate}
-                  onClick={toggleVideoPlay}
-                  className="w-full h-full object-cover cursor-pointer"
-                />
-
-                {/* Play/Pause Overlay Flash */}
-                {showPlayOverlay && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/35 animate-fadeOut">
-                    <div className="w-16 h-16 rounded-full bg-black/80 backdrop-blur-md flex items-center justify-center text-white border border-white/20 scale-110 transition-transform shadow-2xl">
-                      {isVideoPlaying ? <Play className="w-8 h-8 fill-current translate-x-0.5" /> : <Pause className="w-8 h-8 fill-current" />}
-                    </div>
-                  </div>
-                )}
-
-                {/* Big Center Play Button when paused */}
-                {!isVideoPlaying && !showPlayOverlay && (
-                  <div
-                    onClick={toggleVideoPlay}
-                    className="absolute inset-0 bg-black/40 backdrop-blur-2xs flex items-center justify-center cursor-pointer"
-                  >
-                    <div className="w-16 h-16 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center shadow-xl shadow-amber-500/40 hover:scale-110 active:scale-95 transition-transform">
-                      <Play className="w-7 h-7 fill-current translate-x-0.5" />
-                    </div>
-                  </div>
-                )}
-
-                {/* Dedicated Video Controls Dock */}
-                <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/95 via-black/70 to-transparent flex flex-col gap-2 z-20">
-                  {/* Scrubber Progress Bar */}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={videoProgress}
-                      onChange={handleVideoSeek}
-                      className="flex-1 h-1.5 rounded-lg appearance-none bg-white/25 accent-amber-400 cursor-pointer"
-                      aria-label="Seek video position"
-                    />
-                    <span className="text-[10px] font-mono font-semibold text-stone-300 shrink-0">
-                      {formatTime(videoCurrentTime)} / {formatTime(videoDuration)}
-                    </span>
-                  </div>
-
-                  {/* Buttons Row */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={toggleVideoPlay}
-                        className="px-3 py-1.5 rounded-xl bg-stone-900/80 hover:bg-stone-800 text-white text-xs font-bold border border-white/10 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform"
-                      >
-                        {isVideoPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                        <span>{isVideoPlaying ? 'Pause' : 'Play'}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={toggleVideoMute}
-                        className="p-1.5 rounded-xl bg-stone-900/80 hover:bg-stone-800 text-white border border-white/10 flex items-center gap-1 cursor-pointer active:scale-95 transition-transform"
-                        title={isVideoMuted ? 'Unmute audio' : 'Mute audio'}
-                      >
-                        {isVideoMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-                        <span className="text-[10px] font-semibold text-stone-300 pr-1">
-                          {isVideoMuted ? 'Muted' : 'Sound On'}
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={toggleFullscreen}
-                        className="p-1.5 rounded-xl bg-stone-900/80 hover:bg-stone-800 text-white border border-white/10 cursor-pointer active:scale-95 transition-transform"
-                        title="Fullscreen"
-                      >
-                        <Maximize2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <span className="text-[11px] font-bold text-amber-300 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-amber-400/30">
-                      👨‍🍳 Kitchen Making Reel
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
+              )}
+            </div>
           </div>
 
           {/* ----------------------------------------------------------------
@@ -1194,24 +971,10 @@ export default function FoodDetailModal({
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveMediaTab('video');
-                  const modalContainer = document.querySelector('.overflow-y-auto');
-                  if (modalContainer) modalContainer.scrollTo({ top: 0, behavior: 'smooth' });
-                  setTimeout(() => {
-                    if (videoRef.current) {
-                      videoRef.current.play().catch(() => {});
-                      setIsVideoPlaying(true);
-                    }
-                  }, 100);
-                }}
-                className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold border border-white/10 transition cursor-pointer active:scale-95"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-                <span>Full Reel</span>
-              </button>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-950/80 text-purple-200 border border-purple-500/30 text-xs font-bold">
+                <Video className="w-3.5 h-3.5 text-purple-300" />
+                <span>Kitchen Reel</span>
+              </div>
             </div>
 
             {/* Body Embedded Reel Player */}
@@ -1281,6 +1044,16 @@ export default function FoodDetailModal({
                   aria-label={isBodyVideoMuted ? 'Unmute' : 'Mute'}
                 >
                   {isBodyVideoMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={toggleBodyFullscreen}
+                  className="p-1.5 rounded-lg bg-stone-900/80 hover:bg-stone-800 text-white border border-white/10 cursor-pointer active:scale-90"
+                  aria-label="Fullscreen"
+                  title="Fullscreen"
+                >
+                  <Maximize2 className="w-3.5 h-3.5 text-stone-300" />
                 </button>
               </div>
             </div>
