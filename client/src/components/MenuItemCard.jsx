@@ -13,7 +13,9 @@ import {
   Sparkles, 
   Star, 
   Video, 
-  Image as ImageIcon 
+  Image as ImageIcon,
+  ShoppingBag,
+  ArrowRight
 } from 'lucide-react';
 
 /**
@@ -217,232 +219,210 @@ export default function MenuItemCard({
     return createPortal(modalContent, document.body);
   };
 
-  // 1. SHOWCASE ALTERNATING 1-BY-1 EDITORIAL LAYOUT (Requested Signature UI)
+  // 1. UNBOXED FLOATING CIRCULAR DISH ZIG-ZAG LAYOUT (User Requested Signature UI)
   if (layout === 'showcase') {
+    // Alternating zig-zag: Even index has Text Left / Plate Right (like in screenshot 2), Odd has Plate Left / Text Right!
     const isEven = index % 2 === 0;
 
     return (
       <>
         <div
           onClick={() => onSelectDish && onSelectDish(item)}
-          className={`group relative flex flex-col md:flex-row ${
+          className={`group relative flex flex-col md:flex-row items-center justify-between gap-8 md:gap-14 py-8 md:py-16 transition-all duration-300 border-b border-white/5 last:border-b-0 cursor-pointer ${
             isEven ? 'md:flex-row' : 'md:flex-row-reverse'
-          } bg-[#131024]/85 hover:bg-[#18142e]/95 backdrop-blur-2xl border border-purple-500/25 hover:border-purple-400/60 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl hover:shadow-purple-500/15 transition-all duration-400 cursor-pointer ${
-            !isAvailable ? 'opacity-65' : 'hover:-translate-y-1'
-          }`}
+          } ${!isAvailable ? 'opacity-60' : ''}`}
         >
-          {/* Subtle Ambient Violet Card Glow */}
-          <div className="absolute -top-16 -right-16 w-48 h-48 bg-purple-600/10 rounded-full blur-2xl pointer-events-none" />
+          {/* Subtle Ambient Culinary Glow Behind Floating Dish */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#FF5A26]/8 rounded-full blur-3xl pointer-events-none group-hover:bg-[#FF5A26]/12 transition-all duration-500" />
 
-          {/* Media Panel (Left for Even, Right for Odd on Desktop) */}
-          <div className="relative w-full md:w-[46%] lg:w-[48%] aspect-[16/10] md:aspect-auto md:min-h-[290px] overflow-hidden bg-stone-900 shrink-0">
-            {item.image && !imageError ? (
-              <img
-                src={item.image}
-                alt={dishTitle}
-                onError={() => setImageError(true)}
-                loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-purple-950/60 to-neutral-900 text-purple-300 p-4 select-none">
-                <UtensilsCrossed className="w-8 h-8 stroke-[1.8] text-purple-400 mb-1" />
-                <span className="text-xs font-bold text-stone-200 text-center line-clamp-1">
-                  {dishTitle}
-                </span>
-              </div>
-            )}
+          {/* Unboxed Floating Circular Plate with Orbit Ring (Screenshot 2) */}
+          <div className="relative w-64 h-64 sm:w-72 sm:h-72 md:w-84 md:h-84 shrink-0 flex items-center justify-center select-none">
+            
+            {/* Dashed Orbit Ring with 4 Node Dots (Screenshot 2) */}
+            <div className="absolute inset-0 rounded-full border border-dashed border-[#FF7A45]/35 group-hover:border-[#FF5A26]/60 transition-colors pointer-events-none">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[#FF5A26] shadow-sm shadow-[#FF5A26]/80 ring-2 ring-[#0a0a0c]" />
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-3 h-3 rounded-full bg-[#FF5A26] shadow-sm shadow-[#FF5A26]/80 ring-2 ring-[#0a0a0c]" />
+              <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[#FF5A26] shadow-sm shadow-[#FF5A26]/80 ring-2 ring-[#0a0a0c]" />
+              <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[#FF5A26] shadow-sm shadow-[#FF5A26]/80 ring-2 ring-[#0a0a0c]" />
+            </div>
 
-            {/* Gradient Vignette */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0e0c1b]/80 via-transparent to-black/30 pointer-events-none" />
-
-            {/* Top-Left Dietary Badges */}
-            <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
-              {isVeg && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 backdrop-blur-md shadow-xs">
-                  <Leaf className="w-3 h-3 fill-current" />
-                  Veg
-                </span>
+            {/* Circular Plate Image */}
+            <div className="relative w-52 h-52 sm:w-60 sm:h-60 md:w-72 md:h-72 rounded-full overflow-hidden shadow-2xl ring-4 ring-[#FF5A26]/20 group-hover:ring-[#FF5A26]/60 group-hover:scale-104 transition-all duration-500 bg-zinc-900">
+              {item.image && !imageError ? (
+                <img
+                  src={item.image}
+                  alt={dishTitle}
+                  onError={() => setImageError(true)}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-stone-300 p-4">
+                  <UtensilsCrossed className="w-8 h-8 text-[#FF5A26] mb-1" />
+                  <span className="text-xs font-bold text-center">{dishTitle}</span>
+                </div>
               )}
-              {isSpicy && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-950/90 text-rose-300 border border-rose-500/40 backdrop-blur-md shadow-xs">
-                  <Flame className="w-3 h-3 fill-current" />
-                  Spicy
-                </span>
-              )}
-              {item.isPopular && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-purple-950/90 text-purple-200 border border-purple-400/50 backdrop-blur-md shadow-xs">
-                  <Sparkles className="w-3 h-3 text-purple-300" />
-                  Chef's Pick
-                </span>
+
+              {/* Sold Out Badge Overlay */}
+              {!isAvailable && (
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-20">
+                  <span className="px-3 py-1 rounded-xl bg-rose-600 text-white font-extrabold text-xs uppercase tracking-wider">
+                    Sold Out
+                  </span>
+                </div>
               )}
             </div>
 
-            {/* Top-Right Media Badges */}
-            <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-black/80 text-purple-200 border border-purple-500/30 backdrop-blur-md shadow-xs"
-                title={`Photo Gallery (${photoCount} Photos)`}
-              >
-                <ImageIcon className="w-3 h-3 text-purple-300" />
-                <span>{photoCount}</span>
-              </span>
-              {(hasVideo || item.makingVideoUrl !== undefined) && (
-                <span
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-purple-900/95 text-white border border-purple-400/60 backdrop-blur-md shadow-xs animate-purple-pulse"
-                  title="Kitchen Making Video Reel"
-                >
-                  <Video className="w-3 h-3 fill-current text-purple-200" />
-                  <span>Reel</span>
-                </span>
-              )}
-            </div>
-
-            {/* Bottom-Left: Rating & Prep Time */}
-            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 z-10">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-black/85 text-amber-300 backdrop-blur-md border border-amber-500/30 shadow-xs">
+            {/* Floating Review & Time Pill (like Fast Delivery tag in screenshot 2) */}
+            <div className="absolute -bottom-2 right-4 sm:right-6 bg-[#161619]/95 backdrop-blur-md border border-zinc-800/80 px-3 py-1.5 rounded-2xl shadow-xl flex items-center gap-2 z-10">
+              <span className="w-2 h-2 rounded-full bg-[#FF5A26] animate-pulse" />
+              <span className="text-[11px] font-bold text-white flex items-center gap-1">
                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                <span>{item.rating || '4.9'}</span>
+                {item.rating || '4.9'}
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-medium bg-black/80 text-stone-200 backdrop-blur-md border border-white/10 shadow-xs">
-                <Clock className="w-3 h-3 text-purple-300" />
-                <span>{item.prepTime || '12 min'}</span>
-              </span>
+              <span className="text-[10px] text-zinc-400">&bull; {item.prepTime || '12 min'}</span>
             </div>
 
-            {/* Sold Out Overlay */}
-            {!isAvailable && (
-              <div className="absolute inset-0 bg-neutral-950/80 backdrop-blur-xs flex items-center justify-center z-20">
-                <span className="px-3.5 py-1.5 rounded-xl bg-rose-600 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg">
-                  Sold Out
-                </span>
+            {/* Reel Badge if video available */}
+            {(hasVideo || item.makingVideoUrl !== undefined) && (
+              <div className="absolute top-2 left-4 sm:left-6 bg-[#FF5A26] text-white px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg shadow-[#FF5A26]/40 flex items-center gap-1 z-10 animate-flame-pulse">
+                <Video className="w-3 h-3 fill-current" />
+                <span>Video Reel</span>
               </div>
             )}
           </div>
 
-          {/* Details Panel (Beside Media: Right for Even, Left for Odd on Desktop) */}
-          <div className="flex-1 p-5 sm:p-7 flex flex-col justify-between text-stone-100">
-            <div>
-              {/* Category & Tags header */}
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-[11px] uppercase tracking-wider font-extrabold text-purple-400 bg-purple-950/70 border border-purple-500/30 px-2.5 py-0.5 rounded-lg">
-                  {item.category || 'Specialty'}
+          {/* Details Panel (Beside the Plate, No Card Box!) */}
+          <div className="flex-1 max-w-xl text-left select-none">
+            {/* Category tag */}
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs uppercase tracking-wider font-extrabold text-[#FF7A45] flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#FF5A26]" />
+                {item.category || 'Specialty'}
+              </span>
+              {isVeg && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
+                  <Leaf className="w-2.5 h-2.5 fill-current" /> Veg
                 </span>
-                <span className="text-[10px] text-stone-400 font-medium">
-                  Dish #{index + 1}
+              )}
+              {isSpicy && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-950/80 text-rose-300 border border-rose-500/30">
+                  <Flame className="w-2.5 h-2.5 fill-current" /> Spicy
                 </span>
-              </div>
-
-              {/* Dish Title */}
-              <h3 className="text-lg sm:text-xl md:text-2xl font-black text-white group-hover:text-purple-300 transition-colors tracking-tight leading-snug">
-                {dishTitle}
-              </h3>
-
-              {/* Dish Description */}
-              {dishDesc && (
-                <p className="text-xs sm:text-sm text-stone-300/80 leading-relaxed font-normal mt-2 line-clamp-3">
-                  {dishDesc}
-                </p>
-              )}
-
-              {/* Key Ingredients Pills */}
-              {Array.isArray(item.ingredients) && item.ingredients.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-3 pt-2">
-                  {item.ingredients.slice(0, 4).map((ing, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center text-[10px] sm:text-[11px] px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-stone-300"
-                    >
-                      {ing}
-                    </span>
-                  ))}
-                  {item.ingredients.length > 4 && (
-                    <span className="text-[10px] text-purple-400 font-medium self-center">
-                      +{item.ingredients.length - 4} more
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* Chef Custom Note Tag (if user added one) */}
-              {itemNote && (
-                <div
-                  onClick={openNoteModal}
-                  className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-purple-200 text-xs font-medium cursor-pointer transition max-w-full"
-                  title="Edit note for chef"
-                >
-                  <MessageSquare className="w-3 h-3 text-purple-400 shrink-0" />
-                  <span className="truncate">Chef Note: "{itemNote}"</span>
-                </div>
               )}
             </div>
 
-            {/* Bottom Actions Row: Price & Tactile Buttons */}
-            <div className="pt-4 sm:pt-6 mt-4 border-t border-purple-500/20 flex items-center justify-between gap-3">
-              <div>
-                <span className="block text-[10px] uppercase font-bold text-stone-400 tracking-wider">
-                  Price
-                </span>
-                <span className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight font-sans">
-                  {formattedPrice}
-                </span>
-              </div>
+            {/* Food Name (Bold Headline like in screenshot 2) */}
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-white group-hover:text-[#FF7A45] transition-colors tracking-tight leading-snug">
+              {dishTitle}
+            </h3>
 
-              <div className="flex items-center gap-2">
-                {/* Chef Note Button */}
-                {isAvailable && (
-                  <button
-                    type="button"
-                    onClick={openNoteModal}
-                    className={`p-2 rounded-xl border text-xs transition cursor-pointer ${
-                      itemNote
-                        ? 'bg-purple-900/80 border-purple-400 text-purple-200'
-                        : 'bg-white/5 hover:bg-white/10 border-white/15 text-stone-300 hover:text-white'
-                    }`}
-                    title="Add special note for chef"
+            {/* Slight 1-2 line details */}
+            {dishDesc && (
+              <p className="text-sm sm:text-base text-zinc-400 font-normal mt-2.5 leading-relaxed line-clamp-2">
+                {dishDesc}
+              </p>
+            )}
+
+            {/* Ingredients pills hint */}
+            {Array.isArray(item.ingredients) && item.ingredients.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-1">
+                <span className="text-[11px] text-zinc-500 font-semibold mr-1">Ingredients:</span>
+                {item.ingredients.slice(0, 4).map((ing, i) => (
+                  <span
+                    key={i}
+                    className="text-[11px] px-2 py-0.5 rounded-md bg-zinc-900/90 border border-zinc-800 text-zinc-300"
                   >
-                    <MessageSquare className="w-4 h-4" />
-                  </button>
-                )}
-
-                {/* Tactile ADD / Stepper */}
-                {!isAvailable ? (
-                  <span className="text-xs font-bold text-stone-500 uppercase px-3 py-1.5 rounded-xl bg-stone-900 border border-stone-800">
-                    Sold Out
+                    {ing}
                   </span>
-                ) : cartQuantity > 0 ? (
-                  <div className="inline-flex items-center bg-gradient-to-r from-amber-500 to-amber-400 text-neutral-950 rounded-2xl shadow-lg p-1 ring-2 ring-amber-300/40">
-                    <button
-                      type="button"
-                      onClick={handleDecrement}
-                      className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-black/15 active:scale-90 transition cursor-pointer font-bold"
-                      aria-label="Decrease quantity"
-                    >
-                      <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
-                    </button>
-                    <span className="w-6 text-center font-black text-sm select-none">
-                      {cartQuantity}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleIncrement}
-                      className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-black/15 active:scale-90 transition cursor-pointer font-bold"
-                      aria-label="Increase quantity"
-                    >
-                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleAdd}
-                    className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 active:scale-95 text-neutral-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all cursor-pointer ring-1 ring-amber-300/50"
-                  >
-                    <Plus className="w-4 h-4 stroke-[2.5]" />
-                    <span>ADD TO ORDER</span>
-                  </button>
+                ))}
+                {item.ingredients.length > 4 && (
+                  <span className="text-[10px] text-[#FF7A45] font-semibold">
+                    +{item.ingredients.length - 4} more
+                  </span>
                 )}
               </div>
+            )}
+
+            {/* Chef Custom Note Pill (if attached) */}
+            {itemNote && (
+              <div
+                onClick={openNoteModal}
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-zinc-900 border border-zinc-800 text-[#FF7A45] text-xs font-medium cursor-pointer"
+              >
+                <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Chef Note: "{itemNote}"</span>
+              </div>
+            )}
+
+            {/* Price & Action Buttons (Screenshot 2: "Order Now" + "Book A Menu" style) */}
+            <div className="flex flex-wrap items-center gap-4 mt-6 pt-2">
+              <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                {formattedPrice}
+              </span>
+
+              {isAvailable && (
+                <>
+                  {cartQuantity > 0 ? (
+                    <div className="inline-flex items-center bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white rounded-2xl shadow-lg p-1 ring-2 ring-[#FF7A45]/40">
+                      <button
+                        type="button"
+                        onClick={handleDecrement}
+                        className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/15 active:scale-90 transition cursor-pointer font-bold"
+                        aria-label="Decrease quantity"
+                      >
+                        <Minus className="w-4 h-4 stroke-[2.5]" />
+                      </button>
+                      <span className="w-7 text-center font-black text-sm select-none">
+                        {cartQuantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleIncrement}
+                        className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/15 active:scale-90 transition cursor-pointer font-bold"
+                        aria-label="Increase quantity"
+                      >
+                        <Plus className="w-4 h-4 stroke-[2.5]" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleAdd}
+                      className="px-6 py-2.5 rounded-2xl flame-gradient-btn text-white text-xs sm:text-sm font-black shadow-lg shadow-[#FF5A26]/30 flex items-center gap-2 cursor-pointer active:scale-95"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      <span>Order Now</span>
+                    </button>
+                  )}
+                </>
+              )}
+
+              {/* View Full Details Button */}
+              <button
+                type="button"
+                onClick={() => onSelectDish && onSelectDish(item)}
+                className="px-5 py-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700/60 text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>View Details</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#FF7A45]" />
+              </button>
+
+              {/* Chef note button */}
+              {isAvailable && (
+                <button
+                  type="button"
+                  onClick={openNoteModal}
+                  className={`p-2.5 rounded-2xl border text-xs transition cursor-pointer ${
+                    itemNote
+                      ? 'bg-[#FF5A26]/20 border-[#FF5A26] text-[#FF7A45]'
+                      : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                  title="Add special instructions for chef"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>

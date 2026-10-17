@@ -856,8 +856,8 @@ export default function CartDrawer({
                     disabled={isSubmitting || items.length === 0}
                     className={`w-full py-4 px-5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg transition-all active:scale-98 cursor-pointer ${
                       isSubmitting
-                        ? 'bg-amber-400 text-white cursor-wait'
-                        : 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white shadow-orange-500/25'
+                        ? 'bg-[#FF5A26]/80 text-white cursor-wait'
+                        : 'flame-gradient-btn shadow-[#FF5A26]/30'
                     }`}
                   >
                     {isSubmitting ? (

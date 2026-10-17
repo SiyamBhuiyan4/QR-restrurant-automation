@@ -1374,10 +1374,10 @@ export default function FoodDetailModal({
           <button
             type="button"
             onClick={handleConfirmAdd}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-black text-stone-950 rounded-xl shadow-xl transition-all cursor-pointer text-sm sm:text-base ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-black text-white rounded-xl shadow-xl transition-all cursor-pointer text-sm sm:text-base ${
               isAddedAnimation
-                ? 'bg-amber-400 scale-95 shadow-amber-400/50'
-                : 'bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 shadow-amber-500/30 active:scale-[0.98]'
+                ? 'bg-emerald-500 scale-95 shadow-emerald-500/50'
+                : 'flame-gradient-btn shadow-[#FF5A26]/40 active:scale-[0.98]'
             }`}
           >
             <ShoppingBag className={`w-4 h-4 ${isAddedAnimation ? 'animate-bounce' : ''}`} />

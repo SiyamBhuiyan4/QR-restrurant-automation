@@ -70,24 +70,24 @@ export default function Navbar({
   return (
     <>
       <header
-        className={`sticky top-0 z-40 w-full bg-[#0e0b1d]/90 backdrop-blur-xl border-b border-purple-500/25 shadow-lg shadow-black/40 transition-colors ${className}`}
+        className={`sticky top-0 z-40 w-full bg-[#0a0a0c]/90 backdrop-blur-xl border-b border-zinc-800/80 shadow-lg shadow-black/40 transition-colors ${className}`}
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-2">
             
             {/* Left: Brand Identity */}
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-purple-600/30 shrink-0 ring-1 ring-purple-400/40">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FF5A26] to-[#FF7A45] flex items-center justify-center text-white shadow-md shadow-[#FF5A26]/30 shrink-0 ring-1 ring-[#FF7A45]/50">
                 <UtensilsCrossed className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div className="flex flex-col truncate">
-                <span className="text-lg font-black tracking-tight text-white leading-none flex items-center gap-1.5 purple-text-glow">
-                  SmartDine
-                  <span className="hidden sm:inline-block text-[10px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 bg-purple-500/20 border border-purple-500/40 text-purple-300 rounded">
-                    Lounge
+                <span className="text-lg font-black tracking-tight text-white leading-none flex items-center gap-1.5">
+                  Smart<span className="text-[#FF5A26]">Dine</span>
+                  <span className="hidden sm:inline-block text-[10px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] rounded">
+                    Bistro
                   </span>
                 </span>
-                <span className="text-xs text-purple-200/70 font-medium truncate mt-0.5">
+                <span className="text-xs text-zinc-400 font-medium truncate mt-0.5">
                   Artisanal Table Dining
                 </span>
               </div>
@@ -126,7 +126,7 @@ export default function Navbar({
               <button
                 type="button"
                 onClick={onChangeTable}
-                className="group inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900/80 active:scale-95 text-purple-200 font-bold text-xs sm:text-sm border border-purple-500/30 transition-all cursor-pointer shadow-xs"
+                className="group inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 active:scale-95 text-zinc-200 font-bold text-xs sm:text-sm border border-zinc-800 hover:border-[#FF5A26]/40 transition-all cursor-pointer shadow-xs"
                 title="Tap to change table"
               >
                 <span className="text-base leading-none">🍽️</span>
@@ -134,7 +134,7 @@ export default function Navbar({
                   {tableNumber ? `Table ${tableNumber}` : 'Set Table'}
                 </span>
                 {onChangeTable && (
-                  <span className="text-[10px] text-purple-400/80 group-hover:text-purple-200 font-normal hidden sm:inline">
+                  <span className="text-[10px] text-zinc-400 group-hover:text-white font-normal hidden sm:inline">
                     (Edit)
                   </span>
                 )}
@@ -147,7 +147,7 @@ export default function Navbar({
                 className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 shadow-md cursor-pointer border ${
                   waiterCalled
                     ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-600/30 ring-2 ring-emerald-400/50'
-                    : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white border-purple-400/50 shadow-purple-600/30'
+                    : 'flame-gradient-btn text-white border-transparent shadow-[#FF5A26]/30'
                 }`}
                 title="Call waiter to your table"
               >
@@ -159,7 +159,7 @@ export default function Navbar({
                   </>
                 ) : (
                   <>
-                    <BellRing className="w-4 h-4 text-purple-200" />
+                    <BellRing className="w-4 h-4 text-white" />
                     <span className="hidden sm:inline">Call Waiter</span>
                     <span className="sm:hidden">Waiter</span>
                   </>

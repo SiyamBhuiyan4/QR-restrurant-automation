@@ -928,38 +928,38 @@ export default function CustomerMenu({
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0815] text-stone-100 pb-32 selection:bg-purple-600 selection:text-white relative">
+    <div className="min-h-screen bg-[#0a0a0c] text-stone-100 pb-32 selection:bg-[#FF5A26] selection:text-white relative">
       {/* =====================================================================
-          Live Purple Light Bistro Atmosphere Background Effect (GPU 60 FPS)
+          WorldPlate Flame Orange & Noir Ambient Atmosphere (GPU 60 FPS)
          ===================================================================== */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 select-none">
-        {/* Soft Radial Warmth Base with Violet/Amethyst Glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_80%_at_50%_-20%,rgba(168,85,247,0.18),rgba(10,8,21,0)_75%)]" />
+        {/* Soft Radial Flame Warmth Base */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_80%_at_50%_-20%,rgba(255,90,38,0.14),rgba(10,10,12,0)_75%)]" />
 
-        {/* 1. Royal Violet Neon Ambient Orb (Drifting Top Left) */}
-        <div className="absolute -top-32 -left-28 w-[450px] h-[450px] sm:w-[580px] sm:h-[580px] rounded-full bg-gradient-to-tr from-purple-600/35 via-violet-500/20 to-transparent blur-[120px] animate-ambient-drift-1" />
+        {/* 1. Flame Coral Warm Ambient Orb (Top Left) */}
+        <div className="absolute -top-32 -left-28 w-[450px] h-[450px] sm:w-[580px] sm:h-[580px] rounded-full bg-gradient-to-tr from-[#FF5A26]/25 via-[#FF7A45]/15 to-transparent blur-[130px] animate-ambient-drift-1" />
 
-        {/* 2. Soft Fuchsia / Magenta Orb (Drifting Top Right) */}
-        <div className="absolute top-16 -right-32 w-[400px] h-[400px] sm:w-[520px] sm:h-[520px] rounded-full bg-gradient-to-bl from-fuchsia-600/25 via-purple-700/18 to-transparent blur-[110px] animate-ambient-drift-2" />
+        {/* 2. Soft Golden Hearth Orb (Top Right) */}
+        <div className="absolute top-16 -right-32 w-[400px] h-[400px] sm:w-[520px] sm:h-[520px] rounded-full bg-gradient-to-bl from-amber-500/18 via-[#FF5A26]/12 to-transparent blur-[120px] animate-ambient-drift-2" />
 
-        {/* 3. Deep Amethyst / Indigo Glow (Middle Left) */}
-        <div className="absolute top-[42%] -left-36 w-[420px] h-[420px] rounded-full bg-gradient-to-r from-indigo-600/24 via-purple-500/15 to-transparent blur-[130px] animate-ambient-drift-3" />
+        {/* 3. Deep Noir Hearth Glow (Middle Left) */}
+        <div className="absolute top-[42%] -left-36 w-[420px] h-[420px] rounded-full bg-gradient-to-r from-[#FF5A26]/16 via-amber-600/10 to-transparent blur-[140px] animate-ambient-drift-3" />
 
         {/* 4. Honey Hearth Warm Glow Accent (Bottom Center / Right) */}
-        <div className="absolute bottom-12 right-[8%] w-[480px] h-[480px] rounded-full bg-gradient-to-tl from-purple-500/22 via-amber-500/12 to-transparent blur-[120px] animate-ambient-pulse" />
+        <div className="absolute bottom-12 right-[8%] w-[480px] h-[480px] rounded-full bg-gradient-to-tl from-[#FF7A45]/18 via-amber-500/10 to-transparent blur-[130px] animate-ambient-pulse" />
 
-        {/* 5. Floating Purple Champagne Sparkle Bokeh Particles */}
-        <div className="ambient-sparkle sparkle-1" />
-        <div className="ambient-sparkle sparkle-2" />
-        <div className="ambient-sparkle sparkle-3" />
-        <div className="ambient-sparkle sparkle-4" />
-        <div className="ambient-sparkle sparkle-5" />
-        <div className="ambient-sparkle sparkle-6" />
-        <div className="ambient-sparkle sparkle-7" />
-        <div className="ambient-sparkle sparkle-8" />
+        {/* 5. Floating Culinary Ember Particles */}
+        <div className="ember-sparkle sparkle-1" />
+        <div className="ember-sparkle sparkle-2" />
+        <div className="ember-sparkle sparkle-3" />
+        <div className="ember-sparkle sparkle-4" />
+        <div className="ember-sparkle sparkle-5" />
+        <div className="ember-sparkle sparkle-6" />
+        <div className="ember-sparkle sparkle-7" />
+        <div className="ember-sparkle sparkle-8" />
 
         {/* 6. Subtle Micro-texture Dot Grid */}
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(192,132,252,0.035)_1px,transparent_1px)] [background-size:24px_24px] opacity-70" />
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,122,69,0.035)_1px,transparent_1px)] [background-size:24px_24px] opacity-70" />
       </div>
       
       {/* 1. Header Navigation */}
@@ -974,7 +974,7 @@ export default function CustomerMenu({
 
       {/* 2. Offline Notice Banner */}
       {!isOnline && (
-        <div className="bg-amber-500 text-white px-4 py-2.5 shadow-xs border-b border-amber-600/30">
+        <div className="bg-amber-600 text-white px-4 py-2.5 shadow-xs border-b border-amber-700/30">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 fill-white shrink-0 animate-pulse" />
@@ -982,7 +982,7 @@ export default function CustomerMenu({
                 ⚡ You are offline! You can still browse the menu and add items to your cart.
               </span>
             </div>
-            <span className="hidden md:inline-block text-[11px] bg-amber-600/60 px-2 py-0.5 rounded-full font-medium">
+            <span className="hidden md:inline-block text-[11px] bg-amber-700/60 px-2 py-0.5 rounded-full font-medium">
               Offline-First Activated
             </span>
           </div>
@@ -992,30 +992,45 @@ export default function CustomerMenu({
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 relative z-10">
 
-        {/* 1. Dining Lounge Hero Banner & Fixed Table QR Badge */}
-        <div className="relative mb-6 rounded-3xl overflow-hidden bg-gradient-to-br from-[#120e24] via-[#1a1435] to-[#0f0c1d] text-white p-5 sm:p-7 shadow-2xl border border-purple-500/30 animate-fadeIn">
-          {/* Subtle Ambient Purple Glow in Background */}
-          <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-fuchsia-500/12 rounded-full blur-2xl pointer-events-none" />
+        {/* 1. WorldPlate Hero Banner & Fixed Table QR Badge (Screenshots 1 & 2) */}
+        <div className="relative mb-8 rounded-3xl overflow-hidden bg-gradient-to-br from-[#141418] via-[#18181d] to-[#0d0d10] text-white p-6 sm:p-9 shadow-2xl border border-zinc-800 animate-fadeIn">
+          {/* Subtle Ambient Flame Glow */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-[#FF5A26]/12 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-xs font-semibold mb-2.5">
-                <Sparkles className="w-3.5 h-3.5 text-purple-300" />
-                <span className="tracking-wide uppercase text-[10px] font-bold">Artisanal Bistro &amp; Purple Lounge</span>
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <div className="max-w-xl text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] text-xs font-bold mb-3">
+                <Sparkles className="w-3.5 h-3.5 text-[#FF5A26]" />
+                <span className="tracking-wide uppercase text-[10px] font-extrabold">Taste the Tradition, Served Fresh Daily</span>
               </div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white purple-text-glow">
-                Chef's Table Experience
+              <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black tracking-tight text-white leading-tight">
+                Experience the <span className="text-[#FF5A26] underline decoration-[#FF5A26]/50 underline-offset-8">Taste</span> of the World
               </h1>
-              <p className="text-xs sm:text-sm text-purple-200/70 mt-1 max-w-lg leading-relaxed">
-                Hand-crafted seasonal specialties, sommelier pairings, and personalized tableside ordering directly to our kitchen.
+              <p className="text-xs sm:text-sm md:text-base text-zinc-400 mt-3 leading-relaxed">
+                From classic favorites to exotic delights, explore a diverse menu crafted by master chefs and inspired by cuisines from across the globe.
               </p>
+
+              {/* Stadium Discount Pill from Screenshot 1 */}
+              <div className="mt-5 inline-flex flex-wrap items-center gap-3 px-4 py-2 rounded-full bg-white text-neutral-900 shadow-xl">
+                <div className="flex -space-x-2">
+                  <span className="w-6 h-6 rounded-full bg-amber-400 text-[10px] font-black flex items-center justify-center text-neutral-900 ring-2 ring-white">⭐</span>
+                  <span className="w-6 h-6 rounded-full bg-[#FF5A26] text-[10px] font-black flex items-center justify-center text-white ring-2 ring-white">🔥</span>
+                  <span className="w-6 h-6 rounded-full bg-emerald-500 text-[10px] font-black flex items-center justify-center text-white ring-2 ring-white">✨</span>
+                </div>
+                <span className="text-xs font-extrabold text-neutral-900">
+                  Great food &amp; discounted prices
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full bg-[#FF5A26] text-white text-[10px] font-black uppercase">
+                  50% Off On Now
+                </span>
+              </div>
             </div>
 
             {/* Dining Lounge Badge: Locked via QR OR Prompt to Pair Table */}
             {tableNumber ? (
-              <div className="shrink-0 bg-white/10 backdrop-blur-md border border-white/15 px-4.5 py-3.5 rounded-2xl flex items-center gap-3.5 shadow-lg shadow-neutral-950/30">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-neutral-950 font-black text-base flex items-center justify-center shadow-md shadow-amber-500/25 ring-2 ring-amber-300/30">
+              <div className="shrink-0 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 px-5 py-4 rounded-2xl flex items-center gap-4 shadow-xl">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF5A26] to-[#FF7A45] text-white font-black text-lg flex items-center justify-center shadow-lg shadow-[#FF5A26]/30 ring-2 ring-[#FF7A45]/40">
                   {tableNumber}
                 </div>
                 <div>
@@ -1026,22 +1041,22 @@ export default function CustomerMenu({
                     </span>
                     <Lock className="w-3 h-3" /> Locked via QR
                   </div>
-                  <div className="text-sm sm:text-base font-black text-white tracking-tight mt-0.5">
+                  <div className="text-base font-black text-white tracking-tight mt-0.5">
                     Table {tableNumber}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="shrink-0 bg-amber-500/15 border border-amber-500/30 backdrop-blur-md px-4.5 py-3 rounded-2xl flex items-center justify-between gap-3 shadow-md">
+              <div className="shrink-0 bg-zinc-900/90 border border-zinc-800 backdrop-blur-md px-5 py-3.5 rounded-2xl flex items-center justify-between gap-4 shadow-xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500 text-neutral-950 flex items-center justify-center font-bold shrink-0 shadow-sm">
-                    <QrCode className="w-5 h-5" />
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#FF5A26] to-[#FF7A45] text-white flex items-center justify-center font-bold shrink-0 shadow-md shadow-[#FF5A26]/30">
+                    <QrCode className="w-6 h-6" />
                   </div>
                   <div>
-                    <div className="text-[10px] uppercase tracking-wider text-amber-400 font-extrabold">
+                    <div className="text-[10px] uppercase tracking-wider text-[#FF7A45] font-extrabold">
                       Scan Table QR
                     </div>
-                    <div className="text-xs text-stone-300">
+                    <div className="text-xs text-zinc-300">
                       Scan table to order
                     </div>
                   </div>
@@ -1049,7 +1064,7 @@ export default function CustomerMenu({
                 <button
                   type="button"
                   onClick={() => handleSelectTable('1')}
-                  className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-neutral-950 text-xs font-extrabold rounded-xl transition shadow-sm cursor-pointer flex items-center gap-1"
+                  className="px-3.5 py-1.5 flame-gradient-btn text-white text-xs font-extrabold rounded-xl transition shadow-md cursor-pointer flex items-center gap-1"
                 >
                   <span>Demo: T01</span>
                   <ArrowRight className="w-3 h-3 stroke-[2.5]" />
@@ -1206,11 +1221,11 @@ export default function CustomerMenu({
         </section>
 
         {/* Results Info Bar & 3-way Layout Switcher (Showcase / Grid / List) */}
-        <div id="menu-content-root" className="flex items-center justify-between mb-5 px-1 scroll-mt-32">
+        <div id="menu-content-root" className="flex items-center justify-between mb-6 px-1 scroll-mt-32">
           <div className="flex items-center gap-2 sm:gap-2.5">
             <h2 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-2">
               <span>{selectedCategory === 'All' ? 'All Menu Choices' : `${getCategoryMetadata(selectedCategory).title}`}</span>
-              <span className="text-xs font-bold font-mono text-purple-300 bg-purple-950/70 border border-purple-500/30 px-2.5 py-0.5 rounded-full shadow-2xs">
+              <span className="text-xs font-bold font-mono text-[#FF7A45] bg-[#FF5A26]/15 border border-[#FF5A26]/30 px-2.5 py-0.5 rounded-full shadow-2xs">
                 {filteredItems.length}
               </span>
             </h2>
@@ -1222,26 +1237,26 @@ export default function CustomerMenu({
                   setVegOnlyFilter(false);
                   setSpicyFilter(false);
                 }}
-                className="text-xs text-purple-400 hover:text-purple-300 font-bold cursor-pointer underline decoration-purple-400 underline-offset-2 ml-1"
+                className="text-xs text-[#FF7A45] hover:text-[#FF5A26] font-bold cursor-pointer underline decoration-[#FF5A26] underline-offset-2 ml-1"
               >
                 Reset Filters
               </button>
             )}
           </div>
 
-          {/* View Mode Switcher: Showcase (1-by-1 alternating) / Grid / List */}
-          <div className="flex items-center bg-[#141029] p-1 rounded-2xl border border-purple-500/30 shadow-md">
+          {/* View Mode Switcher: Showcase (Unboxed 1-by-1 floating) / Grid / List */}
+          <div className="flex items-center bg-[#161619] p-1 rounded-2xl border border-zinc-800 shadow-md">
             <button
               type="button"
               onClick={() => setLayoutMode('showcase')}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                 layoutMode === 'showcase'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 ring-1 ring-purple-400/50'
-                  : 'text-stone-400 hover:text-white'
+                  ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50'
+                  : 'text-zinc-400 hover:text-white'
               }`}
-              title="Showcase View: 1-by-1 Alternating Layout"
+              title="Showcase View: Unboxed 1-by-1 Alternating Layout"
             >
-              <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+              <Sparkles className="w-3.5 h-3.5" />
               <span className="text-[11px] font-bold">Showcase</span>
             </button>
 
@@ -1250,8 +1265,8 @@ export default function CustomerMenu({
               onClick={() => setLayoutMode('grid')}
               className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
                 layoutMode === 'grid'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 ring-1 ring-purple-400/50'
-                  : 'text-stone-400 hover:text-white'
+                  ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50'
+                  : 'text-zinc-400 hover:text-white'
               }`}
               title="2-Column Compact Grid"
             >
@@ -1264,8 +1279,8 @@ export default function CustomerMenu({
               onClick={() => setLayoutMode('list')}
               className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
                 layoutMode === 'list'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 ring-1 ring-purple-400/50'
-                  : 'text-stone-400 hover:text-white'
+                  ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50'
+                  : 'text-zinc-400 hover:text-white'
               }`}
               title="Compact List View"
             >
@@ -1277,29 +1292,31 @@ export default function CustomerMenu({
 
         {/* Categorized Dishes Sections / Filtered Grid */}
         {filteredItems.length > 0 ? (
-          <div className="space-y-8 sm:space-y-10">
+          <div className="space-y-12 sm:space-y-16">
             {selectedCategory === 'All' ? (
               // Categorized Grouped View
               categorizedSections.map((section) => (
                 <section
                   key={section.categoryKey}
                   id={`cat-section-${section.categoryKey}`}
-                  className="space-y-4 scroll-mt-32 pt-1"
+                  className="space-y-6 scroll-mt-32 pt-2"
                 >
-                  {/* Category Header */}
-                  <div className="flex items-center justify-between pb-2.5 border-b border-purple-500/25">
+                  {/* Category Header with WorldPlate Stylized Brackets [ Title ] */}
+                  <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
                     <div className="flex items-center gap-2.5 sm:gap-3">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center justify-center text-lg sm:text-xl shadow-2xs shrink-0">
+                      <div className="w-10 h-10 rounded-2xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-white flex items-center justify-center text-lg sm:text-xl shadow-sm shrink-0">
                         {section.icon}
                       </div>
                       <div>
-                        <h3 className="text-base sm:text-lg lg:text-xl font-black text-white tracking-tight flex items-center gap-2">
+                        <h3 className="text-base sm:text-xl lg:text-2xl font-black text-white tracking-tight flex items-center gap-1.5">
+                          <span className="text-[#FF5A26] font-mono text-xl sm:text-2xl font-black">[</span>
                           <span>{section.title}</span>
-                          <span className="text-[11px] sm:text-xs font-bold font-mono text-purple-300 bg-purple-950/70 border border-purple-500/30 px-2 sm:px-2.5 py-0.5 rounded-full shadow-2xs">
+                          <span className="text-[#FF5A26] font-mono text-xl sm:text-2xl font-black">]</span>
+                          <span className="text-[11px] sm:text-xs font-bold font-mono text-[#FF7A45] bg-[#FF5A26]/15 border border-[#FF5A26]/30 px-2 sm:px-2.5 py-0.5 rounded-full shadow-2xs ml-1">
                             {section.items.length} {section.items.length === 1 ? 'dish' : 'dishes'}
                           </span>
                         </h3>
-                        <p className="text-[11px] sm:text-xs text-purple-200/60 font-medium line-clamp-1 mt-0.5">
+                        <p className="text-xs sm:text-sm text-zinc-400 font-normal line-clamp-1 mt-0.5">
                           {section.subtitle}
                         </p>
                       </div>
@@ -1311,20 +1328,20 @@ export default function CustomerMenu({
                         setSelectedCategory(section.canonicalId);
                         window.scrollTo({ top: 160, behavior: 'smooth' });
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900/80 text-purple-200 hover:text-white border border-purple-500/30 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 hover:border-[#FF5A26]/40 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
                     >
                       <span>Filter</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight className="w-3.5 h-3.5 text-[#FF7A45]" />
                     </button>
                   </div>
 
-                  {/* Dishes Display: Showcase (1-by-1 alternating) | Grid | List */}
+                  {/* Dishes Display: Unboxed Showcase (1-by-1 alternating) | Grid | List */}
                   <div className={
                     layoutMode === 'showcase'
-                      ? "flex flex-col gap-6 sm:gap-8"
+                      ? "flex flex-col"
                       : layoutMode === 'list'
                       ? "flex flex-col gap-2.5 sm:gap-3"
-                      : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 lg:gap-4"
+                      : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
                   }>
                     {section.items.map((dish, dishIdx) => {
                       const inCart = cart[dish.id];
@@ -1352,20 +1369,22 @@ export default function CustomerMenu({
               (() => {
                 const activeMeta = getCategoryMetadata(selectedCategory);
                 return (
-                  <section className="space-y-4">
-                    <div className="flex items-center justify-between pb-2.5 border-b border-purple-500/25">
+                  <section className="space-y-6">
+                    <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
                       <div className="flex items-center gap-2.5 sm:gap-3">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center justify-center text-lg sm:text-xl shadow-2xs shrink-0">
+                        <div className="w-10 h-10 rounded-2xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-white flex items-center justify-center text-lg sm:text-xl shadow-sm shrink-0">
                           {activeMeta.icon}
                         </div>
                         <div>
-                          <h3 className="text-base sm:text-lg lg:text-xl font-black text-white tracking-tight flex items-center gap-2">
+                          <h3 className="text-base sm:text-xl lg:text-2xl font-black text-white tracking-tight flex items-center gap-1.5">
+                            <span className="text-[#FF5A26] font-mono text-xl sm:text-2xl font-black">[</span>
                             <span>{activeMeta.title}</span>
-                            <span className="text-[11px] sm:text-xs font-bold font-mono text-purple-300 bg-purple-950/70 border border-purple-500/30 px-2 sm:px-2.5 py-0.5 rounded-full shadow-2xs">
+                            <span className="text-[#FF5A26] font-mono text-xl sm:text-2xl font-black">]</span>
+                            <span className="text-[11px] sm:text-xs font-bold font-mono text-[#FF7A45] bg-[#FF5A26]/15 border border-[#FF5A26]/30 px-2 sm:px-2.5 py-0.5 rounded-full shadow-2xs ml-1">
                               {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'}
                             </span>
                           </h3>
-                          <p className="text-[11px] sm:text-xs text-purple-200/60 font-medium line-clamp-1 mt-0.5">
+                          <p className="text-xs sm:text-sm text-zinc-400 font-normal line-clamp-1 mt-0.5">
                             {activeMeta.subtitle}
                           </p>
                         </div>
@@ -1377,20 +1396,20 @@ export default function CustomerMenu({
                           setSelectedCategory('All');
                           window.scrollTo({ top: 160, behavior: 'smooth' });
                         }}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 text-white text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl flame-gradient-btn text-white text-xs font-bold transition shadow-md cursor-pointer shrink-0"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-purple-200" />
+                        <Sparkles className="w-3.5 h-3.5" />
                         <span>View All Categories</span>
                       </button>
                     </div>
 
-                    {/* Dishes Display: Showcase (1-by-1 alternating) | Grid | List */}
+                    {/* Dishes Display: Unboxed Showcase (1-by-1 alternating) | Grid | List */}
                     <div className={
                       layoutMode === 'showcase'
-                        ? "flex flex-col gap-6 sm:gap-8"
+                        ? "flex flex-col"
                         : layoutMode === 'list'
                         ? "flex flex-col gap-2.5 sm:gap-3"
-                        : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 lg:gap-4"
+                        : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
                     }>
                       {filteredItems.map((dish, dishIdx) => {
                         const inCart = cart[dish.id];
@@ -1418,7 +1437,7 @@ export default function CustomerMenu({
           </div>
         ) : (
           /* Empty State */
-          <div className="bg-white rounded-3xl border border-stone-200/90 p-8 sm:p-12 text-center max-w-md mx-auto my-10 shadow-sm">
+          <div className="bg-zinc-900/90 rounded-3xl border border-zinc-800 p-8 sm:p-12 text-center max-w-md mx-auto my-10 shadow-lg">
             <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 mx-auto flex items-center justify-center mb-3.5 shadow-2xs">
               <UtensilsCrossed className="w-8 h-8 stroke-[1.8]" />
             </div>
