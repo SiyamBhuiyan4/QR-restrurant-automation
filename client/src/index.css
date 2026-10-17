@@ -377,19 +377,28 @@
 }
 
 /* ==========================================================================
-   Slow Continuous Dish Plate 360 Rotation (User Requested)
+   Cinematic 3D Orbital Camera Sway (Product stays upright & constant)
    ========================================================================== */
-@keyframes slowDishSpin {
-  from {
-    transform: rotate(0deg);
+@keyframes orbitalCameraSway {
+  0% {
+    transform: perspective(1200px) rotateY(-5deg) rotateX(2deg);
   }
-  to {
-    transform: rotate(360deg);
+  25% {
+    transform: perspective(1200px) rotateY(4deg) rotateX(4deg);
+  }
+  50% {
+    transform: perspective(1200px) rotateY(6deg) rotateX(-2deg);
+  }
+  75% {
+    transform: perspective(1200px) rotateY(-3deg) rotateX(-3deg);
+  }
+  100% {
+    transform: perspective(1200px) rotateY(-5deg) rotateX(2deg);
   }
 }
 
-.animate-dish-spin {
-  animation: slowDishSpin 36s linear infinite;
+.animate-camera-sway {
+  animation: orbitalCameraSway 14s ease-in-out infinite;
   will-change: transform;
 }
 
