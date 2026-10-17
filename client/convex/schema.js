@@ -59,5 +59,15 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_created_at", ["createdAt"])
     .index("by_table", ["tableNumber"]),
+
+  reviews: defineTable({
+    dishId: v.string(), // dish identifier or slug
+    author: v.string(),
+    rating: v.number(), // 1 to 5
+    comment: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_dish", ["dishId"])
+    .index("by_created_at", ["createdAt"]),
 });
 

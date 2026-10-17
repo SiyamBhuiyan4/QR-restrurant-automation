@@ -39,7 +39,14 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: false,
     isPopular: true,
     prepTime: '10 min',
-    image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['Yukon Gold Potatoes', 'White Truffle Oil', 'Aged Reggiano Parmesan', 'Fresh Flat Parsley', 'Sea Salt Flakes', 'Roasted Garlic Aioli']
   },
   {
     id: 'starter-2',
@@ -51,7 +58,14 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: true,
     isPopular: true,
     prepTime: '15 min',
-    image: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1527477321005-4d01d75b2d5c?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['Farm Fresh Wings', 'Fiery Cayenne Glaze', 'Wisconsin Blue Cheese Dip', 'Crisp Celery Sticks', 'Garlic Butter']
   },
   {
     id: 'starter-3',
@@ -62,7 +76,14 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: true,
     isSpicy: false,
     prepTime: '8 min',
-    image: 'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1619535860434-ba1d8fa12536?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1509722747041-616f39b57569?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['Artisanal Sourdough', 'Roasted Garlic Butter', 'Fior di Latte Mozzarella', 'Oregano', 'Virgin Olive Oil']
   },
   {
     id: 'starter-4',
@@ -73,7 +94,14 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: false,
     isSpicy: false,
     prepTime: '12 min',
-    image: 'https://images.unsplash.com/photo-1604909052743-94e838986d24?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1604909052743-94e838986d24?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1604909052743-94e838986d24?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['Monterey Squid Rings', 'Five-Spice Sea Salt', 'Fresh Lemon Wedges', 'House Pickled Tartar', 'Micro Greens']
   },
 
   // Mains
@@ -87,7 +115,14 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: false,
     isPopular: true,
     prepTime: '20 min',
-    image: 'https://images.unsplash.com/photo-1558030006-450675393462?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1504973960431-1c467e159aa4?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['Prime Angus Ribeye Cut', 'Herb Garlic Confit Butter', 'Rosemary Roasted Baby Potatoes', 'Charred Asparagus', 'Flaky Maldon Salt']
   },
   {
     id: 'main-2',
@@ -99,7 +134,14 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: true,
     isPopular: true,
     prepTime: '18 min',
-    image: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['Free-Range Half Chicken', 'African Bird Eye Peri-Peri', 'Smoked Sweet Paprika', 'Charred Key Lime', 'Garlic Herb Glaze']
   },
   {
     id: 'main-3',
@@ -110,7 +152,14 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: false,
     isSpicy: false,
     prepTime: '15 min',
-    image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['Wild Atlantic Salmon Fillet', 'Fresh Sautéed Asparagus', 'Heirloom Cherry Tomatoes', 'Saffron Dill Velouté', 'Lemon Zest']
   },
   {
     id: 'main-4',
@@ -121,7 +170,14 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: true,
     isSpicy: false,
     prepTime: '18 min',
-    image: 'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['Italian Arborio Rice', 'Dried Porcini & Shiitake Stock', 'White Truffle Essence', 'Aged Pecorino Romano', 'Fresh Thyme']
   },
 
   // Burgers
@@ -135,7 +191,14 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: false,
     isPopular: true,
     prepTime: '12 min',
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['Double Angus Beef Patties', 'Melted American Sharp Cheese', 'Slow Caramelized Onions', 'Dill Pickles', 'Signature Truffle Mayo', 'Brioche Bun']
   },
   {
     id: 'burger-2',
@@ -147,7 +210,14 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: true,
     isPopular: true,
     prepTime: '14 min',
-    image: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1521305916504-4a1121188589?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['Spiced Angus Beef Patty', 'Grilled Pickled Jalapeños', 'Melted Pepper Jack Cheese', 'Crispy Onion Strings', 'Habanero Lava Aioli']
   },
   {
     id: 'burger-3',
@@ -158,7 +228,14 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: true,
     isSpicy: false,
     prepTime: '12 min',
-    image: 'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['100% Plant-Based Patty', 'Vegan Aged Cheddar', 'Butterhead Lettuce', 'Ripe Vine Tomato', 'Avocado Chimichurri', 'Potato Bun']
   },
 
   // Beverages
@@ -171,7 +248,14 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: true,
     isSpicy: false,
     prepTime: '3 min',
-    image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['Eureka Fresh Lemons', 'Organic Blue Agave', 'Garden Mint Sprigs', 'Sparkling San Pellegrino', 'Crushed Ice']
   },
   {
     id: 'beverage-2',
@@ -182,18 +266,14 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: true,
     isSpicy: true,
     prepTime: '4 min',
-    image: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=600&auto=format&fit=crop&q=80'
-  },
-  {
-    id: 'beverage-3',
-    name: 'Iced Matcha Green Tea Latte',
-    description: 'Ceremonial grade Japanese Uji matcha whisked with creamy oat milk and a touch of raw Madagascar vanilla.',
-    price: 5.50,
-    category: 'Beverages',
-    isVeg: true,
-    isSpicy: false,
-    prepTime: '4 min',
-    image: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['Fresh Cold-Pressed Ginger', 'Key Lime Juice', 'Subtle Bird Chili Kiss', 'Club Soda', 'Raw Turbinado Sugar']
   },
 
   // Desserts
@@ -207,7 +287,14 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: false,
     isPopular: true,
     prepTime: '10 min',
-    image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['70% Belgian Dark Chocolate', 'European Sweet Butter', 'Madagascar Bourbon Vanilla Gelato', 'Dutch Cocoa Dust', 'Fresh Raspberries']
   },
   {
     id: 'dessert-2',
@@ -218,7 +305,14 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: true,
     isSpicy: false,
     prepTime: '5 min',
-    image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1586040140372-b424ae30a290?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-gourmet-dish-in-a-kitchen-40292-large.mp4',
+    ingredients: ['Savoiardi Ladyfingers', 'Single-Origin Espresso', 'Creamy Italian Mascarpone', 'Pasture Eggs', 'Dark Cocoa Powder']
   }
 ];
 
@@ -577,6 +671,53 @@ export default function CustomerMenu({
     return ['All', ...unique];
   }, [allMenuItems]);
 
+  // Group filtered items into structured Category sections
+  const categorizedSections = useMemo(() => {
+    const map = new Map();
+    // Maintain category ordering from categoriesList
+    categoriesList.filter((c) => c !== 'All').forEach((cat) => {
+      map.set(cat, []);
+    });
+
+    filteredItems.forEach((dish) => {
+      const cat = dish.category || 'Mains';
+      if (!map.has(cat)) {
+        map.set(cat, []);
+      }
+      map.get(cat).push(dish);
+    });
+
+    return Array.from(map.entries())
+      .filter(([_, items]) => items.length > 0)
+      .map(([category, items]) => ({
+        category,
+        items
+      }));
+  }, [filteredItems, categoriesList]);
+
+  // Category Icon helper
+  const getCategoryIcon = (category = '') => {
+    const lower = category.toLowerCase();
+    if (lower.includes('start') || lower.includes('appetiz')) return '🥗';
+    if (lower.includes('main') || lower.includes('steak') || lower.includes('meat')) return '🥩';
+    if (lower.includes('burger') || lower.includes('sandwich')) return '🍔';
+    if (lower.includes('dessert') || lower.includes('sweet') || lower.includes('cake')) return '🍰';
+    if (lower.includes('beverage') || lower.includes('drink') || lower.includes('cocktail')) return '🍹';
+    if (lower.includes('pizza') || lower.includes('pasta')) return '🍕';
+    return '🍽️';
+  };
+
+  // Category Subtitle helper
+  const getCategorySubtitle = (category = '') => {
+    const lower = category.toLowerCase();
+    if (lower.includes('start')) return 'Crispy appetizers, signature bites, and table warmups';
+    if (lower.includes('main')) return 'Prime dry-aged steaks, flame-grilled specialties, and fresh catches';
+    if (lower.includes('burger')) return 'Double-smashed wagyu burgers on toasted brioche';
+    if (lower.includes('dessert')) return 'Decadent sweet creations crafted by our pastry chef';
+    if (lower.includes('beverage')) return 'Hand-crafted iced coolers, spritzers, and organic teas';
+    return 'Chef curated creations prepared fresh to order';
+  };
+
   // Cart summary calculations
   const cartSummary = useMemo(() => {
     const items = Object.values(cart);
@@ -910,25 +1051,118 @@ export default function CustomerMenu({
           )}
         </div>
 
-        {/* Dishes Grid */}
+        {/* Categorized Dishes Sections / Filtered Grid */}
         {filteredItems.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {filteredItems.map((dish) => {
-              const inCart = cart[dish.id];
-              return (
-                <MenuItemCard
-                  key={dish.id}
-                  item={dish}
-                  cartQuantity={inCart ? inCart.quantity : 0}
-                  itemNote={inCart ? inCart.note : ''}
-                  onAddToCart={handleAddToCart}
-                  onUpdateQuantity={handleUpdateQuantity}
-                  onRemoveFromCart={handleRemoveFromCart}
-                  onUpdateNote={handleUpdateNote}
-                  onSelectDish={(selected) => setSelectedDishModal(selected)}
-                />
-              );
-            })}
+          <div className="space-y-8 sm:space-y-10">
+            {selectedCategory === 'All' ? (
+              // Categorized Grouped View
+              categorizedSections.map(({ category, items }) => (
+                <section
+                  key={category}
+                  id={`cat-section-${category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                  className="space-y-3.5 scroll-mt-28"
+                >
+                  {/* Category Header */}
+                  <div className="flex items-center justify-between pb-2 border-b border-stone-200/90">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-amber-100/90 text-amber-900 flex items-center justify-center text-lg shadow-2xs">
+                        {getCategoryIcon(category)}
+                      </div>
+                      <div>
+                        <h3 className="text-base sm:text-lg font-black text-stone-900 tracking-tight flex items-center gap-2">
+                          <span>{category}</span>
+                          <span className="text-[11px] font-bold font-mono text-stone-600 bg-stone-100 border border-stone-200/80 px-2 py-0.5 rounded-full">
+                            {items.length} {items.length === 1 ? 'item' : 'items'}
+                          </span>
+                        </h3>
+                        <p className="text-[11px] sm:text-xs text-stone-500 font-medium">
+                          {getCategorySubtitle(category)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCategory(category)}
+                      className="text-xs font-bold text-amber-700 hover:text-amber-800 transition flex items-center gap-1 cursor-pointer hover:underline"
+                    >
+                      <span>Filter</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  {/* Compact Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                    {items.map((dish) => {
+                      const inCart = cart[dish.id];
+                      return (
+                        <MenuItemCard
+                          key={dish.id}
+                          item={dish}
+                          cartQuantity={inCart ? inCart.quantity : 0}
+                          itemNote={inCart ? inCart.note : ''}
+                          onAddToCart={handleAddToCart}
+                          onUpdateQuantity={handleUpdateQuantity}
+                          onRemoveFromCart={handleRemoveFromCart}
+                          onUpdateNote={handleUpdateNote}
+                          onSelectDish={(selected) => setSelectedDishModal(selected)}
+                        />
+                      );
+                    })}
+                  </div>
+                </section>
+              ))
+            ) : (
+              // Filtered Single Category View
+              <section className="space-y-3.5">
+                <div className="flex items-center justify-between pb-2 border-b border-stone-200/90">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-amber-100/90 text-amber-900 flex items-center justify-center text-lg shadow-2xs">
+                      {getCategoryIcon(selectedCategory)}
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-black text-stone-900 tracking-tight flex items-center gap-2">
+                        <span>{selectedCategory}</span>
+                        <span className="text-[11px] font-bold font-mono text-stone-600 bg-stone-100 border border-stone-200/80 px-2 py-0.5 rounded-full">
+                          {filteredItems.length} items
+                        </span>
+                      </h3>
+                      <p className="text-[11px] sm:text-xs text-stone-500 font-medium">
+                        {getCategorySubtitle(selectedCategory)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory('All')}
+                    className="text-xs font-bold text-stone-700 hover:text-stone-950 bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-xl transition cursor-pointer border border-stone-200"
+                  >
+                    View All Categories
+                  </button>
+                </div>
+
+                {/* Compact Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                  {filteredItems.map((dish) => {
+                    const inCart = cart[dish.id];
+                    return (
+                      <MenuItemCard
+                        key={dish.id}
+                        item={dish}
+                        cartQuantity={inCart ? inCart.quantity : 0}
+                        itemNote={inCart ? inCart.note : ''}
+                        onAddToCart={handleAddToCart}
+                        onUpdateQuantity={handleUpdateQuantity}
+                        onRemoveFromCart={handleRemoveFromCart}
+                        onUpdateNote={handleUpdateNote}
+                        onSelectDish={(selected) => setSelectedDishModal(selected)}
+                      />
+                    );
+                  })}
+                </div>
+              </section>
+            )}
           </div>
         ) : (
           /* Empty State */
