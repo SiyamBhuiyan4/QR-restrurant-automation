@@ -37,7 +37,8 @@ export default function MenuItemCard({
   onUpdateNote,
   currency = '$',
   onSelectDish,
-  layout = 'grid'
+  layout = 'showcase',
+  index = 0
 }) {
   const [imageError, setImageError] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
@@ -216,17 +217,253 @@ export default function MenuItemCard({
     return createPortal(modalContent, document.body);
   };
 
+  // 1. SHOWCASE ALTERNATING 1-BY-1 EDITORIAL LAYOUT (Requested Signature UI)
+  if (layout === 'showcase') {
+    const isEven = index % 2 === 0;
+
+    return (
+      <>
+        <div
+          onClick={() => onSelectDish && onSelectDish(item)}
+          className={`group relative flex flex-col md:flex-row ${
+            isEven ? 'md:flex-row' : 'md:flex-row-reverse'
+          } bg-[#131024]/85 hover:bg-[#18142e]/95 backdrop-blur-2xl border border-purple-500/25 hover:border-purple-400/60 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl hover:shadow-purple-500/15 transition-all duration-400 cursor-pointer ${
+            !isAvailable ? 'opacity-65' : 'hover:-translate-y-1'
+          }`}
+        >
+          {/* Subtle Ambient Violet Card Glow */}
+          <div className="absolute -top-16 -right-16 w-48 h-48 bg-purple-600/10 rounded-full blur-2xl pointer-events-none" />
+
+          {/* Media Panel (Left for Even, Right for Odd on Desktop) */}
+          <div className="relative w-full md:w-[46%] lg:w-[48%] aspect-[16/10] md:aspect-auto md:min-h-[290px] overflow-hidden bg-stone-900 shrink-0">
+            {item.image && !imageError ? (
+              <img
+                src={item.image}
+                alt={dishTitle}
+                onError={() => setImageError(true)}
+                loading="lazy"
+                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-purple-950/60 to-neutral-900 text-purple-300 p-4 select-none">
+                <UtensilsCrossed className="w-8 h-8 stroke-[1.8] text-purple-400 mb-1" />
+                <span className="text-xs font-bold text-stone-200 text-center line-clamp-1">
+                  {dishTitle}
+                </span>
+              </div>
+            )}
+
+            {/* Gradient Vignette */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0e0c1b]/80 via-transparent to-black/30 pointer-events-none" />
+
+            {/* Top-Left Dietary Badges */}
+            <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+              {isVeg && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 backdrop-blur-md shadow-xs">
+                  <Leaf className="w-3 h-3 fill-current" />
+                  Veg
+                </span>
+              )}
+              {isSpicy && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-950/90 text-rose-300 border border-rose-500/40 backdrop-blur-md shadow-xs">
+                  <Flame className="w-3 h-3 fill-current" />
+                  Spicy
+                </span>
+              )}
+              {item.isPopular && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-purple-950/90 text-purple-200 border border-purple-400/50 backdrop-blur-md shadow-xs">
+                  <Sparkles className="w-3 h-3 text-purple-300" />
+                  Chef's Pick
+                </span>
+              )}
+            </div>
+
+            {/* Top-Right Media Badges */}
+            <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-black/80 text-purple-200 border border-purple-500/30 backdrop-blur-md shadow-xs"
+                title={`Photo Gallery (${photoCount} Photos)`}
+              >
+                <ImageIcon className="w-3 h-3 text-purple-300" />
+                <span>{photoCount}</span>
+              </span>
+              {(hasVideo || item.makingVideoUrl !== undefined) && (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-purple-900/95 text-white border border-purple-400/60 backdrop-blur-md shadow-xs animate-purple-pulse"
+                  title="Kitchen Making Video Reel"
+                >
+                  <Video className="w-3 h-3 fill-current text-purple-200" />
+                  <span>Reel</span>
+                </span>
+              )}
+            </div>
+
+            {/* Bottom-Left: Rating & Prep Time */}
+            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 z-10">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-black/85 text-amber-300 backdrop-blur-md border border-amber-500/30 shadow-xs">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                <span>{item.rating || '4.9'}</span>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-medium bg-black/80 text-stone-200 backdrop-blur-md border border-white/10 shadow-xs">
+                <Clock className="w-3 h-3 text-purple-300" />
+                <span>{item.prepTime || '12 min'}</span>
+              </span>
+            </div>
+
+            {/* Sold Out Overlay */}
+            {!isAvailable && (
+              <div className="absolute inset-0 bg-neutral-950/80 backdrop-blur-xs flex items-center justify-center z-20">
+                <span className="px-3.5 py-1.5 rounded-xl bg-rose-600 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg">
+                  Sold Out
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Details Panel (Beside Media: Right for Even, Left for Odd on Desktop) */}
+          <div className="flex-1 p-5 sm:p-7 flex flex-col justify-between text-stone-100">
+            <div>
+              {/* Category & Tags header */}
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-[11px] uppercase tracking-wider font-extrabold text-purple-400 bg-purple-950/70 border border-purple-500/30 px-2.5 py-0.5 rounded-lg">
+                  {item.category || 'Specialty'}
+                </span>
+                <span className="text-[10px] text-stone-400 font-medium">
+                  Dish #{index + 1}
+                </span>
+              </div>
+
+              {/* Dish Title */}
+              <h3 className="text-lg sm:text-xl md:text-2xl font-black text-white group-hover:text-purple-300 transition-colors tracking-tight leading-snug">
+                {dishTitle}
+              </h3>
+
+              {/* Dish Description */}
+              {dishDesc && (
+                <p className="text-xs sm:text-sm text-stone-300/80 leading-relaxed font-normal mt-2 line-clamp-3">
+                  {dishDesc}
+                </p>
+              )}
+
+              {/* Key Ingredients Pills */}
+              {Array.isArray(item.ingredients) && item.ingredients.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3 pt-2">
+                  {item.ingredients.slice(0, 4).map((ing, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center text-[10px] sm:text-[11px] px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-stone-300"
+                    >
+                      {ing}
+                    </span>
+                  ))}
+                  {item.ingredients.length > 4 && (
+                    <span className="text-[10px] text-purple-400 font-medium self-center">
+                      +{item.ingredients.length - 4} more
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Chef Custom Note Tag (if user added one) */}
+              {itemNote && (
+                <div
+                  onClick={openNoteModal}
+                  className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-purple-200 text-xs font-medium cursor-pointer transition max-w-full"
+                  title="Edit note for chef"
+                >
+                  <MessageSquare className="w-3 h-3 text-purple-400 shrink-0" />
+                  <span className="truncate">Chef Note: "{itemNote}"</span>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Actions Row: Price & Tactile Buttons */}
+            <div className="pt-4 sm:pt-6 mt-4 border-t border-purple-500/20 flex items-center justify-between gap-3">
+              <div>
+                <span className="block text-[10px] uppercase font-bold text-stone-400 tracking-wider">
+                  Price
+                </span>
+                <span className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight font-sans">
+                  {formattedPrice}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Chef Note Button */}
+                {isAvailable && (
+                  <button
+                    type="button"
+                    onClick={openNoteModal}
+                    className={`p-2 rounded-xl border text-xs transition cursor-pointer ${
+                      itemNote
+                        ? 'bg-purple-900/80 border-purple-400 text-purple-200'
+                        : 'bg-white/5 hover:bg-white/10 border-white/15 text-stone-300 hover:text-white'
+                    }`}
+                    title="Add special note for chef"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                  </button>
+                )}
+
+                {/* Tactile ADD / Stepper */}
+                {!isAvailable ? (
+                  <span className="text-xs font-bold text-stone-500 uppercase px-3 py-1.5 rounded-xl bg-stone-900 border border-stone-800">
+                    Sold Out
+                  </span>
+                ) : cartQuantity > 0 ? (
+                  <div className="inline-flex items-center bg-gradient-to-r from-amber-500 to-amber-400 text-neutral-950 rounded-2xl shadow-lg p-1 ring-2 ring-amber-300/40">
+                    <button
+                      type="button"
+                      onClick={handleDecrement}
+                      className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-black/15 active:scale-90 transition cursor-pointer font-bold"
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    </button>
+                    <span className="w-6 text-center font-black text-sm select-none">
+                      {cartQuantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleIncrement}
+                      className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-black/15 active:scale-90 transition cursor-pointer font-bold"
+                      aria-label="Increase quantity"
+                    >
+                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleAdd}
+                    className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 active:scale-95 text-neutral-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all cursor-pointer ring-1 ring-amber-300/50"
+                  >
+                    <Plus className="w-4 h-4 stroke-[2.5]" />
+                    <span>ADD TO ORDER</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {renderNoteModal()}
+      </>
+    );
+  }
+
+  // 2. COMPACT LIST VIEW
   if (layout === 'list') {
     return (
       <>
         <div
           onClick={() => onSelectDish && onSelectDish(item)}
-          className={`group relative flex items-center justify-between bg-white rounded-2xl border border-stone-200/80 hover:border-amber-500/40 p-2 sm:p-2.5 gap-2.5 sm:gap-3.5 shadow-2xs hover:shadow-md transition-all duration-300 cursor-pointer ${
-            !isAvailable ? 'opacity-65 bg-stone-50/70' : 'hover:-translate-y-0.5'
+          className={`group relative flex items-center justify-between bg-[#131024]/85 hover:bg-[#18142e]/95 backdrop-blur-xl rounded-2xl border border-purple-500/25 hover:border-purple-400/50 p-2.5 sm:p-3 gap-2.5 sm:gap-3.5 shadow-md hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 cursor-pointer ${
+            !isAvailable ? 'opacity-65' : 'hover:-translate-y-0.5'
           }`}
         >
           {/* Left: Compact Image with Aspect-[16/10] */}
-          <div className="relative w-24 sm:w-32 aspect-[16/10] rounded-xl overflow-hidden shrink-0 bg-stone-100">
+          <div className="relative w-24 sm:w-32 aspect-[16/10] rounded-xl overflow-hidden shrink-0 bg-stone-900">
             {item.image && !imageError ? (
               <img
                 src={item.image}
@@ -236,15 +473,15 @@ export default function MenuItemCard({
                 className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50/40 text-stone-600 p-1 select-none">
-                <UtensilsCrossed className="w-4 h-4 stroke-[1.8] text-amber-600 mb-0.5" />
-                <span className="text-[10px] font-bold text-stone-700 text-center line-clamp-1">
+              <div className="w-full h-full flex flex-col items-center justify-center bg-purple-950/50 text-purple-300 p-1 select-none">
+                <UtensilsCrossed className="w-4 h-4 stroke-[1.8] text-purple-400 mb-0.5" />
+                <span className="text-[10px] font-bold text-stone-200 text-center line-clamp-1">
                   {dishTitle}
                 </span>
               </div>
             )}
 
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/25 pointer-events-none" />
 
             <div className="absolute bottom-1 left-1 flex items-center gap-1 z-10">
               <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[8px] font-extrabold bg-black/80 text-amber-300 backdrop-blur-md">
@@ -266,41 +503,41 @@ export default function MenuItemCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               {isVeg && (
-                <span className="inline-flex items-center px-1 py-0.2 rounded text-[8px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                <span className="inline-flex items-center px-1 py-0.2 rounded text-[8px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">
                   Veg
                 </span>
               )}
               {isSpicy && (
-                <span className="inline-flex items-center px-1 py-0.2 rounded text-[8px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                <span className="inline-flex items-center px-1 py-0.2 rounded text-[8px] font-bold bg-rose-950/80 text-rose-300 border border-rose-500/40">
                   Spicy
                 </span>
               )}
-              <h3 className="font-extrabold text-stone-900 text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-amber-800 transition-colors tracking-tight">
+              <h3 className="font-extrabold text-white text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-purple-300 transition-colors tracking-tight">
                 {dishTitle}
               </h3>
             </div>
 
             {dishDesc && (
-              <p className="text-[10px] sm:text-xs text-stone-500 line-clamp-1 leading-relaxed font-normal mt-0.5">
+              <p className="text-[10px] sm:text-xs text-stone-400 line-clamp-1 leading-relaxed font-normal mt-0.5">
                 {dishDesc}
               </p>
             )}
 
-            <div className="flex items-center gap-2 mt-1 text-[10px] text-stone-500 font-medium">
-              <span className="inline-flex items-center gap-0.5 text-stone-600">
-                <Clock className="w-2.5 h-2.5 text-amber-600" />
+            <div className="flex items-center gap-2 mt-1 text-[10px] text-stone-400 font-medium">
+              <span className="inline-flex items-center gap-0.5 text-stone-300">
+                <Clock className="w-2.5 h-2.5 text-purple-400" />
                 <span>{item.prepTime || '10 min'}</span>
               </span>
               <span>&bull;</span>
-              <span className="inline-flex items-center gap-0.5 text-amber-700 font-bold">
-                <ImageIcon className="w-2.5 h-2.5 text-amber-600" />
+              <span className="inline-flex items-center gap-0.5 text-purple-300 font-bold">
+                <ImageIcon className="w-2.5 h-2.5 text-purple-400" />
                 <span>{photoCount} photos</span>
               </span>
               {(hasVideo || item.makingVideoUrl !== undefined) && (
                 <>
                   <span>&bull;</span>
-                  <span className="inline-flex items-center gap-0.5 text-purple-700 font-bold">
-                    <Video className="w-2.5 h-2.5 text-purple-600" />
+                  <span className="inline-flex items-center gap-0.5 text-purple-300 font-bold">
+                    <Video className="w-2.5 h-2.5 text-purple-400" />
                     <span>Reel</span>
                   </span>
                 </>
@@ -310,10 +547,10 @@ export default function MenuItemCard({
             {itemNote && (
               <div
                 onClick={openNoteModal}
-                className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-900 text-[9px] font-medium cursor-pointer truncate max-w-full"
+                className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-500/30 text-purple-200 text-[9px] font-medium cursor-pointer truncate max-w-full"
                 title="Edit note"
               >
-                <MessageSquare className="w-2 h-2 text-amber-600 shrink-0" />
+                <MessageSquare className="w-2 h-2 text-purple-400 shrink-0" />
                 <span className="truncate">"{itemNote}"</span>
               </div>
             )}
@@ -321,7 +558,7 @@ export default function MenuItemCard({
 
           {/* Right: Price & ADD Button */}
           <div className="flex flex-col items-end gap-1.5 shrink-0 pl-1">
-            <span className="text-xs sm:text-sm md:text-base font-black text-stone-950 tracking-tight font-sans">
+            <span className="text-xs sm:text-sm md:text-base font-black text-white tracking-tight font-sans">
               {formattedPrice}
             </span>
 
@@ -332,8 +569,8 @@ export default function MenuItemCard({
                   onClick={openNoteModal}
                   className={`p-1 rounded-lg border text-xs transition cursor-pointer ${
                     itemNote
-                      ? 'bg-amber-100 border-amber-300 text-amber-900'
-                      : 'bg-stone-50 hover:bg-stone-100 border-stone-200 text-stone-500 hover:text-stone-800'
+                      ? 'bg-purple-900/80 border-purple-400 text-purple-200'
+                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-stone-300 hover:text-white'
                   }`}
                   title="Add chef note"
                 >
@@ -384,17 +621,18 @@ export default function MenuItemCard({
     );
   }
 
+  // 3. COMPACT 2-COLUMN GRID VIEW
   return (
     <>
       <div
         onClick={() => onSelectDish && onSelectDish(item)}
-        className={`group relative flex flex-col justify-between bg-white rounded-2xl border border-stone-200/80 hover:border-amber-500/40 overflow-hidden shadow-2xs hover:shadow-md transition-all duration-300 cursor-pointer ${
-          !isAvailable ? 'opacity-65 bg-stone-50/70' : 'hover:-translate-y-0.5'
+        className={`group relative flex flex-col justify-between bg-[#131024]/85 hover:bg-[#18142e]/95 backdrop-blur-xl rounded-2xl border border-purple-500/25 hover:border-purple-400/50 overflow-hidden shadow-md hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 cursor-pointer ${
+          !isAvailable ? 'opacity-65' : 'hover:-translate-y-0.5'
         }`}
       >
         <div>
           {/* Compact Image Container with 16/10 Aspect Ratio */}
-          <div className="relative aspect-[16/10] w-full bg-stone-100 overflow-hidden">
+          <div className="relative aspect-[16/10] w-full bg-stone-900 overflow-hidden">
             {item.image && !imageError ? (
               <img
                 src={item.image}
@@ -404,16 +642,16 @@ export default function MenuItemCard({
                 className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50/40 text-stone-600 p-2 select-none">
-                <UtensilsCrossed className="w-5 h-5 stroke-[1.8] text-amber-600 mb-1" />
-                <span className="text-[11px] font-bold text-stone-700 text-center line-clamp-1">
+              <div className="w-full h-full flex flex-col items-center justify-center bg-purple-950/50 text-purple-300 p-2 select-none">
+                <UtensilsCrossed className="w-5 h-5 stroke-[1.8] text-purple-400 mb-1" />
+                <span className="text-[11px] font-bold text-stone-200 text-center line-clamp-1">
                   {dishTitle}
                 </span>
               </div>
             )}
 
             {/* Subtle Gradient Vignette */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/25 pointer-events-none" />
 
             {/* Top-Left Dietary Badges */}
             <div className="absolute top-1.5 sm:top-2 left-1.5 sm:left-2 flex flex-wrap gap-1 z-10">
@@ -430,8 +668,8 @@ export default function MenuItemCard({
                 </span>
               )}
               {item.isPopular && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-amber-950/85 text-amber-300 border border-amber-500/40 backdrop-blur-md shadow-2xs">
-                  <Sparkles className="w-2.5 h-2.5 text-amber-300" />
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-purple-950/85 text-purple-200 border border-purple-400/50 backdrop-blur-md shadow-2xs">
+                  <Sparkles className="w-2.5 h-2.5 text-purple-300" />
                   Popular
                 </span>
               )}
@@ -440,10 +678,10 @@ export default function MenuItemCard({
             {/* Top-Right Media Badges (📸 {photoCount}, 🎥 Reel) */}
             <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 flex items-center gap-1 z-10">
               <span 
-                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-black/75 text-amber-300 border border-white/15 backdrop-blur-md shadow-2xs" 
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-black/75 text-purple-200 border border-purple-500/30 backdrop-blur-md shadow-2xs" 
                 title={`Photo Gallery (${photoCount} Photos)`}
               >
-                <ImageIcon className="w-2.5 h-2.5 text-amber-300" />
+                <ImageIcon className="w-2.5 h-2.5 text-purple-300" />
                 <span>{photoCount}</span>
               </span>
               {(hasVideo || item.makingVideoUrl !== undefined) && (
@@ -464,7 +702,7 @@ export default function MenuItemCard({
                 <span>{item.rating || '4.9'}</span>
               </span>
               <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-medium bg-black/75 text-stone-200 backdrop-blur-md border border-white/10 shadow-2xs">
-                <Clock className="w-2.5 h-2.5 text-amber-400" />
+                <Clock className="w-2.5 h-2.5 text-purple-300" />
                 <span>{item.prepTime || '10 min'}</span>
               </span>
             </div>
@@ -481,12 +719,12 @@ export default function MenuItemCard({
 
           {/* Compact Dish Details */}
           <div className="p-2.5 sm:p-3">
-            <h3 className="font-extrabold text-stone-900 text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-amber-800 transition-colors tracking-tight mb-0.5">
+            <h3 className="font-extrabold text-white text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-purple-300 transition-colors tracking-tight mb-0.5">
               {dishTitle}
             </h3>
 
             {dishDesc && (
-              <p className="text-[10px] sm:text-xs text-stone-500 line-clamp-1 sm:line-clamp-2 leading-relaxed font-normal mb-1">
+              <p className="text-[10px] sm:text-xs text-stone-400 line-clamp-1 sm:line-clamp-2 leading-relaxed font-normal mb-1">
                 {dishDesc}
               </p>
             )}
@@ -495,10 +733,10 @@ export default function MenuItemCard({
             {itemNote && (
               <div
                 onClick={openNoteModal}
-                className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-[10px] font-medium cursor-pointer transition truncate max-w-full"
+                className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-950/80 border border-purple-500/30 text-purple-200 text-[10px] font-medium cursor-pointer transition truncate max-w-full"
                 title="Edit note"
               >
-                <MessageSquare className="w-2.5 h-2.5 text-amber-600 shrink-0" />
+                <MessageSquare className="w-2.5 h-2.5 text-purple-400 shrink-0" />
                 <span className="truncate">"{itemNote}"</span>
               </div>
             )}
@@ -506,8 +744,8 @@ export default function MenuItemCard({
         </div>
 
         {/* Compact Footer: High-Contrast Price & Tactile ADD Action */}
-        <div className="px-2.5 sm:px-3 pb-2.5 sm:pb-3 pt-1.5 flex items-center justify-between gap-1 border-t border-stone-100/90 mt-auto">
-          <span className="text-xs sm:text-sm md:text-base font-black text-stone-950 tracking-tight font-sans">
+        <div className="px-2.5 sm:px-3 pb-2.5 sm:pb-3 pt-1.5 flex items-center justify-between gap-1 border-t border-purple-500/20 mt-auto">
+          <span className="text-xs sm:text-sm md:text-base font-black text-white tracking-tight font-sans">
             {formattedPrice}
           </span>
 
@@ -519,8 +757,8 @@ export default function MenuItemCard({
                 onClick={openNoteModal}
                 className={`p-1 sm:p-1.5 rounded-lg border text-xs transition cursor-pointer ${
                   itemNote
-                    ? 'bg-amber-100 border-amber-300 text-amber-900'
-                    : 'bg-stone-50 hover:bg-stone-100 border-stone-200 text-stone-500 hover:text-stone-800'
+                    ? 'bg-purple-900/80 border-purple-400 text-purple-200'
+                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-stone-300 hover:text-white'
                 }`}
                 title="Add chef note"
               >

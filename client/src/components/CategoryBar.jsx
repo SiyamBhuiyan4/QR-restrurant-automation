@@ -76,14 +76,14 @@ export default function CategoryBar({
   };
 
   return (
-    <div className={`relative w-full bg-white/90 backdrop-blur-md py-2.5 border-b border-stone-200/70 transition-all ${className}`}>
+    <div className={`relative w-full bg-[#0e0b1d]/85 backdrop-blur-xl py-2.5 border-b border-purple-500/20 transition-all ${className}`}>
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 relative flex items-center">
         
         {/* Left Scroll Button (Desktop / larger screens) */}
         <button
           type="button"
           onClick={() => scrollByAmount(-220)}
-          className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white/95 backdrop-blur-xs border border-stone-200/90 shadow-sm text-stone-600 hover:text-neutral-900 hover:bg-stone-50 hover:shadow-md active:scale-95 transition-all shrink-0 mr-1.5 z-10 cursor-pointer"
+          className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-[#1a1533]/90 backdrop-blur-xs border border-purple-500/30 shadow-md shadow-purple-950/40 text-purple-200 hover:text-white hover:bg-purple-900/60 active:scale-95 transition-all shrink-0 mr-1.5 z-10 cursor-pointer"
           aria-label="Scroll left"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -124,8 +124,8 @@ export default function CategoryBar({
                 onClick={() => onSelectCategory && onSelectCategory(categoryId)}
                 className={`group inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight transition-all duration-200 shrink-0 select-none cursor-pointer ${
                   isSelected
-                    ? 'bg-neutral-950 text-white shadow-lg shadow-neutral-950/25 ring-1 ring-amber-500/50 scale-[1.02]'
-                    : 'bg-stone-100/90 hover:bg-stone-200/80 text-stone-700 hover:text-stone-900 border border-stone-200/70 hover:border-stone-300 shadow-2xs hover:scale-[1.01]'
+                    ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-purple-600/35 ring-1 ring-purple-400/60 scale-[1.02]'
+                    : 'bg-[#151228]/85 hover:bg-[#1f1938] text-purple-200/85 hover:text-white border border-purple-500/20 hover:border-purple-400/40 shadow-xs hover:scale-[1.01]'
                 }`}
               >
                 <span className="text-base leading-none transition-transform duration-200 group-hover:scale-115">
@@ -139,8 +139,8 @@ export default function CategoryBar({
                   <span
                     className={`ml-0.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold font-mono leading-none transition-all ${
                       isSelected
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/35 shadow-xs'
-                        : 'bg-stone-200/90 text-stone-600 group-hover:bg-stone-300 group-hover:text-stone-800'
+                        ? 'bg-purple-950/80 text-purple-200 border border-purple-400/40 shadow-xs'
+                        : 'bg-purple-900/40 text-purple-300/80 group-hover:bg-purple-800/60 group-hover:text-purple-100'
                     }`}
                   >
                     {count}
@@ -155,7 +155,7 @@ export default function CategoryBar({
         <button
           type="button"
           onClick={() => scrollByAmount(220)}
-          className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white/95 backdrop-blur-xs border border-stone-200/90 shadow-sm text-stone-600 hover:text-neutral-900 hover:bg-stone-50 hover:shadow-md active:scale-95 transition-all shrink-0 ml-1.5 z-10 cursor-pointer"
+          className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-[#1a1533]/90 backdrop-blur-xs border border-purple-500/30 shadow-md shadow-purple-950/40 text-purple-200 hover:text-white hover:bg-purple-900/60 active:scale-95 transition-all shrink-0 ml-1.5 z-10 cursor-pointer"
           aria-label="Scroll right"
         >
           <ChevronRight className="w-4 h-4" />

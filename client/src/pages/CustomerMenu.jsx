@@ -392,8 +392,8 @@ export default function CustomerMenu({
   onPlaceOrder,
   tableFromProp
 }) {
-  // 0. Layout View Mode ('grid' for 2-column compact modern, 'list' for horizontal rows)
-  const [layoutMode, setLayoutMode] = useState('grid');
+  // 0. Layout View Mode ('showcase' for 1-by-1 alternating editorial, 'grid' for 2-column compact modern, 'list' for horizontal rows)
+  const [layoutMode, setLayoutMode] = useState('showcase');
   const [activeScrollCategory, setActiveScrollCategory] = useState('All');
 
   // 1. Fixed Table Detection & Locking (No automatic table selection modal)
@@ -928,27 +928,27 @@ export default function CustomerMenu({
   };
 
   return (
-    <div className="min-h-screen bg-[#faf8f5] text-stone-900 pb-32 selection:bg-amber-500 selection:text-white relative">
+    <div className="min-h-screen bg-[#0a0815] text-stone-100 pb-32 selection:bg-purple-600 selection:text-white relative">
       {/* =====================================================================
-          Live Ambient Bistro Atmosphere Background Effect (GPU 60 FPS)
+          Live Purple Light Bistro Atmosphere Background Effect (GPU 60 FPS)
          ===================================================================== */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 select-none">
-        {/* Soft Radial Warmth Base */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_80%_at_50%_-20%,rgba(245,158,11,0.07),rgba(250,248,245,0)_75%)]" />
+        {/* Soft Radial Warmth Base with Violet/Amethyst Glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_80%_at_50%_-20%,rgba(168,85,247,0.18),rgba(10,8,21,0)_75%)]" />
 
-        {/* 1. Warm Golden Amber Ambient Orb (Drifting Top Left) */}
-        <div className="absolute -top-32 -left-28 w-[450px] h-[450px] sm:w-[560px] sm:h-[560px] rounded-full bg-gradient-to-tr from-amber-400/20 via-amber-300/12 to-transparent blur-[110px] animate-ambient-drift-1" />
+        {/* 1. Royal Violet Neon Ambient Orb (Drifting Top Left) */}
+        <div className="absolute -top-32 -left-28 w-[450px] h-[450px] sm:w-[580px] sm:h-[580px] rounded-full bg-gradient-to-tr from-purple-600/35 via-violet-500/20 to-transparent blur-[120px] animate-ambient-drift-1" />
 
-        {/* 2. Soft Rosé Wine Orb (Drifting Top Right) */}
-        <div className="absolute top-16 -right-32 w-[400px] h-[400px] sm:w-[500px] sm:h-[500px] rounded-full bg-gradient-to-bl from-rose-400/15 via-orange-300/12 to-transparent blur-[100px] animate-ambient-drift-2" />
+        {/* 2. Soft Fuchsia / Magenta Orb (Drifting Top Right) */}
+        <div className="absolute top-16 -right-32 w-[400px] h-[400px] sm:w-[520px] sm:h-[520px] rounded-full bg-gradient-to-bl from-fuchsia-600/25 via-purple-700/18 to-transparent blur-[110px] animate-ambient-drift-2" />
 
-        {/* 3. Fresh Herb Emerald Glow (Middle Left) */}
-        <div className="absolute top-[42%] -left-36 w-[420px] h-[420px] rounded-full bg-gradient-to-r from-emerald-400/12 via-teal-300/10 to-transparent blur-[120px] animate-ambient-drift-3" />
+        {/* 3. Deep Amethyst / Indigo Glow (Middle Left) */}
+        <div className="absolute top-[42%] -left-36 w-[420px] h-[420px] rounded-full bg-gradient-to-r from-indigo-600/24 via-purple-500/15 to-transparent blur-[130px] animate-ambient-drift-3" />
 
-        {/* 4. Honey Hearth Pulse (Bottom Center / Right) */}
-        <div className="absolute bottom-12 right-[8%] w-[480px] h-[480px] rounded-full bg-gradient-to-tl from-amber-500/18 via-yellow-400/10 to-transparent blur-[110px] animate-ambient-pulse" />
+        {/* 4. Honey Hearth Warm Glow Accent (Bottom Center / Right) */}
+        <div className="absolute bottom-12 right-[8%] w-[480px] h-[480px] rounded-full bg-gradient-to-tl from-purple-500/22 via-amber-500/12 to-transparent blur-[120px] animate-ambient-pulse" />
 
-        {/* 5. Floating Candlelight / Champagne Sparkle Bokeh Particles */}
+        {/* 5. Floating Purple Champagne Sparkle Bokeh Particles */}
         <div className="ambient-sparkle sparkle-1" />
         <div className="ambient-sparkle sparkle-2" />
         <div className="ambient-sparkle sparkle-3" />
@@ -959,7 +959,7 @@ export default function CustomerMenu({
         <div className="ambient-sparkle sparkle-8" />
 
         {/* 6. Subtle Micro-texture Dot Grid */}
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(120,53,15,0.025)_1px,transparent_1px)] [background-size:24px_24px] opacity-70" />
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(192,132,252,0.035)_1px,transparent_1px)] [background-size:24px_24px] opacity-70" />
       </div>
       
       {/* 1. Header Navigation */}
@@ -993,21 +993,21 @@ export default function CustomerMenu({
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 relative z-10">
 
         {/* 1. Dining Lounge Hero Banner & Fixed Table QR Badge */}
-        <div className="relative mb-6 rounded-3xl overflow-hidden bg-gradient-to-br from-neutral-950 via-stone-900 to-neutral-950 text-white p-5 sm:p-7 shadow-xl border border-stone-800/90 animate-fadeIn">
-          {/* Subtle Ambient Gold Glow in Background */}
-          <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
+        <div className="relative mb-6 rounded-3xl overflow-hidden bg-gradient-to-br from-[#120e24] via-[#1a1435] to-[#0f0c1d] text-white p-5 sm:p-7 shadow-2xl border border-purple-500/30 animate-fadeIn">
+          {/* Subtle Ambient Purple Glow in Background */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-fuchsia-500/12 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-semibold mb-2.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span className="tracking-wide uppercase text-[10px] font-bold">Artisanal Bistro &amp; Table Dining</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-xs font-semibold mb-2.5">
+                <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+                <span className="tracking-wide uppercase text-[10px] font-bold">Artisanal Bistro &amp; Purple Lounge</span>
               </div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white purple-text-glow">
                 Chef's Table Experience
               </h1>
-              <p className="text-xs sm:text-sm text-stone-400 mt-1 max-w-lg leading-relaxed">
+              <p className="text-xs sm:text-sm text-purple-200/70 mt-1 max-w-lg leading-relaxed">
                 Hand-crafted seasonal specialties, sommelier pairings, and personalized tableside ordering directly to our kitchen.
               </p>
             </div>
@@ -1059,35 +1059,35 @@ export default function CustomerMenu({
           </div>
         </div>
 
-        {/* 2. Live Customer Order Status Tracker (Order Received -> Cooking -> Ready to Serve -> Served) */}
+        {/* 2. Live Customer Order Status Tracker */}
         {activeOrder && activeOrder.status !== 'served' && (
-          <div className="mb-6 bg-white border border-stone-200/90 rounded-3xl p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] animate-fadeIn">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-stone-100">
+          <div className="mb-6 bg-[#141028]/90 border border-purple-500/30 rounded-3xl p-5 sm:p-6 shadow-xl animate-fadeIn">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-purple-500/20">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-700 flex items-center justify-center font-black text-xs shadow-2xs">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/40 text-purple-300 flex items-center justify-center font-black text-xs shadow-2xs">
                   {tableNumber ? `T${tableNumber}` : 'ORD'}
                 </div>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-extrabold text-stone-900 flex items-center gap-2">
+                  <h4 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                     <span>Live Kitchen Tracker</span>
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
                   </h4>
-                  <span className="text-[11px] text-stone-500 font-medium">
+                  <span className="text-[11px] text-purple-200/60 font-medium">
                     Order #{activeOrder.orderId || activeOrder.orderNumber || 'Active'} &bull; Table {tableNumber || activeOrder.tableNumber}
                   </span>
                 </div>
               </div>
               <div className="text-right">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/80 shadow-2xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-emerald-300 bg-emerald-950/80 border border-emerald-500/40 shadow-xs">
                   {activeOrder.status === 'preparing' ? '🔥 Cooking in Kitchen' : activeOrder.status === 'ready' ? '🛎️ Ready to Serve' : '⏳ Order Received'}
                 </span>
               </div>
             </div>
 
-            {/* Stepper Progress Bar with Connecting Animated Line */}
+            {/* Stepper Progress Bar */}
             {(() => {
               const stepOrder = ['pending', 'preparing', 'ready', 'served'];
               const currentIndex = Math.max(0, stepOrder.indexOf(activeOrder.status || 'pending'));
@@ -1095,15 +1095,12 @@ export default function CustomerMenu({
 
               return (
                 <div className="relative pt-2 pb-1">
-                  {/* Background Track Line */}
-                  <div className="absolute top-6 left-8 right-8 h-1 bg-stone-200/80 -translate-y-1/2 z-0 rounded-full" />
-                  {/* Active Gradient Glow Line */}
+                  <div className="absolute top-6 left-8 right-8 h-1 bg-purple-950/80 -translate-y-1/2 z-0 rounded-full" />
                   <div
-                    className="absolute top-6 left-8 h-1 bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-500 -translate-y-1/2 z-0 rounded-full transition-all duration-700 shadow-xs"
+                    className="absolute top-6 left-8 h-1 bg-gradient-to-r from-purple-500 via-fuchsia-500 to-emerald-400 -translate-y-1/2 z-0 rounded-full transition-all duration-700 shadow-xs"
                     style={{ width: `calc((100% - 4rem) * ${progressPercent / 100})` }}
                   />
 
-                  {/* Stepper Nodes */}
                   <div className="relative z-10 grid grid-cols-4 gap-2 text-center">
                     {[
                       { id: 'pending', label: 'Received', icon: CheckCircle2 },
@@ -1120,15 +1117,15 @@ export default function CustomerMenu({
                           <div
                             className={`w-9 h-9 rounded-full flex items-center justify-center text-xs transition-all duration-300 ${
                               isCurrent
-                                ? 'bg-amber-500 text-neutral-950 ring-4 ring-amber-500/25 font-bold scale-110 shadow-lg shadow-amber-500/30'
+                                ? 'bg-purple-600 text-white ring-4 ring-purple-500/30 font-bold scale-110 shadow-lg shadow-purple-600/40'
                                 : isCompleted
                                 ? 'bg-emerald-600 text-white font-medium shadow-md shadow-emerald-600/25'
-                                : 'bg-stone-100 text-stone-400 border border-stone-200/90'
+                                : 'bg-purple-950/60 text-purple-400/50 border border-purple-500/20'
                             }`}
                           >
                             <StepIcon className="w-4 h-4" />
                           </div>
-                          <span className={`text-[11px] mt-1.5 font-bold tracking-tight ${isCurrent ? 'text-amber-700 font-extrabold' : isCompleted ? 'text-stone-800' : 'text-stone-400'}`}>
+                          <span className={`text-[11px] mt-1.5 font-bold tracking-tight ${isCurrent ? 'text-purple-300 font-extrabold' : isCompleted ? 'text-stone-300' : 'text-stone-500'}`}>
                             {step.label}
                           </span>
                         </div>
@@ -1145,21 +1142,21 @@ export default function CustomerMenu({
         <section className="mb-4 space-y-3">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
             
-            {/* High-Contrast Luxury Search Input */}
+            {/* Search Input */}
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-purple-400/60 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search delicious dishes, ingredients, drinks..."
-                className="w-full pl-10 pr-9 py-2.5 sm:py-3 text-xs sm:text-sm bg-white rounded-2xl border border-stone-200/90 shadow-2xs focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 placeholder:text-stone-400 text-stone-900 transition-all"
+                className="w-full pl-10 pr-9 py-2.5 sm:py-3 text-xs sm:text-sm bg-[#141029]/90 rounded-2xl border border-purple-500/30 shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-400 placeholder:text-purple-300/40 text-white transition-all"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-white p-1"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1168,31 +1165,29 @@ export default function CustomerMenu({
 
             {/* Dietary Toggle Pills */}
             <div className="flex items-center gap-2 shrink-0">
-              {/* Veg Only Toggle */}
               <button
                 type="button"
                 onClick={() => setVegOnlyFilter((v) => !v)}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-2xs ${
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
                   vegOnlyFilter
-                    ? 'bg-emerald-700 text-white border-emerald-700 shadow-md shadow-emerald-700/20 ring-1 ring-emerald-500/30'
-                    : 'bg-white hover:bg-stone-100 text-stone-700 border-stone-200/90'
+                    ? 'bg-emerald-700 text-white border-emerald-600 shadow-md shadow-emerald-700/30 ring-1 ring-emerald-400/40'
+                    : 'bg-[#141029]/80 hover:bg-[#1b1535] text-stone-300 border-purple-500/25'
                 }`}
               >
-                <Leaf className={`w-3.5 h-3.5 ${vegOnlyFilter ? 'fill-current' : 'text-emerald-600'}`} />
+                <Leaf className={`w-3.5 h-3.5 ${vegOnlyFilter ? 'fill-current' : 'text-emerald-400'}`} />
                 <span>Vegetarian</span>
               </button>
 
-              {/* Spicy Toggle */}
               <button
                 type="button"
                 onClick={() => setSpicyFilter((s) => !s)}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-2xs ${
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
                   spicyFilter
-                    ? 'bg-rose-700 text-white border-rose-700 shadow-md shadow-rose-700/20 ring-1 ring-rose-500/30'
-                    : 'bg-white hover:bg-stone-100 text-stone-700 border-stone-200/90'
+                    ? 'bg-rose-700 text-white border-rose-600 shadow-md shadow-rose-700/30 ring-1 ring-rose-400/40'
+                    : 'bg-[#141029]/80 hover:bg-[#1b1535] text-stone-300 border-purple-500/25'
                 }`}
               >
-                <Flame className={`w-3.5 h-3.5 ${spicyFilter ? 'fill-current' : 'text-rose-600'}`} />
+                <Flame className={`w-3.5 h-3.5 ${spicyFilter ? 'fill-current' : 'text-rose-400'}`} />
                 <span>Spicy</span>
               </button>
             </div>
@@ -1201,7 +1196,7 @@ export default function CustomerMenu({
         </section>
 
         {/* Category Horizontal Sticky Pill Bar */}
-        <section className="sticky top-16 z-30 -mx-3 sm:mx-0 mb-4 bg-[#faf8f5]/95 backdrop-blur-md pt-1 pb-1.5 border-b border-stone-200/60 shadow-2xs">
+        <section className="sticky top-16 z-30 -mx-3 sm:mx-0 mb-4 bg-[#0a0815]/95 backdrop-blur-md pt-1 pb-1.5 border-b border-purple-500/20 shadow-md">
           <CategoryBar
             categories={categoriesList}
             selectedCategory={selectedCategory === 'All' ? activeScrollCategory : selectedCategory}
@@ -1210,12 +1205,12 @@ export default function CustomerMenu({
           />
         </section>
 
-        {/* Results Info Bar & Layout Switcher */}
-        <div id="menu-content-root" className="flex items-center justify-between mb-4 px-1 scroll-mt-32">
+        {/* Results Info Bar & 3-way Layout Switcher (Showcase / Grid / List) */}
+        <div id="menu-content-root" className="flex items-center justify-between mb-5 px-1 scroll-mt-32">
           <div className="flex items-center gap-2 sm:gap-2.5">
-            <h2 className="text-base sm:text-lg font-black text-stone-900 tracking-tight flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-2">
               <span>{selectedCategory === 'All' ? 'All Menu Choices' : `${getCategoryMetadata(selectedCategory).title}`}</span>
-              <span className="text-xs font-bold font-mono text-amber-800 bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 rounded-full shadow-2xs">
+              <span className="text-xs font-bold font-mono text-purple-300 bg-purple-950/70 border border-purple-500/30 px-2.5 py-0.5 rounded-full shadow-2xs">
                 {filteredItems.length}
               </span>
             </h2>
@@ -1227,39 +1222,52 @@ export default function CustomerMenu({
                   setVegOnlyFilter(false);
                   setSpicyFilter(false);
                 }}
-                className="text-xs text-amber-700 hover:text-amber-800 font-bold cursor-pointer underline decoration-amber-400 underline-offset-2 ml-1"
+                className="text-xs text-purple-400 hover:text-purple-300 font-bold cursor-pointer underline decoration-purple-400 underline-offset-2 ml-1"
               >
                 Reset Filters
               </button>
             )}
           </div>
 
-          {/* View Mode Toggle: Grid (2-col) / List (Compact) */}
-          <div className="flex items-center bg-stone-200/80 p-0.5 rounded-xl border border-stone-300/70 shadow-2xs">
+          {/* View Mode Switcher: Showcase (1-by-1 alternating) / Grid / List */}
+          <div className="flex items-center bg-[#141029] p-1 rounded-2xl border border-purple-500/30 shadow-md">
+            <button
+              type="button"
+              onClick={() => setLayoutMode('showcase')}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                layoutMode === 'showcase'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 ring-1 ring-purple-400/50'
+                  : 'text-stone-400 hover:text-white'
+              }`}
+              title="Showcase View: 1-by-1 Alternating Layout"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+              <span className="text-[11px] font-bold">Showcase</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setLayoutMode('grid')}
-              className={`p-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+              className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
                 layoutMode === 'grid'
-                  ? 'bg-white text-stone-950 shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 ring-1 ring-purple-400/50'
+                  : 'text-stone-400 hover:text-white'
               }`}
               title="2-Column Compact Grid"
-              aria-label="2-Column Grid View"
             >
               <LayoutGrid className="w-3.5 h-3.5" />
               <span className="hidden sm:inline-block text-[11px] font-semibold">Grid</span>
             </button>
+
             <button
               type="button"
               onClick={() => setLayoutMode('list')}
-              className={`p-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+              className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
                 layoutMode === 'list'
-                  ? 'bg-white text-stone-950 shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 ring-1 ring-purple-400/50'
+                  : 'text-stone-400 hover:text-white'
               }`}
               title="Compact List View"
-              aria-label="List View"
             >
               <Rows3 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline-block text-[11px] font-semibold">List</span>
@@ -1271,27 +1279,27 @@ export default function CustomerMenu({
         {filteredItems.length > 0 ? (
           <div className="space-y-8 sm:space-y-10">
             {selectedCategory === 'All' ? (
-              // Categorized Grouped View (Starters -> Mains -> Burgers -> Desserts -> Beverages)
+              // Categorized Grouped View
               categorizedSections.map((section) => (
                 <section
                   key={section.categoryKey}
                   id={`cat-section-${section.categoryKey}`}
-                  className="space-y-3.5 scroll-mt-32 pt-1"
+                  className="space-y-4 scroll-mt-32 pt-1"
                 >
-                  {/* Category Header with Icon, Title, Dish Count Pill, and Subtitle */}
-                  <div className="flex items-center justify-between pb-2.5 border-b border-stone-200/90">
+                  {/* Category Header */}
+                  <div className="flex items-center justify-between pb-2.5 border-b border-purple-500/25">
                     <div className="flex items-center gap-2.5 sm:gap-3">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 flex items-center justify-center text-lg sm:text-xl shadow-2xs shrink-0">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center justify-center text-lg sm:text-xl shadow-2xs shrink-0">
                         {section.icon}
                       </div>
                       <div>
-                        <h3 className="text-base sm:text-lg lg:text-xl font-black text-stone-900 tracking-tight flex items-center gap-2">
+                        <h3 className="text-base sm:text-lg lg:text-xl font-black text-white tracking-tight flex items-center gap-2">
                           <span>{section.title}</span>
-                          <span className="text-[11px] sm:text-xs font-bold font-mono text-amber-800 bg-amber-500/15 border border-amber-500/30 px-2 sm:px-2.5 py-0.5 rounded-full shadow-2xs">
+                          <span className="text-[11px] sm:text-xs font-bold font-mono text-purple-300 bg-purple-950/70 border border-purple-500/30 px-2 sm:px-2.5 py-0.5 rounded-full shadow-2xs">
                             {section.items.length} {section.items.length === 1 ? 'dish' : 'dishes'}
                           </span>
                         </h3>
-                        <p className="text-[11px] sm:text-xs text-stone-500 font-medium line-clamp-1 mt-0.5">
+                        <p className="text-[11px] sm:text-xs text-purple-200/60 font-medium line-clamp-1 mt-0.5">
                           {section.subtitle}
                         </p>
                       </div>
@@ -1303,25 +1311,28 @@ export default function CustomerMenu({
                         setSelectedCategory(section.canonicalId);
                         window.scrollTo({ top: 160, behavior: 'smooth' });
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-amber-500/15 hover:border-amber-500/30 text-stone-700 hover:text-amber-900 border border-stone-200/90 text-xs font-bold transition-all shadow-2xs cursor-pointer shrink-0"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900/80 text-purple-200 hover:text-white border border-purple-500/30 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
                     >
                       <span>Filter</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
-                  {/* Compact Responsive Grid: 2-col on mobile, 3 on tablet, 4 on desktop */}
+                  {/* Dishes Display: Showcase (1-by-1 alternating) | Grid | List */}
                   <div className={
-                    layoutMode === 'list'
+                    layoutMode === 'showcase'
+                      ? "flex flex-col gap-6 sm:gap-8"
+                      : layoutMode === 'list'
                       ? "flex flex-col gap-2.5 sm:gap-3"
                       : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 lg:gap-4"
                   }>
-                    {section.items.map((dish) => {
+                    {section.items.map((dish, dishIdx) => {
                       const inCart = cart[dish.id];
                       return (
                         <MenuItemCard
                           key={dish.id}
                           item={dish}
+                          index={dishIdx}
                           layout={layoutMode}
                           cartQuantity={inCart ? inCart.quantity : 0}
                           itemNote={inCart ? inCart.note : ''}
@@ -1341,20 +1352,20 @@ export default function CustomerMenu({
               (() => {
                 const activeMeta = getCategoryMetadata(selectedCategory);
                 return (
-                  <section className="space-y-3.5">
-                    <div className="flex items-center justify-between pb-2.5 border-b border-stone-200/90">
+                  <section className="space-y-4">
+                    <div className="flex items-center justify-between pb-2.5 border-b border-purple-500/25">
                       <div className="flex items-center gap-2.5 sm:gap-3">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 flex items-center justify-center text-lg sm:text-xl shadow-2xs shrink-0">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center justify-center text-lg sm:text-xl shadow-2xs shrink-0">
                           {activeMeta.icon}
                         </div>
                         <div>
-                          <h3 className="text-base sm:text-lg lg:text-xl font-black text-stone-900 tracking-tight flex items-center gap-2">
+                          <h3 className="text-base sm:text-lg lg:text-xl font-black text-white tracking-tight flex items-center gap-2">
                             <span>{activeMeta.title}</span>
-                            <span className="text-[11px] sm:text-xs font-bold font-mono text-amber-800 bg-amber-500/15 border border-amber-500/30 px-2 sm:px-2.5 py-0.5 rounded-full shadow-2xs">
+                            <span className="text-[11px] sm:text-xs font-bold font-mono text-purple-300 bg-purple-950/70 border border-purple-500/30 px-2 sm:px-2.5 py-0.5 rounded-full shadow-2xs">
                               {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'}
                             </span>
                           </h3>
-                          <p className="text-[11px] sm:text-xs text-stone-500 font-medium line-clamp-1 mt-0.5">
+                          <p className="text-[11px] sm:text-xs text-purple-200/60 font-medium line-clamp-1 mt-0.5">
                             {activeMeta.subtitle}
                           </p>
                         </div>
@@ -1366,25 +1377,28 @@ export default function CustomerMenu({
                           setSelectedCategory('All');
                           window.scrollTo({ top: 160, behavior: 'smooth' });
                         }}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-white text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 text-white text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        <Sparkles className="w-3.5 h-3.5 text-purple-200" />
                         <span>View All Categories</span>
                       </button>
                     </div>
 
-                    {/* Compact Responsive Grid: 2-col on mobile, 3 on tablet, 4 on desktop */}
+                    {/* Dishes Display: Showcase (1-by-1 alternating) | Grid | List */}
                     <div className={
-                      layoutMode === 'list'
+                      layoutMode === 'showcase'
+                        ? "flex flex-col gap-6 sm:gap-8"
+                        : layoutMode === 'list'
                         ? "flex flex-col gap-2.5 sm:gap-3"
                         : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 lg:gap-4"
                     }>
-                      {filteredItems.map((dish) => {
+                      {filteredItems.map((dish, dishIdx) => {
                         const inCart = cart[dish.id];
                         return (
                           <MenuItemCard
                             key={dish.id}
                             item={dish}
+                            index={dishIdx}
                             layout={layoutMode}
                             cartQuantity={inCart ? inCart.quantity : 0}
                             itemNote={inCart ? inCart.note : ''}
