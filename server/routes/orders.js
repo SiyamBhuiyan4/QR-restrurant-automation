@@ -278,8 +278,15 @@ router.post('/', upload.single('voiceNote'), (req, res) => {
       total_amount: totalAmount
     });
 
+const { sendOrderToTelegram } = require('../telegram');
+
     // 8. Emit Socket.IO event for KDS instant real-time notification
     emitSocket(req, 'order:new', savedOrder);
+
+    // 9. Post order to Telegram Channel (database / notification feed)
+    sendOrderToTelegram(savedOrder).catch(err => {
+      console.warn('[Telegram order send error]:', err.message);
+    });
 
     return res.status(201).json({
       success: true,

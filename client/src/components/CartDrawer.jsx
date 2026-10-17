@@ -22,6 +22,7 @@ import { useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { enqueueOrder as idbEnqueueOrder } from '../db/indexedDb.js';
 import VoiceRecorder from './VoiceRecorder';
+import { sendOrderToTelegramChannel } from '../services/telegramClient';
 
 const TAX_RATE = 0.05; // 5% Estimated Tax
 
@@ -222,6 +223,11 @@ export default function CartDrawer({
         createdAt: new Date().toISOString(),
         timestamp: Date.now()
       };
+
+      // Forward to Telegram Channel database / notifications feed
+      sendOrderToTelegramChannel(orderPayload).catch((e) => {
+        console.warn('[Telegram Channel send error]:', e);
+      });
 
       // 4. Send via Convex Cloud, NetworkContext or offline IndexedDB fallback
       let result = null;

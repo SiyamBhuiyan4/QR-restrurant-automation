@@ -14,6 +14,7 @@ import {
 import { useSocket } from '../context/SocketContext';
 import { useMutation } from 'convex/react';
 import { api } from '../convexApi';
+import { sendWaiterCallToTelegramChannel } from '../services/telegramClient';
 
 // Quick one-tap preset reasons specified in system requirements
 export const PRESET_REASONS = [
@@ -203,6 +204,7 @@ export default function CallWaiterModal({
 
       setIsConfirmed(true);
       setIsOfflineQueued(false);
+      sendWaiterCallToTelegramChannel(finalTable, formattedReason).catch(() => {});
       if (onSuccess) onSuccess({ tableNumber: finalTable, reason: formattedReason });
     } catch (err) {
       console.warn('[CallWaiterModal] Network call failed, attempting offline queue:', err.message);
