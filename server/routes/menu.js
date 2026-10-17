@@ -1,6 +1,57 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const db = require('../db');
+
+// Multer storage for food photos and short kitchen reel videos
+const mediaStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const isVideo = file.mimetype.startsWith('video/');
+    const targetDir = isVideo 
+      ? path.join(__dirname, '..', 'uploads', 'videos')
+      : path.join(__dirname, '..', 'uploads', 'photos');
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+    cb(null, targetDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname).toLowerCase() || (file.mimetype.startsWith('video/') ? '.mp4' : '.jpg');
+    const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    cb(null, safeName);
+  }
+});
+
+const mediaUpload = multer({
+  storage: mediaStorage,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB max for high-res food photos or kitchen reels
+});
+
+/**
+ * POST /api/menu/upload
+ * Upload dish pictures or kitchen making-videos to local storage
+ */
+router.post('/upload', mediaUpload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file provided' });
+    }
+    const isVideo = req.file.mimetype.startsWith('video/');
+    const relativeUrl = `/uploads/${isVideo ? 'videos' : 'photos'}/${req.file.filename}`;
+    return res.status(200).json({
+      success: true,
+      url: relativeUrl,
+      filename: req.file.filename,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    });
+  } catch (err) {
+    console.error('Error uploading media:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 /**
  * Helper to emit Socket.IO events safely if Socket.IO is initialized on app
