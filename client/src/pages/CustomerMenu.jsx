@@ -705,6 +705,41 @@ export default function CustomerMenu({
           </div>
         )}
 
+        {/* 3. Restaurant Welcome & Table Badge Hero Banner */}
+        <div className="relative mb-6 rounded-3xl overflow-hidden bg-gradient-to-br from-neutral-900 via-neutral-900 to-amber-950 text-white p-5 sm:p-7 shadow-xl border border-neutral-800 animate-fadeIn">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-semibold mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Smart Restaurant Experience</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white">
+                Fresh Gourmet &amp; Table Dining
+              </h1>
+              <p className="text-xs sm:text-sm text-neutral-400 mt-1 max-w-lg">
+                Browse our chef-crafted menu, watch kitchen making-reels, customize with voice notes, and order seamlessly.
+              </p>
+            </div>
+
+            {tableNumber && (
+              <div className="shrink-0 bg-white/10 backdrop-blur-md border border-white/15 px-4 py-3 rounded-2xl flex items-center gap-3 shadow-md">
+                <div className="w-10 h-10 rounded-xl bg-amber-500 text-neutral-950 font-black text-sm flex items-center justify-center shadow-md">
+                  {tableNumber}
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1">
+                    <Lock className="w-3 h-3" /> Locked via QR
+                  </div>
+                  <div className="text-sm font-extrabold text-white">
+                    Table {tableNumber}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Search Bar & Dietary Filter Toggles */}
         <section className="mb-4 space-y-3">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">

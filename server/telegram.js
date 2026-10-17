@@ -11,8 +11,8 @@ const fs = require('fs');
 const path = require('path');
 
 // Read config from environment variables or local fallback config
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID || ''; // Channel ID (e.g. -1001234567890 or @ChannelUsername)
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8819171458:AAHd3_pjEj2tEYfuB1zgJkznnSqPsisB6p0';
+const CHAT_ID = process.env.TELEGRAM_CHAT_ID || '-1004253971473'; // Channel ID for @Restaurant Media
 
 const TELEGRAM_API_BASE = 'https://api.telegram.org';
 

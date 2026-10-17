@@ -5,15 +5,15 @@
  * directly to the restaurant's Telegram Channel!
  */
 
-export const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '';
-export const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID || '';
+export const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '8819171458:AAHd3_pjEj2tEYfuB1zgJkznnSqPsisB6p0';
+export const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID || '-1004253971473';
 
 /**
  * Send an Order Notification to Telegram Channel directly from Diner PWA
  */
 export async function sendOrderToTelegramChannel(orderPayload) {
-  const token = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || (typeof window !== 'undefined' ? localStorage.getItem('smartdine_tg_token') : '') || '';
-  const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID || (typeof window !== 'undefined' ? localStorage.getItem('smartdine_tg_chat_id') : '') || '';
+  const token = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || (typeof window !== 'undefined' ? localStorage.getItem('smartdine_tg_token') : '') || '8819171458:AAHd3_pjEj2tEYfuB1zgJkznnSqPsisB6p0';
+  const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID || (typeof window !== 'undefined' ? localStorage.getItem('smartdine_tg_chat_id') : '') || '-1004253971473';
 
   if (!token || !chatId) {
     // Config not yet provided
@@ -67,8 +67,8 @@ export async function sendOrderToTelegramChannel(orderPayload) {
  * Send Waiter Bell Notification to Telegram Channel directly from Diner PWA
  */
 export async function sendWaiterCallToTelegramChannel(tableNumber, reason) {
-  const token = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || (typeof window !== 'undefined' ? localStorage.getItem('smartdine_tg_token') : '') || '';
-  const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID || (typeof window !== 'undefined' ? localStorage.getItem('smartdine_tg_chat_id') : '') || '';
+  const token = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || (typeof window !== 'undefined' ? localStorage.getItem('smartdine_tg_token') : '') || '8819171458:AAHd3_pjEj2tEYfuB1zgJkznnSqPsisB6p0';
+  const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID || (typeof window !== 'undefined' ? localStorage.getItem('smartdine_tg_chat_id') : '') || '-1004253971473';
 
   if (!token || !chatId) {
     return { success: false, reason: 'unconfigured' };
