@@ -376,5 +376,121 @@
   animation: purplePulseGlow 3s ease-in-out infinite;
 }
 
+/* ==========================================================================
+   Slow Continuous Dish Plate 360 Rotation (User Requested)
+   ========================================================================== */
+@keyframes slowDishSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-dish-spin {
+  animation: slowDishSpin 36s linear infinite;
+  will-change: transform;
+}
+
+@keyframes modalBackdropFade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-modal-backdrop {
+  animation: modalBackdropFade 0.35s ease-out forwards;
+}
+
+@keyframes modalContainerBuild {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateY(45px);
+    border-radius: 44px;
+    filter: blur(8px);
+  }
+  45% {
+    opacity: 0.98;
+    transform: scale(1.018) translateY(-4px);
+    border-radius: 28px;
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    border-radius: 24px;
+    filter: blur(0px);
+  }
+}
+
+@keyframes staggerSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(22px) scale(0.97);
+  }
+  60% {
+    opacity: 0.85;
+    transform: translateY(-2px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes staggerScaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  60% {
+    opacity: 0.9;
+    transform: scale(1.02) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal-build {
+  animation: modalContainerBuild 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity, filter;
+}
+
+.animate-stagger-1 {
+  animation: staggerSlideUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.15s backwards;
+  will-change: transform, opacity;
+}
+
+.animate-stagger-2 {
+  animation: staggerScaleIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.35s backwards;
+  will-change: transform, opacity;
+}
+
+.animate-stagger-3 {
+  animation: staggerSlideUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.55s backwards;
+  will-change: transform, opacity;
+}
+
+.animate-stagger-4 {
+  animation: staggerSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.75s backwards;
+  will-change: transform, opacity;
+}
+
+.animate-stagger-5 {
+  animation: staggerSlideUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.95s backwards;
+  will-change: transform, opacity;
+}
+
+.animate-stagger-6 {
+  animation: staggerSlideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 1.15s backwards;
+  will-change: transform, opacity;
+}
+
 
 

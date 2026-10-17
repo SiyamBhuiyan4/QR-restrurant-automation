@@ -235,27 +235,24 @@ export default function MenuItemCard({
           {/* Subtle Ambient Culinary Glow Behind Floating Dish */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#FF5A26]/8 rounded-full blur-3xl pointer-events-none group-hover:bg-[#FF5A26]/12 transition-all duration-500" />
 
-          {/* Unboxed Floating Circular Plate with Orbit Ring (Screenshot 2) */}
-          <div className="relative w-64 h-64 sm:w-72 sm:h-72 md:w-84 md:h-84 shrink-0 flex items-center justify-center select-none">
+          {/* Unboxed Floating Circular Plate (User Requested: Clean Natural Dish, No Burning Border, Slow 360 Rotation, Hover Zoom) */}
+          <div className="relative w-64 h-64 sm:w-72 sm:h-72 md:w-84 md:h-84 shrink-0 flex items-center justify-center select-none group-hover:scale-110 md:group-hover:scale-115 transition-transform duration-500 ease-out">
             
-            {/* Dashed Orbit Ring with 4 Node Dots (Screenshot 2) */}
-            <div className="absolute inset-0 rounded-full border border-dashed border-[#FF7A45]/35 group-hover:border-[#FF5A26]/60 transition-colors pointer-events-none">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[#FF5A26] shadow-sm shadow-[#FF5A26]/80 ring-2 ring-[#0a0a0c]" />
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-3 h-3 rounded-full bg-[#FF5A26] shadow-sm shadow-[#FF5A26]/80 ring-2 ring-[#0a0a0c]" />
-              <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[#FF5A26] shadow-sm shadow-[#FF5A26]/80 ring-2 ring-[#0a0a0c]" />
-              <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[#FF5A26] shadow-sm shadow-[#FF5A26]/80 ring-2 ring-[#0a0a0c]" />
-            </div>
+            {/* Soft Ambient Depth Shadow (Natural Culinary Dish Atmosphere) */}
+            <div className="absolute inset-4 rounded-full bg-black/60 blur-2xl pointer-events-none group-hover:bg-[#FF5A26]/10 transition-all duration-700" />
 
-            {/* Circular Plate Image */}
-            <div className="relative w-52 h-52 sm:w-60 sm:h-60 md:w-72 md:h-72 rounded-full overflow-hidden shadow-2xl ring-4 ring-[#FF5A26]/20 group-hover:ring-[#FF5A26]/60 group-hover:scale-104 transition-all duration-500 bg-zinc-900">
+            {/* Circular Plate Image with Slow Continuous 360 Rotation */}
+            <div className="relative w-56 h-56 sm:w-64 sm:h-64 md:w-76 md:h-76 rounded-full overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.95)] drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)] border border-white/10 bg-zinc-950 transition-all duration-500">
               {item.image && !imageError ? (
-                <img
-                  src={item.image}
-                  alt={dishTitle}
-                  onError={() => setImageError(true)}
-                  loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
-                />
+                <div className="w-full h-full animate-dish-spin">
+                  <img
+                    src={item.image}
+                    alt={dishTitle}
+                    onError={() => setImageError(true)}
+                    loading="lazy"
+                    className="w-full h-full object-cover select-none pointer-events-none"
+                  />
+                </div>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-stone-300 p-4">
                   <UtensilsCrossed className="w-8 h-8 text-[#FF5A26] mb-1" />

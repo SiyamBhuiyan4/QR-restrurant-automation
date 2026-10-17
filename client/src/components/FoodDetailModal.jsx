@@ -58,10 +58,10 @@ export const FOOD_ANGLE_POOLS = {
     'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=900&auto=format&fit=crop&q=80'
   ],
   calamari: [
-    'https://images.unsplash.com/photo-1604909052743-94e838986d24?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=900&auto=format&fit=crop&q=80'
   ],
   // Mains
   steak: [
@@ -148,8 +148,7 @@ export const FOOD_ANGLE_POOLS = {
   starters: [
     'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1604909052743-94e838986d24?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80'
   ],
   mains: [
     'https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80',
@@ -660,12 +659,12 @@ export default function FoodDetailModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-950/85 backdrop-blur-xl transition-all duration-300"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-950/85 backdrop-blur-xl transition-all duration-300 animate-modal-backdrop"
       onClick={onClose}
     >
       {/* Modal Container: Modern Dark Glassmorphic Bistro Card */}
       <div 
-        className="w-full sm:max-w-xl md:max-w-2xl max-h-[92vh] sm:max-h-[90vh] bg-stone-900/95 backdrop-blur-2xl border border-white/10 sm:rounded-3xl rounded-t-3xl shadow-2xl shadow-black/80 flex flex-col overflow-hidden text-stone-100 transition-all duration-300 relative"
+        className="w-full sm:max-w-xl md:max-w-2xl max-h-[92vh] sm:max-h-[90vh] bg-stone-900/95 backdrop-blur-2xl border border-white/10 sm:rounded-3xl rounded-t-3xl shadow-2xl shadow-black/80 flex flex-col overflow-hidden text-stone-100 transition-all duration-300 relative animate-modal-build"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Ambient Top Glow */}
@@ -674,7 +673,7 @@ export default function FoodDetailModal({
         {/* ------------------------------------------------------------------
             1. Sticky Top Bar: Category, Dietary Badges, Controls
            ------------------------------------------------------------------ */}
-        <div className="relative flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/10 bg-stone-900/90 backdrop-blur-md z-30">
+        <div className="relative flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/10 bg-stone-900/90 backdrop-blur-md z-30 animate-stagger-1">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-[#FF5A26]/15 text-[#FF7A45] border border-[#FF5A26]/30">
               {dish.category || 'Specialty'}
@@ -730,7 +729,7 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               2. MULTI-PHOTO SLIDER WITH TOUCH SWIPE & THUMBNAILS (ON TOP)
              ---------------------------------------------------------------- */}
-          <div className="relative bg-black select-none">
+          <div className="relative bg-black select-none animate-stagger-2">
             <div 
               className="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-stone-950 flex items-center justify-center touch-pan-y"
               onTouchStart={handleTouchStart}
@@ -848,7 +847,7 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               3. Dish Title, Price, Prep Time & Social Proof
              ---------------------------------------------------------------- */}
-          <div className="p-4 sm:p-5 space-y-2.5">
+          <div className="p-4 sm:p-5 space-y-2.5 animate-stagger-3">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
@@ -902,7 +901,7 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               4. Ingredients Profile
              ---------------------------------------------------------------- */}
-          <div className="p-4 sm:p-5 space-y-2.5 bg-stone-900/60">
+          <div className="p-4 sm:p-5 space-y-2.5 bg-stone-900/60 animate-stagger-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-stone-300 flex items-center justify-between">
               <span>Fresh Ingredients Profile</span>
               <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
@@ -926,7 +925,7 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               DEDICATED CHEF'S KITCHEN REEL IN SCROLLABLE BODY
              ---------------------------------------------------------------- */}
-          <div className="p-4 sm:p-5 space-y-3 bg-stone-950/70 border-t border-white/5">
+          <div className="p-4 sm:p-5 space-y-3 bg-stone-950/70 border-t border-white/5 animate-stagger-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 flex items-center justify-center text-[#FF5A26]">
@@ -1061,7 +1060,7 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               5. Chef Customization & Voice Notes
              ---------------------------------------------------------------- */}
-          <div className="p-4 sm:p-5 space-y-3 bg-stone-900/40">
+          <div className="p-4 sm:p-5 space-y-3 bg-stone-900/40 animate-stagger-5">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-stone-300 flex items-center gap-1.5">
@@ -1141,7 +1140,7 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               6. INTERACTIVE REVIEWS & LEAVE A COMMENT SECTION
              ---------------------------------------------------------------- */}
-          <div id="reviews-section" className="p-4 sm:p-5 space-y-4 bg-stone-900/80 scroll-mt-4">
+          <div id="reviews-section" className="p-4 sm:p-5 space-y-4 bg-stone-900/80 scroll-mt-4 animate-stagger-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/10">
               <div>
                 <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-stone-200 flex items-center gap-1.5">
@@ -1344,7 +1343,7 @@ export default function FoodDetailModal({
         {/* ------------------------------------------------------------------
             7. Prominent Sticky Bottom Bar
            ------------------------------------------------------------------ */}
-        <div className="p-3.5 sm:p-4 bg-stone-900/95 backdrop-blur-xl border-t border-white/10 flex items-center gap-3 z-30 shadow-2xl">
+        <div className="p-3.5 sm:p-4 bg-stone-900/95 backdrop-blur-xl border-t border-white/10 flex items-center gap-3 z-30 shadow-2xl animate-stagger-6">
           {/* Stepper */}
           <div className="flex items-center bg-stone-800/90 border border-stone-700/80 rounded-xl p-1 shrink-0">
             <button
