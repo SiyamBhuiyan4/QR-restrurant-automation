@@ -254,20 +254,20 @@ export default function CallWaiterModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn"
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-neutral-100 overflow-hidden transform transition-all animate-scaleUp text-neutral-900"
+        className="w-full max-w-md bg-[#161619] rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden transform transition-all animate-scaleUp text-white"
       >
         {/* Header Bar */}
-        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 p-5 text-white relative">
+        <div className="flame-gradient-btn p-5 text-white relative shadow-lg shadow-[#FF5A26]/30">
           <button
             type="button"
             onClick={handleDismiss}
             disabled={isSubmitting}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition active:scale-95 cursor-pointer disabled:opacity-50"
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/25 hover:bg-black/40 flex items-center justify-center text-white transition active:scale-95 cursor-pointer disabled:opacity-50"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -279,8 +279,8 @@ export default function CallWaiterModal({
             </div>
             <div>
               <h2 className="text-xl font-extrabold tracking-tight">Call Waiter</h2>
-              <div className="flex items-center gap-2 mt-0.5 text-xs text-amber-100 font-medium">
-                <span className="bg-white/25 px-2 py-0.5 rounded-full font-bold text-white">
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-white/90 font-medium">
+                <span className="bg-black/30 px-2.5 py-0.5 rounded-full font-bold text-white border border-white/20">
                   Table {tableNumber || '?'}
                 </span>
                 <span>&bull; Instant Floor Bell</span>
@@ -294,24 +294,24 @@ export default function CallWaiterModal({
           {/* CONFIRMED STATE */}
           {isConfirmed ? (
             <div className="text-center py-4 space-y-4 animate-scaleUp">
-              <div className="w-20 h-20 mx-auto rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-8 ring-emerald-50">
+              <div className="w-20 h-20 mx-auto rounded-3xl bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shadow-lg shadow-emerald-900/30">
                 <CheckCircle2 className="w-10 h-10 animate-bounce" />
               </div>
 
               <div>
-                <h3 className="text-2xl font-black text-neutral-900">
+                <h3 className="text-2xl font-black text-white">
                   Waiter Alerted!
                 </h3>
-                <p className="text-sm font-semibold text-emerald-700 mt-1">
+                <p className="text-sm font-semibold text-emerald-400 mt-1">
                   Staff has been notified for Table {tableNumber}.
                 </p>
-                <div className="mt-3 p-3 bg-neutral-50 rounded-2xl border border-neutral-200/80 text-xs text-neutral-600 inline-block max-w-xs text-left">
-                  <span className="font-semibold text-neutral-800">Requested:</span>{' '}
-                  <span className="font-medium text-amber-600">
+                <div className="mt-3 p-3 bg-zinc-900/90 rounded-2xl border border-zinc-800 text-xs text-zinc-300 inline-block max-w-xs text-left">
+                  <span className="font-semibold text-zinc-400">Requested:</span>{' '}
+                  <span className="font-bold text-[#FF7A45]">
                     {selectedReason.label}
                   </span>
                   {customMessage.trim() && (
-                    <p className="mt-1 italic text-neutral-500">
+                    <p className="mt-1 italic text-zinc-400">
                       "{customMessage.trim()}"
                     </p>
                   )}
@@ -319,22 +319,22 @@ export default function CallWaiterModal({
               </div>
 
               {isOfflineQueued && (
-                <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-800 flex items-center gap-2 text-left">
-                  <WifiOff className="w-4 h-4 shrink-0 text-amber-600" />
+                <div className="p-3 bg-amber-950/50 rounded-2xl border border-amber-500/40 text-xs text-amber-300 flex items-center gap-2 text-left">
+                  <WifiOff className="w-4 h-4 shrink-0 text-amber-400" />
                   <span>
                     Offline Mode: Alert has been saved locally and will auto-sync the moment Wi-Fi reconnects!
                   </span>
                 </div>
               )}
 
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-zinc-500">
                 Floor staff will be at your table in a moment. Auto-closing in {dismissCountdown}s...
               </p>
 
               <button
                 type="button"
                 onClick={handleDismiss}
-                className="w-full py-3 px-4 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-sm transition active:scale-98 shadow-md cursor-pointer"
+                className="w-full py-3 px-4 rounded-2xl flame-gradient-btn text-white font-bold text-sm transition active:scale-98 shadow-md shadow-[#FF5A26]/30 cursor-pointer"
               >
                 Done
               </button>
@@ -343,26 +343,26 @@ export default function CallWaiterModal({
             /* SELECTION STATE */
             <div className="space-y-4">
               {/* Optional Table Number Confirmation */}
-              <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-                <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                   Your Table Number
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium text-neutral-400">Table #</span>
+                  <span className="text-sm font-medium text-zinc-500">Table #</span>
                   <input
                     type="number"
                     min="1"
                     max="99"
                     value={tableNumber}
                     onChange={(e) => setTableNumber(e.target.value)}
-                    className="w-14 text-center font-bold text-base py-1 px-2 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-neutral-50"
+                    className="w-14 text-center font-bold text-base py-1 px-2 border border-zinc-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#FF5A26] bg-zinc-900 text-white"
                   />
                 </div>
               </div>
 
               {/* Preset Reason Choices */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">
                   Select Reason (One-Tap)
                 </label>
                 <div className="grid grid-cols-1 gap-2">
@@ -375,8 +375,8 @@ export default function CallWaiterModal({
                         onClick={() => setSelectedReason(preset)}
                         className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all text-left cursor-pointer active:scale-98 ${
                           isSelected
-                            ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20'
-                            : 'bg-neutral-50 hover:bg-neutral-100/80 text-neutral-800 border-neutral-200/70'
+                            ? 'flame-gradient-btn text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50'
+                            : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border-zinc-800'
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -387,7 +387,7 @@ export default function CallWaiterModal({
                             </p>
                             <p
                               className={`text-[11px] ${
-                                isSelected ? 'text-amber-100' : 'text-neutral-500'
+                                isSelected ? 'text-white/80' : 'text-zinc-400'
                               }`}
                             >
                               {preset.desc}
@@ -396,11 +396,11 @@ export default function CallWaiterModal({
                         </div>
 
                         {isSelected ? (
-                          <div className="w-6 h-6 rounded-full bg-white text-amber-600 flex items-center justify-center shrink-0">
+                          <div className="w-6 h-6 rounded-full bg-white text-[#FF5A26] flex items-center justify-center shrink-0">
                             <CheckCircle2 className="w-4 h-4" />
                           </div>
                         ) : (
-                          <span className="text-xs font-medium text-neutral-400">
+                          <span className="text-xs font-medium text-zinc-500">
                             Select
                           </span>
                         )}
@@ -412,8 +412,8 @@ export default function CallWaiterModal({
 
               {/* Optional Custom Message Field */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5 flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-neutral-400" />
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5 flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-[#FF5A26]" />
                   <span>Custom Request Note (Optional)</span>
                 </label>
                 <input
@@ -422,14 +422,14 @@ export default function CallWaiterModal({
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
                   placeholder="e.g., Warm water, extra spice, split bill..."
-                  className="w-full py-2.5 px-3.5 text-xs sm:text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-neutral-50 placeholder:text-neutral-400 transition"
+                  className="w-full py-2.5 px-3.5 text-xs sm:text-sm border border-zinc-700/80 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#FF5A26] bg-zinc-900 text-white placeholder-zinc-500 transition"
                 />
               </div>
 
               {/* Error message */}
               {errorMessage && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-rose-700 text-xs">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+                <div className="p-3 bg-rose-500/15 border border-rose-500/30 rounded-xl flex items-center gap-2 text-rose-300 text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                   <span>{errorMessage}</span>
                 </div>
               )}
@@ -440,7 +440,7 @@ export default function CallWaiterModal({
                   type="button"
                   onClick={handleDismiss}
                   disabled={isSubmitting}
-                  className="flex-1 py-3 px-4 rounded-2xl border border-neutral-200 text-neutral-600 hover:bg-neutral-100 text-xs sm:text-sm font-bold transition cursor-pointer disabled:opacity-50"
+                  className="flex-1 py-3 px-4 rounded-2xl border border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-xs sm:text-sm font-bold transition cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -449,7 +449,7 @@ export default function CallWaiterModal({
                   type="button"
                   onClick={() => handleSubmit()}
                   disabled={isSubmitting || !tableNumber}
-                  className="flex-2 py-3 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs sm:text-sm transition active:scale-98 shadow-md shadow-orange-500/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-2 py-3 px-5 rounded-2xl flame-gradient-btn text-white font-bold text-xs sm:text-sm transition active:scale-98 shadow-lg shadow-[#FF5A26]/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <>

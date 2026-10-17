@@ -139,7 +139,7 @@ export default function VoiceRecorder({
   return (
     <div className={`w-full rounded-2xl p-4 transition-all ${
       isDark 
-        ? 'bg-slate-900/90 border border-slate-700/80 text-slate-100 shadow-xl' 
+        ? 'bg-[#18181d] border border-zinc-800 text-stone-100 shadow-xl' 
         : 'bg-slate-50/80 border border-slate-200/90 text-neutral-800'
     } ${className}`}>
       
@@ -159,7 +159,7 @@ export default function VoiceRecorder({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
           <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
-            isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-600'
+            isDark ? 'bg-[#FF5A26]/15 text-[#FF7A45] border border-[#FF5A26]/30' : 'bg-amber-500/10 text-amber-600'
           }`}>
             🎙️
           </div>
@@ -167,7 +167,7 @@ export default function VoiceRecorder({
             <h4 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-neutral-800'}`}>
               Voice Instructions
             </h4>
-            <p className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-neutral-500'}`}>
+            <p className={`text-[11px] font-medium ${isDark ? 'text-zinc-400' : 'text-neutral-500'}`}>
               Record specific cooking instructions for the kitchen
             </p>
           </div>
@@ -176,7 +176,7 @@ export default function VoiceRecorder({
         {activeUrl && !isRecording && (
           <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
             isDark
-              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+              ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/30'
               : 'bg-emerald-100 text-emerald-800 border-emerald-200/80'
           }`}>
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -189,7 +189,7 @@ export default function VoiceRecorder({
       {!activeUrl && !isRecording && (
         <div className={`mb-3.5 px-3 py-2 rounded-xl text-xs flex items-start gap-2 border ${
           isDark
-            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+            ? 'bg-[#FF5A26]/10 border-[#FF5A26]/20 text-zinc-300'
             : 'bg-amber-50/90 border-amber-200/70 text-amber-900'
         }`}>
           <span className="text-sm shrink-0">💡</span>
@@ -201,8 +201,8 @@ export default function VoiceRecorder({
 
       {/* Error notification */}
       {error && (
-        <div className="mb-3 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2 animate-fadeIn">
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+        <div className="mb-3 p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2 animate-fadeIn">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
           <div className="leading-tight">{error}</div>
         </div>
       )}
@@ -251,18 +251,18 @@ export default function VoiceRecorder({
       {!isRecording && activeUrl && (
         <div className={`rounded-xl p-3 shadow-sm flex flex-col gap-2.5 border ${
           isDark
-            ? 'bg-slate-800/90 border-slate-700'
+            ? 'bg-zinc-900 border-zinc-800 text-white'
             : 'bg-white border-neutral-200/90'
         }`}>
           <div className="flex items-center justify-between">
             <span className={`text-xs font-semibold flex items-center gap-1.5 ${
-              isDark ? 'text-slate-200' : 'text-neutral-700'
+              isDark ? 'text-zinc-200' : 'text-neutral-700'
             }`}>
-              <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+              <Volume2 className="w-3.5 h-3.5 text-[#FF5A26]" />
               Kitchen Voice Note Preview
             </span>
             <span className={`text-xs font-mono font-medium ${
-              isDark ? 'text-slate-400' : 'text-neutral-500'
+              isDark ? 'text-zinc-400' : 'text-neutral-500'
             }`}>
               {playbackTime} / {totalDuration}
             </span>
@@ -277,7 +277,7 @@ export default function VoiceRecorder({
                 isPlaying
                   ? 'bg-amber-500 hover:bg-amber-600 text-slate-950'
                   : isDark
-                    ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+                    ? 'flame-gradient-btn text-white'
                     : 'bg-neutral-900 hover:bg-neutral-800 text-white'
               }`}
               title={isPlaying ? 'Pause' : 'Play audio preview'}
@@ -300,7 +300,7 @@ export default function VoiceRecorder({
               aria-label="Seek audio preview"
               className={`flex-1 h-2 rounded-lg appearance-none cursor-pointer ${
                 isDark
-                  ? 'bg-slate-700 accent-emerald-400'
+                  ? 'bg-zinc-700 accent-[#FF5A26]'
                   : 'bg-neutral-200 accent-amber-500 hover:accent-amber-600'
               }`}
             />
@@ -311,7 +311,7 @@ export default function VoiceRecorder({
               onClick={handleDeleteAudio}
               className={`p-2 rounded-xl transition active:scale-95 shrink-0 cursor-pointer ${
                 isDark
-                  ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/10'
+                  ? 'text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10'
                   : 'text-neutral-400 hover:text-rose-600 hover:bg-rose-50'
               }`}
               title="Delete and re-record"
@@ -329,12 +329,12 @@ export default function VoiceRecorder({
           onClick={startRecording}
           className={`w-full py-3 px-4 rounded-xl border-2 border-dashed font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer group ${
             isDark
-              ? 'bg-slate-800/70 hover:bg-slate-800 active:bg-slate-700 text-emerald-300 border-emerald-500/30 hover:border-emerald-500/60 shadow-sm'
+              ? 'bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 text-[#FF7A45] border-[#FF5A26]/30 hover:border-[#FF5A26]/60 shadow-sm'
               : 'bg-white hover:bg-amber-50 active:bg-amber-100 text-amber-700 border-amber-300/80 hover:border-amber-400 shadow-2xs'
           }`}
         >
           <div className={`w-7 h-7 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform ${
-            isDark ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-amber-500 text-white'
+            isDark ? 'flame-gradient-btn text-white font-bold' : 'bg-amber-500 text-white'
           }`}>
             <Mic className="w-4 h-4" />
           </div>

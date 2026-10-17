@@ -669,14 +669,14 @@ export default function FoodDetailModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Ambient Top Glow */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-48 bg-[#FF5A26]/15 rounded-full blur-3xl pointer-events-none" />
 
         {/* ------------------------------------------------------------------
             1. Sticky Top Bar: Category, Dietary Badges, Controls
            ------------------------------------------------------------------ */}
         <div className="relative flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/10 bg-stone-900/90 backdrop-blur-md z-30">
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-[#FF5A26]/15 text-[#FF7A45] border border-[#FF5A26]/30">
               {dish.category || 'Specialty'}
             </span>
 
@@ -754,9 +754,9 @@ export default function FoodDetailModal({
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${
                           selectedImageIndex === idx
-                            ? 'bg-amber-400 shadow-xs shadow-amber-400 w-full'
+                            ? 'bg-[#FF5A26] shadow-xs shadow-[#FF5A26]/50 w-full'
                             : selectedImageIndex > idx
-                              ? 'bg-amber-400/80 w-full'
+                              ? 'bg-[#FF5A26]/75 w-full'
                               : 'w-0'
                         }`}
                       />
@@ -767,8 +767,8 @@ export default function FoodDetailModal({
 
               {/* Floating Photo Counter Badge */}
               <div className="absolute top-5 sm:top-6 right-3 sm:right-4 z-20 pointer-events-none">
-                <span className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-amber-300 bg-stone-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-amber-400/30 shadow-lg">
-                  <ImageIcon className="w-3 h-3 text-amber-400" />
+                <span className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-[#FF7A45] bg-stone-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#FF5A26]/30 shadow-lg">
+                  <ImageIcon className="w-3 h-3 text-[#FF5A26]" />
                   <span>Slide {selectedImageIndex + 1} of {photos.length}</span>
                 </span>
               </div>
@@ -828,7 +828,7 @@ export default function FoodDetailModal({
                         }}
                         className={`relative w-12 h-9 sm:w-16 sm:h-11 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer shrink-0 ${
                           selectedImageIndex === idx
-                            ? 'border-amber-400 scale-105 shadow-md shadow-amber-500/40 opacity-100 ring-2 ring-amber-400/50'
+                            ? 'border-[#FF5A26] scale-105 shadow-md shadow-[#FF5A26]/40 opacity-100 ring-2 ring-[#FF7A45]/50'
                             : 'border-white/20 opacity-60 hover:opacity-100 hover:scale-102'
                         }`}
                         aria-label={`Jump to photo ${idx + 1}`}
@@ -863,18 +863,18 @@ export default function FoodDetailModal({
                       const el = document.getElementById('reviews-section');
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="flex items-center gap-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 px-2.5 py-1 rounded-xl text-amber-300 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                    className="flex items-center gap-1.5 bg-[#FF5A26]/15 hover:bg-[#FF5A26]/25 border border-[#FF5A26]/35 px-2.5 py-1 rounded-xl text-[#FF7A45] text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
                     title="Click to view reviews or write a comment"
                   >
-                    <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-current text-[#FF7A45]" />
                     <span>{averageRating} / 5</span>
                     <span className="text-stone-300 font-normal">({combinedReviews.length} ratings)</span>
-                    <span className="text-amber-400 text-[11px] underline ml-1 font-semibold">✍️ Review</span>
+                    <span className="text-[#FF5A26] text-[11px] underline ml-1 font-semibold">✍️ Review</span>
                   </button>
 
                   {dish.prepTime && (
                     <div className="flex items-center gap-1 text-xs text-stone-400 font-medium bg-stone-800/60 px-2 py-0.5 rounded-lg border border-white/5">
-                      <Clock className="w-3.5 h-3.5 text-amber-400" />
+                      <Clock className="w-3.5 h-3.5 text-[#FF7A45]" />
                       <span>{dish.prepTime}</span>
                     </div>
                   )}
@@ -883,7 +883,7 @@ export default function FoodDetailModal({
 
               {/* Price */}
               <div className="text-right shrink-0">
-                <span className="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight font-sans">
+                <span className="text-2xl sm:text-3xl font-black text-[#FF5A26] tracking-tight font-sans flame-text-glow">
                   {currency}{priceNum.toFixed(2)}
                 </span>
                 <span className="block text-[10px] text-stone-400 uppercase font-semibold">
@@ -929,7 +929,7 @@ export default function FoodDetailModal({
           <div className="p-4 sm:p-5 space-y-3 bg-stone-950/70 border-t border-white/5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <div className="w-8 h-8 rounded-xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 flex items-center justify-center text-[#FF5A26]">
                   <ChefHat className="w-4 h-4" />
                 </div>
                 <div>
@@ -945,8 +945,8 @@ export default function FoodDetailModal({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-950/80 text-purple-200 border border-purple-500/30 text-xs font-bold">
-                <Video className="w-3.5 h-3.5 text-purple-300" />
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FF5A26]/15 text-[#FF7A45] border border-[#FF5A26]/30 text-xs font-bold shadow-xs">
+                <Video className="w-3.5 h-3.5 text-[#FF5A26]" />
                 <span>Kitchen Reel</span>
               </div>
             </div>
@@ -979,7 +979,7 @@ export default function FoodDetailModal({
                   onClick={toggleBodyVideoPlay}
                   className="absolute inset-0 bg-black/45 backdrop-blur-2xs flex items-center justify-center cursor-pointer"
                 >
-                  <div className="w-14 h-14 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center shadow-xl shadow-amber-500/40 hover:scale-110 active:scale-95 transition-transform">
+                  <div className="w-14 h-14 rounded-full flame-gradient-btn text-white flex items-center justify-center shadow-xl shadow-[#FF5A26]/50 hover:scale-110 active:scale-95 transition-transform ring-2 ring-[#FF7A45]/40">
                     <Play className="w-6 h-6 fill-current translate-x-0.5" />
                   </div>
                 </div>
@@ -1003,7 +1003,7 @@ export default function FoodDetailModal({
                   max="100"
                   value={bodyVideoProgress}
                   onChange={handleBodyVideoSeek}
-                  className="flex-1 h-1.5 rounded-lg appearance-none bg-white/25 accent-amber-400 cursor-pointer"
+                  className="flex-1 h-1.5 rounded-lg appearance-none bg-white/25 accent-[#FF5A26] cursor-pointer"
                   aria-label="Seek video"
                 />
 
@@ -1036,8 +1036,8 @@ export default function FoodDetailModal({
             <div className="grid grid-cols-3 gap-2 pt-1">
               <div className="p-2 rounded-xl bg-stone-900/80 border border-white/5 text-center">
                 <span className="block text-[10px] text-stone-400 uppercase font-semibold">Prep Time</span>
-                <span className="text-xs font-bold text-amber-300 flex items-center justify-center gap-1 mt-0.5">
-                  <Clock className="w-3 h-3 text-amber-400" />
+                <span className="text-xs font-bold text-[#FF7A45] flex items-center justify-center gap-1 mt-0.5">
+                  <Clock className="w-3 h-3 text-[#FF5A26]" />
                   {dish.prepTime || '10-15 min'}
                 </span>
               </div>
@@ -1050,8 +1050,8 @@ export default function FoodDetailModal({
               </div>
               <div className="p-2 rounded-xl bg-stone-900/80 border border-white/5 text-center">
                 <span className="block text-[10px] text-stone-400 uppercase font-semibold">Quality</span>
-                <span className="text-xs font-bold text-amber-300 flex items-center justify-center gap-1 mt-0.5">
-                  <ShieldCheck className="w-3 h-3 text-amber-400" />
+                <span className="text-xs font-bold text-[#FF7A45] flex items-center justify-center gap-1 mt-0.5">
+                  <ShieldCheck className="w-3 h-3 text-[#FF5A26]" />
                   100% Artisan
                 </span>
               </div>
@@ -1065,7 +1065,7 @@ export default function FoodDetailModal({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-stone-300 flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
+                  <MessageSquare className="w-3.5 h-3.5 text-[#FF5A26]" />
                   <span>Chef Customization Notes</span>
                 </h3>
                 <p className="text-[11px] text-stone-400">Add allergies, temperature, or preferences</p>
@@ -1077,7 +1077,7 @@ export default function FoodDetailModal({
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all border shadow-xs cursor-pointer ${
                   showVoiceRecorder
                     ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                    : 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
+                    : 'bg-[#FF5A26]/15 text-[#FF7A45] border-[#FF5A26]/30 hover:bg-[#FF5A26]/25'
                 }`}
               >
                 <Mic className="w-3.5 h-3.5" />
@@ -1108,7 +1108,7 @@ export default function FoodDetailModal({
                     }}
                     className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all active:scale-95 cursor-pointer ${
                       isSelected
-                        ? 'bg-amber-500/25 text-amber-300 border-amber-500/50 shadow-xs'
+                        ? 'bg-[#FF5A26]/20 text-[#FF7A45] border-[#FF5A26]/40 shadow-xs'
                         : 'bg-stone-800/80 hover:bg-stone-700/80 text-stone-300 border-stone-700/60'
                     }`}
                   >
@@ -1123,7 +1123,7 @@ export default function FoodDetailModal({
               value={customNote}
               onChange={(e) => setCustomNote(e.target.value)}
               placeholder="e.g. Please put dressing on the side..."
-              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-stone-800/90 border border-stone-700/80 rounded-xl text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 transition"
+              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-stone-800/90 border border-stone-700/80 rounded-xl text-white placeholder-stone-500 focus:outline-none focus:border-[#FF5A26] focus:ring-1 focus:ring-[#FF5A26]/40 transition"
             />
 
             {showVoiceRecorder && (
@@ -1145,19 +1145,19 @@ export default function FoodDetailModal({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/10">
               <div>
                 <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-stone-200 flex items-center gap-1.5">
-                  <Star className="w-4 h-4 text-amber-400 fill-current" />
+                  <Star className="w-4 h-4 text-[#FF7A45] fill-current" />
                   <span>Diner Reviews &amp; Comments</span>
                 </h3>
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="flex items-center text-amber-400">
+                  <div className="flex items-center text-[#FF7A45]">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
-                        className={`w-3.5 h-3.5 ${star <= Math.round(Number(averageRating)) ? 'fill-current text-amber-400' : 'text-stone-600'}`}
+                        className={`w-3.5 h-3.5 ${star <= Math.round(Number(averageRating)) ? 'fill-current text-[#FF7A45]' : 'text-stone-600'}`}
                       />
                     ))}
                   </div>
-                  <span className="text-xs font-bold text-amber-300 font-mono">{averageRating} / 5</span>
+                  <span className="text-xs font-bold text-[#FF7A45] font-mono">{averageRating} / 5</span>
                   <span className="text-[11px] text-stone-400">• {combinedReviews.length} verified ratings</span>
                 </div>
               </div>
@@ -1166,7 +1166,7 @@ export default function FoodDetailModal({
               <button
                 type="button"
                 onClick={() => setIsReviewFormOpen(!isReviewFormOpen)}
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-stone-950 text-xs font-black shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl flame-gradient-btn active:scale-95 text-white text-xs font-black shadow-md shadow-[#FF5A26]/30 transition-all cursor-pointer"
               >
                 <span>{isReviewFormOpen ? '✖ Close Form' : '✍️ Write Review / Leave a Comment'}</span>
               </button>
@@ -1182,7 +1182,7 @@ export default function FoodDetailModal({
 
             {/* EXPANDABLE REVIEW / COMMENT FORM */}
             {isReviewFormOpen && (
-              <form onSubmit={handleSubmitReview} className="p-4 sm:p-5 bg-stone-800/90 rounded-2xl border border-amber-500/40 space-y-3.5 animate-fadeIn shadow-xl">
+              <form onSubmit={handleSubmitReview} className="p-4 sm:p-5 bg-stone-800/90 rounded-2xl border border-[#FF5A26]/35 space-y-3.5 animate-fadeIn shadow-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-stone-700/60">
                   <span className="text-xs font-bold text-stone-200 uppercase tracking-wide">
                     Rate Your Experience:
@@ -1190,7 +1190,7 @@ export default function FoodDetailModal({
                   
                   {/* Interactive Star Rating Selector (Hover & Tap) */}
                   <div 
-                    className="flex items-center gap-1 text-amber-400"
+                    className="flex items-center gap-1 text-[#FF7A45]"
                     onMouseLeave={() => setHoverRating(0)}
                   >
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -1206,13 +1206,13 @@ export default function FoodDetailModal({
                         <Star 
                           className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors ${
                             star <= (hoverRating || reviewRating)
-                              ? 'fill-current text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]'
+                              ? 'fill-current text-[#FF5A26] drop-shadow-[0_0_8px_rgba(255,90,38,0.6)]'
                               : 'text-stone-600 hover:text-stone-400'
                           }`} 
                         />
                       </button>
                     ))}
-                    <span className="ml-2 text-xs sm:text-sm font-extrabold text-amber-300 font-mono">
+                    <span className="ml-2 text-xs sm:text-sm font-extrabold text-[#FF7A45] font-mono">
                       {(hoverRating || reviewRating)}.0
                     </span>
                   </div>
@@ -1228,7 +1228,7 @@ export default function FoodDetailModal({
                     value={reviewAuthor}
                     onChange={(e) => setReviewAuthor(e.target.value)}
                     placeholder="e.g. Table 01 Diner"
-                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-stone-900 border border-stone-700 rounded-xl text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 transition"
+                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-stone-900 border border-stone-700 rounded-xl text-white placeholder-stone-500 focus:outline-none focus:border-[#FF5A26] focus:ring-1 focus:ring-[#FF5A26]/40 transition"
                   />
                 </div>
 
@@ -1268,7 +1268,7 @@ export default function FoodDetailModal({
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
                     placeholder="What did you love most about this dish? Taste, texture, aroma, presentation..."
-                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-stone-900 border border-stone-700 rounded-xl text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 transition resize-none"
+                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-stone-900 border border-stone-700 rounded-xl text-white placeholder-stone-500 focus:outline-none focus:border-[#FF5A26] focus:ring-1 focus:ring-[#FF5A26]/40 transition resize-none"
                     required
                   />
                 </div>
@@ -1285,7 +1285,7 @@ export default function FoodDetailModal({
                   <button
                     type="submit"
                     disabled={isSubmittingReview || !reviewComment.trim()}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-stone-950 text-xs font-black shadow-md shadow-amber-500/20 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-xl flame-gradient-btn active:scale-95 text-white text-xs font-black shadow-md shadow-[#FF5A26]/30 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>{isSubmittingReview ? 'Publishing...' : 'Publish Review'}</span>
@@ -1303,7 +1303,7 @@ export default function FoodDetailModal({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 to-amber-700 flex items-center justify-center text-stone-950 font-black text-xs shadow-xs uppercase">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#FF5A26] to-[#FF7A45] flex items-center justify-center text-white font-black text-xs shadow-xs uppercase">
                         {(rev.author || 'D').charAt(0)}
                       </div>
                       <div>

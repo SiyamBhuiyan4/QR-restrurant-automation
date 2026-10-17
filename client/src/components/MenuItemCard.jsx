@@ -129,19 +129,19 @@ export default function MenuItemCard({
 
     const modalContent = (
       <div 
-        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn"
         onClick={(e) => {
           e.stopPropagation();
           setIsNoteModalOpen(false);
         }}
       >
         <div 
-          className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-stone-200 p-5 space-y-3 animate-scaleUp text-stone-900"
+          className="w-full max-w-sm bg-[#161619] rounded-2xl shadow-2xl border border-zinc-800 p-5 space-y-3.5 animate-scaleUp text-white"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between pb-2 border-b border-stone-100">
-            <div className="flex items-center gap-1.5 text-stone-900 font-bold text-sm">
-              <MessageSquare className="w-4 h-4 text-amber-600" />
+          <div className="flex items-center justify-between pb-2.5 border-b border-zinc-800">
+            <div className="flex items-center gap-2 text-white font-bold text-sm">
+              <MessageSquare className="w-4 h-4 text-[#FF5A26]" />
               <span>Special Note for Chef</span>
             </div>
             <button
@@ -150,14 +150,14 @@ export default function MenuItemCard({
                 e.stopPropagation();
                 setIsNoteModalOpen(false);
               }}
-              className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 cursor-pointer"
+              className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          <p className="text-xs text-stone-500 font-medium">
-            Dish: <strong className="text-stone-800">{dishTitle}</strong>
+          <p className="text-xs text-zinc-400 font-medium">
+            Dish: <strong className="text-white">{dishTitle}</strong>
           </p>
 
           <div className="flex flex-wrap gap-1.5">
@@ -169,10 +169,10 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   handlePresetClick(preset);
                 }}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition cursor-pointer ${
+                className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold border transition cursor-pointer ${
                   tempNote.includes(preset)
-                    ? 'bg-amber-100 border-amber-400 text-amber-900 font-bold'
-                    : 'bg-stone-50 hover:bg-stone-100 border-stone-200 text-stone-700'
+                    ? 'bg-[#FF5A26]/20 border-[#FF5A26] text-[#FF7A45] font-bold shadow-xs'
+                    : 'bg-zinc-900/90 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
                 }`}
               >
                 {preset}
@@ -186,7 +186,7 @@ export default function MenuItemCard({
             onChange={(e) => setTempNote(e.target.value)}
             onClick={(e) => e.stopPropagation()}
             placeholder="e.g. Allergies, less spicy, dressing on side..."
-            className="w-full px-3 py-2 text-xs border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition resize-none text-stone-900 bg-white"
+            className="w-full px-3 py-2 text-xs border border-zinc-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#FF5A26] focus:border-[#FF5A26] transition resize-none text-white bg-zinc-900/90 placeholder-zinc-500"
           />
 
           <div className="flex items-center justify-end gap-2 pt-1">
@@ -196,7 +196,7 @@ export default function MenuItemCard({
                 e.stopPropagation();
                 setIsNoteModalOpen(false);
               }}
-              className="px-3 py-1.5 text-xs text-stone-500 hover:text-stone-700 font-semibold cursor-pointer"
+              className="px-3.5 py-1.5 text-xs text-zinc-400 hover:text-white font-semibold transition cursor-pointer"
             >
               Cancel
             </button>
@@ -206,7 +206,7 @@ export default function MenuItemCard({
                 e.stopPropagation();
                 handleSaveNote();
               }}
-              className="px-4 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 active:scale-95 text-stone-950 rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1"
+              className="px-4 py-1.5 text-xs font-bold flame-gradient-btn text-white rounded-xl shadow-md shadow-[#FF5A26]/30 active:scale-95 transition cursor-pointer flex items-center gap-1.5"
             >
               <Check className="w-3.5 h-3.5" />
               <span>Save Note</span>
@@ -438,12 +438,12 @@ export default function MenuItemCard({
       <>
         <div
           onClick={() => onSelectDish && onSelectDish(item)}
-          className={`group relative flex items-center justify-between bg-[#131024]/85 hover:bg-[#18142e]/95 backdrop-blur-xl rounded-2xl border border-purple-500/25 hover:border-purple-400/50 p-2.5 sm:p-3 gap-2.5 sm:gap-3.5 shadow-md hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 cursor-pointer ${
+          className={`group relative flex items-center justify-between bg-[#141418]/90 hover:bg-[#18181f] backdrop-blur-xl rounded-2xl border border-zinc-800 hover:border-[#FF5A26]/40 p-2.5 sm:p-3 gap-2.5 sm:gap-3.5 shadow-md hover:shadow-xl hover:shadow-black/50 transition-all duration-300 cursor-pointer ${
             !isAvailable ? 'opacity-65' : 'hover:-translate-y-0.5'
           }`}
         >
           {/* Left: Compact Image with Aspect-[16/10] */}
-          <div className="relative w-24 sm:w-32 aspect-[16/10] rounded-xl overflow-hidden shrink-0 bg-stone-900">
+          <div className="relative w-24 sm:w-32 aspect-[16/10] rounded-xl overflow-hidden shrink-0 bg-zinc-900">
             {item.image && !imageError ? (
               <img
                 src={item.image}
@@ -453,9 +453,9 @@ export default function MenuItemCard({
                 className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-purple-950/50 text-purple-300 p-1 select-none">
-                <UtensilsCrossed className="w-4 h-4 stroke-[1.8] text-purple-400 mb-0.5" />
-                <span className="text-[10px] font-bold text-stone-200 text-center line-clamp-1">
+              <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-zinc-400 p-1 select-none">
+                <UtensilsCrossed className="w-4 h-4 stroke-[1.8] text-[#FF5A26] mb-0.5" />
+                <span className="text-[10px] font-bold text-zinc-300 text-center line-clamp-1">
                   {dishTitle}
                 </span>
               </div>
@@ -492,32 +492,32 @@ export default function MenuItemCard({
                   Spicy
                 </span>
               )}
-              <h3 className="font-extrabold text-white text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-purple-300 transition-colors tracking-tight">
+              <h3 className="font-extrabold text-white text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-[#FF7A45] transition-colors tracking-tight">
                 {dishTitle}
               </h3>
             </div>
 
             {dishDesc && (
-              <p className="text-[10px] sm:text-xs text-stone-400 line-clamp-1 leading-relaxed font-normal mt-0.5">
+              <p className="text-[10px] sm:text-xs text-zinc-400 line-clamp-1 leading-relaxed font-normal mt-0.5">
                 {dishDesc}
               </p>
             )}
 
-            <div className="flex items-center gap-2 mt-1 text-[10px] text-stone-400 font-medium">
-              <span className="inline-flex items-center gap-0.5 text-stone-300">
-                <Clock className="w-2.5 h-2.5 text-purple-400" />
+            <div className="flex items-center gap-2 mt-1 text-[10px] text-zinc-400 font-medium">
+              <span className="inline-flex items-center gap-0.5 text-zinc-300">
+                <Clock className="w-2.5 h-2.5 text-[#FF7A45]" />
                 <span>{item.prepTime || '10 min'}</span>
               </span>
               <span>&bull;</span>
-              <span className="inline-flex items-center gap-0.5 text-purple-300 font-bold">
-                <ImageIcon className="w-2.5 h-2.5 text-purple-400" />
+              <span className="inline-flex items-center gap-0.5 text-zinc-300 font-bold">
+                <ImageIcon className="w-2.5 h-2.5 text-[#FF7A45]" />
                 <span>{photoCount} photos</span>
               </span>
               {(hasVideo || item.makingVideoUrl !== undefined) && (
                 <>
                   <span>&bull;</span>
-                  <span className="inline-flex items-center gap-0.5 text-purple-300 font-bold">
-                    <Video className="w-2.5 h-2.5 text-purple-400" />
+                  <span className="inline-flex items-center gap-0.5 text-[#FF7A45] font-bold">
+                    <Video className="w-2.5 h-2.5 text-[#FF5A26]" />
                     <span>Reel</span>
                   </span>
                 </>
@@ -527,10 +527,10 @@ export default function MenuItemCard({
             {itemNote && (
               <div
                 onClick={openNoteModal}
-                className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-500/30 text-purple-200 text-[9px] font-medium cursor-pointer truncate max-w-full"
+                className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[#FF7A45] text-[9px] font-medium cursor-pointer truncate max-w-full"
                 title="Edit note"
               >
-                <MessageSquare className="w-2 h-2 text-purple-400 shrink-0" />
+                <MessageSquare className="w-2 h-2 text-[#FF5A26] shrink-0" />
                 <span className="truncate">"{itemNote}"</span>
               </div>
             )}
@@ -549,8 +549,8 @@ export default function MenuItemCard({
                   onClick={openNoteModal}
                   className={`p-1 rounded-lg border text-xs transition cursor-pointer ${
                     itemNote
-                      ? 'bg-purple-900/80 border-purple-400 text-purple-200'
-                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-stone-300 hover:text-white'
+                      ? 'bg-[#FF5A26]/20 border-[#FF5A26] text-[#FF7A45]'
+                      : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300 hover:text-white'
                   }`}
                   title="Add chef note"
                 >
@@ -559,11 +559,11 @@ export default function MenuItemCard({
               )}
 
               {!isAvailable ? (
-                <span className="text-[10px] font-bold text-stone-400 uppercase">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase">
                   Sold Out
                 </span>
               ) : cartQuantity > 0 ? (
-                <div className="inline-flex items-center bg-amber-500 text-stone-950 rounded-xl shadow-xs p-0.5 ring-1 ring-amber-400">
+                <div className="inline-flex items-center flame-gradient-btn text-white rounded-xl shadow-xs p-0.5 ring-1 ring-[#FF7A45]/40">
                   <button
                     type="button"
                     onClick={handleDecrement}
@@ -586,7 +586,7 @@ export default function MenuItemCard({
                 <button
                   type="button"
                   onClick={handleAdd}
-                  className="inline-flex items-center gap-0.5 px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-stone-950 font-black text-xs shadow-xs transition-all cursor-pointer ring-1 ring-amber-400/50"
+                  className="inline-flex items-center gap-0.5 px-2.5 py-1 rounded-xl flame-gradient-btn text-white font-black text-xs shadow-md shadow-[#FF5A26]/30 active:scale-95 transition-all cursor-pointer"
                 >
                   <Plus className="w-3 h-3 stroke-[2.5]" />
                   <span>ADD</span>
@@ -606,13 +606,13 @@ export default function MenuItemCard({
     <>
       <div
         onClick={() => onSelectDish && onSelectDish(item)}
-        className={`group relative flex flex-col justify-between bg-[#131024]/85 hover:bg-[#18142e]/95 backdrop-blur-xl rounded-2xl border border-purple-500/25 hover:border-purple-400/50 overflow-hidden shadow-md hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 cursor-pointer ${
+        className={`group relative flex flex-col justify-between bg-[#141418]/90 hover:bg-[#18181f] backdrop-blur-xl rounded-2xl border border-zinc-800 hover:border-[#FF5A26]/40 overflow-hidden shadow-md hover:shadow-xl hover:shadow-black/50 transition-all duration-300 cursor-pointer ${
           !isAvailable ? 'opacity-65' : 'hover:-translate-y-0.5'
         }`}
       >
         <div>
           {/* Compact Image Container with 16/10 Aspect Ratio */}
-          <div className="relative aspect-[16/10] w-full bg-stone-900 overflow-hidden">
+          <div className="relative aspect-[16/10] w-full bg-zinc-900 overflow-hidden">
             {item.image && !imageError ? (
               <img
                 src={item.image}
@@ -622,9 +622,9 @@ export default function MenuItemCard({
                 className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-purple-950/50 text-purple-300 p-2 select-none">
-                <UtensilsCrossed className="w-5 h-5 stroke-[1.8] text-purple-400 mb-1" />
-                <span className="text-[11px] font-bold text-stone-200 text-center line-clamp-1">
+              <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-zinc-400 p-2 select-none">
+                <UtensilsCrossed className="w-5 h-5 stroke-[1.8] text-[#FF5A26] mb-1" />
+                <span className="text-[11px] font-bold text-zinc-300 text-center line-clamp-1">
                   {dishTitle}
                 </span>
               </div>
@@ -648,8 +648,8 @@ export default function MenuItemCard({
                 </span>
               )}
               {item.isPopular && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-purple-950/85 text-purple-200 border border-purple-400/50 backdrop-blur-md shadow-2xs">
-                  <Sparkles className="w-2.5 h-2.5 text-purple-300" />
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-[#FF5A26]/20 text-[#FF7A45] border border-[#FF5A26]/40 backdrop-blur-md shadow-2xs">
+                  <Sparkles className="w-2.5 h-2.5 text-[#FF5A26]" />
                   Popular
                 </span>
               )}
@@ -658,18 +658,18 @@ export default function MenuItemCard({
             {/* Top-Right Media Badges (📸 {photoCount}, 🎥 Reel) */}
             <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 flex items-center gap-1 z-10">
               <span 
-                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-black/75 text-purple-200 border border-purple-500/30 backdrop-blur-md shadow-2xs" 
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-black/75 text-zinc-300 border border-zinc-700/60 backdrop-blur-md shadow-2xs" 
                 title={`Photo Gallery (${photoCount} Photos)`}
               >
-                <ImageIcon className="w-2.5 h-2.5 text-purple-300" />
+                <ImageIcon className="w-2.5 h-2.5 text-[#FF7A45]" />
                 <span>{photoCount}</span>
               </span>
               {(hasVideo || item.makingVideoUrl !== undefined) && (
                 <span 
-                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-purple-950/90 text-purple-200 border border-purple-400/50 backdrop-blur-md shadow-2xs" 
+                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-[#FF5A26] text-white backdrop-blur-md shadow-2xs" 
                   title="Kitchen Making Video Reel"
                 >
-                  <Video className="w-2.5 h-2.5 fill-current text-purple-300" />
+                  <Video className="w-2.5 h-2.5 fill-current" />
                   <span>Reel</span>
                 </span>
               )}
@@ -681,8 +681,8 @@ export default function MenuItemCard({
                 <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-amber-400 text-amber-400" />
                 <span>{item.rating || '4.9'}</span>
               </span>
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-medium bg-black/75 text-stone-200 backdrop-blur-md border border-white/10 shadow-2xs">
-                <Clock className="w-2.5 h-2.5 text-purple-300" />
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-medium bg-black/75 text-zinc-300 backdrop-blur-md border border-white/10 shadow-2xs">
+                <Clock className="w-2.5 h-2.5 text-[#FF7A45]" />
                 <span>{item.prepTime || '10 min'}</span>
               </span>
             </div>
@@ -699,12 +699,12 @@ export default function MenuItemCard({
 
           {/* Compact Dish Details */}
           <div className="p-2.5 sm:p-3">
-            <h3 className="font-extrabold text-white text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-purple-300 transition-colors tracking-tight mb-0.5">
+            <h3 className="font-extrabold text-white text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-[#FF7A45] transition-colors tracking-tight mb-0.5">
               {dishTitle}
             </h3>
 
             {dishDesc && (
-              <p className="text-[10px] sm:text-xs text-stone-400 line-clamp-1 sm:line-clamp-2 leading-relaxed font-normal mb-1">
+              <p className="text-[10px] sm:text-xs text-zinc-400 line-clamp-1 sm:line-clamp-2 leading-relaxed font-normal mb-1">
                 {dishDesc}
               </p>
             )}
@@ -713,10 +713,10 @@ export default function MenuItemCard({
             {itemNote && (
               <div
                 onClick={openNoteModal}
-                className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-950/80 border border-purple-500/30 text-purple-200 text-[10px] font-medium cursor-pointer transition truncate max-w-full"
+                className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-[#FF7A45] text-[10px] font-medium cursor-pointer transition truncate max-w-full"
                 title="Edit note"
               >
-                <MessageSquare className="w-2.5 h-2.5 text-purple-400 shrink-0" />
+                <MessageSquare className="w-2.5 h-2.5 text-[#FF5A26] shrink-0" />
                 <span className="truncate">"{itemNote}"</span>
               </div>
             )}
@@ -724,7 +724,7 @@ export default function MenuItemCard({
         </div>
 
         {/* Compact Footer: High-Contrast Price & Tactile ADD Action */}
-        <div className="px-2.5 sm:px-3 pb-2.5 sm:pb-3 pt-1.5 flex items-center justify-between gap-1 border-t border-purple-500/20 mt-auto">
+        <div className="px-2.5 sm:px-3 pb-2.5 sm:pb-3 pt-1.5 flex items-center justify-between gap-1 border-t border-zinc-800 mt-auto">
           <span className="text-xs sm:text-sm md:text-base font-black text-white tracking-tight font-sans">
             {formattedPrice}
           </span>
@@ -737,8 +737,8 @@ export default function MenuItemCard({
                 onClick={openNoteModal}
                 className={`p-1 sm:p-1.5 rounded-lg border text-xs transition cursor-pointer ${
                   itemNote
-                    ? 'bg-purple-900/80 border-purple-400 text-purple-200'
-                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-stone-300 hover:text-white'
+                    ? 'bg-[#FF5A26]/20 border-[#FF5A26] text-[#FF7A45]'
+                    : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300 hover:text-white'
                 }`}
                 title="Add chef note"
               >
@@ -748,11 +748,11 @@ export default function MenuItemCard({
 
             {/* Tactile ADD Button OR Quantity Stepper */}
             {!isAvailable ? (
-              <span className="text-[10px] font-bold text-stone-400 uppercase">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase">
                 Unavailable
               </span>
             ) : cartQuantity > 0 ? (
-              <div className="inline-flex items-center bg-amber-500 text-stone-950 rounded-xl shadow-xs p-0.5 ring-1 ring-amber-400">
+              <div className="inline-flex items-center flame-gradient-btn text-white rounded-xl shadow-xs p-0.5 ring-1 ring-[#FF7A45]/40">
                 <button
                   type="button"
                   onClick={handleDecrement}
@@ -777,7 +777,7 @@ export default function MenuItemCard({
               <button
                 type="button"
                 onClick={handleAdd}
-                className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-stone-950 font-black text-[10px] sm:text-xs shadow-xs hover:shadow transition-all cursor-pointer ring-1 ring-amber-400/50"
+                className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl flame-gradient-btn text-white font-black text-[10px] sm:text-xs shadow-md shadow-[#FF5A26]/30 active:scale-95 transition-all cursor-pointer"
               >
                 <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5]" />
                 <span>ADD</span>

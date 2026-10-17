@@ -441,7 +441,7 @@ export default function CartDrawer({
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
         <div
-          className={`w-screen max-w-md bg-white shadow-2xl flex flex-col border-l border-neutral-200/80 transform transition-all ease-in-out duration-300 ${className}`}
+          className={`w-screen max-w-md bg-[#121215] text-stone-100 shadow-2xl flex flex-col border-l border-zinc-800 transform transition-all ease-in-out duration-300 ${className}`}
         >
           
           {/* ========================================================
@@ -453,7 +453,7 @@ export default function CartDrawer({
                 <div
                   className={`w-20 h-20 rounded-3xl flex items-center justify-center text-white shadow-xl ${
                     orderConfirmation.isOfflineQueued
-                      ? 'bg-amber-500 shadow-amber-500/30'
+                      ? 'flame-gradient-btn shadow-[#FF5A26]/30'
                       : 'bg-emerald-600 shadow-emerald-600/30'
                   }`}
                 >
@@ -463,49 +463,49 @@ export default function CartDrawer({
                     <CheckCircle2 className="w-10 h-10 animate-bounce" />
                   )}
                 </div>
-                <div className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-md">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <div className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-[#161619] border border-zinc-700 flex items-center justify-center shadow-md">
+                  <Sparkles className="w-3.5 h-3.5 text-[#FF5A26]" />
                 </div>
               </div>
 
-              <h3 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                 {orderConfirmation.isOfflineQueued ? 'Order Saved Offline!' : 'Order Sent to Kitchen!'}
               </h3>
 
-              <p className="text-xs sm:text-sm text-neutral-500 mt-1.5 max-w-xs font-medium leading-relaxed">
+              <p className="text-xs sm:text-sm text-zinc-400 mt-1.5 max-w-xs font-medium leading-relaxed">
                 {orderConfirmation.isOfflineQueued
                   ? `Table ${orderConfirmation.tableNumber} order is safely cached and will automatically push to the kitchen display the moment Wi-Fi reconnects.`
                   : `Your order has been printed on the kitchen display. The chefs are preparing your meal now!`}
               </p>
 
               {/* Order Receipt Box */}
-              <div className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl p-4 my-5 text-left text-xs space-y-2.5 shadow-2xs">
-                <div className="flex justify-between items-center pb-2.5 border-b border-neutral-200 font-bold text-neutral-800">
+              <div className="w-full bg-[#18181d] border border-zinc-800 rounded-2xl p-4 my-5 text-left text-xs space-y-2.5 shadow-xl">
+                <div className="flex justify-between items-center pb-2.5 border-b border-zinc-800 font-bold text-white">
                   <span className="flex items-center gap-1.5">
-                    <Receipt className="w-4 h-4 text-amber-600" />
+                    <Receipt className="w-4 h-4 text-[#FF5A26]" />
                     Order #{orderConfirmation.orderId}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-neutral-200/80 text-neutral-800 text-[11px] font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] text-[11px] font-bold">
                     Table {orderConfirmation.tableNumber}
                   </span>
                 </div>
 
                 <div className="space-y-1.5 py-1 max-h-40 overflow-y-auto">
                   {orderConfirmation.items.map((i, idx) => (
-                    <div key={idx} className="flex justify-between text-neutral-700 font-medium">
+                    <div key={idx} className="flex justify-between text-zinc-300 font-medium">
                       <span className="truncate pr-2">
                         {i.quantity}x {i.name}
                       </span>
-                      <span className="font-bold text-neutral-900 shrink-0">
+                      <span className="font-bold text-white shrink-0">
                         ${(i.price * i.quantity).toFixed(2)}
                       </span>
                     </div>
                   ))}
                 </div>
 
-                <div className="pt-2 border-t border-neutral-200 flex justify-between font-black text-sm text-neutral-900">
+                <div className="pt-2 border-t border-zinc-800 flex justify-between font-black text-sm text-white">
                   <span>Total Amount</span>
-                  <span className="text-amber-600 font-extrabold text-base">
+                  <span className="text-[#FF5A26] font-black text-base">
                     ${orderConfirmation.total.toFixed(2)}
                   </span>
                 </div>
@@ -517,7 +517,7 @@ export default function CartDrawer({
                   setOrderConfirmation(null);
                   handleClose();
                 }}
-                className="w-full py-3.5 px-4 rounded-xl bg-neutral-900 hover:bg-neutral-800 active:scale-98 text-white font-bold text-xs sm:text-sm transition-all shadow-md shadow-neutral-900/20 cursor-pointer"
+                className="w-full py-3.5 px-4 rounded-xl flame-gradient-btn text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-[#FF5A26]/30 cursor-pointer active:scale-95"
               >
                 Back to Menu &bull; Order More
               </button>
@@ -528,21 +528,21 @@ export default function CartDrawer({
                ======================================================== */
             <>
               {/* Drawer Header */}
-              <div className="p-4 sm:p-5 border-b border-neutral-100 flex items-center justify-between shrink-0 bg-white">
+              <div className="p-4 sm:p-5 border-b border-zinc-800 flex items-center justify-between shrink-0 bg-[#161619]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500/15 to-orange-500/15 text-amber-600 flex items-center justify-center font-bold border border-amber-500/20 shadow-xs">
+                  <div className="w-10 h-10 rounded-2xl bg-[#FF5A26]/15 text-[#FF7A45] flex items-center justify-center font-bold border border-[#FF5A26]/30 shadow-xs">
                     <ShoppingBag className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 id="cart-drawer-title" className="font-extrabold text-neutral-900 text-base sm:text-lg leading-tight flex items-center gap-2 tracking-tight">
+                    <h2 id="cart-drawer-title" className="font-extrabold text-white text-base sm:text-lg leading-tight flex items-center gap-2 tracking-tight">
                       Your Order
                       {totalItemCount > 0 && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200/80">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#FF5A26]/20 text-[#FF7A45] border border-[#FF5A26]/40">
                           {totalItemCount}
                         </span>
                       )}
                     </h2>
-                    <p className="text-xs text-neutral-500 font-medium mt-0.5">
+                    <p className="text-xs text-zinc-400 font-medium mt-0.5">
                       {currentTable ? `Table ${currentTable}` : 'Select table below'} &bull; Dine-In Experience
                     </p>
                   </div>
@@ -551,7 +551,7 @@ export default function CartDrawer({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="w-9 h-9 rounded-xl bg-neutral-100 hover:bg-neutral-200/80 active:scale-95 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition cursor-pointer"
+                  className="w-9 h-9 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 active:scale-95 flex items-center justify-center text-zinc-400 hover:text-white transition cursor-pointer"
                   aria-label="Close cart drawer"
                 >
                   <X className="w-4 h-4 stroke-[2.5]" />
@@ -559,24 +559,24 @@ export default function CartDrawer({
               </div>
 
               {/* Scrollable Content Container */}
-              <div className="flex-1 overflow-y-auto divide-y divide-neutral-100 scrollbar-thin scrollbar-thumb-neutral-300">
+              <div className="flex-1 overflow-y-auto divide-y divide-zinc-800/80 scrollbar-thin scrollbar-thumb-zinc-700">
                 
                 {/* 1. Empty Cart State */}
                 {items.length === 0 ? (
                   <div className="py-20 px-6 text-center flex flex-col items-center justify-center">
-                    <div className="w-20 h-20 rounded-3xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 border border-amber-100 shadow-xs">
+                    <div className="w-20 h-20 rounded-3xl bg-[#FF5A26]/10 text-[#FF7A45] flex items-center justify-center mb-4 border border-[#FF5A26]/20 shadow-xs">
                       <ShoppingBag className="w-10 h-10 stroke-[1.5]" />
                     </div>
-                    <h3 className="font-extrabold text-neutral-900 text-lg mb-1 tracking-tight">
+                    <h3 className="font-extrabold text-white text-lg mb-1 tracking-tight">
                       Your cart is empty
                     </h3>
-                    <p className="text-xs text-neutral-500 max-w-xs mb-6 leading-relaxed">
+                    <p className="text-xs text-zinc-400 max-w-xs mb-6 leading-relaxed">
                       Explore our delicious appetizers, chef specials, beverages, and desserts to add items to your table order.
                     </p>
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="px-6 py-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-white font-bold text-xs sm:text-sm transition shadow-md shadow-neutral-900/15 cursor-pointer"
+                      className="px-6 py-3 rounded-xl flame-gradient-btn text-white font-bold text-xs sm:text-sm transition shadow-lg shadow-[#FF5A26]/30 cursor-pointer active:scale-95"
                     >
                       Browse Menu
                     </button>
@@ -586,14 +586,14 @@ export default function CartDrawer({
                     {/* 2. Selected Dishes List */}
                     <div className="p-4 sm:p-5 space-y-3.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
                           Selected Dishes ({items.length})
                         </span>
                         {cartCtx?.clearCart && (
                           <button
                             type="button"
                             onClick={() => cartCtx.clearCart()}
-                            className="text-[11px] text-rose-600 hover:text-rose-700 font-semibold cursor-pointer transition active:scale-95"
+                            className="text-[11px] text-rose-400 hover:text-rose-300 font-semibold cursor-pointer transition active:scale-95"
                           >
                             Clear All
                           </button>
@@ -615,47 +615,47 @@ export default function CartDrawer({
                           return (
                             <div
                               key={dishId}
-                              className="bg-neutral-50/80 border border-neutral-200/70 rounded-2xl p-3.5 transition-all hover:border-neutral-300/90 shadow-2xs"
+                              className="bg-[#18181d] border border-zinc-800/90 rounded-2xl p-3.5 transition-all hover:border-zinc-700 shadow-md"
                             >
                               <div className="flex items-start justify-between gap-3">
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-bold text-neutral-900 text-sm leading-snug truncate">
+                                  <h4 className="font-bold text-white text-sm leading-snug truncate">
                                     {dishName}
                                   </h4>
-                                  <p className="text-xs text-neutral-500 font-semibold mt-0.5">
+                                  <p className="text-xs text-zinc-400 font-semibold mt-0.5">
                                     ${dishPrice.toFixed(2)} each
                                   </p>
                                 </div>
 
                                 {/* Stepper + Item Price */}
                                 <div className="flex items-center gap-2.5 shrink-0">
-                                  <span className="font-extrabold text-sm text-neutral-900">
+                                  <span className="font-extrabold text-sm text-white">
                                     ${itemTotal}
                                   </span>
 
-                                  <div className="inline-flex items-center bg-white rounded-xl p-0.5 border border-neutral-200/90 shadow-2xs">
+                                  <div className="inline-flex items-center bg-zinc-900 rounded-xl p-0.5 border border-zinc-700/80 shadow-2xs">
                                     <button
                                       type="button"
                                       onClick={() => handleQuantityDelta(dishId, -1)}
-                                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-neutral-100 text-neutral-700 transition active:scale-90 cursor-pointer"
+                                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-zinc-800 text-zinc-300 transition active:scale-90 cursor-pointer"
                                       title={quantity === 1 ? 'Remove item' : 'Decrease quantity'}
                                       aria-label="Decrease quantity"
                                     >
                                       {quantity === 1 ? (
-                                        <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                                        <Trash2 className="w-3.5 h-3.5 text-rose-400" />
                                       ) : (
                                         <Minus className="w-3.5 h-3.5" />
                                       )}
                                     </button>
 
-                                    <span className="w-7 text-center text-xs font-black text-neutral-900">
+                                    <span className="w-7 text-center text-xs font-black text-white">
                                       {quantity}
                                     </span>
 
                                     <button
                                       type="button"
                                       onClick={() => handleQuantityDelta(dishId, 1)}
-                                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-neutral-100 text-neutral-700 transition active:scale-90 cursor-pointer"
+                                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-zinc-800 text-zinc-300 transition active:scale-90 cursor-pointer"
                                       title="Increase quantity"
                                       aria-label="Increase quantity"
                                     >
@@ -673,28 +673,28 @@ export default function CartDrawer({
                               )}
 
                               {/* Individual Dish Customization Accordion */}
-                              <div className="mt-2.5 pt-2 border-t border-neutral-200/60">
+                              <div className="mt-2.5 pt-2 border-t border-zinc-800/80">
                                 {!isNoteOpen ? (
                                   <button
                                     type="button"
                                     onClick={() => toggleNoteExpand(dishId)}
-                                    className="inline-flex items-center gap-1.5 text-xs text-neutral-500 hover:text-amber-600 font-medium transition cursor-pointer"
+                                    className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-[#FF7A45] font-medium transition cursor-pointer"
                                   >
-                                    <MessageSquare className="w-3.5 h-3.5 text-neutral-400" />
+                                    <MessageSquare className="w-3.5 h-3.5 text-[#FF5A26]" />
                                     <span>Add note for chef (e.g. &ldquo;less spicy&rdquo;)</span>
                                   </button>
                                 ) : (
                                   <div className="space-y-2">
                                     <div className="flex items-center justify-between">
-                                      <label className="text-[11px] font-bold text-neutral-600 flex items-center gap-1">
-                                        <MessageSquare className="w-3 h-3 text-amber-500" />
+                                      <label className="text-[11px] font-bold text-zinc-400 flex items-center gap-1">
+                                        <MessageSquare className="w-3 h-3 text-[#FF5A26]" />
                                         <span>Cooking instructions:</span>
                                       </label>
                                       {!note && (
                                         <button
                                           type="button"
                                           onClick={() => toggleNoteExpand(dishId)}
-                                          className="text-[10px] text-neutral-400 hover:text-neutral-600 font-semibold cursor-pointer"
+                                          className="text-[10px] text-zinc-500 hover:text-zinc-300 font-semibold cursor-pointer"
                                         >
                                           Collapse
                                         </button>
@@ -713,7 +713,7 @@ export default function CartDrawer({
                                               handleItemNoteChange(dishId, `${note}${separator}${preset}`);
                                             }
                                           }}
-                                          className="px-2 py-0.5 rounded-lg bg-white border border-neutral-200 text-neutral-600 hover:border-amber-400 hover:text-amber-700 transition active:scale-95 cursor-pointer"
+                                          className="px-2 py-0.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:border-[#FF5A26]/50 hover:text-[#FF7A45] transition active:scale-95 cursor-pointer"
                                         >
                                           + {preset}
                                         </button>
@@ -725,7 +725,7 @@ export default function CartDrawer({
                                       value={note}
                                       onChange={(e) => handleItemNoteChange(dishId, e.target.value)}
                                       placeholder="e.g. Extra sauce, no onions, well-done"
-                                      className="w-full px-3 py-1.5 text-xs bg-white rounded-xl border border-neutral-200 focus:outline-none focus:ring-1.5 focus:ring-amber-500 focus:border-amber-500 placeholder:text-neutral-400 transition"
+                                      className="w-full px-3 py-1.5 text-xs bg-zinc-900 rounded-xl border border-zinc-700/80 focus:outline-none focus:ring-1.5 focus:ring-[#FF5A26] focus:border-[#FF5A26] placeholder:text-zinc-500 text-white transition"
                                     />
                                   </div>
                                 )}
@@ -738,7 +738,7 @@ export default function CartDrawer({
 
                     {/* 3. General Special Instructions Section */}
                     <div className="p-4 sm:p-5 space-y-2">
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400">
                         General Special Requests for Table
                       </label>
                       <textarea
@@ -746,24 +746,24 @@ export default function CartDrawer({
                         value={generalNote}
                         onChange={(e) => setGeneralNote(e.target.value)}
                         placeholder="Any general requests? (e.g. bring appetizers together, extra napkins, allergic to nuts...)"
-                        className="w-full p-3 text-xs bg-neutral-50 rounded-2xl border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 placeholder:text-neutral-400 resize-none transition"
+                        className="w-full p-3 text-xs bg-zinc-900 rounded-2xl border border-zinc-800 focus:outline-none focus:ring-1 focus:ring-[#FF5A26] focus:border-[#FF5A26] placeholder:text-zinc-500 text-white resize-none transition"
                       />
                     </div>
 
                     {/* 4. Table-wide Voice Customization Section */}
                     <div className="p-4 sm:p-5">
-                      <VoiceRecorder />
+                      <VoiceRecorder theme="dark" />
                     </div>
 
                     {/* 5. Table Number Selector / Validator */}
-                    <div className="p-4 sm:p-5 bg-neutral-50/70 space-y-2.5">
+                    <div className="p-4 sm:p-5 bg-[#18181d] border-t border-zinc-800 space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
                           <span>Table Assignment:</span>
                           <span className="text-rose-500 font-black">*</span>
                         </label>
                         {tableInput && (
-                          <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200/80">
+                          <span className="text-xs font-bold text-[#FF7A45] bg-[#FF5A26]/15 px-2.5 py-0.5 rounded-full border border-[#FF5A26]/30">
                             Table {tableInput}
                           </span>
                         )}
@@ -781,10 +781,10 @@ export default function CartDrawer({
                             }
                           }}
                           placeholder="Enter Table # (e.g. 4, Bar 2)"
-                          className={`flex-1 px-3.5 py-2 text-xs sm:text-sm bg-white rounded-xl border font-bold transition ${
+                          className={`flex-1 px-3.5 py-2 text-xs sm:text-sm bg-zinc-900 rounded-xl border font-bold transition ${
                             tableError
-                              ? 'border-rose-400 ring-2 ring-rose-200 text-rose-900'
-                              : 'border-neutral-200 focus:ring-2 focus:ring-amber-500 text-neutral-900'
+                              ? 'border-rose-500 ring-2 ring-rose-500/30 text-rose-200'
+                              : 'border-zinc-700/80 focus:ring-1 focus:ring-[#FF5A26] focus:border-[#FF5A26] text-white placeholder-zinc-500'
                           }`}
                         />
 
@@ -803,8 +803,8 @@ export default function CartDrawer({
                               }}
                               className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl text-xs font-black transition active:scale-95 cursor-pointer ${
                                 String(tableInput) === String(num)
-                                  ? 'bg-amber-500 text-white shadow-xs'
-                                  : 'bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-100'
+                                  ? 'flame-gradient-btn text-white shadow-xs'
+                                  : 'bg-zinc-900 text-zinc-300 border border-zinc-750 hover:bg-zinc-800'
                               }`}
                             >
                               {num}
@@ -814,7 +814,7 @@ export default function CartDrawer({
                       </div>
 
                       {tableError && (
-                        <p className="text-xs text-rose-600 font-semibold flex items-center gap-1 mt-1">
+                        <p className="text-xs text-rose-400 font-semibold flex items-center gap-1 mt-1">
                           <AlertTriangle className="w-3.5 h-3.5" />
                           Please enter or pick your table number before submitting your order!
                         </p>
@@ -826,24 +826,24 @@ export default function CartDrawer({
 
               {/* Drawer Footer: Bill Breakdown & Submit Button */}
               {items.length > 0 && (
-                <div className="p-4 sm:p-5 bg-white border-t border-neutral-100 shrink-0 space-y-3 shadow-xl">
+                <div className="p-4 sm:p-5 bg-[#161619] border-t border-zinc-800 shrink-0 space-y-3 shadow-xl">
                   
                   {/* Bill Breakdown */}
-                  <div className="space-y-1.5 text-xs text-neutral-600 font-medium">
+                  <div className="space-y-1.5 text-xs text-zinc-400 font-medium">
                     <div className="flex justify-between">
                       <span>Items Subtotal</span>
-                      <span className="font-semibold text-neutral-800">${subtotal.toFixed(2)}</span>
+                      <span className="font-semibold text-zinc-200">${subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="flex items-center gap-1">
                         Estimated Tax (5%)
-                        <span className="text-[10px] text-neutral-400">(Local rate)</span>
+                        <span className="text-[10px] text-zinc-500">(Local rate)</span>
                       </span>
-                      <span className="font-semibold text-neutral-800">${tax.toFixed(2)}</span>
+                      <span className="font-semibold text-zinc-200">${tax.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-base font-black text-neutral-900 pt-2 border-t border-neutral-100">
+                    <div className="flex justify-between text-base font-black text-white pt-2 border-t border-zinc-800">
                       <span>Total Amount</span>
-                      <span className="text-amber-600 font-black text-xl">
+                      <span className="text-[#FF5A26] font-black text-xl sm:text-2xl">
                         ${grandTotal.toFixed(2)}
                       </span>
                     </div>
@@ -873,7 +873,7 @@ export default function CartDrawer({
                     )}
                   </button>
 
-                  <p className="text-[11px] text-center text-neutral-400 font-medium">
+                  <p className="text-[11px] text-center text-zinc-500 font-medium">
                     ⚡ Offline-First Active &bull; Instant Kitchen Display Push
                   </p>
                 </div>

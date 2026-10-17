@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'SmartDine - Local Restaurant',
         short_name: 'SmartDine',
         description: 'Offline-First Smart Restaurant Ordering & Table Management System',
-        theme_color: '#0f172a',
-        background_color: '#ffffff',
+        theme_color: '#0a0a0c',
+        background_color: '#0a0a0c',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -41,11 +41,11 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
         runtimeCaching: [
           {
-            // Cache static assets (images, css, js) with CacheFirst strategy
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico|css|js|woff|woff2)$/i,
+            // Cache static media and font assets with CacheFirst strategy
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico|woff|woff2)$/i,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'static-assets-cache',
+              cacheName: 'static-media-cache',
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days

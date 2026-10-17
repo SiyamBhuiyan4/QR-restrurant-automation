@@ -75,23 +75,60 @@ export default function Navbar({
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-2">
             
-            {/* Left: Brand Identity */}
+            {/* Left: Brand Identity (Screenshot 1: WorldPlate) */}
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FF5A26] to-[#FF7A45] flex items-center justify-center text-white shadow-md shadow-[#FF5A26]/30 shrink-0 ring-1 ring-[#FF7A45]/50">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FF5A26] to-[#FF7A45] flex items-center justify-center text-white shadow-md shadow-[#FF5A26]/40 shrink-0 ring-1 ring-[#FF7A45]/50">
                 <UtensilsCrossed className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div className="flex flex-col truncate">
-                <span className="text-lg font-black tracking-tight text-white leading-none flex items-center gap-1.5">
-                  Smart<span className="text-[#FF5A26]">Dine</span>
-                  <span className="hidden sm:inline-block text-[10px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] rounded">
-                    Bistro
-                  </span>
+                <span className="text-xl font-black tracking-tight text-white leading-none flex items-center gap-1">
+                  World<span className="text-[#FF5A26] flame-text-glow">Plate</span>
                 </span>
-                <span className="text-xs text-zinc-400 font-medium truncate mt-0.5">
-                  Artisanal Table Dining
+                <span className="text-[11px] text-zinc-400 font-medium truncate mt-0.5">
+                  Artisanal Global Dining
                 </span>
               </div>
             </div>
+
+            {/* Center: Desktop Navigation Bar from Screenshot 1 */}
+            <nav className="hidden lg:flex items-center gap-1 bg-[#141418]/90 border border-zinc-800/80 p-1 rounded-full text-xs font-semibold backdrop-blur-md">
+              <a
+                href="#menu-hero"
+                className="px-3.5 py-1.5 rounded-full bg-[#FF5A26] text-white font-bold shadow-sm shadow-[#FF5A26]/30 transition"
+              >
+                Home
+              </a>
+              <a
+                href="#menu-content-root"
+                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition"
+              >
+                Menu
+              </a>
+              <a
+                href="#special-section"
+                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition"
+              >
+                Specials
+              </a>
+              <a
+                href="#reviews-section"
+                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition"
+              >
+                Reviews
+              </a>
+              <a
+                href="#chefs-section"
+                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition"
+              >
+                Chefs
+              </a>
+              <a
+                href="#footer-section"
+                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition"
+              >
+                Contact
+              </a>
+            </nav>
 
             {/* Right: Table Badge, Call Waiter & Network Badge */}
             <div className="flex items-center gap-2 sm:gap-3">

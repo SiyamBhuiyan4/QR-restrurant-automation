@@ -2,8 +2,17 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { ConvexProvider } from 'convex/react';
 import { convex } from './convexClient.js';
+import { registerSW } from 'virtual:pwa-register';
 import App from './App.jsx';
 import './index.css';
+
+// Automatically activate and update service worker across all active client tabs
+registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    window.location.reload();
+  },
+});
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

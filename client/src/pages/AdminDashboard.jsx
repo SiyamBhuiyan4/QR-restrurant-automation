@@ -550,14 +550,14 @@ export default function AdminDashboard({ className = '' }) {
           </div>
 
           {/* Mobile Tab Navigation Strip */}
-          <div className="flex md:hidden items-center justify-around py-2 border-t border-purple-500/20 gap-1">
+          <div className="flex md:hidden items-center justify-around py-2 border-t border-zinc-800/80 gap-1 bg-[#0e0e12]/60">
             <button
               type="button"
               onClick={() => handleSelectTab('stats')}
               className={`flex-1 py-1.5 text-center text-xs font-black rounded-xl transition ${
                 activeTab === 'stats' 
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' 
-                  : 'text-purple-200/70'
+                  ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30' 
+                  : 'text-zinc-400 hover:text-white'
               }`}
             >
               Telemetry
@@ -567,8 +567,8 @@ export default function AdminDashboard({ className = '' }) {
               onClick={() => handleSelectTab('menu')}
               className={`flex-1 py-1.5 text-center text-xs font-black rounded-xl transition ${
                 activeTab === 'menu' 
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' 
-                  : 'text-purple-200/70'
+                  ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30' 
+                  : 'text-zinc-400 hover:text-white'
               }`}
             >
               Menu
@@ -578,8 +578,8 @@ export default function AdminDashboard({ className = '' }) {
               onClick={() => handleSelectTab('qr')}
               className={`flex-1 py-1.5 text-center text-xs font-black rounded-xl transition ${
                 activeTab === 'qr' 
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' 
-                  : 'text-purple-200/70'
+                  ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30' 
+                  : 'text-zinc-400 hover:text-white'
               }`}
             >
               QR Codes
@@ -651,24 +651,24 @@ export default function AdminDashboard({ className = '' }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
               
               {/* Card 1: Active Orders */}
-              <div className="bg-[#120f26]/85 hover:bg-[#181333]/95 backdrop-blur-2xl rounded-3xl border border-purple-500/25 hover:border-purple-400/60 p-5 sm:p-6 shadow-xl hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 group">
+              <div className="bg-[#161619]/90 hover:bg-[#1e1e24] backdrop-blur-2xl rounded-3xl border border-zinc-800 hover:border-[#FF5A26]/50 p-5 sm:p-6 shadow-xl hover:shadow-2xl hover:shadow-black/60 transition-all duration-300 group">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-black uppercase tracking-wider text-purple-300">
+                  <span className="text-xs font-black uppercase tracking-wider text-zinc-300">
                     Active Orders
                   </span>
-                  <div className="w-10 h-10 rounded-2xl bg-purple-900/60 border border-purple-500/30 text-purple-300 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <ShoppingBag className="w-5 h-5 text-purple-300" />
+                  <div className="w-10 h-10 rounded-2xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF5A26] flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <ShoppingBag className="w-5 h-5 text-[#FF5A26]" />
                   </div>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl sm:text-4xl font-black text-white tracking-tight purple-text-glow">
+                  <span className="text-3xl sm:text-4xl font-black text-white tracking-tight flame-text-glow">
                     {stats.active_orders}
                   </span>
-                  <span className="text-xs font-bold text-purple-400">
+                  <span className="text-xs font-bold text-[#FF7A45]">
                     {stats.active_orders === 1 ? 'order live' : 'orders live'}
                   </span>
                 </div>
-                <div className="mt-3 pt-3 border-t border-purple-500/15 flex items-center justify-between text-[11px] text-purple-200/70 font-medium">
+                <div className="mt-3 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] text-zinc-400 font-medium">
                   <span>P: {stats.orders_by_status?.pending || 0}</span>
                   <span>&bull;</span>
                   <span>Prep: {stats.orders_by_status?.preparing || 0}</span>
@@ -678,7 +678,7 @@ export default function AdminDashboard({ className = '' }) {
               </div>
 
               {/* Card 2: Today's Revenue */}
-              <div className="bg-[#120f26]/85 hover:bg-[#181333]/95 backdrop-blur-2xl rounded-3xl border border-emerald-500/25 hover:border-emerald-400/60 p-5 sm:p-6 shadow-xl hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 group">
+              <div className="bg-[#161619]/90 hover:bg-[#1e1e24] backdrop-blur-2xl rounded-3xl border border-zinc-800 hover:border-emerald-500/50 p-5 sm:p-6 shadow-xl hover:shadow-2xl hover:shadow-black/60 transition-all duration-300 group">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-black uppercase tracking-wider text-emerald-300">
                     Today's Revenue
@@ -692,7 +692,7 @@ export default function AdminDashboard({ className = '' }) {
                     {formatCurrency(stats.today_revenue)}
                   </span>
                 </div>
-                <div className="mt-3 pt-3 border-t border-emerald-500/15 flex items-center justify-between text-[11px] text-emerald-200/70 font-medium">
+                <div className="mt-3 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] text-emerald-200/70 font-medium">
                   <span className="flex items-center gap-1">
                     <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
                     <span>{stats.today_orders} completed today</span>
@@ -701,24 +701,24 @@ export default function AdminDashboard({ className = '' }) {
               </div>
 
               {/* Card 3: Active Seated Tables */}
-              <div className="bg-[#120f26]/85 hover:bg-[#181333]/95 backdrop-blur-2xl rounded-3xl border border-indigo-500/25 hover:border-indigo-400/60 p-5 sm:p-6 shadow-xl hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group">
+              <div className="bg-[#161619]/90 hover:bg-[#1e1e24] backdrop-blur-2xl rounded-3xl border border-zinc-800 hover:border-[#FF5A26]/50 p-5 sm:p-6 shadow-xl hover:shadow-2xl hover:shadow-black/60 transition-all duration-300 group">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-black uppercase tracking-wider text-indigo-300">
+                  <span className="text-xs font-black uppercase tracking-wider text-zinc-300">
                     Table Occupancy
                   </span>
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-950/60 border border-indigo-500/30 text-indigo-300 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Users className="w-5 h-5 text-indigo-400" />
+                  <div className="w-10 h-10 rounded-2xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Users className="w-5 h-5 text-[#FF7A45]" />
                   </div>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
                     {activeTablesCount}
                   </span>
-                  <span className="text-xs font-bold text-indigo-400">
+                  <span className="text-xs font-bold text-[#FF7A45]">
                     / 24 tables seated
                   </span>
                 </div>
-                <div className="mt-3 pt-3 border-t border-indigo-500/15 flex items-center justify-between text-[11px] text-indigo-200/70 font-medium">
+                <div className="mt-3 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] text-zinc-400 font-medium">
                   <span>Guest dining experience active</span>
                 </div>
               </div>
@@ -727,7 +727,7 @@ export default function AdminDashboard({ className = '' }) {
               <div className={`backdrop-blur-2xl rounded-3xl border p-5 sm:p-6 shadow-xl transition-all duration-300 group ${
                 stats.active_waiter_calls > 0 
                   ? 'bg-amber-950/40 border-amber-500/60 shadow-amber-500/20 ring-1 ring-amber-400/50' 
-                  : 'bg-[#120f26]/85 hover:bg-[#181333]/95 border-purple-500/25 hover:border-purple-400/60'
+                  : 'bg-[#161619]/90 hover:bg-[#1e1e24] border-zinc-800 hover:border-zinc-700'
               }`}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-black uppercase tracking-wider text-amber-300">
@@ -736,7 +736,7 @@ export default function AdminDashboard({ className = '' }) {
                   <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-transform ${
                     stats.active_waiter_calls > 0 
                       ? 'bg-amber-500 text-neutral-950 animate-bounce' 
-                      : 'bg-purple-900/60 border border-purple-500/30 text-purple-300 group-hover:scale-110'
+                      : 'bg-zinc-800/80 border border-zinc-700/60 text-zinc-300 group-hover:scale-110'
                   }`}>
                     <BellRing className="w-5 h-5" />
                   </div>
@@ -757,40 +757,40 @@ export default function AdminDashboard({ className = '' }) {
                     </span>
                   )}
                 </div>
-                <div className="mt-3 pt-3 border-t border-purple-500/15 flex items-center justify-between text-[11px] text-purple-200/70 font-medium">
-                  <span>Table assistance requests</span>
+                <div className="mt-3 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] text-zinc-400 font-medium">
+                  <span>Table service alerts</span>
                 </div>
               </div>
 
             </div>
 
             {/* ORDERS STATUS PIPELINE STRIP */}
-            <div className="bg-[#120f26]/85 backdrop-blur-2xl rounded-3xl border border-purple-500/25 p-5 shadow-xl">
+            <div className="bg-[#161619]/90 backdrop-blur-2xl rounded-3xl border border-zinc-800 p-5 shadow-xl shadow-black/40">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-black uppercase tracking-wider text-purple-300 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-purple-400" />
+                <h3 className="text-xs font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-[#FF5A26]" />
                   <span>Orders Lifecycle Pipeline</span>
                 </h3>
-                <span className="text-[11px] text-stone-400 font-medium">
+                <span className="text-[11px] text-zinc-400 font-medium">
                   Click any stage to filter below
                 </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[
-                  { key: 'pending', label: 'Pending', count: stats.orders_by_status?.pending || 0, color: 'border-amber-500/40 bg-amber-950/30 text-amber-300' },
-                  { key: 'preparing', label: 'Preparing', count: stats.orders_by_status?.preparing || 0, color: 'border-blue-500/40 bg-blue-950/30 text-blue-300' },
-                  { key: 'ready', label: 'Ready', count: stats.orders_by_status?.ready || 0, color: 'border-emerald-500/40 bg-emerald-950/30 text-emerald-300' },
-                  { key: 'served', label: 'Served', count: stats.orders_by_status?.served || 0, color: 'border-purple-500/40 bg-purple-950/30 text-purple-300' },
-                  { key: 'completed', label: 'Completed', count: stats.orders_by_status?.completed || 0, color: 'border-stone-600/40 bg-stone-900/30 text-stone-300' },
-                  { key: 'cancelled', label: 'Cancelled', count: stats.orders_by_status?.cancelled || 0, color: 'border-rose-500/40 bg-rose-950/30 text-rose-300' },
+                  { key: 'pending', label: 'Pending', count: stats.orders_by_status?.pending || 0, color: 'border-amber-500/40 bg-amber-950/20 text-amber-300' },
+                  { key: 'preparing', label: 'Preparing', count: stats.orders_by_status?.preparing || 0, color: 'border-[#FF5A26]/40 bg-[#FF5A26]/10 text-[#FF7A45]' },
+                  { key: 'ready', label: 'Ready', count: stats.orders_by_status?.ready || 0, color: 'border-emerald-500/40 bg-emerald-950/20 text-emerald-300' },
+                  { key: 'served', label: 'Served', count: stats.orders_by_status?.served || 0, color: 'border-blue-500/40 bg-blue-950/20 text-blue-300' },
+                  { key: 'completed', label: 'Completed', count: stats.orders_by_status?.completed || 0, color: 'border-zinc-700/60 bg-zinc-900/40 text-zinc-300' },
+                  { key: 'cancelled', label: 'Cancelled', count: stats.orders_by_status?.cancelled || 0, color: 'border-rose-500/40 bg-rose-950/20 text-rose-300' },
                 ].map((s) => (
                   <button
                     key={s.key}
                     type="button"
                     onClick={() => setStatusFilter(statusFilter === s.key ? 'all' : s.key)}
                     className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${s.color} ${
-                      statusFilter === s.key ? 'ring-2 ring-purple-400 scale-[1.03] shadow-lg' : 'hover:scale-[1.01]'
+                      statusFilter === s.key ? 'ring-2 ring-[#FF7A45] scale-[1.03] shadow-lg shadow-[#FF5A26]/20' : 'hover:scale-[1.01]'
                     }`}
                   >
                     <span className="text-xs font-extrabold block tracking-tight">{s.label}</span>
@@ -804,17 +804,17 @@ export default function AdminDashboard({ className = '' }) {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               
               {/* Left 8 Cols: Interactive Live Orders Feed */}
-              <div className="lg:col-span-8 bg-[#120f26]/85 backdrop-blur-2xl rounded-3xl border border-purple-500/25 p-5 sm:p-6 shadow-xl space-y-5">
+              <div className="lg:col-span-8 bg-[#161619]/90 backdrop-blur-2xl rounded-3xl border border-zinc-800 p-5 sm:p-6 shadow-xl shadow-black/40 space-y-5">
                 
                 {/* Header with Search and Filter Status */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-purple-500/20 gap-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-zinc-800/80 gap-3">
                   <div className="flex items-center gap-2.5">
-                    <ShoppingBag className="w-5 h-5 text-purple-400" />
+                    <ShoppingBag className="w-5 h-5 text-[#FF5A26]" />
                     <div>
                       <h3 className="font-black text-white text-base sm:text-lg tracking-tight">
                         Live Order Operations Feed
                       </h3>
-                      <p className="text-xs text-purple-200/70 font-medium">
+                      <p className="text-xs text-zinc-400 font-medium">
                         Advance orders, inspect guest voice notes &amp; table requests
                       </p>
                     </div>
@@ -822,13 +822,13 @@ export default function AdminDashboard({ className = '' }) {
 
                   {/* Search Bar */}
                   <div className="relative w-full sm:w-64">
-                    <Search className="w-4 h-4 text-purple-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search order # or table..."
-                      className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#1a1438]/80 border border-purple-500/30 text-xs text-white placeholder-purple-300/40 focus:outline-none focus:border-purple-400"
+                      className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#101013] border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#FF5A26]"
                     />
                   </div>
                 </div>
@@ -842,8 +842,8 @@ export default function AdminDashboard({ className = '' }) {
                       onClick={() => setStatusFilter(filterKey)}
                       className={`px-3 py-1.5 rounded-xl font-bold uppercase text-[10px] tracking-wider transition-all cursor-pointer ${
                         statusFilter === filterKey
-                          ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-1 ring-purple-400/60'
-                          : 'bg-[#181335]/80 text-purple-300 hover:text-white hover:bg-purple-900/40 border border-purple-500/20'
+                          ? 'flame-gradient-btn text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/60'
+                          : 'bg-[#101013] text-zinc-400 hover:text-white hover:bg-zinc-800/60 border border-zinc-800'
                       }`}
                     >
                       {filterKey}
@@ -853,10 +853,10 @@ export default function AdminDashboard({ className = '' }) {
 
                 {/* Orders List */}
                 {filteredOrders.length === 0 ? (
-                  <div className="py-16 text-center text-purple-300/60">
-                    <ShoppingBag className="w-10 h-10 mx-auto mb-3 opacity-40 text-purple-400" />
+                  <div className="py-16 text-center text-zinc-500">
+                    <ShoppingBag className="w-10 h-10 mx-auto mb-3 opacity-40 text-zinc-400" />
                     <p className="text-sm font-bold text-stone-200">No orders match this filter.</p>
-                    <p className="text-xs text-purple-300/60 mt-1">New incoming orders from guests will appear here in real-time.</p>
+                    <p className="text-xs text-zinc-500 mt-1">New incoming orders from guests will appear here in real-time.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -871,15 +871,15 @@ export default function AdminDashboard({ className = '' }) {
                       return (
                         <div 
                           key={order.id} 
-                          className="bg-[#171333]/70 hover:bg-[#1a153a]/90 backdrop-blur-xl border border-purple-500/20 hover:border-purple-400/40 rounded-2xl p-4 sm:p-5 transition-all shadow-md space-y-3"
+                          className="bg-[#121215]/90 hover:bg-[#18181d] backdrop-blur-xl border border-zinc-800 hover:border-[#FF5A26]/40 rounded-2xl p-4 sm:p-5 transition-all shadow-md space-y-3"
                         >
                           {/* Order Header */}
-                          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-purple-500/15">
+                          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-zinc-800/80">
                             <div className="flex items-center gap-2">
                               <span className="font-black text-white text-sm sm:text-base tracking-tight">
                                 {order.order_number}
                               </span>
-                              <span className="px-2.5 py-1 rounded-xl text-xs font-black bg-purple-950/80 text-purple-300 border border-purple-500/30">
+                              <span className="px-2.5 py-1 rounded-xl text-xs font-black bg-[#FF5A26]/15 text-[#FF7A45] border border-[#FF5A26]/30">
                                 Table {order.table_number}
                               </span>
                               {order.is_offline && (
@@ -897,7 +897,7 @@ export default function AdminDashboard({ className = '' }) {
                                 order.status === 'ready'
                                   ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40'
                                   : order.status === 'preparing'
-                                  ? 'bg-blue-950/80 text-blue-300 border border-blue-500/40'
+                                  ? 'bg-[#FF5A26]/20 text-[#FF7A45] border border-[#FF5A26]/40'
                                   : order.status === 'served' || order.status === 'completed'
                                   ? 'bg-stone-900/80 text-stone-300 border border-stone-600/40'
                                   : 'bg-amber-950/80 text-amber-300 border border-amber-500/40'
@@ -912,14 +912,14 @@ export default function AdminDashboard({ className = '' }) {
                             {Array.isArray(order.items) && order.items.map((item, idx) => (
                               <div key={idx} className="flex items-baseline justify-between text-xs sm:text-sm">
                                 <div className="flex items-center gap-2">
-                                  <span className="w-5 h-5 rounded-md bg-purple-900/60 text-purple-300 font-bold text-[11px] flex items-center justify-center shrink-0">
+                                  <span className="w-5 h-5 rounded-md bg-[#FF5A26]/15 text-[#FF7A45] font-bold text-[11px] flex items-center justify-center shrink-0">
                                     {item.quantity || 1}×
                                   </span>
                                   <span className="font-semibold text-stone-200">
                                     {item.name || item.title}
                                   </span>
                                   {item.note && (
-                                    <span className="text-[11px] text-amber-300 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-md italic">
+                                    <span className="text-[11px] text-[#FF7A45] bg-[#FF5A26]/10 border border-[#FF5A26]/25 px-2 py-0.5 rounded-md italic">
                                       "{item.note}"
                                     </span>
                                   )}
@@ -933,9 +933,9 @@ export default function AdminDashboard({ className = '' }) {
 
                           {/* Voice Note Player if Customer Left Voice Instructions */}
                           {voiceUrl && (
-                            <div className="mt-3 pt-3 border-t border-purple-500/15">
-                              <div className="flex items-center gap-1.5 text-xs font-bold text-rose-300 mb-2">
-                                <Mic className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
+                            <div className="mt-3 pt-3 border-t border-zinc-800/80">
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-[#FF7A45] mb-2">
+                                <Mic className="w-3.5 h-3.5 text-[#FF5A26] animate-pulse" />
                                 <span>Guest Voice Special Instruction</span>
                               </div>
                               <AudioPlayer src={voiceUrl} title="Voice Note" />
@@ -943,7 +943,7 @@ export default function AdminDashboard({ className = '' }) {
                           )}
 
                           {/* Actions & Total */}
-                          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-purple-500/15">
+                          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-zinc-800/80">
                             <div>
                               <span className="text-xs text-stone-400 block font-medium">Total Bill</span>
                               <span className="text-base sm:text-lg font-black text-emerald-400">
@@ -958,7 +958,7 @@ export default function AdminDashboard({ className = '' }) {
                                   type="button"
                                   disabled={isUpdating}
                                   onClick={() => handleUpdateOrderStatus(order.id, 'preparing')}
-                                  className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black shadow-md shadow-blue-900/40 transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+                                  className="px-3 py-1.5 rounded-xl flame-gradient-btn text-white text-xs font-black shadow-md shadow-[#FF5A26]/30 transition active:scale-95 cursor-pointer flex items-center gap-1.5"
                                 >
                                   <ChefHat className="w-3.5 h-3.5" />
                                   <span>Start Cooking</span>
@@ -982,7 +982,7 @@ export default function AdminDashboard({ className = '' }) {
                                   type="button"
                                   disabled={isUpdating}
                                   onClick={() => handleUpdateOrderStatus(order.id, 'served')}
-                                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black shadow-md shadow-purple-900/40 transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+                                  className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black shadow-md shadow-blue-900/40 transition active:scale-95 cursor-pointer flex items-center gap-1.5"
                                 >
                                   <ConciergeBell className="w-3.5 h-3.5" />
                                   <span>Mark Served</span>

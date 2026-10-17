@@ -993,93 +993,143 @@ export default function CustomerMenu({
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 relative z-10">
 
         {/* 1. WorldPlate Hero Banner & Fixed Table QR Badge (Screenshots 1 & 2) */}
-        <div className="relative mb-8 rounded-3xl overflow-hidden bg-gradient-to-br from-[#141418] via-[#18181d] to-[#0d0d10] text-white p-6 sm:p-9 shadow-2xl border border-zinc-800 animate-fadeIn">
-          {/* Subtle Ambient Flame Glow */}
-          <div className="absolute top-0 right-0 w-80 h-80 bg-[#FF5A26]/12 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div id="menu-hero" className="relative mb-8 rounded-3xl overflow-hidden bg-gradient-to-br from-[#121216] via-[#16161c] to-[#0a0a0c] text-white p-6 sm:p-10 shadow-2xl border border-zinc-800/90 animate-fadeIn">
+          {/* Subtle Ambient Flame Glow Orbs */}
+          <div className="absolute top-0 right-10 w-96 h-96 bg-[#FF5A26]/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-72 h-72 bg-[#FF7A45]/10 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10">
+            {/* Left Column: Big Headline & Action Buttons (Screenshot 1) */}
             <div className="max-w-xl text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] text-xs font-bold mb-3">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] text-xs font-bold mb-4 shadow-sm">
                 <Sparkles className="w-3.5 h-3.5 text-[#FF5A26]" />
                 <span className="tracking-wide uppercase text-[10px] font-extrabold">Taste the Tradition, Served Fresh Daily</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-                Experience the <span className="text-[#FF5A26] underline decoration-[#FF5A26]/50 underline-offset-8">Taste</span> of the World
+
+              {/* Exact Display Typography from Screenshot 1 */}
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12]">
+                Experience the <br />
+                <span className="inline-flex flex-wrap items-center gap-2.5 sm:gap-3.5 my-1.5">
+                  <span className="text-[#FF5A26] underline decoration-[#FF5A26]/60 underline-offset-8 flame-text-glow">Taste</span>
+                  <span className="inline-flex items-center -space-x-2 px-2.5 py-1 rounded-full bg-zinc-800/90 border border-zinc-700/80 shadow-md">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80" alt="Diner" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover ring-2 ring-[#0a0a0c]" />
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80" alt="Diner" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover ring-2 ring-[#0a0a0c]" />
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80" alt="Diner" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover ring-2 ring-[#0a0a0c]" />
+                  </span>
+                  <span className="text-white">of the</span>
+                </span> <br />
+                World
               </h1>
-              <p className="text-xs sm:text-sm md:text-base text-zinc-400 mt-3 leading-relaxed">
-                From classic favorites to exotic delights, explore a diverse menu crafted by master chefs and inspired by cuisines from across the globe.
+
+              <p className="text-xs sm:text-sm md:text-base text-zinc-400 mt-4 leading-relaxed font-normal">
+                From classic favorites to exotic delights, explore a diverse menu inspired by cuisines from across the globe and freshly prepared by master chefs.
               </p>
 
-              {/* Stadium Discount Pill from Screenshot 1 */}
-              <div className="mt-5 inline-flex flex-wrap items-center gap-3 px-4 py-2 rounded-full bg-white text-neutral-900 shadow-xl">
-                <div className="flex -space-x-2">
-                  <span className="w-6 h-6 rounded-full bg-amber-400 text-[10px] font-black flex items-center justify-center text-neutral-900 ring-2 ring-white">⭐</span>
-                  <span className="w-6 h-6 rounded-full bg-[#FF5A26] text-[10px] font-black flex items-center justify-center text-white ring-2 ring-white">🔥</span>
-                  <span className="w-6 h-6 rounded-full bg-emerald-500 text-[10px] font-black flex items-center justify-center text-white ring-2 ring-white">✨</span>
-                </div>
-                <span className="text-xs font-extrabold text-neutral-900">
-                  Great food &amp; discounted prices
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#FF5A26] text-white text-[10px] font-black uppercase">
-                  50% Off On Now
-                </span>
+              {/* CTA Buttons */}
+              <div className="flex flex-wrap items-center gap-3.5 mt-6">
+                <a
+                  href="#menu-content-root"
+                  className="px-6 py-3 rounded-full flame-gradient-btn text-white text-xs sm:text-sm font-black shadow-lg shadow-[#FF5A26]/40 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <span>Explore Menu</span>
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => setIsTableModalOpen(true)}
+                  className="px-5 py-3 rounded-full bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 hover:text-white border border-zinc-700/80 hover:border-[#FF5A26]/50 text-xs sm:text-sm font-bold transition-all shadow-md active:scale-95 cursor-pointer flex items-center gap-2"
+                >
+                  <UtensilsCrossed className="w-3.5 h-3.5 text-[#FF5A26]" />
+                  <span>{tableNumber ? `Table ${tableNumber}` : 'Set Dining Table'}</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+                </button>
               </div>
             </div>
 
-            {/* Dining Lounge Badge: Locked via QR OR Prompt to Pair Table */}
-            {tableNumber ? (
-              <div className="shrink-0 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 px-5 py-4 rounded-2xl flex items-center gap-4 shadow-xl">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF5A26] to-[#FF7A45] text-white font-black text-lg flex items-center justify-center shadow-lg shadow-[#FF5A26]/30 ring-2 ring-[#FF7A45]/40">
-                  {tableNumber}
+            {/* Right Column: Floating Ceramic Artisanal Ramen Bowl (Screenshot 1) */}
+            <div className="relative shrink-0 flex items-center justify-center select-none py-2 lg:py-6">
+              {/* Radiant Orange Glow Behind Bowl */}
+              <div className="absolute w-72 h-72 sm:w-80 sm:h-80 bg-[#FF5A26]/20 rounded-full blur-3xl pointer-events-none animate-pulse" />
+              
+              {/* Floating Ceramic Dish */}
+              <div className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-92 md:h-92 rounded-full p-2.5 bg-gradient-to-tr from-[#FF5A26]/50 via-transparent to-[#FF7A45]/30 shadow-2xl">
+                <div className="w-full h-full rounded-full overflow-hidden shadow-2xl ring-4 ring-white/10 hover:scale-104 transition-transform duration-700 bg-zinc-900">
+                  <img
+                    src="https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=900&auto=format&fit=crop&q=80"
+                    alt="WorldPlate Signature Artisanal Ramen Bowl"
+                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-700"
+                  />
                 </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-emerald-400 font-extrabold flex items-center gap-1.5">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    <Lock className="w-3 h-3" /> Locked via QR
-                  </div>
-                  <div className="text-base font-black text-white tracking-tight mt-0.5">
-                    Table {tableNumber}
-                  </div>
+
+                {/* Floating Highlight Badge */}
+                <div className="absolute -bottom-2 -left-2 bg-[#161619]/95 backdrop-blur-md border border-zinc-800 px-3.5 py-2 rounded-2xl shadow-xl flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF5A26] animate-ping" />
+                  <span className="text-xs font-black text-white">Chef Special</span>
+                  <span className="text-[10px] text-[#FF7A45] font-bold">&bull; Fresh Daily</span>
                 </div>
               </div>
-            ) : (
-              <div className="shrink-0 bg-zinc-900/90 border border-zinc-800 backdrop-blur-md px-5 py-3.5 rounded-2xl flex items-center justify-between gap-4 shadow-xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#FF5A26] to-[#FF7A45] text-white flex items-center justify-center font-bold shrink-0 shadow-md shadow-[#FF5A26]/30">
-                    <QrCode className="w-6 h-6" />
+            </div>
+          </div>
+
+          {/* Stadium Discount Banner from Screenshot 1 */}
+          <div className="relative mt-8 rounded-3xl sm:rounded-full bg-white text-neutral-900 shadow-2xl p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4 overflow-hidden border border-zinc-200">
+            {/* Left Sub-Section */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-center sm:text-left z-10">
+              <div>
+                <h4 className="font-black text-sm sm:text-base text-neutral-950 tracking-tight">
+                  Great food and lots of discounted prices
+                </h4>
+                <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+                  <div className="flex -space-x-2">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=80" alt="Diner" className="w-6 h-6 rounded-full object-cover ring-2 ring-white" />
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&auto=format&fit=crop&q=80" alt="Diner" className="w-6 h-6 rounded-full object-cover ring-2 ring-white" />
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=60&auto=format&fit=crop&q=80" alt="Diner" className="w-6 h-6 rounded-full object-cover ring-2 ring-white" />
                   </div>
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider text-[#FF7A45] font-extrabold">
-                      Scan Table QR
-                    </div>
-                    <div className="text-xs text-zinc-300">
-                      Scan table to order
-                    </div>
-                  </div>
+                  <span className="text-xs font-extrabold text-neutral-800">
+                    +40 People grabbed the offer
+                  </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleSelectTable('1')}
-                  className="px-3.5 py-1.5 flame-gradient-btn text-white text-xs font-extrabold rounded-xl transition shadow-md cursor-pointer flex items-center gap-1"
-                >
-                  <span>Demo: T01</span>
-                  <ArrowRight className="w-3 h-3 stroke-[2.5]" />
-                </button>
               </div>
-            )}
+            </div>
+
+            {/* Center Notched Divider with 2 Circular Cutouts from Screenshot 1 */}
+            <div className="hidden md:flex flex-col items-center justify-between h-14 relative px-2">
+              <div className="w-4 h-4 rounded-full bg-[#0a0a0c] -mt-6 shadow-inner" />
+              <div className="h-8 w-px border-l-2 border-dashed border-neutral-300" />
+              <div className="w-4 h-4 rounded-full bg-[#0a0a0c] -mb-6 shadow-inner" />
+            </div>
+
+            {/* Right Sub-Section: 50% Offer + Dish Plate */}
+            <div className="flex items-center gap-4 z-10">
+              <div className="text-right">
+                <span className="block text-2xl sm:text-4xl font-black text-neutral-950 tracking-tight leading-none">
+                  50%
+                </span>
+                <span className="text-[11px] font-black uppercase text-neutral-600 tracking-wider">
+                  Offer On Now
+                </span>
+              </div>
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden shadow-lg border-2 border-white ring-2 ring-[#FF5A26]/40 shrink-0">
+                <img
+                  src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&auto=format&fit=crop&q=80"
+                  alt="Gourmet Salad Special"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-0 right-0 w-6 h-6 bg-[#FF5A26] text-white text-[9px] font-black flex items-center justify-center rounded-bl-lg">
+                  ★
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* 2. Live Customer Order Status Tracker */}
         {activeOrder && activeOrder.status !== 'served' && (
-          <div className="mb-6 bg-[#141028]/90 border border-purple-500/30 rounded-3xl p-5 sm:p-6 shadow-xl animate-fadeIn">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-purple-500/20">
+          <div className="mb-6 bg-[#161619]/95 border border-zinc-800 rounded-3xl p-5 sm:p-6 shadow-xl animate-fadeIn">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/80">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/40 text-purple-300 flex items-center justify-center font-black text-xs shadow-2xs">
+                <div className="w-9 h-9 rounded-xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] flex items-center justify-center font-black text-xs shadow-2xs">
                   {tableNumber ? `T${tableNumber}` : 'ORD'}
                 </div>
                 <div>
@@ -1090,7 +1140,7 @@ export default function CustomerMenu({
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
                   </h4>
-                  <span className="text-[11px] text-purple-200/60 font-medium">
+                  <span className="text-[11px] text-zinc-400 font-medium">
                     Order #{activeOrder.orderId || activeOrder.orderNumber || 'Active'} &bull; Table {tableNumber || activeOrder.tableNumber}
                   </span>
                 </div>
@@ -1110,9 +1160,9 @@ export default function CustomerMenu({
 
               return (
                 <div className="relative pt-2 pb-1">
-                  <div className="absolute top-6 left-8 right-8 h-1 bg-purple-950/80 -translate-y-1/2 z-0 rounded-full" />
+                  <div className="absolute top-6 left-8 right-8 h-1 bg-zinc-800 -translate-y-1/2 z-0 rounded-full" />
                   <div
-                    className="absolute top-6 left-8 h-1 bg-gradient-to-r from-purple-500 via-fuchsia-500 to-emerald-400 -translate-y-1/2 z-0 rounded-full transition-all duration-700 shadow-xs"
+                    className="absolute top-6 left-8 h-1 bg-gradient-to-r from-[#FF5A26] via-[#FF7A45] to-emerald-400 -translate-y-1/2 z-0 rounded-full transition-all duration-700 shadow-xs"
                     style={{ width: `calc((100% - 4rem) * ${progressPercent / 100})` }}
                   />
 
@@ -1132,15 +1182,15 @@ export default function CustomerMenu({
                           <div
                             className={`w-9 h-9 rounded-full flex items-center justify-center text-xs transition-all duration-300 ${
                               isCurrent
-                                ? 'bg-purple-600 text-white ring-4 ring-purple-500/30 font-bold scale-110 shadow-lg shadow-purple-600/40'
+                                ? 'flame-gradient-btn text-white ring-4 ring-[#FF5A26]/30 font-bold scale-110 shadow-lg shadow-[#FF5A26]/40'
                                 : isCompleted
                                 ? 'bg-emerald-600 text-white font-medium shadow-md shadow-emerald-600/25'
-                                : 'bg-purple-950/60 text-purple-400/50 border border-purple-500/20'
+                                : 'bg-zinc-800/90 text-zinc-500 border border-zinc-700'
                             }`}
                           >
                             <StepIcon className="w-4 h-4" />
                           </div>
-                          <span className={`text-[11px] mt-1.5 font-bold tracking-tight ${isCurrent ? 'text-purple-300 font-extrabold' : isCompleted ? 'text-stone-300' : 'text-stone-500'}`}>
+                          <span className={`text-[11px] mt-1.5 font-bold tracking-tight ${isCurrent ? 'text-[#FF7A45] font-extrabold' : isCompleted ? 'text-stone-300' : 'text-stone-500'}`}>
                             {step.label}
                           </span>
                         </div>
@@ -1159,19 +1209,19 @@ export default function CustomerMenu({
             
             {/* Search Input */}
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-purple-400/60 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search delicious dishes, ingredients, drinks..."
-                className="w-full pl-10 pr-9 py-2.5 sm:py-3 text-xs sm:text-sm bg-[#141029]/90 rounded-2xl border border-purple-500/30 shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-400 placeholder:text-purple-300/40 text-white transition-all"
+                className="w-full pl-10 pr-9 py-2.5 sm:py-3 text-xs sm:text-sm bg-[#161619]/90 rounded-2xl border border-zinc-800 shadow-md focus:outline-none focus:ring-2 focus:ring-[#FF5A26]/40 focus:border-[#FF5A26] placeholder:text-zinc-500 text-white transition-all"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-white p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1186,7 +1236,7 @@ export default function CustomerMenu({
                 className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
                   vegOnlyFilter
                     ? 'bg-emerald-700 text-white border-emerald-600 shadow-md shadow-emerald-700/30 ring-1 ring-emerald-400/40'
-                    : 'bg-[#141029]/80 hover:bg-[#1b1535] text-stone-300 border-purple-500/25'
+                    : 'bg-[#161619] hover:bg-zinc-800 text-stone-300 border-zinc-800'
                 }`}
               >
                 <Leaf className={`w-3.5 h-3.5 ${vegOnlyFilter ? 'fill-current' : 'text-emerald-400'}`} />
@@ -1199,7 +1249,7 @@ export default function CustomerMenu({
                 className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
                   spicyFilter
                     ? 'bg-rose-700 text-white border-rose-600 shadow-md shadow-rose-700/30 ring-1 ring-rose-400/40'
-                    : 'bg-[#141029]/80 hover:bg-[#1b1535] text-stone-300 border-purple-500/25'
+                    : 'bg-[#161619] hover:bg-zinc-800 text-stone-300 border-zinc-800'
                 }`}
               >
                 <Flame className={`w-3.5 h-3.5 ${spicyFilter ? 'fill-current' : 'text-rose-400'}`} />
@@ -1211,7 +1261,7 @@ export default function CustomerMenu({
         </section>
 
         {/* Category Horizontal Sticky Pill Bar */}
-        <section className="sticky top-16 z-30 -mx-3 sm:mx-0 mb-4 bg-[#0a0815]/95 backdrop-blur-md pt-1 pb-1.5 border-b border-purple-500/20 shadow-md">
+        <section className="sticky top-16 z-30 -mx-3 sm:mx-0 mb-4 bg-[#0a0a0c]/95 backdrop-blur-md pt-1 pb-1.5 border-b border-zinc-800/80 shadow-md">
           <CategoryBar
             categories={categoriesList}
             selectedCategory={selectedCategory === 'All' ? activeScrollCategory : selectedCategory}
@@ -1461,27 +1511,265 @@ export default function CustomerMenu({
             </button>
           </div>
         )}
+        {/* 3. REVIEWS TESTIMONIALS SECTION [ What They Say? ] (Screenshot 1) */}
+        <section id="reviews-section" className="my-16 sm:my-24 scroll-mt-24">
+          <div className="flex items-center justify-center mb-8 sm:mb-12">
+            <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#141418]/90 border border-zinc-800 shadow-xl">
+              <span className="text-[#FF5A26] font-mono text-2xl sm:text-3xl font-black">[</span>
+              <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2">
+                <span>What They</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] flame-text-glow">Say?</span>
+              </h2>
+              <span className="text-[#FF5A26] font-mono text-2xl sm:text-3xl font-black">]</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+            {[
+              {
+                name: 'John Smith',
+                rating: 5,
+                image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+                comment: 'Absolutely loved the flavors! The food was fresh, and the delivery was super fast. Highly recommend!',
+                dish: 'Artisanal Salmon & Arugula'
+              },
+              {
+                name: 'Elena Rostova',
+                rating: 5,
+                image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
+                comment: 'The Woodfired Wagyu burger and the fresh made sauces were out of this world. Best dining experience in town.',
+                dish: 'Truffle Wagyu Smash'
+              },
+              {
+                name: 'Marcus Vance',
+                rating: 5,
+                image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
+                comment: 'The interactive chef video reels and real-time QR ordering are so smooth and innovative. A true 10/10.',
+                dish: 'Wild Mushroom Risotto'
+              }
+            ].map((review, i) => (
+              <div
+                key={i}
+                className="bg-[#141418]/90 hover:bg-[#18181f] backdrop-blur-xl border border-zinc-800/80 hover:border-[#FF5A26]/40 p-6 rounded-3xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-black/50 group flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center gap-3.5 mb-4">
+                    <img
+                      src={review.image}
+                      alt={review.name}
+                      className="w-12 h-12 rounded-full object-cover ring-2 ring-[#FF5A26]/40 shadow-md group-hover:scale-105 transition-transform"
+                    />
+                    <div>
+                      <h4 className="font-black text-sm text-white group-hover:text-[#FF7A45] transition-colors">
+                        {review.name}
+                      </h4>
+                      <div className="flex items-center text-amber-400 gap-0.5 mt-0.5">
+                        {Array.from({ length: 5 }).map((_, s) => (
+                          <Star key={s} className="w-3.5 h-3.5 fill-current text-[#FF7A45]" />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed italic font-normal">
+                    &ldquo;{review.comment}&rdquo;
+                  </p>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] text-zinc-500 font-medium">
+                  <span className="text-[#FF7A45] font-semibold">{review.dish}</span>
+                  <span className="flex items-center gap-1 text-emerald-400 font-bold">
+                    <CheckCircle2 className="w-3 h-3" /> Verified Diner
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 4. MASTER CHEF FEATURE SECTION [ Meet Our Chefs ] (Screenshot 1) */}
+        <section id="chefs-section" className="my-16 sm:my-24 scroll-mt-24">
+          <div className="flex items-center justify-center mb-8 sm:mb-12">
+            <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#141418]/90 border border-zinc-800 shadow-xl">
+              <span className="text-[#FF5A26] font-mono text-2xl sm:text-3xl font-black">[</span>
+              <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2">
+                <span>Meet Our</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] flame-text-glow">Chefs</span>
+              </h2>
+              <span className="text-[#FF5A26] font-mono text-2xl sm:text-3xl font-black">]</span>
+            </div>
+          </div>
+
+          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#15151a] via-[#121216] to-[#0a0a0c] border border-zinc-800/90 p-6 sm:p-10 shadow-2xl flex flex-col md:flex-row items-center gap-8 md:gap-12">
+            {/* Ambient Backlight */}
+            <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-[#FF5A26]/12 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Chef Portrait (holding plated dish matching Screenshot 1) */}
+            <div className="relative w-64 h-72 sm:w-80 sm:h-96 rounded-2xl overflow-hidden border border-zinc-700/80 shadow-2xl shrink-0 group">
+              <img
+                src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=900&auto=format&fit=crop&q=80"
+                alt="Executive Master Chef"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute bottom-3 left-3 right-3 p-3 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-center">
+                <span className="block text-sm font-black text-white">Chef Alessandro Rossi</span>
+                <span className="text-[11px] text-[#FF7A45] font-bold">Executive Culinary Director</span>
+              </div>
+            </div>
+
+            {/* Chef Bio Details from Screenshot 1 */}
+            <div className="flex-1 text-left space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] text-xs font-bold">
+                <ChefHat className="w-3.5 h-3.5 text-[#FF5A26]" />
+                <span className="uppercase text-[10px] tracking-widest font-extrabold">Michelin Recognized Craftsmanship</span>
+              </div>
+
+              <h3 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-snug">
+                Culinary Mastery in Every <span className="text-[#FF5A26]">Handcrafted</span> Plate
+              </h3>
+
+              <p className="text-xs sm:text-sm md:text-base text-zinc-300 leading-relaxed font-normal">
+                Our expert chefs bring passion, skill, and creativity to every dish, ensuring an unforgettable dining experience. With years of experience across top kitchens and a deep love for global flavors, they craft each meal to perfection using only the freshest, artisanal ingredients.
+              </p>
+
+              <div className="pt-2 flex flex-wrap items-center gap-4">
+                <a
+                  href="#menu-content-root"
+                  className="px-6 py-2.5 rounded-full flame-gradient-btn text-white text-xs sm:text-sm font-black shadow-lg shadow-[#FF5A26]/30 hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-2"
+                >
+                  <span>View Chef's Specials</span>
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                </a>
+
+                <div className="flex items-center gap-3 text-xs text-zinc-400 font-semibold pl-2">
+                  <span className="text-[#FF7A45] font-bold">★ 15+ Years</span>
+                  <span>•</span>
+                  <span>Organic Sourced</span>
+                  <span>•</span>
+                  <span>Zero Preservatives</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 5. WORLDPLATE LUXURY FOOTER (Screenshot 1 & 2) */}
+        <footer id="footer-section" className="mt-20 pt-16 pb-12 border-t border-zinc-800/80 bg-[#070709] text-stone-300 -mx-3 sm:-mx-6 lg:-mx-8 px-4 sm:px-8">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
+            {/* Col 1: WorldPlate Info */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FF5A26] to-[#FF7A45] flex items-center justify-center text-white shadow-md shadow-[#FF5A26]/40">
+                  <UtensilsCrossed className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <span className="text-xl font-black text-white tracking-tight">
+                  World<span className="text-[#FF5A26]">Plate</span>
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 leading-relaxed font-normal">
+                At WorldPlate, we are dedicated to crafting world-class culinary experiences with high-speed tableside QR ordering and artisanal kitchen mastery.
+              </p>
+              {/* Social Icons in Flame Orange Circular Tiles (Screenshot 1 & 2) */}
+              <div className="flex items-center gap-2 pt-1">
+                {['Twitter', 'Facebook', 'TikTok', 'Instagram'].map((network, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    aria-label={network}
+                    className="w-8 h-8 rounded-full bg-[#FF5A26] hover:bg-[#FF7A45] text-white flex items-center justify-center text-xs font-bold transition shadow-sm hover:scale-110 cursor-pointer"
+                  >
+                    {network.charAt(0)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Col 2: Quick Links */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-black uppercase tracking-wider text-white">
+                Quick Links
+              </h4>
+              <ul className="space-y-2 text-xs text-zinc-400 font-medium">
+                <li><a href="#menu-hero" className="hover:text-white transition">Home</a></li>
+                <li><a href="#menu-content-root" className="hover:text-white transition">Artisanal Menu</a></li>
+                <li><a href="#reviews-section" className="hover:text-white transition">Customer Reviews</a></li>
+                <li><a href="#chefs-section" className="hover:text-white transition">Meet The Chefs</a></li>
+              </ul>
+            </div>
+
+            {/* Col 3: Direct Contact (Phone from Screenshot 2) */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-black uppercase tracking-wider text-white">
+                Contact &amp; Reservations
+              </h4>
+              <p className="text-xs text-zinc-400 leading-relaxed font-normal">
+                Dine-in tableside assistance, private catering &amp; event reservations:
+              </p>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-sm font-black text-[#FF7A45]">
+                <span>📞</span>
+                <span>+20 654 87 432</span>
+              </div>
+              <p className="text-[11px] text-zinc-500 font-medium">
+                Open Daily: 10:00 AM – 11:30 PM
+              </p>
+            </div>
+
+            {/* Col 4: Newsletter Signup (Screenshot 1) */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-black uppercase tracking-wider text-white">
+                Sign Up Our Newsletters
+              </h4>
+              <p className="text-xs text-zinc-400 font-normal">
+                Let's stay connected. Get exclusive secret recipes &amp; seasonal discount drops.
+              </p>
+              <div className="space-y-2 pt-1">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:border-[#FF5A26]"
+                />
+                <button
+                  type="button"
+                  onClick={() => showToast('Thank you for subscribing to WorldPlate! 🌟')}
+                  className="w-full py-2 rounded-xl flame-gradient-btn text-white text-xs font-black shadow-md shadow-[#FF5A26]/30 cursor-pointer active:scale-95 transition"
+                >
+                  Subscribe Now
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-zinc-800/60 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500 gap-3">
+            <p>© 2026 WorldPlate. All Rights Reserved. Crafted for Artisanal Dining.</p>
+            <div className="flex items-center gap-4 text-[11px]">
+              <span className="hover:text-zinc-400 cursor-pointer">Privacy Policy</span>
+              <span>&bull;</span>
+              <span className="hover:text-zinc-400 cursor-pointer">Terms of Service</span>
+            </div>
+          </div>
+        </footer>
       </main>
 
       {/* Floating Bottom Cart Summary Bar */}
       {cartSummary.totalCount > 0 && (
         <aside
           aria-label="Order Cart Summary"
-          className="fixed bottom-0 left-0 right-0 z-40 p-3 sm:p-4 bg-gradient-to-t from-stone-100 via-stone-100/95 to-transparent backdrop-blur-xs pointer-events-none"
+          className="fixed bottom-0 left-0 right-0 z-40 p-3 sm:p-4 bg-gradient-to-t from-[#0a0a0c] via-[#0a0a0c]/90 to-transparent backdrop-blur-xs pointer-events-none"
         >
           <div className="max-w-xl mx-auto pointer-events-auto">
-            <div className="bg-neutral-950/95 backdrop-blur-md text-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 shadow-2xl shadow-neutral-950/40 flex items-center justify-between gap-3.5 border border-stone-800 ring-1 ring-white/10 animate-slideUp">
+            <div className="bg-[#141418]/95 backdrop-blur-xl text-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 shadow-2xl shadow-black/80 flex items-center justify-between gap-3.5 border border-zinc-800 ring-1 ring-[#FF5A26]/20 animate-slideUp">
               
               {/* Left: Cart Info */}
               <div className="flex items-center gap-3.5">
-                <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 flex items-center justify-center text-neutral-950 shrink-0 shadow-md shadow-amber-500/30">
+                <div className="relative w-11 h-11 rounded-xl flame-gradient-btn flex items-center justify-center text-white shrink-0 shadow-md shadow-[#FF5A26]/40">
                   <ShoppingBag className="w-5 h-5 stroke-[2.2]" />
-                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-600 text-white text-[10px] font-black rounded-full flex items-center justify-center ring-2 ring-neutral-950 shadow-sm">
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-600 text-white text-[10px] font-black rounded-full flex items-center justify-center ring-2 ring-[#0a0a0c] shadow-sm">
                     {cartSummary.totalCount}
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs text-stone-400 font-medium leading-tight">
+                  <span className="text-xs text-zinc-400 font-medium leading-tight">
                     {cartSummary.totalCount} {cartSummary.totalCount === 1 ? 'dish' : 'dishes'}
                     {tableNumber ? ` • Table ${tableNumber}` : ''}
                   </span>
@@ -1495,7 +1783,7 @@ export default function CustomerMenu({
               <button
                 type="button"
                 onClick={() => setIsCartOpen(true)}
-                className="inline-flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-neutral-950 font-black text-xs sm:text-sm transition-all shadow-md shadow-amber-500/25 cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl flame-gradient-btn active:scale-95 text-white font-black text-xs sm:text-sm transition-all shadow-md shadow-[#FF5A26]/30 cursor-pointer"
               >
                 <span>View Order</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -1551,26 +1839,26 @@ export default function CustomerMenu({
         onUpdateQuantity={(itemId, qty) => handleUpdateQuantity(itemId, qty)}
       />
 
-      {/* Table Selection Modal */}
+      {/* Table Selection Modal (Dark Noir Glass Theme) */}
       {isTableModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-stone-200/90 p-6 sm:p-7 transform transition-all animate-scaleUp">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-md bg-[#161619] text-white rounded-3xl shadow-2xl border border-zinc-800 p-6 sm:p-7 transform transition-all animate-scaleUp">
             
             <div className="text-center mb-5">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-700 mx-auto flex items-center justify-center mb-2.5 shadow-2xs">
+              <div className="w-12 h-12 rounded-2xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF5A26] mx-auto flex items-center justify-center mb-2.5 shadow-2xs">
                 <UtensilsCrossed className="w-6 h-6 stroke-[1.8]" />
               </div>
-              <h3 className="font-black text-stone-900 text-lg sm:text-xl tracking-tight">
+              <h3 className="font-black text-white text-lg sm:text-xl tracking-tight">
                 Dine-in Table Selection
               </h3>
-              <p className="text-xs sm:text-sm text-stone-500 mt-1">
+              <p className="text-xs text-zinc-400 mt-1">
                 Select your dining table number to synchronize orders with our kitchen.
               </p>
             </div>
 
             {/* Quick Grid 1 - 20 */}
             <div className="mb-4">
-              <label className="block text-[11px] font-bold text-stone-600 uppercase tracking-wider mb-2">
+              <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
                 Select Table (1 - 20):
               </label>
               <div className="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1">
@@ -1583,8 +1871,8 @@ export default function CustomerMenu({
                       onClick={() => handleSelectTable(num)}
                       className={`h-11 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer ${
                         isCurrent
-                          ? 'bg-neutral-950 text-white border-neutral-950 shadow-md shadow-neutral-950/20 ring-2 ring-amber-500/40 scale-102'
-                          : 'bg-stone-50 hover:bg-stone-100 text-stone-800 border-stone-200/80'
+                          ? 'flame-gradient-btn text-white shadow-md shadow-[#FF5A26]/40 ring-2 ring-[#FF7A45] scale-102'
+                          : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border-zinc-800 hover:border-zinc-700'
                       }`}
                     >
                       {num}
@@ -1595,8 +1883,8 @@ export default function CustomerMenu({
             </div>
 
             {/* Custom Table Number Input */}
-            <div className="pt-3.5 border-t border-stone-100 mb-4">
-              <label className="block text-xs font-semibold text-stone-600 mb-1.5">
+            <div className="pt-3.5 border-t border-zinc-800/80 mb-4">
+              <label className="block text-xs font-semibold text-zinc-400 mb-1.5">
                 Or enter custom dining area (Bar, Patio, VIP):
               </label>
               <div className="flex gap-2">
@@ -1605,7 +1893,7 @@ export default function CustomerMenu({
                   value={customTableInput}
                   onChange={(e) => setCustomTableInput(e.target.value)}
                   placeholder="e.g. Bar 02, VIP Lounge, Terrace 1"
-                  className="flex-1 px-3.5 py-2 text-xs sm:text-sm bg-stone-50 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition"
+                  className="flex-1 px-3.5 py-2 text-xs sm:text-sm bg-zinc-900 rounded-xl border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-[#FF5A26] focus:border-[#FF5A26] transition"
                 />
                 <button
                   type="button"
@@ -1614,7 +1902,7 @@ export default function CustomerMenu({
                       handleSelectTable(customTableInput.trim());
                     }
                   }}
-                  className="px-4 py-2 bg-neutral-950 text-white text-xs sm:text-sm font-bold rounded-xl hover:bg-neutral-900 cursor-pointer shadow-xs"
+                  className="px-4 py-2 flame-gradient-btn text-white text-xs sm:text-sm font-bold rounded-xl cursor-pointer shadow-xs active:scale-95"
                 >
                   Set Table
                 </button>
@@ -1625,7 +1913,7 @@ export default function CustomerMenu({
               <button
                 type="button"
                 onClick={() => setIsTableModalOpen(false)}
-                className="w-full py-2.5 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs sm:text-sm font-semibold transition cursor-pointer"
+                className="w-full py-2.5 rounded-xl border border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white text-xs sm:text-sm font-semibold transition cursor-pointer"
               >
                 Keep Table {tableNumber}
               </button>
@@ -1635,33 +1923,33 @@ export default function CustomerMenu({
         </div>
       )}
 
-      {/* Order Success Modal */}
+      {/* Order Success Modal (Dark Noir Glass Theme) */}
       {orderSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-stone-200/90 p-6 sm:p-7 text-center transform transition-all animate-scaleUp">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 mx-auto flex items-center justify-center mb-3 shadow-2xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-sm bg-[#161619] text-white rounded-3xl shadow-2xl border border-zinc-800 p-6 sm:p-7 text-center transform transition-all animate-scaleUp">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 mx-auto flex items-center justify-center mb-3 shadow-2xs">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h3 className="font-black text-stone-900 text-lg tracking-tight">
+            <h3 className="font-black text-white text-lg tracking-tight">
               Order Dispatched to Kitchen!
             </h3>
-            <p className="text-xs text-stone-500 mt-1 mb-4 font-medium">
+            <p className="text-xs text-zinc-400 mt-1 mb-4 font-medium">
               Order #{orderSuccessModal.orderId} &bull; Table {orderSuccessModal.tableNumber}
             </p>
 
-            <div className="bg-stone-50 rounded-2xl p-3.5 text-left mb-4 space-y-1.5 text-xs border border-stone-100">
-              <div className="flex justify-between font-semibold text-stone-600">
+            <div className="bg-zinc-900/90 rounded-2xl p-3.5 text-left mb-4 space-y-1.5 text-xs border border-zinc-800">
+              <div className="flex justify-between font-semibold text-zinc-400">
                 <span>Items Placed:</span>
-                <span>{orderSuccessModal.items.length} items</span>
+                <span className="text-white font-bold">{orderSuccessModal.items.length} items</span>
               </div>
-              <div className="flex justify-between font-extrabold text-stone-900 pt-1.5 border-t border-stone-200/60">
+              <div className="flex justify-between font-extrabold text-white pt-1.5 border-t border-zinc-800">
                 <span>Total Amount:</span>
-                <span className="text-amber-700 font-black">${orderSuccessModal.total.toFixed(2)}</span>
+                <span className="text-[#FF5A26] font-black">${orderSuccessModal.total.toFixed(2)}</span>
               </div>
             </div>
 
             {!isOnline && (
-              <div className="bg-amber-50 text-amber-900 text-[11px] p-3 rounded-xl mb-4 text-left border border-amber-200/90 leading-relaxed">
+              <div className="bg-amber-950/40 text-amber-300 text-[11px] p-3 rounded-xl mb-4 text-left border border-amber-500/30 leading-relaxed">
                 <span className="font-bold">Offline Resilience:</span> Your order is secured locally and relayed over local Wi-Fi to the kitchen display.
               </div>
             )}
@@ -1669,7 +1957,7 @@ export default function CustomerMenu({
             <button
               type="button"
               onClick={() => setOrderSuccessModal(null)}
-              className="w-full py-3 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs sm:text-sm transition cursor-pointer shadow-sm"
+              className="w-full py-3 rounded-xl flame-gradient-btn text-white font-bold text-xs sm:text-sm transition cursor-pointer shadow-md active:scale-95"
             >
               Back to Menu
             </button>
@@ -1679,8 +1967,8 @@ export default function CustomerMenu({
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-neutral-950/95 backdrop-blur-md text-white px-4.5 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-bold flex items-center gap-2.5 border border-stone-800 ring-1 ring-amber-500/20 animate-fadeIn">
-          <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#161619]/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-bold flex items-center gap-2.5 border border-zinc-800 ring-1 ring-[#FF5A26]/30 animate-fadeIn">
+          <Sparkles className="w-4 h-4 text-[#FF5A26] shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}

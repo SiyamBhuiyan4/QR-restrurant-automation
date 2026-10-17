@@ -139,7 +139,7 @@ export default function OrderCard({
       return {
         nextStatus: 'served',
         label: '🚀 Mark Served',
-        colorClass: 'bg-purple-500 hover:bg-purple-400 active:bg-purple-600 text-white ring-2 ring-purple-400/40 font-black'
+        colorClass: 'flame-gradient-btn text-white ring-2 ring-[#FF7A45]/40 font-black'
       };
     }
     return null;
@@ -324,13 +324,13 @@ export default function OrderCard({
       {/* VOICE NOTE SECTION */}
       {voiceNoteUrl && (
         <div className="px-4 pb-3">
-          <div className="p-3 rounded-xl bg-purple-950/50 border-2 border-purple-500/50 shadow-inner">
+          <div className="p-3 rounded-xl bg-[#FF5A26]/10 border border-[#FF5A26]/30 shadow-inner">
             <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-purple-300">
-                <Mic className="w-4 h-4 text-purple-400 animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#FF7A45]">
+                <Mic className="w-4 h-4 text-[#FF5A26] animate-pulse" />
                 🎙️ Customer Voice Instruction
               </span>
-              <span className="text-[10px] text-purple-300 font-mono font-semibold bg-purple-900/80 px-2 py-0.5 rounded">
+              <span className="text-[10px] text-[#FF7A45] font-mono font-semibold bg-[#FF5A26]/20 px-2 py-0.5 rounded">
                 Audio Note
               </span>
             </div>
