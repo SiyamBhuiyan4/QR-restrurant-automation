@@ -929,8 +929,38 @@ export default function CustomerMenu({
 
   return (
     <div className="min-h-screen bg-[#faf8f5] text-stone-900 pb-32 selection:bg-amber-500 selection:text-white relative">
-      {/* Warm Ambient Bistro Glow */}
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(217,119,6,0.05),rgba(250,248,245,0))] z-0" />
+      {/* =====================================================================
+          Live Ambient Bistro Atmosphere Background Effect (GPU 60 FPS)
+         ===================================================================== */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 select-none">
+        {/* Soft Radial Warmth Base */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_80%_at_50%_-20%,rgba(245,158,11,0.07),rgba(250,248,245,0)_75%)]" />
+
+        {/* 1. Warm Golden Amber Ambient Orb (Drifting Top Left) */}
+        <div className="absolute -top-32 -left-28 w-[450px] h-[450px] sm:w-[560px] sm:h-[560px] rounded-full bg-gradient-to-tr from-amber-400/20 via-amber-300/12 to-transparent blur-[110px] animate-ambient-drift-1" />
+
+        {/* 2. Soft Rosé Wine Orb (Drifting Top Right) */}
+        <div className="absolute top-16 -right-32 w-[400px] h-[400px] sm:w-[500px] sm:h-[500px] rounded-full bg-gradient-to-bl from-rose-400/15 via-orange-300/12 to-transparent blur-[100px] animate-ambient-drift-2" />
+
+        {/* 3. Fresh Herb Emerald Glow (Middle Left) */}
+        <div className="absolute top-[42%] -left-36 w-[420px] h-[420px] rounded-full bg-gradient-to-r from-emerald-400/12 via-teal-300/10 to-transparent blur-[120px] animate-ambient-drift-3" />
+
+        {/* 4. Honey Hearth Pulse (Bottom Center / Right) */}
+        <div className="absolute bottom-12 right-[8%] w-[480px] h-[480px] rounded-full bg-gradient-to-tl from-amber-500/18 via-yellow-400/10 to-transparent blur-[110px] animate-ambient-pulse" />
+
+        {/* 5. Floating Candlelight / Champagne Sparkle Bokeh Particles */}
+        <div className="ambient-sparkle sparkle-1" />
+        <div className="ambient-sparkle sparkle-2" />
+        <div className="ambient-sparkle sparkle-3" />
+        <div className="ambient-sparkle sparkle-4" />
+        <div className="ambient-sparkle sparkle-5" />
+        <div className="ambient-sparkle sparkle-6" />
+        <div className="ambient-sparkle sparkle-7" />
+        <div className="ambient-sparkle sparkle-8" />
+
+        {/* 6. Subtle Micro-texture Dot Grid */}
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(120,53,15,0.025)_1px,transparent_1px)] [background-size:24px_24px] opacity-70" />
+      </div>
       
       {/* 1. Header Navigation */}
       <Navbar

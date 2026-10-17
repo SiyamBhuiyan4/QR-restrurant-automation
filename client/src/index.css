@@ -118,3 +118,118 @@
     size: auto;
   }
 }
+
+/* ==========================================================================
+   Live Ambient Bistro Background Effects (GPU-Accelerated 60 FPS)
+   ========================================================================== */
+
+@keyframes ambientDrift1 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(50px, 60px, 0) scale(1.08);
+  }
+  66% {
+    transform: translate3d(-30px, 90px, 0) scale(0.96);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes ambientDrift2 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  40% {
+    transform: translate3d(-60px, 50px, 0) scale(1.1);
+  }
+  75% {
+    transform: translate3d(-20px, -30px, 0) scale(0.94);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes ambientDrift3 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(60px, -45px, 0) scale(1.12);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes ambientPulseSlow {
+  0%, 100% {
+    transform: scale(1) translate3d(0, 0, 0);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scale(1.14) translate3d(-15px, -15px, 0);
+    opacity: 0.95;
+  }
+}
+
+@keyframes liveSparkleFloat {
+  0% {
+    transform: translateY(105vh) scale(0.5);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.75;
+  }
+  85% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translateY(-5vh) scale(1.2);
+    opacity: 0;
+  }
+}
+
+.animate-ambient-drift-1 {
+  animation: ambientDrift1 22s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-ambient-drift-2 {
+  animation: ambientDrift2 26s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-ambient-drift-3 {
+  animation: ambientDrift3 30s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-ambient-pulse {
+  animation: ambientPulseSlow 18s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Floating Candlelight / Champagne Sparkle Bokeh Particles */
+.ambient-sparkle {
+  position: absolute;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.75) 0%, rgba(251, 191, 36, 0.35) 45%, transparent 75%);
+  pointer-events: none;
+  filter: blur(1.5px);
+  animation: liveSparkleFloat linear infinite;
+  will-change: transform, opacity;
+}
+
+.sparkle-1 { left: 8%; width: 14px; height: 14px; animation-duration: 19s; animation-delay: 0s; }
+.sparkle-2 { left: 22%; width: 18px; height: 18px; animation-duration: 23s; animation-delay: 4s; }
+.sparkle-3 { left: 38%; width: 12px; height: 12px; animation-duration: 17s; animation-delay: 8s; }
+.sparkle-4 { left: 54%; width: 22px; height: 22px; animation-duration: 25s; animation-delay: 2s; }
+.sparkle-5 { left: 68%; width: 16px; height: 16px; animation-duration: 20s; animation-delay: 11s; }
+.sparkle-6 { left: 82%; width: 18px; height: 18px; animation-duration: 22s; animation-delay: 6s; }
+.sparkle-7 { left: 32%; width: 10px; height: 10px; animation-duration: 26s; animation-delay: 13s; }
+.sparkle-8 { left: 92%; width: 14px; height: 14px; animation-duration: 18s; animation-delay: 9s; }
+

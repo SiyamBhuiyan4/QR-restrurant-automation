@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Plus, 
   Minus, 
@@ -8,11 +9,11 @@ import {
   UtensilsCrossed, 
   Clock, 
   Check, 
-  X,
-  Sparkles,
-  Star,
-  Video,
-  Image as ImageIcon
+  X, 
+  Sparkles, 
+  Star, 
+  Video, 
+  Image as ImageIcon 
 } from 'lucide-react';
 
 /**
@@ -121,13 +122,18 @@ export default function MenuItemCard({
 
   const renderNoteModal = () => {
     if (!isNoteModalOpen) return null;
-    return (
+    if (typeof document === 'undefined') return null;
+
+    const modalContent = (
       <div 
-        className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
-        onClick={() => setIsNoteModalOpen(false)}
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsNoteModalOpen(false);
+        }}
       >
         <div 
-          className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-stone-200 p-5 space-y-3 animate-scaleUp"
+          className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-stone-200 p-5 space-y-3 animate-scaleUp text-stone-900"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between pb-2 border-b border-stone-100">
@@ -137,8 +143,11 @@ export default function MenuItemCard({
             </div>
             <button
               type="button"
-              onClick={() => setIsNoteModalOpen(false)}
-              className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsNoteModalOpen(false);
+              }}
+              className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -153,7 +162,10 @@ export default function MenuItemCard({
               <button
                 key={preset}
                 type="button"
-                onClick={() => handlePresetClick(preset)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePresetClick(preset);
+                }}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition cursor-pointer ${
                   tempNote.includes(preset)
                     ? 'bg-amber-100 border-amber-400 text-amber-900 font-bold'
@@ -169,21 +181,28 @@ export default function MenuItemCard({
             rows={2}
             value={tempNote}
             onChange={(e) => setTempNote(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
             placeholder="e.g. Allergies, less spicy, dressing on side..."
-            className="w-full px-3 py-2 text-xs border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition resize-none"
+            className="w-full px-3 py-2 text-xs border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition resize-none text-stone-900 bg-white"
           />
 
           <div className="flex items-center justify-end gap-2 pt-1">
             <button
               type="button"
-              onClick={() => setIsNoteModalOpen(false)}
-              className="px-3 py-1.5 text-xs text-stone-500 hover:text-stone-700 font-semibold"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsNoteModalOpen(false);
+              }}
+              className="px-3 py-1.5 text-xs text-stone-500 hover:text-stone-700 font-semibold cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="button"
-              onClick={handleSaveNote}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSaveNote();
+              }}
               className="px-4 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 active:scale-95 text-stone-950 rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1"
             >
               <Check className="w-3.5 h-3.5" />
@@ -193,6 +212,8 @@ export default function MenuItemCard({
         </div>
       </div>
     );
+
+    return createPortal(modalContent, document.body);
   };
 
   if (layout === 'list') {
