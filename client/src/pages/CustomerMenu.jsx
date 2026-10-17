@@ -25,7 +25,8 @@ import {
   Clock,
   BellRing,
   LayoutGrid,
-  Rows3
+  Rows3,
+  Star
 } from 'lucide-react';
 
 // Default initial menu items for full offline or standalone browsing
