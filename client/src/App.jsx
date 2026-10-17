@@ -180,7 +180,14 @@ function AppRouter() {
 
   return (
     <div className="relative min-h-screen flex flex-col">
-      
+
+      {/* Global ambient background: fixed, CSS-only, behind all content */}
+      <div className="app-ambient" aria-hidden="true">
+        <div className="app-ambient__blob app-ambient__blob--a" />
+        <div className="app-ambient__blob app-ambient__blob--b" />
+        <div className="app-ambient__blob app-ambient__blob--c" />
+      </div>
+
       {/* Active Screen View */}
       <div className="flex-1">
         {renderView()}

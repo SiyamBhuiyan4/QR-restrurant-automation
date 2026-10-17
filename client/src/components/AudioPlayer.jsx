@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Play, Pause, RotateCcw, FastForward, Rewind, Volume2, VolumeX, AlertCircle } from 'lucide-react';
+import '../styles/staff.css';
 
 /**
  * AudioPlayer Component
@@ -171,7 +172,7 @@ export default function AudioPlayer({
 
   return (
     <div
-      className={`bg-slate-900/90 border border-slate-700/70 rounded-xl p-3 shadow-lg select-none ${className}`}
+      className={`min-w-0 max-w-full bg-slate-900/90 border border-slate-700/70 rounded-xl p-3 shadow-lg select-none ${className}`}
       role="region"
       aria-label="Kitchen Audio Player"
     >
@@ -210,7 +211,7 @@ export default function AudioPlayer({
               onClick={togglePlay}
               disabled={isLoading && !isPlaying}
               aria-label={isPlaying ? 'Pause voice instruction' : 'Play voice instruction'}
-              className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center font-bold transition-all transform active:scale-95 cursor-pointer shadow-md ${
+              className={`staff-touch staff-focus w-11 h-11 shrink-0 rounded-xl flex items-center justify-center font-bold transition-all transform active:scale-95 cursor-pointer shadow-md ${
                 isPlaying
                   ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/25 ring-2 ring-amber-400/50'
                   : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/25 ring-2 ring-emerald-400/50'
@@ -242,7 +243,7 @@ export default function AudioPlayer({
                   value={currentTime}
                   onChange={handleSeek}
                   aria-label="Audio scrubber"
-                  className="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400 hover:accent-amber-300 focus:outline-hidden"
+                  className="staff-range w-full h-2.5 bg-slate-800 rounded-lg cursor-pointer accent-amber-400 hover:accent-amber-300"
                   style={{
                     background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${progressPercent}%, #334155 ${progressPercent}%, #334155 100%)`
                   }}
@@ -258,7 +259,7 @@ export default function AudioPlayer({
               <button
                 type="button"
                 onClick={() => seekRelative(-5)}
-                className="inline-flex items-center gap-0.5 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 active:scale-95 text-[11px] font-medium transition cursor-pointer"
+                className="staff-chip staff-focus gap-0.5 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 active:scale-95 text-[11px] font-medium transition cursor-pointer"
                 title="Rewind 5 seconds"
               >
                 <Rewind className="w-3 h-3" />
@@ -268,7 +269,7 @@ export default function AudioPlayer({
               <button
                 type="button"
                 onClick={() => seekRelative(5)}
-                className="inline-flex items-center gap-0.5 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 active:scale-95 text-[11px] font-medium transition cursor-pointer"
+                className="staff-chip staff-focus gap-0.5 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 active:scale-95 text-[11px] font-medium transition cursor-pointer"
                 title="Forward 5 seconds"
               >
                 <span>+5s</span>
@@ -283,7 +284,7 @@ export default function AudioPlayer({
                     setCurrentTime(0);
                   }
                 }}
-                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 active:scale-95 transition cursor-pointer"
+                className="staff-chip staff-focus p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 active:scale-95 transition cursor-pointer"
                 title="Replay from start"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -296,7 +297,7 @@ export default function AudioPlayer({
               <button
                 type="button"
                 onClick={cyclePlaybackRate}
-                className="px-2.5 py-0.5 rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-mono font-bold text-xs tracking-tight transition active:scale-95 cursor-pointer"
+                className="staff-chip staff-focus px-2.5 py-0.5 rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-mono font-bold text-xs tracking-tight transition active:scale-95 cursor-pointer"
                 title="Toggle playback speed"
               >
                 ⚡ {playbackRate}x
@@ -306,7 +307,7 @@ export default function AudioPlayer({
               <button
                 type="button"
                 onClick={toggleMute}
-                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition cursor-pointer"
+                className="staff-chip staff-focus p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition cursor-pointer"
                 title={isMuted ? 'Unmute' : 'Mute'}
               >
                 {isMuted ? (

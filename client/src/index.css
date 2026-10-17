@@ -19,6 +19,50 @@
   button, a, input, select, textarea {
     touch-action: manipulation;
   }
+
+  /* Phone-width safety: no horizontal page scroll, 16px side gutter baseline */
+  html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    line-height: 1.5;
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  img, svg, video, canvas {
+    max-width: 100%;
+  }
+
+  h1, h2, h3, h4 {
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  /* Consistent, visible keyboard focus across the app */
+  :focus {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(255, 122, 69, 0.9);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  ::selection {
+    background: rgba(255, 90, 38, 0.45);
+    color: #ffffff;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 /* Custom modern scrollbars */
@@ -499,6 +543,93 @@
 .animate-stagger-6 {
   animation: staggerSlideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 1.15s backwards;
   will-change: transform, opacity;
+}
+
+/* ==========================================================================
+   Global Ambient Background (CSS-only, fixed, behind content)
+   Warm flame-orange blobs drifting slowly over the near-black base.
+   Transform/opacity only; never intercepts pointer events.
+   ========================================================================== */
+.app-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  pointer-events: none;
+  background: #0a0a0c;
+}
+
+.app-ambient__blob {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.app-ambient__blob--a {
+  width: 60vmax;
+  height: 60vmax;
+  top: -22vmax;
+  left: -18vmax;
+  background: radial-gradient(circle, rgba(255, 90, 38, 0.16) 0%, rgba(255, 90, 38, 0) 65%);
+  animation: ambientDrift1 34s ease-in-out infinite;
+}
+
+.app-ambient__blob--b {
+  width: 55vmax;
+  height: 55vmax;
+  bottom: -20vmax;
+  right: -16vmax;
+  background: radial-gradient(circle, rgba(255, 122, 69, 0.12) 0%, rgba(255, 122, 69, 0) 65%);
+  animation: ambientDrift2 40s ease-in-out infinite;
+}
+
+.app-ambient__blob--c {
+  width: 38vmax;
+  height: 38vmax;
+  top: 40%;
+  left: 45%;
+  background: radial-gradient(circle, rgba(255, 60, 20, 0.08) 0%, rgba(255, 60, 20, 0) 70%);
+  animation: ambientPulseSlow 26s ease-in-out infinite;
+}
+
+/* Faint vignette so content stays readable at the edges */
+.app-ambient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(10, 10, 12, 0) 40%, rgba(10, 10, 12, 0.7) 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-ambient__blob,
+  .app-ambient__blob * {
+    animation: none !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-ambient-drift-1,
+  .animate-ambient-drift-2,
+  .animate-ambient-drift-3,
+  .animate-ambient-pulse,
+  .ambient-sparkle,
+  .ember-sparkle,
+  .animate-flame-pulse,
+  .animate-purple-pulse,
+  .animate-camera-sway,
+  .plate-orbit-ring,
+  .animate-stagger-1,
+  .animate-stagger-2,
+  .animate-stagger-3,
+  .animate-stagger-4,
+  .animate-stagger-5,
+  .animate-stagger-6 {
+    animation: none !important;
+  }
 }
 
 

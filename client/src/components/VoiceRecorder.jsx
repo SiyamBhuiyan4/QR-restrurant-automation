@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, Trash2, Play, Pause, AlertCircle, Volume2, CheckCircle2 } from 'lucide-react';
 import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
 import { useCart } from '../context/CartContext';
+import '../styles/staff.css';
 
 /**
  * VoiceRecorder Component
@@ -137,7 +138,7 @@ export default function VoiceRecorder({
   const isDark = theme === 'dark';
 
   return (
-    <div className={`w-full rounded-2xl p-4 transition-all ${
+    <div className={`staff-enter min-w-0 max-w-full w-full rounded-2xl p-4 transition-all ${
       isDark 
         ? 'bg-[#18181d] border border-zinc-800 text-stone-100 shadow-xl' 
         : 'bg-slate-50/80 border border-slate-200/90 text-neutral-800'
@@ -273,7 +274,7 @@ export default function VoiceRecorder({
             <button
               type="button"
               onClick={togglePlayback}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold transition active:scale-95 shrink-0 shadow-sm cursor-pointer ${
+              className={`staff-focus w-11 h-11 rounded-xl flex items-center justify-center font-bold transition active:scale-95 shrink-0 shadow-sm cursor-pointer ${
                 isPlaying
                   ? 'bg-amber-500 hover:bg-amber-600 text-slate-950'
                   : isDark
@@ -298,7 +299,7 @@ export default function VoiceRecorder({
               value={playbackProgress}
               onChange={handleSeek}
               aria-label="Seek audio preview"
-              className={`flex-1 h-2 rounded-lg appearance-none cursor-pointer ${
+              className={`staff-range flex-1 h-2 rounded-lg cursor-pointer ${
                 isDark
                   ? 'bg-zinc-700 accent-[#FF5A26]'
                   : 'bg-neutral-200 accent-amber-500 hover:accent-amber-600'
@@ -309,7 +310,7 @@ export default function VoiceRecorder({
             <button
               type="button"
               onClick={handleDeleteAudio}
-              className={`p-2 rounded-xl transition active:scale-95 shrink-0 cursor-pointer ${
+              className={`staff-touch staff-focus p-2 rounded-xl transition active:scale-95 shrink-0 cursor-pointer ${
                 isDark
                   ? 'text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10'
                   : 'text-neutral-400 hover:text-rose-600 hover:bg-rose-50'
@@ -327,7 +328,7 @@ export default function VoiceRecorder({
         <button
           type="button"
           onClick={startRecording}
-          className={`w-full py-3 px-4 rounded-xl border-2 border-dashed font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer group ${
+          className={`staff-action staff-touch staff-focus w-full py-3 px-4 rounded-xl border-2 border-dashed font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer group ${
             isDark
               ? 'bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 text-[#FF7A45] border-[#FF5A26]/30 hover:border-[#FF5A26]/60 shadow-sm'
               : 'bg-white hover:bg-amber-50 active:bg-amber-100 text-amber-700 border-amber-300/80 hover:border-amber-400 shadow-2xs'

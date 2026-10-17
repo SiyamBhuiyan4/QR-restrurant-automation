@@ -29,6 +29,7 @@ import { api } from '../convexApi';
 import { uploadPhotoToTelegram, uploadVideoToTelegram } from '../services/telegramClient';
 import { resolveServerUrl } from '../context/SocketContext';
 import { getCachedMenu, cacheMenu } from '../db/indexedDb';
+import '../styles/admin.css';
 
 // Initial fallback sample menu in case server is fresh or offline
 const INITIAL_SAMPLE_DISHES = [
@@ -675,7 +676,7 @@ export default function MenuManager({ className = '' }) {
     <div className={`space-y-6 ${className}`}>
       
       {/* Top Banner / Actions Bar */}
-      <div className="bg-white rounded-2xl border border-neutral-200/80 p-4 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="admin-enter bg-white rounded-2xl border border-neutral-200/80 p-4 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
@@ -737,7 +738,7 @@ export default function MenuManager({ className = '' }) {
       )}
 
       {/* Quick Metrics Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
+      <div className="admin-enter grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4" style={{ '--i': 1 }}>
         <div className="bg-white p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
           <span className="text-xs font-medium text-neutral-500">Total Items</span>
           <div className="text-xl sm:text-2xl font-bold text-neutral-900 mt-1">
@@ -874,7 +875,7 @@ export default function MenuManager({ className = '' }) {
           <p className="text-sm font-medium text-neutral-600">Loading restaurant dishes...</p>
         </div>
       ) : filteredDishes.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-neutral-300 p-12 text-center">
+        <div className="admin-empty bg-white rounded-2xl border border-dashed border-neutral-300 p-12 px-4 text-center">
           <UtensilsCrossed className="w-10 h-10 text-neutral-400 mx-auto mb-3" />
           <h3 className="text-base font-bold text-neutral-800">No dishes found</h3>
           <p className="text-xs text-neutral-500 max-w-sm mx-auto mt-1 mb-4">

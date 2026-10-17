@@ -122,10 +122,10 @@ export default function CategoryBar({
                 ref={(el) => { pillRefs.current[categoryId] = el; }}
                 type="button"
                 onClick={() => onSelectCategory && onSelectCategory(categoryId)}
-                className={`group inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight transition-all duration-200 shrink-0 select-none cursor-pointer ${
+                className={`group relative overflow-hidden inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight transition-all duration-300 ease-out shrink-0 select-none cursor-pointer active:scale-95 ${
                   isSelected
                     ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-lg shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50 scale-[1.02]'
-                    : 'bg-[#161619]/90 hover:bg-[#1f1f24] text-zinc-300 hover:text-white border border-zinc-800 hover:border-zinc-700 shadow-xs hover:scale-[1.01]'
+                    : 'bg-[#161619]/80 hover:bg-[#1f1f24] text-zinc-300 hover:text-white border border-white/5 hover:border-zinc-700 shadow-xs hover:-translate-y-px'
                 }`}
               >
                 <span className="text-base leading-none transition-transform duration-200 group-hover:scale-115">
@@ -135,6 +135,14 @@ export default function CategoryBar({
                   {categoryName}
                 </span>
                 
+                {/* Sliding highlight under the active pill */}
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-white/80 transition-all duration-300 ease-out ${
+                    isSelected ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
+                  }`}
+                />
+
                 {count !== undefined && (
                   <span
                     className={`ml-0.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold font-mono leading-none transition-all ${

@@ -1,0 +1,100 @@
+/* Admin side polish: scoped to .admin-root so customer-facing pages are untouched. */
+
+/* ---------- Entrance animations (short, staggered via --i) ---------- */
+@keyframes admin-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-root .admin-enter {
+  animation: admin-rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+/* Hover lift for interactive cards (motion-safe only) */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .admin-root .admin-lift {
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+  }
+  .admin-root .admin-lift:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* ---------- Focus & touch affordances ---------- */
+.admin-root :is(button, a, input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid #ff7a45;
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+}
+
+.admin-root button:not(:disabled),
+.admin-root a[href] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin-root button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+@media (pointer: coarse) {
+  .admin-root button,
+  .admin-root a[href],
+  .admin-root input:not([type="checkbox"]):not([type="radio"]),
+  .admin-root select,
+  .admin-root textarea {
+    min-height: 44px;
+  }
+}
+
+/* ---------- Surfaces ---------- */
+.admin-root .admin-empty {
+  border: 1px dashed rgba(255, 90, 38, 0.25);
+  background: radial-gradient(ellipse at top, rgba(255, 90, 38, 0.08), transparent 70%);
+  border-radius: 1.5rem;
+}
+
+.admin-root .admin-divider {
+  border-color: rgba(63, 63, 70, 0.6);
+}
+
+/* Keep wide content from ever producing horizontal page scroll on phones */
+.admin-root {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+.admin-root img,
+.admin-root video {
+  max-width: 100%;
+  height: auto;
+}
+
+.admin-root .admin-scroll-x {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.admin-root .admin-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------- Reduced motion: drop decorative motion, keep state changes ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .admin-root .admin-enter,
+  .admin-root .admin-lift,
+  .admin-root .admin-lift:hover {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1;
+  }
+  .admin-root button:active:not(:disabled) {
+    transform: none;
+  }
+}

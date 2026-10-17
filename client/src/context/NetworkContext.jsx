@@ -532,11 +532,11 @@ export function NetworkProvider({ children }) {
       {children}
 
       {/* Global In-App Toast Notifications & Offline Indicator */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0">
+      <div className="fixed bottom-2 sm:bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0">
         {/* Offline Warning Banner (Always visible when offline or when orders are pending) */}
         {(!isOnline || totalPending > 0) && (
           <div
-            className={`pointer-events-auto rounded-2xl p-3.5 shadow-xl border backdrop-blur-md transition-all duration-300 animate-slide-up ${
+            className={`pointer-events-auto rounded-2xl px-3 py-2 sm:p-3.5 shadow-xl border backdrop-blur-md transition-all duration-300 animate-slide-up ${
               !isOnline
                 ? 'bg-amber-500/95 text-white border-amber-400 shadow-amber-500/20'
                 : 'bg-neutral-900/95 text-white border-neutral-700 shadow-black/30'
@@ -553,7 +553,7 @@ export function NetworkProvider({ children }) {
                   <p className="font-bold leading-tight">
                     {!isOnline ? 'Offline Mode Active' : `${totalPending} Queued for Kitchen`}
                   </p>
-                  <p className="opacity-90 text-[11px] truncate">
+                  <p className="hidden sm:block opacity-90 text-[11px] truncate">
                     {!isOnline
                       ? totalPending > 0
                         ? `${totalPending} items stored locally`

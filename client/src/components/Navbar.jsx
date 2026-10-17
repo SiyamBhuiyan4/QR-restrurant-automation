@@ -70,10 +70,10 @@ export default function Navbar({
   return (
     <>
       <header
-        className={`sticky top-0 z-40 w-full bg-[#0a0a0c]/90 backdrop-blur-xl border-b border-zinc-800/80 shadow-lg shadow-black/40 transition-colors ${className}`}
+        className={`sticky top-0 z-40 w-full bg-[#0a0a0c]/70 backdrop-blur-2xl saturate-150 border-b border-white/5 shadow-lg shadow-black/30 transition-all duration-300 ${className}`}
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-2">
+          <div className="flex items-center justify-between h-16 gap-3">
             
             {/* Left: Brand Identity (Screenshot 1: WorldPlate) */}
             <div className="flex items-center gap-2.5 min-w-0">
@@ -91,47 +91,47 @@ export default function Navbar({
             </div>
 
             {/* Center: Desktop Navigation Bar from Screenshot 1 */}
-            <nav className="hidden lg:flex items-center gap-1 bg-[#141418]/90 border border-zinc-800/80 p-1 rounded-full text-xs font-semibold backdrop-blur-md">
+            <nav className="hidden lg:flex items-center gap-1 bg-white/[0.03] border border-white/5 p-1 rounded-full text-xs font-semibold backdrop-blur-md">
               <a
                 href="#menu-hero"
-                className="px-3.5 py-1.5 rounded-full bg-[#FF5A26] text-white font-bold shadow-sm shadow-[#FF5A26]/30 transition"
+                className="px-3.5 py-1.5 rounded-full bg-[#FF5A26] text-white font-bold shadow-sm shadow-[#FF5A26]/30 transition-all duration-200"
               >
                 Home
               </a>
               <a
                 href="#menu-content-root"
-                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition"
+                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200"
               >
                 Menu
               </a>
               <a
                 href="#special-section"
-                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition"
+                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200"
               >
                 Specials
               </a>
               <a
                 href="#reviews-section"
-                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition"
+                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200"
               >
                 Reviews
               </a>
               <a
                 href="#chefs-section"
-                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition"
+                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200"
               >
                 Chefs
               </a>
               <a
                 href="#footer-section"
-                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition"
+                className="px-3.5 py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200"
               >
                 Contact
               </a>
             </nav>
 
             {/* Right: Table Badge, Call Waiter & Network Badge */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-2.5">
               
               {/* Network Status Badge */}
               <div
@@ -159,23 +159,26 @@ export default function Navbar({
                 )}
               </div>
 
-              {/* Table Badge */}
-              <button
-                type="button"
-                onClick={onChangeTable}
-                className="group inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 active:scale-95 text-zinc-200 font-bold text-xs sm:text-sm border border-zinc-800 hover:border-[#FF5A26]/40 transition-all cursor-pointer shadow-xs"
-                title="Tap to change table"
-              >
-                <span className="text-base leading-none">🍽️</span>
-                <span className="whitespace-nowrap">
-                  {tableNumber ? `Table ${tableNumber}` : 'Set Table'}
+              {/* Table Badge: static label once a table is known (set via QR link) */}
+              {tableNumber ? (
+                <span
+                  className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-zinc-900/90 text-zinc-200 font-bold text-xs sm:text-sm border border-zinc-800 shadow-xs select-none"
+                  title={`Table ${tableNumber}`}
+                >
+                  <span className="text-base leading-none">🍽️</span>
+                  <span className="whitespace-nowrap">Table {tableNumber}</span>
                 </span>
-                {onChangeTable && (
-                  <span className="text-[10px] text-zinc-400 group-hover:text-white font-normal hidden sm:inline">
-                    (Edit)
-                  </span>
-                )}
-              </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onChangeTable}
+                  className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 active:scale-95 text-zinc-200 font-bold text-xs sm:text-sm border border-zinc-800 hover:border-[#FF5A26]/40 transition-all duration-200 cursor-pointer shadow-xs"
+                  title="Set your table"
+                >
+                  <span className="text-base leading-none">🍽️</span>
+                  <span className="whitespace-nowrap">Set Table</span>
+                </button>
+              )}
 
               {/* Call Waiter Trigger Button */}
               <button

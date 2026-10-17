@@ -424,6 +424,17 @@ export default function CartDrawer({
     }
   };
 
+  // Mount flag so the panel slides in after it is first painted
+  const [entered, setEntered] = useState(false);
+  useEffect(() => {
+    if (!isOpen) {
+      setEntered(false);
+      return;
+    }
+    const id = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(id);
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -436,12 +447,13 @@ export default function CartDrawer({
       {/* Backdrop overlay */}
       <div
         onClick={handleClose}
-        className="fixed inset-0 bg-neutral-950/65 backdrop-blur-xs transition-opacity duration-300"
+        className={`fixed inset-0 bg-neutral-950/65 backdrop-blur-xs transition-opacity duration-300 ease-out ${entered ? 'opacity-100' : 'opacity-0'}`}
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
+      {/* Mobile: bottom sheet. Desktop: right-side panel. */}
+      <div className="fixed inset-x-0 bottom-0 h-[92dvh] sm:inset-x-auto sm:inset-y-0 sm:h-auto sm:right-0 max-w-full flex sm:pl-10">
         <div
-          className={`w-screen max-w-md bg-[#121215] text-stone-100 shadow-2xl flex flex-col border-l border-zinc-800 transform transition-all ease-in-out duration-300 ${className}`}
+          className={`w-screen max-w-md h-full bg-[#121215]/95 backdrop-blur-xl text-stone-100 shadow-2xl shadow-black/60 flex flex-col border-t sm:border-t-0 sm:border-l border-zinc-800 rounded-t-3xl sm:rounded-t-none sm:rounded-l-3xl overflow-hidden transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${entered ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:translate-y-0 sm:translate-x-full'} ${className}`}
         >
           
           {/* ========================================================

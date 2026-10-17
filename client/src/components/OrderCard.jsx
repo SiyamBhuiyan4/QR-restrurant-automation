@@ -12,6 +12,7 @@ import {
   Volume2
 } from 'lucide-react';
 import AudioPlayer from './AudioPlayer.jsx';
+import '../styles/staff.css';
 
 /**
  * OrderCard Component
@@ -154,7 +155,7 @@ export default function OrderCard({
 
   return (
     <div
-      className={`flex flex-col bg-slate-900 text-slate-100 rounded-2xl border-2 transition-all duration-200 overflow-hidden ${getCardBorderClasses()} ${className}`}
+      className={`staff-enter staff-card-hover flex flex-col min-w-0 max-w-full bg-slate-900 text-slate-100 rounded-2xl border-2 transition-all duration-200 overflow-hidden ${getCardBorderClasses()} ${className}`}
       data-order-id={orderId}
       data-order-status={status}
     >
@@ -212,7 +213,7 @@ export default function OrderCard({
           </div>
 
           {/* Status Badge */}
-          <div className="text-xs font-bold uppercase tracking-wide">
+          <div className="staff-badge text-xs font-bold uppercase tracking-wide">
             {status === 'pending' && (
               <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40">
                 Pending
@@ -346,7 +347,7 @@ export default function OrderCard({
             type="button"
             onClick={handleActionClick}
             disabled={isUpdating}
-            className={`w-full py-3 px-4 rounded-xl font-black text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 transition-all transform active:scale-98 cursor-pointer shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${action.colorClass}`}
+            className={`staff-action staff-touch w-full min-h-12 py-3 px-4 rounded-xl font-black text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:brightness-100 ${action.colorClass}`}
           >
             {isUpdating ? (
               <div className="flex items-center gap-2 text-slate-900 font-bold">
@@ -370,7 +371,7 @@ export default function OrderCard({
               <button
                 type="button"
                 onClick={() => onStatusChange(orderId, 'ready')}
-                className="text-xs text-slate-400 hover:text-slate-200 underline cursor-pointer"
+                className="staff-touch staff-focus inline-flex items-center px-2 text-xs text-slate-400 hover:text-slate-200 underline cursor-pointer rounded"
               >
                 Reopen Ticket
               </button>

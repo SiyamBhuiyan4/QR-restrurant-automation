@@ -25,6 +25,7 @@ import SocketContext, { resolveServerUrl } from '../context/SocketContext.jsx';
 import { io } from 'socket.io-client';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
+import '../styles/staff.css';
 
 /**
  * Web Audio API Kitchen Alert Synthesis
@@ -513,7 +514,7 @@ export default function KitchenDisplay() {
   const activeCount = pendingOrders.length + preparingOrders.length + readyOrders.length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans select-none antialiased">
+    <div className="staff-root min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans select-none antialiased">
       {/* =========================================================================
           TOP KITCHEN HEADER BAR
           ========================================================================= */}
@@ -715,8 +716,8 @@ export default function KitchenDisplay() {
       <main className="flex-1 p-3 sm:p-5 max-w-[1920px] w-full mx-auto flex flex-col">
         {/* Loading State */}
         {isLoading && orders.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-400">
-            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4" />
+          <div className="staff-empty flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-400">
+            <div className="staff-spinner w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full mb-4" />
             <h2 className="text-xl font-bold text-white">Loading Kitchen Display...</h2>
             <p className="text-xs text-slate-400 mt-1">Connecting to live order stream</p>
           </div>

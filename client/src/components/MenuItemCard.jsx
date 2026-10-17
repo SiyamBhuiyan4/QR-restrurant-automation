@@ -18,6 +18,13 @@ import {
   ArrowRight,
   Compass
 } from 'lucide-react';
+import '../styles/menu-orbit.css';
+
+// Reads the OS "reduce motion" preference; guarded so it is safe outside the browser
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
  * Compact, High-Conversion MenuItemCard Component
@@ -82,7 +89,7 @@ export default function MenuItemCard({
 
   // Camera orbits smoothly around stationary dish (Front, Right, Back, Left)
   useEffect(() => {
-    if (layout !== 'showcase' || angleImages.length <= 1 || isOrbitalHovered) return;
+    if (layout !== 'showcase' || angleImages.length <= 1 || isOrbitalHovered || prefersReducedMotion()) return;
     const interval = setInterval(() => {
       setCurrentAngleIndex((prev) => (prev + 1) % angleImages.length);
     }, 3200);
@@ -279,14 +286,14 @@ export default function MenuItemCard({
           onClick={() => onSelectDish && onSelectDish(item)}
           className={`group relative flex flex-col md:flex-row items-center justify-between gap-8 md:gap-14 py-10 md:py-20 transition-all duration-500 border-b border-white/5 last:border-b-0 cursor-pointer ${
             isEven ? 'md:flex-row' : 'md:flex-row-reverse'
-          } ${!isAvailable ? 'opacity-60' : ''}`}
+          } overflow-hidden ${!isAvailable ? 'opacity-60' : ''}`}
         >
           {/* Subtle Ambient Culinary Glow Behind Floating Dish */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-[#FF5A26]/8 rounded-full blur-3xl pointer-events-none group-hover:bg-[#FF5A26]/15 transition-all duration-700" />
 
           {/* Unboxed Floating Circular Plate (360° Orbital Camera & ~40% Page Width Occupation on Zoom) */}
           <div 
-            className="relative w-72 h-72 sm:w-84 sm:h-84 md:w-96 md:h-96 lg:w-[430px] lg:h-[430px] xl:w-[490px] xl:h-[490px] shrink-0 flex items-center justify-center select-none group-hover:scale-110 md:group-hover:scale-120 transition-all duration-700 ease-out [perspective:1400px]"
+            className="relative w-56 h-56 sm:w-64 sm:h-64 md:w-72 md:h-72 lg:w-80 lg:h-80 shrink-0 flex items-center justify-center select-none group-hover:scale-105 transition-all duration-700 ease-out"
             onMouseMove={handleOrbitalMouseMove}
             onMouseEnter={() => setIsOrbitalHovered(true)}
             onMouseLeave={handleOrbitalMouseLeave}
@@ -296,7 +303,7 @@ export default function MenuItemCard({
 
             {/* Circular Plate with 3D Orbital Perspective & Specular Sheen (Product stays upright & constant) */}
             <div 
-              className="relative w-64 h-64 sm:w-76 sm:h-76 md:w-88 md:h-88 lg:w-[390px] lg:h-[390px] xl:w-[450px] xl:h-[450px] rounded-full overflow-hidden shadow-[0_30px_90px_rgba(0,0,0,0.95)] drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)] border border-white/10 bg-zinc-950 transition-transform duration-300 ease-out"
+              className="menu-orbit-frame relative w-44 h-44 sm:w-52 sm:h-52 md:w-60 md:h-60 lg:w-64 lg:h-64 rounded-[1.75rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.85)] border border-white/10 bg-zinc-950 transition-transform duration-300 ease-out"
               style={{
                 transform: `rotateX(${tiltStyle.rotateX}deg) rotateY(${tiltStyle.rotateY}deg)`,
                 transformStyle: 'preserve-3d',
@@ -312,7 +319,7 @@ export default function MenuItemCard({
 
               {/* Multi-Angle Photography Showcase: Camera walks around the stationary product */}
               {safeDishImage && !imageError ? (
-                <div className="w-full h-full relative">
+                <div className="menu-orbit-sway w-full h-full relative">
                   {angleImages.map((imgUrl, idx) => (
                     <img
                       key={idx}
@@ -323,7 +330,7 @@ export default function MenuItemCard({
                       className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-1000 ease-in-out ${
                         idx === currentAngleIndex 
                           ? 'opacity-100 scale-100' 
-                          : 'opacity-0 scale-104'
+                          : 'opacity-0 scale-[1.04]'
                       }`}
                     />
                   ))}

@@ -135,6 +135,17 @@ export default function CallWaiterModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, isSubmitting]);
 
+  // Mount flag so the modal eases in after first paint
+  const [entered, setEntered] = useState(false);
+  useEffect(() => {
+    if (!isOpen) {
+      setEntered(false);
+      return;
+    }
+    const id = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(id);
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleDismiss = () => {
@@ -254,12 +265,12 @@ export default function CallWaiterModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn"
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md transition-opacity duration-300 ease-out ${entered ? 'opacity-100' : 'opacity-0'}`}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="w-full max-w-md bg-[#161619] rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden transform transition-all animate-scaleUp text-white"
+        className={`w-full max-w-md bg-[#161619] rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/60 border border-zinc-800 overflow-hidden transform transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] text-white ${entered ? 'translate-y-0 sm:scale-100 opacity-100' : 'translate-y-8 sm:translate-y-0 sm:scale-95 opacity-0'}`}
       >
         {/* Header Bar */}
         <div className="flame-gradient-btn p-5 text-white relative shadow-lg shadow-[#FF5A26]/30">

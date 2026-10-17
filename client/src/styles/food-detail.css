@@ -1,0 +1,174 @@
+/* Food detail modal: staged open sequence and quick reverse close.
+   Timeline (open):
+     0.00s  backdrop fades in
+     0.00s  frame rises in, glowing border traces around it
+     0.35s  top bar
+     0.65s  hero / photo area (the "chibi" stage)
+     1.00s+ text blocks, staggered 0.12s apart
+   All animations use fill-mode "both" so the hidden start state holds during delays. */
+
+:root {
+  --fdm-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --fdm-ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ---- Backdrop ---------------------------------------------------------- */
+@keyframes fdmBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fdmBackdropOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.fdm-backdrop {
+  animation: fdmBackdropIn 0.3s ease-out both;
+}
+
+.fdm-backdrop-out {
+  animation: fdmBackdropOut 0.2s var(--fdm-ease-in) forwards;
+}
+
+/* ---- Frame: rises in, then a glowing border traces around it ------------ */
+@keyframes fdmFrameIn {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fdmFrameOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+}
+
+@keyframes fdmBorderTrace {
+  0% {
+    opacity: 0;
+    clip-path: inset(0 100% 100% 0 round 24px);
+  }
+  45% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0 round 24px);
+  }
+  100% {
+    opacity: 0;
+    clip-path: inset(0 0 0 0 round 24px);
+  }
+}
+
+.fdm-frame {
+  animation: fdmFrameIn 0.6s var(--fdm-ease-out) both;
+  will-change: transform, opacity;
+}
+
+.fdm-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1.5px solid rgba(255, 90, 38, 0.85);
+  box-shadow: 0 0 22px rgba(255, 90, 38, 0.45), inset 0 0 18px rgba(255, 90, 38, 0.18);
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0;
+  animation: fdmBorderTrace 0.8s var(--fdm-ease-out) 0.05s both;
+}
+
+.fdm-frame-out {
+  animation: fdmFrameOut 0.2s var(--fdm-ease-in) forwards;
+  will-change: transform, opacity;
+}
+
+.fdm-frame-out::after {
+  animation: none;
+  opacity: 0;
+}
+
+/* ---- Staged blocks ----------------------------------------------------- */
+@keyframes fdmRise {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fdmHeroIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Top bar */
+.fdm-d1 {
+  animation: fdmRise 0.5s var(--fdm-ease-out) 0.35s both;
+}
+
+/* Hero / photo area */
+.fdm-hero {
+  animation: fdmHeroIn 0.6s var(--fdm-ease-out) 0.65s both;
+}
+
+/* Text blocks, staggered */
+.fdm-d3 {
+  animation: fdmRise 0.5s var(--fdm-ease-out) 1s both;
+}
+
+.fdm-d4 {
+  animation: fdmRise 0.5s var(--fdm-ease-out) 1.12s both;
+}
+
+.fdm-d5 {
+  animation: fdmRise 0.5s var(--fdm-ease-out) 1.24s both;
+}
+
+.fdm-d6 {
+  animation: fdmRise 0.5s var(--fdm-ease-out) 1.36s both;
+}
+
+/* ---- Reduced motion: show everything instantly ------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .fdm-backdrop,
+  .fdm-backdrop-out,
+  .fdm-frame,
+  .fdm-frame-out,
+  .fdm-frame::after,
+  .fdm-d1,
+  .fdm-hero,
+  .fdm-d3,
+  .fdm-d4,
+  .fdm-d5,
+  .fdm-d6 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .fdm-frame::after {
+    opacity: 0 !important;
+  }
+}

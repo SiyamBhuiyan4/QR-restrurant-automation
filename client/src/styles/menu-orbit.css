@@ -1,0 +1,39 @@
+/*
+ * Menu showcase: calm 360-style "camera orbit" around a fixed dish.
+ * Only transform/opacity are animated, so it stays cheap on phones.
+ */
+
+/* Rounded, clean frame; perspective lives on the frame so the sway reads as depth */
+.menu-orbit-frame {
+  perspective: 900px;
+}
+
+/* Slow continuous walk-around sway: the dish stays put, the camera drifts around it */
+.menu-orbit-sway {
+  animation: menu-orbit-sway 14s ease-in-out infinite;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+/* Pause the orbit while the user is looking closely at the dish */
+.group:hover .menu-orbit-sway {
+  animation-play-state: paused;
+}
+
+@keyframes menu-orbit-sway {
+  0%,
+  100% {
+    transform: rotateY(-16deg) rotateX(3deg);
+  }
+  50% {
+    transform: rotateY(16deg) rotateX(-2deg);
+  }
+}
+
+/* Respect users who asked for less motion: hold a still, flattering angle */
+@media (prefers-reduced-motion: reduce) {
+  .menu-orbit-sway {
+    animation: none;
+    transform: none;
+  }
+}

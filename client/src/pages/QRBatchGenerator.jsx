@@ -17,6 +17,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { resolveServerUrl } from '../context/SocketContext';
+import '../styles/admin.css';
 
 export default function QRBatchGenerator({ className = '' }) {
   // Config inputs
@@ -153,7 +154,7 @@ export default function QRBatchGenerator({ className = '' }) {
     <div className={`space-y-6 ${className}`}>
       
       {/* Configuration & Controls Card (Hidden during print) */}
-      <div className="no-print bg-white rounded-2xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs space-y-6">
+      <div className="admin-enter no-print bg-white rounded-2xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs space-y-6">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-neutral-100">

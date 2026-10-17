@@ -38,6 +38,7 @@ import QRBatchGenerator from './QRBatchGenerator';
 import AudioPlayer from '../components/AudioPlayer';
 import { resolveServerUrl, useSocket } from '../context/SocketContext';
 import { getPendingOrders, getPendingWaiterCalls } from '../db/indexedDb';
+import '../styles/admin.css';
 
 export default function AdminDashboard({ className = '' }) {
   // Navigation tabs: 'stats', 'menu', 'qr'
@@ -373,7 +374,7 @@ export default function AdminDashboard({ className = '' }) {
   }, [recentOrders, statusFilter, searchQuery]);
 
   return (
-    <div className={`min-h-screen bg-[#0a0a0c] text-stone-100 relative overflow-x-hidden ${className}`}>
+    <div className={`admin-root min-h-screen bg-[#0a0a0c] text-stone-100 relative overflow-x-hidden ${className}`}>
       
       {/* =========================================================================
           LIVE AMBIENT DRIFT ORBS & WARM CULINARY EMBER ATMOSPHERE
@@ -438,7 +439,7 @@ export default function AdminDashboard({ className = '' }) {
                 <BarChart3 className="w-4 h-4" />
                 <span>Live Telemetry</span>
                 {stats.active_orders > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-400 text-neutral-950 font-black animate-pulse">
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-neutral-950 font-black animate-pulse">
                     {stats.active_orders}
                   </span>
                 )}
@@ -651,7 +652,7 @@ export default function AdminDashboard({ className = '' }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
               
               {/* Card 1: Active Orders */}
-              <div className="bg-[#161619]/90 hover:bg-[#1e1e24] backdrop-blur-2xl rounded-3xl border border-zinc-800 hover:border-[#FF5A26]/50 p-5 sm:p-6 shadow-xl hover:shadow-2xl hover:shadow-black/60 transition-all duration-300 group">
+              <div style={{ '--i': 0 }} className="admin-enter admin-lift bg-[#161619]/90 hover:bg-[#1e1e24] backdrop-blur-2xl rounded-3xl border border-zinc-800 hover:border-[#FF5A26]/50 p-5 sm:p-6 shadow-xl hover:shadow-2xl hover:shadow-black/60 transition-all duration-300 group">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-black uppercase tracking-wider text-zinc-300">
                     Active Orders
@@ -678,7 +679,7 @@ export default function AdminDashboard({ className = '' }) {
               </div>
 
               {/* Card 2: Today's Revenue */}
-              <div className="bg-[#161619]/90 hover:bg-[#1e1e24] backdrop-blur-2xl rounded-3xl border border-zinc-800 hover:border-emerald-500/50 p-5 sm:p-6 shadow-xl hover:shadow-2xl hover:shadow-black/60 transition-all duration-300 group">
+              <div style={{ '--i': 1 }} className="admin-enter admin-lift bg-[#161619]/90 hover:bg-[#1e1e24] backdrop-blur-2xl rounded-3xl border border-zinc-800 hover:border-emerald-500/50 p-5 sm:p-6 shadow-xl hover:shadow-2xl hover:shadow-black/60 transition-all duration-300 group">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-black uppercase tracking-wider text-emerald-300">
                     Today's Revenue
@@ -701,7 +702,7 @@ export default function AdminDashboard({ className = '' }) {
               </div>
 
               {/* Card 3: Active Seated Tables */}
-              <div className="bg-[#161619]/90 hover:bg-[#1e1e24] backdrop-blur-2xl rounded-3xl border border-zinc-800 hover:border-[#FF5A26]/50 p-5 sm:p-6 shadow-xl hover:shadow-2xl hover:shadow-black/60 transition-all duration-300 group">
+              <div style={{ '--i': 2 }} className="admin-enter admin-lift bg-[#161619]/90 hover:bg-[#1e1e24] backdrop-blur-2xl rounded-3xl border border-zinc-800 hover:border-[#FF5A26]/50 p-5 sm:p-6 shadow-xl hover:shadow-2xl hover:shadow-black/60 transition-all duration-300 group">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-black uppercase tracking-wider text-zinc-300">
                     Table Occupancy
@@ -724,7 +725,7 @@ export default function AdminDashboard({ className = '' }) {
               </div>
 
               {/* Card 4: Waiter Summons */}
-              <div className={`backdrop-blur-2xl rounded-3xl border p-5 sm:p-6 shadow-xl transition-all duration-300 group ${
+              <div style={{ '--i': 3 }} className={`admin-enter admin-lift backdrop-blur-2xl rounded-3xl border p-5 sm:p-6 shadow-xl transition-all duration-300 group ${
                 stats.active_waiter_calls > 0 
                   ? 'bg-amber-950/40 border-amber-500/60 shadow-amber-500/20 ring-1 ring-amber-400/50' 
                   : 'bg-[#161619]/90 hover:bg-[#1e1e24] border-zinc-800 hover:border-zinc-700'
@@ -765,7 +766,7 @@ export default function AdminDashboard({ className = '' }) {
             </div>
 
             {/* ORDERS STATUS PIPELINE STRIP */}
-            <div className="bg-[#161619]/90 backdrop-blur-2xl rounded-3xl border border-zinc-800 p-5 shadow-xl shadow-black/40">
+            <div style={{ '--i': 4 }} className="admin-enter bg-[#161619]/90 backdrop-blur-2xl rounded-3xl border border-zinc-800 p-5 shadow-xl shadow-black/40">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2">
                   <Layers className="w-4 h-4 text-[#FF5A26]" />
@@ -804,7 +805,7 @@ export default function AdminDashboard({ className = '' }) {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               
               {/* Left 8 Cols: Interactive Live Orders Feed */}
-              <div className="lg:col-span-8 bg-[#161619]/90 backdrop-blur-2xl rounded-3xl border border-zinc-800 p-5 sm:p-6 shadow-xl shadow-black/40 space-y-5">
+              <div style={{ '--i': 5 }} className="admin-enter lg:col-span-8 bg-[#161619]/90 backdrop-blur-2xl rounded-3xl border border-zinc-800 p-5 sm:p-6 shadow-xl shadow-black/40 space-y-5">
                 
                 {/* Header with Search and Filter Status */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-zinc-800/80 gap-3">
@@ -834,7 +835,7 @@ export default function AdminDashboard({ className = '' }) {
                 </div>
 
                 {/* Filter Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                <div className="admin-scroll-x flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
                   {['all', 'pending', 'preparing', 'ready', 'served', 'offline'].map((filterKey) => (
                     <button
                       key={filterKey}
@@ -853,7 +854,7 @@ export default function AdminDashboard({ className = '' }) {
 
                 {/* Orders List */}
                 {filteredOrders.length === 0 ? (
-                  <div className="py-16 text-center text-zinc-500">
+                  <div className="admin-empty py-16 px-4 text-center text-zinc-500">
                     <ShoppingBag className="w-10 h-10 mx-auto mb-3 opacity-40 text-zinc-400" />
                     <p className="text-sm font-bold text-stone-200">No orders match this filter.</p>
                     <p className="text-xs text-zinc-500 mt-1">New incoming orders from guests will appear here in real-time.</p>
@@ -1013,7 +1014,7 @@ export default function AdminDashboard({ className = '' }) {
               <div className="lg:col-span-4 space-y-6">
                 
                 {/* Active Waiter Summons Box */}
-                <div className="bg-[#120f26]/85 backdrop-blur-2xl rounded-3xl border border-purple-500/25 p-5 shadow-xl space-y-4">
+                <div style={{ '--i': 6 }} className="admin-enter bg-[#120f26]/85 backdrop-blur-2xl rounded-3xl border border-purple-500/25 p-5 shadow-xl space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-purple-500/15">
                     <div className="flex items-center gap-2">
                       <BellRing className="w-4 h-4 text-amber-400" />
@@ -1024,7 +1025,7 @@ export default function AdminDashboard({ className = '' }) {
                   </div>
 
                   {activeWaiterCalls.length === 0 ? (
-                    <div className="py-8 text-center text-purple-300/60">
+                    <div className="admin-empty py-8 px-4 text-center text-purple-300/60">
                       <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2 opacity-80" />
                       <p className="text-xs font-bold text-stone-200">No pending table alerts!</p>
                       <p className="text-[11px] text-purple-300/60 mt-0.5">All dining guests are attended to.</p>
@@ -1062,7 +1063,7 @@ export default function AdminDashboard({ className = '' }) {
 
                 {/* Top Selling Gourmet Dishes */}
                 {stats.popular_items && stats.popular_items.length > 0 && (
-                  <div className="bg-[#120f26]/85 backdrop-blur-2xl rounded-3xl border border-purple-500/25 p-5 shadow-xl space-y-3">
+                  <div style={{ '--i': 7 }} className="admin-enter bg-[#120f26]/85 backdrop-blur-2xl rounded-3xl border border-purple-500/25 p-5 shadow-xl space-y-3">
                     <div className="flex items-center gap-2 pb-3 border-b border-purple-500/15">
                       <Sparkles className="w-4 h-4 text-amber-400" />
                       <h3 className="font-black text-white text-sm">
@@ -1085,7 +1086,7 @@ export default function AdminDashboard({ className = '' }) {
                 )}
 
                 {/* Server Network & Cloud Matrix */}
-                <div className="bg-[#120f26]/85 backdrop-blur-2xl rounded-3xl border border-purple-500/25 p-5 shadow-xl space-y-3 text-xs">
+                <div style={{ '--i': 8 }} className="admin-enter bg-[#120f26]/85 backdrop-blur-2xl rounded-3xl border border-purple-500/25 p-5 shadow-xl space-y-3 text-xs">
                   <div className="flex items-center gap-2 pb-2 border-b border-purple-500/15">
                     <Wifi className="w-4 h-4 text-purple-400" />
                     <h3 className="font-black text-white text-sm">

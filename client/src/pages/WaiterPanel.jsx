@@ -26,6 +26,7 @@ import {
 import { useSocket, useSocketListener } from '../context/SocketContext';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
+import '../styles/staff.css';
 
 /**
  * High-fidelity restaurant desk calling bell synthesizer using Web Audio API.
@@ -400,7 +401,7 @@ export default function WaiterPanel() {
   }, [calls, acknowledgedIds, getCallMetrics]);
 
   return (
-    <div className="min-h-screen bg-neutral-900 text-neutral-100 flex flex-col font-sans select-none">
+    <div className="staff-root min-h-screen bg-neutral-900 text-neutral-100 flex flex-col font-sans select-none">
       {/* Top Header */}
       <header className="sticky top-0 z-30 bg-neutral-900/95 backdrop-blur-md border-b border-neutral-800 px-4 py-3 sm:px-6">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -751,7 +752,7 @@ export default function WaiterPanel() {
           <div>
             {filteredCalls.length === 0 ? (
               /* Calming Empty State */
-              <div className="text-center py-16 px-4 bg-neutral-800/30 border border-dashed border-neutral-700 rounded-3xl space-y-4">
+              <div className="staff-empty text-center py-16 px-4 bg-neutral-800/30 border border-dashed border-neutral-700 rounded-3xl space-y-4">
                 <div className="w-20 h-20 mx-auto rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center ring-8 ring-emerald-500/5">
                   <CheckCircle2 className="w-10 h-10 animate-bounce" />
                 </div>
