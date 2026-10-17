@@ -309,14 +309,6 @@ export default function MenuItemCard({
                 transformStyle: 'preserve-3d',
               }}
             >
-              {/* Dynamic Specular Light Sheen That Reacts to Camera Angle */}
-              <div 
-                className="absolute inset-0 pointer-events-none rounded-full transition-opacity duration-300 z-10 opacity-30 group-hover:opacity-60"
-                style={{
-                  background: `radial-gradient(circle at ${tiltStyle.sheenX}% ${tiltStyle.sheenY}%, rgba(255,255,255,0.4) 0%, rgba(255,90,38,0.12) 40%, transparent 70%)`
-                }}
-              />
-
               {/* Multi-Angle Photography Showcase: Camera walks around the stationary product */}
               {safeDishImage && !imageError ? (
                 <div className="menu-orbit-sway w-full h-full relative">
