@@ -108,3 +108,53 @@
 .mb-stage { align-items: stretch; }
 .mb-stage > *, .mb-spread, .mb-spread .mb-page { height: 100%; }
 .mb-root { scroll-margin-top: 140px; }
+
+/* ---------- Open-book fold: pages lean toward the spine (about 160 degrees) ---------- */
+@media (min-width: 768px) {
+  .mb-stage {
+    perspective: 2600px;
+    perspective-origin: 50% 45%;
+    transform-style: preserve-3d;
+  }
+
+  /* Each half hinges on the spine so the spread reads as a real open book */
+  .mb-stage > .mb-spread-left {
+    transform-origin: right center;
+    transform: rotateY(10deg);
+  }
+
+  .mb-stage > .mb-spread-right {
+    transform-origin: left center;
+    transform: rotateY(-10deg);
+  }
+
+  .mb-stage > .mb-spread-left,
+  .mb-stage > .mb-spread-right {
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+
+  /* Paper shades off toward the spine, which sells the curve */
+  .mb-spread-left .mb-page::after,
+  .mb-spread-right .mb-page::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  .mb-spread-left .mb-page::after {
+    background: linear-gradient(to right, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.38) 100%);
+  }
+
+  .mb-spread-right .mb-page::after {
+    background: linear-gradient(to left, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.38) 100%);
+  }
+}
+
+/* Phone shows one page, so it stays flat */
+@media (max-width: 767px) {
+  .mb-stage > .mb-spread-left,
+  .mb-stage > .mb-spread-right { transform: none; }
+}

@@ -1272,75 +1272,10 @@ export default function CustomerMenu({
           </div>
         )}
 
-        {/* Search Bar & Dietary Filter Toggles */}
-        <section className="mb-4 space-y-3">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-            
-            {/* Search Input */}
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search delicious dishes, ingredients, drinks..."
-                className="w-full min-h-11 pl-10 pr-9 py-2.5 sm:py-3 text-xs sm:text-sm bg-[#161619]/90 rounded-2xl border border-zinc-800 shadow-md focus:outline-none focus:ring-2 focus:ring-[#FF5A26]/40 focus:border-[#FF5A26] placeholder:text-zinc-500 text-white transition-all"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Dietary Toggle Pills */}
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setVegOnlyFilter((v) => !v)}
-                className={`inline-flex items-center gap-1.5 min-h-11 ch-btn px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
-                  vegOnlyFilter
-                    ? 'bg-emerald-700 text-white border-emerald-600 shadow-md shadow-emerald-700/30 ring-1 ring-emerald-400/40'
-                    : 'bg-[#161619] hover:bg-zinc-800 text-stone-300 border-zinc-800'
-                }`}
-              >
-                <Leaf className={`w-3.5 h-3.5 ${vegOnlyFilter ? 'fill-current' : 'text-emerald-400'}`} />
-                <span>Vegetarian</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSpicyFilter((s) => !s)}
-                className={`inline-flex items-center gap-1.5 min-h-11 ch-btn px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
-                  spicyFilter
-                    ? 'bg-rose-700 text-white border-rose-600 shadow-md shadow-rose-700/30 ring-1 ring-rose-400/40'
-                    : 'bg-[#161619] hover:bg-zinc-800 text-stone-300 border-zinc-800'
-                }`}
-              >
-                <Flame className={`w-3.5 h-3.5 ${spicyFilter ? 'fill-current' : 'text-rose-400'}`} />
-                <span>Spicy</span>
-              </button>
-            </div>
-
-          </div>
-        </section>
 
         {/* Emerald & gold menu panel: category bar, headings and dish showcase */}
         <div className="cm-theme relative mb-10 rounded-[2rem] bg-[#06140e] border border-[#1f6b4a]/40 px-3 py-6 sm:px-6 sm:py-8 text-[#f5efe0]">
 
-        {/* Category Horizontal Sticky Pill Bar */}
-        <section className="ch-sticky-bar sticky top-16 z-30 -mx-3 sm:mx-0 mb-4 pt-1 pb-1.5 border-b border-zinc-800/80 shadow-md">
-          <CategoryBar
-            categories={categoriesList}
-            selectedCategory={selectedCategory === 'All' ? activeScrollCategory : selectedCategory}
-            onSelectCategory={handleSelectCategory}
-            categoryCounts={categoryCounts}
-          />
-        </section>
 
         {/* Results Info Bar & 3-way Layout Switcher (Showcase / Grid / List) */}
         <div id="menu-content-root" className="flex flex-wrap items-center justify-between gap-3 mb-8 px-1 scroll-mt-32">
