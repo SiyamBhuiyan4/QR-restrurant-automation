@@ -119,7 +119,7 @@ export default function CategoryBar({
 
   return (
     <div
-      className={`relative w-full bg-[#021424]/80 backdrop-blur-md border-b border-sky-400/20 py-2.5 ${className}`}
+      className={`relative w-full bg-[#021424]/20 border-b border-sky-400/20 py-2.5 ${className}`}
     >
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 relative flex items-center min-w-0">
 
@@ -143,7 +143,7 @@ export default function CategoryBar({
           {indicator && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute left-0 top-0 rounded-full border-[1.5px] border-sky-400 bg-gradient-to-r from-[#0369a1] to-[#0284c7] shadow-[0_0_14px_rgba(56,189,248,0.4)] transition-[transform,width,height] duration-300 ease-out motion-reduce:transition-none"
+              className="pointer-events-none absolute left-0 top-0 rounded-full border-[1.5px] border-sky-400 bg-gradient-to-r from-[#0369a1]/80 to-[#0284c7]/80 shadow-[0_0_14px_rgba(56,189,248,0.4)] transition-[transform,width,height] duration-300 ease-out motion-reduce:transition-none"
               style={{
                 width: indicator.width,
                 height: indicator.height,
@@ -176,10 +176,10 @@ export default function CategoryBar({
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => onSelectCategory && onSelectCategory(categoryId)}
-                className={`group relative z-10 inline-flex items-center gap-2 h-11 min-h-11 px-3.5 sm:px-4 rounded-full text-xs sm:text-sm font-semibold tracking-tight text-slate-100 transition-[color,background-color,border-color,transform] duration-300 ease-out shrink-0 select-none cursor-pointer active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${
+                className={`group relative z-10 inline-flex items-center gap-2 h-11 min-h-11 px-3.5 sm:px-4 rounded-full text-xs sm:text-sm font-semibold tracking-tight text-slate-100 [text-shadow:0_1px_3px_rgba(2,20,36,0.95)] transition-[color,background-color,border-color,transform] duration-300 ease-out shrink-0 select-none cursor-pointer active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${
                   isSelected
                     ? 'border border-transparent text-white font-bold'
-                    : 'bg-[#032038]/75 hover:bg-[#073b61] border border-sky-500/25 hover:border-sky-400/60 hover:-translate-y-px motion-reduce:hover:translate-y-0 text-sky-100'
+                    : 'bg-[#032038]/35 hover:bg-[#073b61]/60 border border-sky-300/55 hover:border-sky-300/80 hover:-translate-y-px motion-reduce:hover:translate-y-0 text-sky-100'
                 }`}
               >
                 <span className="text-base leading-none transition-transform duration-200 group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100">
