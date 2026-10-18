@@ -5,13 +5,9 @@ import Navbar from '../components/Navbar';
 import CategoryBar from '../components/CategoryBar';
 import CartDrawer from '../components/CartDrawer';
 import FoodDetailModal from '../components/FoodDetailModal';
-import MenuBook from '../components/menuBook/MenuBook';
 import MenuItemCard from '../components/MenuItemCard';
 import '../styles/customer-hero.css';
 import '../styles/customer-menu-sections.css';
-import '../styles/menu-book-flip.css';
-import '../styles/menu-book-depth.css';
-import '../styles/menu-book-responsive.css';
 import { 
   Search, 
   X, 
@@ -1378,22 +1374,10 @@ export default function CustomerMenu({
           </div>
         )}
 
-        {/* 3D Restaurant Menu Book */}
-        <div className="w-full flex justify-center py-2 sm:py-4">
-          <MenuBook
-            sections={categorizedSections}
-            cart={cart}
-            onAddToCart={(item, qty = 1) => {
-              for (let i = 0; i < qty; i++) handleAddToCart(item);
-            }}
-            onSelectDish={(selected) => setSelectedDishModal(selected)}
-          />
-        </div>
-
         {/* =====================================================================
             A La Carte Dishes Grid (Matching Screenshot Plate Aesthetic)
             ===================================================================== */}
-        <section id="menu-food-grid" className="w-full max-w-7xl pt-10 pb-12 scroll-mt-24">
+        <section id="menu-food-grid" className="w-full max-w-7xl pt-4 sm:pt-6 pb-12 scroll-mt-24">
           {/* Section Divider & Heading */}
           <div className="text-center mb-7">
             <div className="inline-flex items-center gap-3 text-[#d4af37] text-xs font-bold tracking-[0.22em] uppercase mb-2">
