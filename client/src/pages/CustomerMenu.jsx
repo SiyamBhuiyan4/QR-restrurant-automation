@@ -6,7 +6,6 @@ import CategoryBar from '../components/CategoryBar';
 import CartDrawer from '../components/CartDrawer';
 import FoodDetailModal from '../components/FoodDetailModal';
 import MenuItemCard from '../components/MenuItemCard';
-import WaterBackground from '../components/WaterBackground';
 import '../styles/customer-hero.css';
 import '../styles/customer-menu-sections.css';
 import { 
@@ -1233,11 +1232,6 @@ export default function CustomerMenu({
 
   return (
     <div className="min-h-screen bg-transparent text-slate-100 pb-32 selection:bg-[#0284c7] selection:text-white relative">
-      {/* =====================================================================
-          Serene River Mirror & Sky Reflection Water Background (Interactive Ripple Waves)
-         ===================================================================== */}
-      <WaterBackground />
-      
       {/* 1. Header Navigation */}
       <Navbar
         tableNumber={tableNumber}

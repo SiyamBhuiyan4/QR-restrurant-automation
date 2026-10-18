@@ -514,7 +514,7 @@ export default function KitchenDisplay() {
   const activeCount = pendingOrders.length + preparingOrders.length + readyOrders.length;
 
   return (
-    <div className="staff-root min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans select-none antialiased">
+    <div className="staff-root min-h-screen bg-transparent text-slate-100 flex flex-col font-sans select-none antialiased">
       {/* =========================================================================
           TOP KITCHEN HEADER BAR
           ========================================================================= */}

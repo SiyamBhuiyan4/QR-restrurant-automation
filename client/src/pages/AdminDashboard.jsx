@@ -374,7 +374,7 @@ export default function AdminDashboard({ className = '' }) {
   }, [recentOrders, statusFilter, searchQuery]);
 
   return (
-    <div className={`admin-root min-h-screen bg-[#0a0a0c] text-stone-100 relative overflow-x-hidden ${className}`}>
+    <div className={`admin-root min-h-screen bg-transparent text-stone-100 relative overflow-x-hidden ${className}`}>
       
       {/* =========================================================================
           LIVE AMBIENT DRIFT ORBS & WARM CULINARY EMBER ATMOSPHERE
