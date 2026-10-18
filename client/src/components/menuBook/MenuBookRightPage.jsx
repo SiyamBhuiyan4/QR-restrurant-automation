@@ -310,6 +310,109 @@ export const DEFAULT_DESSERTS = [
   },
 ];
 
+/**
+ * Delicate chalk-style line art SVG illustration of a cocktail / mocktail glass.
+ * Placed in the right margin of the MOCKTAIL section, matching the reference photo.
+ */
+function CocktailChalkIllustration({ className = '' }) {
+  return (
+    <div className={`mb-drinks-chalk-illustration ${className}`.trim()} aria-hidden="true">
+      <svg
+        viewBox="0 0 160 210"
+        className="mb-drinks-chalk-svg"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <defs>
+          <filter id="mbChalkGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="0.65" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <g filter="url(#mbChalkGlow)">
+          {/* Top Glass Rim Oval */}
+          <ellipse cx="80" cy="62" rx="38" ry="7" stroke="rgba(245, 239, 224, 0.85)" strokeWidth="1.5" />
+
+          {/* Left & Right Glass Walls */}
+          <path d="M 42 62 L 50 172" stroke="rgba(245, 239, 224, 0.85)" strokeWidth="1.5" />
+          <path d="M 118 62 L 110 172" stroke="rgba(245, 239, 224, 0.85)" strokeWidth="1.5" />
+
+          {/* Curved Bottom Rim */}
+          <path d="M 50 172 C 50 180, 110 180, 110 172" stroke="rgba(245, 239, 224, 0.85)" strokeWidth="1.5" />
+
+          {/* Heavy Base Sham Line */}
+          <path d="M 52 162 C 52 168, 108 168, 108 162" stroke="rgba(245, 239, 224, 0.6)" strokeWidth="1.2" strokeDasharray="4 2.5" />
+
+          {/* Liquid Meniscus Curve */}
+          <path d="M 46 100 C 46 106, 114 106, 114 100" stroke="rgba(245, 239, 224, 0.7)" strokeWidth="1.2" />
+
+          {/* Floating Ice Cube 1 (Upper Right) */}
+          <path d="M 74 108 L 92 102 L 105 109 L 87 115 Z" stroke="rgba(250, 225, 140, 0.85)" strokeWidth="1.2" />
+          <path d="M 74 108 L 74 124 L 87 130 L 87 115" stroke="rgba(250, 225, 140, 0.85)" strokeWidth="1.2" />
+          <path d="M 87 130 L 105 124 L 105 109" stroke="rgba(250, 225, 140, 0.85)" strokeWidth="1.2" />
+
+          {/* Floating Ice Cube 2 (Lower Left) */}
+          <path d="M 56 126 L 72 120 L 82 127 L 66 133 Z" stroke="rgba(250, 225, 140, 0.85)" strokeWidth="1.2" />
+          <path d="M 56 126 L 56 140 L 66 147 L 66 133" stroke="rgba(250, 225, 140, 0.85)" strokeWidth="1.2" />
+          <path d="M 66 147 L 82 141 L 82 127" stroke="rgba(250, 225, 140, 0.85)" strokeWidth="1.2" />
+
+          {/* Straw Angled from Drink up through Rim to Right */}
+          <path d="M 70 152 L 96 62 L 126 16" stroke="rgba(250, 225, 140, 0.95)" strokeWidth="2.2" />
+          <path d="M 74 153 L 99 63 L 129 17" stroke="rgba(250, 225, 140, 0.65)" strokeWidth="0.8" />
+          {/* Straw Decorative Spiral Stripes */}
+          <line x1="102" y1="52" x2="107" y2="54" stroke="rgba(250, 225, 140, 0.8)" strokeWidth="1" />
+          <line x1="112" y1="36" x2="117" y2="38" stroke="rgba(250, 225, 140, 0.8)" strokeWidth="1" />
+          <line x1="121" y1="22" x2="126" y2="24" stroke="rgba(250, 225, 140, 0.8)" strokeWidth="1" />
+
+          {/* Effervescent Rising Bubbles */}
+          <circle cx="60" cy="150" r="1.5" stroke="rgba(255, 255, 255, 0.75)" strokeWidth="1" />
+          <circle cx="64" cy="136" r="2.0" stroke="rgba(255, 255, 255, 0.75)" strokeWidth="1" />
+          <circle cx="76" cy="122" r="1.5" stroke="rgba(255, 255, 255, 0.75)" strokeWidth="1" />
+          <circle cx="92" cy="118" r="2.2" stroke="rgba(255, 255, 255, 0.75)" strokeWidth="1" />
+          <circle cx="80" cy="88" r="1.8" stroke="rgba(255, 255, 255, 0.75)" strokeWidth="1" />
+          <circle cx="64" cy="78" r="2.2" stroke="rgba(255, 255, 255, 0.75)" strokeWidth="1" />
+          <circle cx="100" cy="92" r="1.5" stroke="rgba(255, 255, 255, 0.75)" strokeWidth="1" />
+
+          {/* Lime / Citrus Wheel on the Rim (Left Rim at x=42, y=48) */}
+          {/* Outer Peel Rind */}
+          <circle cx="42" cy="48" r="24" stroke="rgba(240, 210, 122, 0.95)" strokeWidth="1.6" />
+          {/* Inner Pith Ring */}
+          <circle cx="42" cy="48" r="20" stroke="rgba(240, 210, 122, 0.7)" strokeWidth="1.0" strokeDasharray="1.5 1" />
+          {/* Center Core */}
+          <circle cx="42" cy="48" r="3.5" stroke="rgba(240, 210, 122, 0.9)" strokeWidth="1.2" fill="rgba(240, 210, 122, 0.2)" />
+
+          {/* Pulp Wedges / Radial Spokes (8 segments) */}
+          <line x1="42" y1="44.5" x2="42" y2="28" stroke="rgba(240, 210, 122, 0.85)" strokeWidth="1.0" />
+          <line x1="42" y1="51.5" x2="42" y2="68" stroke="rgba(240, 210, 122, 0.85)" strokeWidth="1.0" />
+          <line x1="38.5" y1="48" x2="22" y2="48" stroke="rgba(240, 210, 122, 0.85)" strokeWidth="1.0" />
+          <line x1="45.5" y1="48" x2="62" y2="48" stroke="rgba(240, 210, 122, 0.85)" strokeWidth="1.0" />
+          <line x1="39.5" y1="45.5" x2="28" y2="34" stroke="rgba(240, 210, 122, 0.85)" strokeWidth="1.0" />
+          <line x1="44.5" y1="50.5" x2="56" y2="62" stroke="rgba(240, 210, 122, 0.85)" strokeWidth="1.0" />
+          <line x1="44.5" y1="45.5" x2="56" y2="34" stroke="rgba(240, 210, 122, 0.85)" strokeWidth="1.0" />
+          <line x1="39.5" y1="50.5" x2="28" y2="62" stroke="rgba(240, 210, 122, 0.85)" strokeWidth="1.0" />
+
+          {/* Curved pulp pockets inside wedges */}
+          <path d="M 39 30 C 42 32, 45 32, 45 30" stroke="rgba(240, 210, 122, 0.6)" strokeWidth="0.8" />
+          <path d="M 54 39 C 56 42, 56 45, 54 45" stroke="rgba(240, 210, 122, 0.6)" strokeWidth="0.8" />
+          <path d="M 30 39 C 28 42, 28 45, 30 45" stroke="rgba(240, 210, 122, 0.6)" strokeWidth="0.8" />
+
+          {/* Notch gripping the glass rim */}
+          <path d="M 41 58 L 47 64 L 43 70" stroke="rgba(240, 210, 122, 0.9)" strokeWidth="1.2" />
+
+          {/* Botanical Mint Leaf Accent behind the citrus wheel */}
+          <path d="M 28 32 C 22 24, 18 25, 20 20 C 26 21, 29 26, 30 30" stroke="rgba(134, 239, 172, 0.75)" strokeWidth="1.1" />
+          <path d="M 34 26 C 36 18, 42 16, 42 22 C 38 25, 36 28, 34 29" stroke="rgba(134, 239, 172, 0.75)" strokeWidth="1.1" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
 
 /**
  * MenuBookRightPage
@@ -489,9 +592,14 @@ export default function MenuBookRightPage({
           {mocktails.length > 0 && (
             <section className="mb-drinks-section mb-drinks-section--mocktails" aria-label="Mocktails">
               {renderSectionHeading('MOCKTAIL')}
-              <ul className="mb-drinks-list mb-drinks-list--mocktails">
-                {mocktails.map(renderItemRow)}
-              </ul>
+              <div className="mb-drinks-mocktail-layout">
+                <div className="mb-drinks-mocktail-items">
+                  <ul className="mb-drinks-list mb-drinks-list--mocktails">
+                    {mocktails.map(renderItemRow)}
+                  </ul>
+                </div>
+                <CocktailChalkIllustration />
+              </div>
             </section>
           )}
 

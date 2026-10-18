@@ -257,39 +257,21 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
 
   // The verso leaf: dark, bare paper. No frame, no folio, no dog-ears, nothing
   // focusable - just unlit paper with a little light rolling off the spine.
-  //
-  // `.mb-page` is kept for the page geometry (size, radius, the paper-curve
-  // shading layer), but its parchment fill is replaced inline and its gold
-  // filigree frame - a `::before` that cannot be reached from here - is covered
-  // by one aria-hidden sheet sitting above it (frame is z-index 1, the curve
-  // shading is z-index 3, so this sheet sits in between at 2).
+  // The verso leaf: bare paper without content. No frame, no folio, no dog-ears.
+  // In dark mode it appears as deep emerald-noir unlit paper; in light mode it
+  // appears as warm cream parchment paper matching the recto page.
+  // Styling is defined cleanly via .mb-page--blank and .mb-blank-verso-overlay
+  // in menu-book-classic.css.
   const renderBlankLeftPage = () => (
     <section
       className="mb-page mb-page-left mb-page--blank relative flex flex-col"
       aria-hidden="true"
       style={{
         transform: 'translateZ(0)',
-        // The recto grows with its content (a dish page is taller than a list),
-        // so the verso stretches to the spread's height instead of stopping at
-        // the page min-height and leaving the cover showing underneath.
         minHeight: '100%',
-        background: 'var(--mb-verso-bg, linear-gradient(105deg, #04100b 0%, #081710 48%, #030d08 100%))',
-        boxShadow: 'inset -14px 0 26px -12px var(--mb-verso-shade, rgba(0, 0, 0, 0.75))',
       }}
     >
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 2,
-          pointerEvents: 'none',
-          borderRadius: 'inherit',
-          background:
-            'radial-gradient(ellipse at 88% 42%, var(--mb-verso-sheen, rgba(255, 255, 255, 0.05)) 0%, transparent 62%),' +
-            'var(--mb-verso-bg, linear-gradient(105deg, #04100b 0%, #081710 48%, #030d08 100%))',
-        }}
-      />
+      <div className="mb-blank-verso-overlay" aria-hidden="true" />
     </section>
   );
 

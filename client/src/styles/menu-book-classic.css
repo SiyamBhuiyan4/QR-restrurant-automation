@@ -1081,9 +1081,56 @@ html[data-theme="light"] .mbc-menu-page .mb-drinks-item:active {
   }
 }
 
-/* Light theme: the blank verso is warm cream paper, not dark green */
-html[data-theme="light"] .mb-root {
-  --mb-verso-bg: linear-gradient(105deg, #f3ead6 0%, #ece2cb 48%, #e6dbc2 100%);
-  --mb-verso-shade: rgba(90, 65, 25, 0.22);
-  --mb-verso-sheen: rgba(255, 255, 255, 0.45);
+/* ==========================================================================
+   Blank Verso (Left Page) Styling
+   ========================================================================== */
+
+/* Hide the ornate gold filigree frame on the blank verso */
+.mb-root .mb-page--blank::before {
+  display: none !important;
+  content: none !important;
 }
+
+/* Dark mode (default): rich deep emerald/noir parchment */
+.mb-root .mb-page--blank {
+  min-height: 100%;
+  background-color: #04100b !important;
+  background-image:
+    radial-gradient(ellipse at 88% 42%, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 32%, transparent 62%),
+    linear-gradient(105deg, #04100b 0%, #081710 48%, #030d08 100%) !important;
+  box-shadow: inset -14px 0 26px -12px rgba(0, 0, 0, 0.75) !important;
+}
+
+.mb-root .mb-blank-verso-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at 88% 42%, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 32%, transparent 62%);
+}
+
+/* Light mode: authentic warm cream/parchment paper matching the recto page */
+html[data-theme="light"] .mb-root .mb-page--blank {
+  background-color: var(--mbc-paper, #f4ecdc) !important;
+  background-image:
+    radial-gradient(circle at 50% 30%, rgba(122, 95, 16, 0.05) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(180, 160, 130, 0.35) 100%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.02) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.015) 0 1px, transparent 1px 3px),
+    linear-gradient(155deg, #faf5ea 0%, #eee3ce 50%, #e2d3b7 100%) !important;
+  box-shadow: inset -14px 0 26px -12px rgba(90, 65, 25, 0.22) !important;
+}
+
+html[data-theme="light"] .mb-root .mb-blank-verso-overlay {
+  background: radial-gradient(ellipse at 88% 42%, rgba(255, 255, 255, 0.45) 0%, transparent 62%);
+}
+
+/* Light mode: warm spine gutter shading on the blank verso spread */
+html[data-theme="light"] .mb-root .mb-spread-left.mb-spread--blank .mb-page::after {
+  background:
+    linear-gradient(to left, rgba(90, 65, 25, 0.28) 0%, rgba(90, 65, 25, 0.14) 4%, rgba(90, 65, 25, 0.04) 12%, transparent 26%),
+    linear-gradient(to left, transparent 12%, rgba(255, 255, 255, 0.35) 18%, transparent 28%),
+    linear-gradient(to right, rgba(90, 65, 25, 0.12) 0%, transparent 6%);
+}
+
