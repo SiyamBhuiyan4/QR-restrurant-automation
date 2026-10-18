@@ -96,13 +96,14 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: linear-gradient(180deg, rgba(8, 47, 73, 0.78) 0%, rgba(3, 29, 51, 0.88) 60%, rgba(2, 20, 36, 0.95) 100%);
+  /* Card panel is see-through so the river shows behind it; food images stay opaque. Lower alpha = more transparent. */
+  background: linear-gradient(180deg, rgba(8, 47, 73, 0.35) 0%, rgba(3, 29, 51, 0.42) 60%, rgba(2, 20, 36, 0.5) 100%);
   border: 1px solid rgba(56, 189, 248, 0.32);
   border-radius: 1.25rem;
   padding: 1.15rem 1rem 1rem;
-  box-shadow: 0 12px 32px -10px rgba(2, 20, 36, 0.75), 0 0 20px -5px rgba(56, 189, 248, 0.12), inset 0 1px 0 rgba(224, 242, 254, 0.12);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 12px 32px -10px rgba(2, 20, 36, 0.5), 0 0 20px -5px rgba(56, 189, 248, 0.12), inset 0 1px 0 rgba(224, 242, 254, 0.12);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
               box-shadow 320ms ease,
               border-color 320ms ease;
@@ -371,7 +372,7 @@
 
 /* Light Theme Overrides */
 html[data-theme="light"] .plate-card {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.5);
   border: 1px solid #e5e0d3;
   box-shadow: 0 6px 20px -6px rgba(15, 61, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
