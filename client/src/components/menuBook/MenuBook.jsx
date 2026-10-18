@@ -10,7 +10,7 @@ import useBookParallax from './useBookParallax.js';
 import useBookSwipe from './useBookSwipe.js';
 import MenuBookDogEar from './MenuBookDogEar.jsx';
 import useBookSound from './useBookSound.js';
-import { Box, BookOpen, Sparkles, Volume2, VolumeX, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, Volume2, VolumeX, ChevronLeft, ChevronRight } from 'lucide-react';
 import '../../styles/menu-book-flip.css';
 import '../../styles/menu-book-3d-flip.css';
 import '../../styles/menu-book-depth.css';
@@ -157,7 +157,8 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
     next();
   }, [isPhone, goToPage, phoneIndex, next, playPageFlip]);
 
-  const { containerRef, viewMode, setViewMode } = useBookParallax({ enabled: true });
+  const viewMode = 'flat';
+  const { containerRef } = useBookParallax({ enabled: false });
 
   const swipeHandlers = useBookSwipe({
     onSwipeLeft: turnNext,
@@ -473,35 +474,11 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
           <ChevronLeft className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
         </button>
 
-        {/* Center controls: 3D View Toggle, Sound Toggle, and Page Counter */}
+        {/* Center controls: Page Counter and Sound Toggle */}
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
-          <div
-            className="mb-view-toggle"
-            role="radiogroup"
-            aria-label="Book perspective viewing angle"
-          >
-            <button
-              type="button"
-              role="radio"
-              aria-checked={viewMode === '3d'}
-              onClick={() => setViewMode('3d')}
-              className="mb-view-btn"
-              title="3D realistic tabletop perspective with smooth depth"
-            >
-              <Box className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>3D Realistic</span>
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={viewMode === 'flat'}
-              onClick={() => setViewMode('flat')}
-              className="mb-view-btn"
-              title="Flat straight-on reading perspective"
-            >
-              <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Flat Reading</span>
-            </button>
+          {/* Page Counter Badge */}
+          <div className="flex items-center px-3.5 py-1.5 rounded-full bg-[#03231a]/85 border border-[#d4af37]/35 text-[#d4af37] text-xs font-semibold tracking-wider uppercase shadow-md">
+            <span>{isPhone ? `Page ${activeDot + 1} of ${dotCount}` : `Spread ${activeDot + 1} of ${dotCount}`}</span>
           </div>
 
           {/* Sound Effect Mute/Unmute Toggle */}
@@ -521,11 +498,6 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
               )}
               <span className="hidden sm:inline">{isMuted ? 'Muted' : 'Sound'}</span>
             </button>
-          </div>
-
-          {/* Page Counter Badge */}
-          <div className="hidden sm:flex items-center px-3 py-1.5 rounded-full bg-[#03231a]/85 border border-[#d4af37]/35 text-[#d4af37] text-xs font-semibold tracking-wider uppercase">
-            <span>{isPhone ? `Page ${activeDot + 1} of ${dotCount}` : `Spread ${activeDot + 1} of ${dotCount}`}</span>
           </div>
         </div>
 

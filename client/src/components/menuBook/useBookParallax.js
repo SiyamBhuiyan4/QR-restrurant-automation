@@ -49,25 +49,15 @@ export function useBookParallax({
 } = {}) {
   const containerRef = useRef(null);
 
-  const [viewMode, setViewModeState] = useState(() => {
-    if (typeof window === 'undefined') return '3d';
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === '3d' || saved === 'flat') return saved;
-    } catch {
-      // ignore storage errors
-    }
-    return '3d';
-  });
+  const [viewMode, setViewModeState] = useState('flat');
 
-  const viewModeRef = useRef(viewMode);
-  viewModeRef.current = viewMode;
+  const viewModeRef = useRef('flat');
+  viewModeRef.current = 'flat';
 
-  const setViewMode = useCallback((mode) => {
-    const nextMode = mode === 'flat' ? 'flat' : '3d';
-    setViewModeState(nextMode);
+  const setViewMode = useCallback(() => {
+    setViewModeState('flat');
     try {
-      localStorage.setItem(STORAGE_KEY, nextMode);
+      localStorage.setItem(STORAGE_KEY, 'flat');
     } catch {
       // ignore storage errors
     }

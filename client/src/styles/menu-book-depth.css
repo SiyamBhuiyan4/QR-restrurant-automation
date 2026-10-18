@@ -42,7 +42,14 @@
 
   .mb-book[data-view="flat"],
   .mb-3d-book[data-view="flat"] {
-    transform: perspective(2400px) rotateX(0deg) rotateY(0deg);
+    transform: none !important;
+  }
+
+  .mb-book[data-view="flat"] .mb-stage > .mb-spread-left,
+  .mb-book[data-view="flat"] .mb-stage > .mb-spread-right,
+  .mb-book[data-view="flat"] .mb-spread-left,
+  .mb-book[data-view="flat"] .mb-spread-right {
+    transform: none !important;
   }
 }
 
