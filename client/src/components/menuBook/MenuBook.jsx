@@ -4,6 +4,8 @@ import useBookFlip3D from './useBookFlip3D.js';
 import MenuBookTurningLeaf from './MenuBookTurningLeaf.jsx';
 import MenuBookOverview from './MenuBookOverview.jsx';
 import MenuBookDetail from './MenuBookDetail.jsx';
+import MenuBookShowcasePage from './MenuBookShowcasePage.jsx';
+import MenuBookRightPage from './MenuBookRightPage.jsx';
 import useBookParallax from './useBookParallax.js';
 import useBookSwipe from './useBookSwipe.js';
 import MenuBookDogEar from './MenuBookDogEar.jsx';
@@ -17,6 +19,8 @@ import '../../styles/menu-book-a11y.css';
 import '../../styles/menu-book-classic.css';
 import '../../styles/menu-book-3d.css';
 import '../../styles/menu-book-interactive.css';
+import '../../styles/menu-book-showcase.css';
+import '../../styles/menu-book-drinks.css';
 
 const PAPER = 'bg-[#0f2f22] text-[#f5efe0]';
 
@@ -172,10 +176,13 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
   const goToSection = useCallback((sectionKey, targetPageNumber) => {
     const section = sections.find((s) => (s.categoryKey ?? s.key) === sectionKey || s.title === sectionKey);
     const key = section ? (section.categoryKey ?? section.key) : sectionKey;
+    const normKey = String(key || sectionKey || '').toLowerCase();
 
     let target = spreads.findIndex((sp) =>
       (sp.left?.type === 'items' && (sp.left.sectionKey === key || sp.left.sectionTitle === section?.title)) ||
-      (sp.right?.type === 'items' && (sp.right.sectionKey === key || sp.right.sectionTitle === section?.title))
+      (sp.right?.type === 'items' && (sp.right.sectionKey === key || sp.right.sectionTitle === section?.title)) ||
+      (sp.left?.type === 'showcase' && (sp.left.sectionKey === key || normKey.includes('starter') || normKey.includes('appetiz') || normKey.includes('chicken') || normKey.includes('wing'))) ||
+      (sp.right?.type === 'drinksDessert' && (sp.right.sectionKey === key || normKey.includes('beverag') || normKey.includes('drink') || normKey.includes('cocktail') || normKey.includes('mocktail') || normKey.includes('dessert')))
     );
 
     if (target < 0) {
@@ -199,8 +206,12 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
 
     if (isPhone) {
       const sp = spreads[target];
-      const onLeft = sp?.left?.type === 'items'
-        && (sp.left.sectionKey === key || (section?.items?.[0]?.id && sp.left.items?.some((item) => item.id === section.items[0].id)));
+      const onLeft =
+        (sp?.left?.type === 'items' &&
+          (sp.left.sectionKey === key ||
+            (section?.items?.[0]?.id && sp.left.items?.some((item) => item.id === section.items[0].id)))) ||
+        (sp?.left?.type === 'showcase' &&
+          (normKey.includes('starter') || normKey.includes('appetiz') || normKey.includes('chicken') || normKey.includes('wing')));
       const idx = pages.findIndex((p) => p.spreadIndex === target && p.side === (onLeft ? 'left' : 'right'));
       if (idx >= 0) { goToPage(idx); return; }
     }
@@ -215,8 +226,12 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
     if (typeof target === 'number' && target >= 0 && target < spreads.length) {
       if (isPhone) {
         const sp = spreads[target];
-        const onLeft = sp?.left?.type === 'items'
-          && sp.left.items?.some((it) => it.id === item.id);
+        const onLeft =
+          (sp?.left?.type === 'items' && sp.left.items?.some((it) => it.id === item.id)) ||
+          (sp?.left?.type === 'showcase' &&
+            (sp.left.dishTop?.id === item.id ||
+              sp.left.dishBottom?.id === item.id ||
+              sp.left.dishes?.some?.((d) => d.id === item.id)));
         const idx = pages.findIndex((p) => p.spreadIndex === target && p.side === (onLeft ? 'left' : 'right'));
         if (idx >= 0) {
           goToPage(idx);
@@ -249,7 +264,7 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
     // screen, so the dish page takes over whichever leaf that is.
     const showDetail = Boolean(selectedDish) && side === (isPhone ? visibleSide : 'right');
     const pageNumber = showDetail ? null
-      : page?.type === 'items' ? page.pageNumber
+      : typeof page?.pageNumber === 'number' ? page.pageNumber
       : page?.type === 'overview' ? page.index : null;
 
     let content = null;
@@ -274,6 +289,33 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
           onGoToDish={goToDish}
           onSelectItem={handleSelectItem}
           onSelectDish={handleSelectItem}
+        />
+      );
+    } else if (page.type === 'showcase') {
+      content = (
+        <MenuBookShowcasePage
+          titleUpper={page.titleUpper || 'CHICKEN'}
+          titleLower={page.titleLower || 'Wings'}
+          titleScript={page.titleScript || 'Wings'}
+          dishTop={page.dishTop}
+          dishBottom={page.dishBottom}
+          dishes={page.dishes}
+          onSelectDish={handleSelectItem}
+          onSelectItem={handleSelectItem}
+          pageNumber={page.pageNumber}
+        />
+      );
+    } else if (page.type === 'drinksDessert') {
+      content = (
+        <MenuBookRightPage
+          cart={cart}
+          onSelectDish={handleSelectItem}
+          onSelectItem={handleSelectItem}
+          onAddToCart={handleAddToCart}
+          cocktails={page.cocktails}
+          mocktails={page.mocktails}
+          desserts={page.desserts}
+          pageNumber={page.pageNumber}
         />
       );
     } else if (page.type === 'items') {
@@ -362,9 +404,13 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
       ? visibleSide === side && canNextPage
       : side === 'right' && canNextPage);
 
+    const isSpecialLayout = (page?.type === 'showcase' || page?.type === 'drinksDessert') && !showDetail;
+    const pagePadding = isSpecialLayout ? 'p-0' : 'p-4 sm:p-5 md:p-6';
+    const pageBg = isSpecialLayout ? 'bg-[#0c120f] text-[#f5efe0]' : `${PAPER}`;
+
     return (
       <section
-        className={`mb-page mb-page-${side} ${PAPER} relative flex flex-col p-4 sm:p-5 md:p-6 shadow-inner`}
+        className={`mb-page mb-page-${side} ${pageBg} relative flex flex-col ${pagePadding} shadow-inner`}
         data-detail={showDetail ? 'true' : undefined}
         style={hitTestFix}
       >
@@ -415,10 +461,10 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
         )}
 
         {/* Keyed so switching between the list and a dish page starts at the top */}
-        <div key={showDetail ? `detail-${selectedDish.id}` : 'list'} className="flex-1 overflow-y-auto">
+        <div key={showDetail ? `detail-${selectedDish.id}` : (page?.type || 'list')} className="flex-1 overflow-y-auto">
           {content}
         </div>
-        {pageNumber !== null && (
+        {pageNumber !== null && !isSpecialLayout && (
           <div className="mt-4 text-center text-xs tracking-widest text-[#8a6d1d]">
             {pageNumber}
           </div>

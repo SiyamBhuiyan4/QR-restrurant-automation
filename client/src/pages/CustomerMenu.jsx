@@ -34,12 +34,55 @@ import {
 
 // Default initial menu items for full offline or standalone browsing
 const DEFAULT_MENU_ITEMS = [
-  // Starters
+  // Starters & Wings
+  {
+    id: 'starter-balado-wings',
+    name: 'Balado Sauce Wings',
+    description: 'Crispy chicken wings glazed in spicy Indonesian Minangkabau chili balado reduction, lime leaf, and garlic confit.',
+    price: 14.50,
+    priceK: '78 K',
+    category: 'Appetizers',
+    subcategory: 'Wings',
+    isVeg: false,
+    isSpicy: true,
+    isPopular: true,
+    prepTime: '15 min',
+    image: 'https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['Crispy Farm Wings', 'Authentic Red Balado Paste', 'Kaffir Lime Leaf', 'Shallot Confit', 'Palm Sugar']
+  },
+  {
+    id: 'starter-lemonade-wings',
+    name: 'Lemonade Sauce Wings',
+    description: 'Crispy golden chicken wings tossed in our signature candied citrus glaze, infused with lemon zest, honey, and fresh herbs.',
+    price: 14.50,
+    priceK: '78 K',
+    category: 'Appetizers',
+    subcategory: 'Wings',
+    isVeg: false,
+    isSpicy: false,
+    isPopular: true,
+    prepTime: '15 min',
+    image: 'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['Golden Fried Wings', 'Handmade Lemonade Glaze', 'Meyer Lemon Slices', 'Wildflower Honey', 'White Sesame Seeds']
+  },
   {
     id: 'starter-1',
     name: 'Truffle Parmesan Fries',
     description: 'Crispy skin-on fries tossed with white truffle oil, shaved aged parmesan, and fresh parsley with garlic aioli.',
     price: 7.99,
+    priceK: '42 K',
     category: 'Appetizers',
     isVeg: true,
     isSpicy: false,
@@ -60,6 +103,7 @@ const DEFAULT_MENU_ITEMS = [
     name: 'Spicy Buffalo Wings',
     description: 'Crispy chicken wings glazed in our chef signature fiery cayenne sauce, served with blue cheese and celery sticks.',
     price: 10.99,
+    priceK: '58 K',
     category: 'Appetizers',
     isVeg: false,
     isSpicy: true,
@@ -336,12 +380,126 @@ const DEFAULT_MENU_ITEMS = [
     ingredients: ['100% Plant-Based Patty', 'Vegan Aged Cheddar', 'Butterhead Lettuce', 'Ripe Vine Tomato', 'Avocado Chimichurri', 'Potato Bun']
   },
 
-  // Beverages
+  // Beverages (Classic Cocktails, Mocktails & House Coolers)
+  {
+    id: 'cocktail-mojito',
+    name: 'Mojito',
+    description: 'Cuban white rum muddled with fresh spearmint leaves, crushed lime, cane syrup, and effervescent sparkling soda.',
+    price: 12.00,
+    priceK: '65 K',
+    category: 'Beverages',
+    subType: 'cocktail',
+    isVeg: true,
+    isSpicy: false,
+    isPopular: true,
+    prepTime: '4 min',
+    image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['Cuban White Rum', 'Fresh Spearmint', 'Tahitian Lime Wedges', 'Organic Cane Syrup', 'Club Soda']
+  },
+  {
+    id: 'cocktail-old-fashioned',
+    name: 'Old Fashioned',
+    description: 'Small batch bourbon whiskey stirred with aromatic Angostura bitters, raw sugar cube, and hand-carved ice sphere.',
+    price: 14.00,
+    priceK: '75 K',
+    category: 'Beverages',
+    subType: 'cocktail',
+    isVeg: true,
+    isSpicy: false,
+    isPopular: true,
+    prepTime: '5 min',
+    image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['Kentucky Bourbon Whiskey', 'Angostura Bitters', 'Demerara Raw Sugar', 'Flamed Orange Peel', 'Luxardo Cherry']
+  },
+  {
+    id: 'cocktail-espresso-martini',
+    name: 'Espresso Martini',
+    description: 'Fresh pulled dark espresso vigorously shaken with premium vodka, coffee liqueur, and dark cocoa dust.',
+    price: 13.50,
+    priceK: '72 K',
+    category: 'Beverages',
+    subType: 'cocktail',
+    isVeg: true,
+    isSpicy: false,
+    isPopular: true,
+    prepTime: '5 min',
+    image: 'https://images.unsplash.com/photo-1545438102-799c3991ffb2?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1545438102-799c3991ffb2?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['Dark Roast Espresso', 'Single-Estate Vodka', 'Kahlua Coffee Liqueur', 'Vanilla Bean Infusion', 'Whole Coffee Beans']
+  },
+  {
+    id: 'cocktail-gin-tonic',
+    name: 'Gin Tonic',
+    description: 'Artisanal botanical London dry gin paired with premium Mediterranean tonic water, fresh juniper berries, and rosemary.',
+    price: 11.50,
+    priceK: '60 K',
+    category: 'Beverages',
+    subType: 'cocktail',
+    isVeg: true,
+    isSpicy: false,
+    prepTime: '3 min',
+    image: 'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['Botanical Dry Gin', 'Mediterranean Tonic', 'Juniper Berries', 'Dehydrated Citrus Wheel', 'Fresh Garden Rosemary']
+  },
+  {
+    id: 'mocktail-virgin-mojito',
+    name: 'Virgin Mojito',
+    description: 'Crisp spearmint and Tahitian lime muddled with organic blue agave and chilled San Pellegrino sparkling water.',
+    price: 8.50,
+    priceK: '45 K',
+    category: 'Beverages',
+    subType: 'mocktail',
+    isVeg: true,
+    isSpicy: false,
+    isPopular: true,
+    prepTime: '3 min',
+    image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['Garden Spearmint', 'Tahitian Fresh Lime', 'Blue Agave Syrup', 'San Pellegrino Sparkling Mineral Water']
+  },
+  {
+    id: 'mocktail-citrus-cooler',
+    name: 'Citrus Cooler',
+    description: 'Refreshing medley of pink grapefruit, blood orange, Meyer lemon, and crushed ice with fragrant rosemary.',
+    price: 7.50,
+    priceK: '40 K',
+    category: 'Beverages',
+    subType: 'mocktail',
+    isVeg: true,
+    isSpicy: false,
+    prepTime: '3 min',
+    image: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['Ruby Red Grapefruit', 'Blood Orange Juice', 'Meyer Lemon', 'Sprig of Rosemary', 'Pure Cane Sugar']
+  },
   {
     id: 'beverage-1',
     name: 'Signature Sparkling Lemonade',
     description: 'Freshly squeezed lemons with organic agave syrup, crushed mint, and sparkling mineral water.',
     price: 4.50,
+    priceK: '28 K',
     category: 'Beverages',
     isVeg: true,
     isSpicy: false,
@@ -361,6 +519,7 @@ const DEFAULT_MENU_ITEMS = [
     name: 'Fiery Ginger Spiced Cooler',
     description: 'House brewed cold ginger root infusion, fresh lime, bird chili hint, crushed ice, and club soda.',
     price: 4.99,
+    priceK: '32 K',
     category: 'Beverages',
     isVeg: true,
     isSpicy: true,
@@ -378,10 +537,30 @@ const DEFAULT_MENU_ITEMS = [
 
   // Desserts
   {
+    id: 'dessert-souffle',
+    name: 'Chocolate Soufflé',
+    description: 'Classic French chocolate soufflé puffed to airy perfection, with a warm liquid chocolate center and bourbon crème anglaise.',
+    price: 9.50,
+    priceK: '50 K',
+    category: 'Desserts',
+    isVeg: true,
+    isSpicy: false,
+    isPopular: true,
+    prepTime: '15 min',
+    image: 'https://images.unsplash.com/photo-1579372786545-d24232daf58c?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1579372786545-d24232daf58c?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['Valrhona Dark Chocolate', 'Pasture-Raised Eggs', 'Dutch Cocoa Powder', 'Bourbon Crème Anglaise', 'Powdered Confectioner Sugar']
+  },
+  {
     id: 'dessert-1',
-    name: 'Molten Chocolate Lava Cake',
+    name: 'Molten Lava Cake',
     description: 'Warm Belgian dark chocolate cake with a gooey flowing center, paired with Madagascar vanilla bean ice cream.',
-    price: 7.99,
+    price: 8.50,
+    priceK: '45 K',
     category: 'Desserts',
     isVeg: true,
     isSpicy: false,
@@ -399,9 +578,10 @@ const DEFAULT_MENU_ITEMS = [
   },
   {
     id: 'dessert-2',
-    name: 'Classic Venetian Tiramisu',
+    name: 'Tiramisu',
     description: 'Espresso dipped ladyfingers layered with whipped mascarpone cream and dusted with raw Dutch cocoa.',
-    price: 8.50,
+    price: 9.00,
+    priceK: '48 K',
     category: 'Desserts',
     isVeg: true,
     isSpicy: false,
@@ -413,6 +593,8 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1534432182912-63863115e106?w=900&auto=format&fit=crop&q=80'
     ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['Savoiardi Ladyfingers', 'Italian Mascarpone Cream', 'Single Origin Dark Espresso', 'Marsala Wine Hint', 'Raw Dutch Cocoa Dust']
   }
 ];
 
