@@ -5,6 +5,7 @@ import {
   pageCountOf,
   findPageForItem,
   getSectionPageNumber,
+  partitionOverviewSections,
 } from './buildSpreads.js';
 
 const SAMPLE_SECTIONS = [
@@ -108,3 +109,52 @@ test('pageCountOf correctly counts pages excluding padding', () => {
   const count = pageCountOf(spreads);
   assert.ok(count >= 5);
 });
+
+test('partitionOverviewSections partitions categories and their foods across pages', () => {
+  const partitions = partitionOverviewSections(SAMPLE_SECTIONS);
+  assert.ok(partitions.length >= 2, 'Should partition into at least 2 overview pages');
+
+  // Page 1 should contain category and foods
+  assert.equal(partitions[0][0].title, 'APPETIZERS');
+  assert.ok(partitions[0][0].items.length > 0);
+  assert.equal(partitions[0][0].items[0].name, 'Balado Sauce Wings');
+
+  // Page 2 should contain remaining categories and foods
+  assert.ok(partitions[1].length > 0);
+  assert.equal(partitions[1][0].title, 'BEVERAGES');
+  assert.equal(partitions[1][0].items[0].name, 'Mojito');
+});
+
+test('buildSpreads attaches categories with all food item names to overview pages', () => {
+  const spreads = buildSpreads(SAMPLE_SECTIONS);
+  const page1 = spreads[0].left;
+  const page2 = spreads[0].right;
+
+  assert.equal(page1.type, 'overview');
+  assert.ok(Array.isArray(page1.sections));
+  assert.ok(page1.sections.length > 0);
+  // Verify first section on page 1 has category title and food item names
+  const starters = page1.sections[0];
+  assert.equal(starters.title, 'APPETIZERS');
+  assert.deepEqual(
+    starters.items.map((it) => it.name),
+    [
+      'Balado Sauce Wings',
+      'Lemonade Sauce Wings',
+      'Truffle Parmesan Fries',
+      'Spicy Buffalo Wings',
+    ]
+  );
+
+  assert.equal(page2.type, 'overview');
+  assert.ok(Array.isArray(page2.sections));
+  assert.ok(page2.sections.length > 0);
+  // Verify page 2 has categories with food items
+  const bevs = page2.sections[0];
+  assert.equal(bevs.title, 'BEVERAGES');
+  assert.deepEqual(
+    bevs.items.map((it) => it.name),
+    ['Mojito', 'Virgin Mojito']
+  );
+});
+

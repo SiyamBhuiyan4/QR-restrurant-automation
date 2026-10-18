@@ -17,17 +17,92 @@
  * @param {{itemsPerPage?: number, includeShowcaseSpread?: boolean}} [opts]
  * @returns {{left: object, right: object}[]}
  */
+/**
+ * Partition sections into overview pages so each page displays category headers
+ * along with the food item names belonging to those categories.
+ *
+ * @param {object[]} sections
+ * @returns {object[][]} Array of section lists, one per overview page
+ */
+export function partitionOverviewSections(sections) {
+  const safeSections = Array.isArray(sections) ? sections.filter(Boolean) : [];
+  if (safeSections.length === 0) {
+    return [[], []];
+  }
+
+  // If there are 2 to 4 sections, split evenly across 2 pages
+  if (safeSections.length <= 4) {
+    const mid = Math.ceil(safeSections.length / 2);
+    return [safeSections.slice(0, mid), safeSections.slice(mid)];
+  }
+
+  // For 5 or more sections:
+  // Estimate capacity: Page 1 has top title block, so fits ~14 weight units (2 per header + 1 per dish).
+  // Subsequent pages fit ~18 weight units.
+  const pages = [];
+  let currentPage = [];
+  let currentWeight = 0;
+  const maxWeightPage1 = 14;
+  const maxWeightSubsequent = 18;
+
+  for (let i = 0; i < safeSections.length; i++) {
+    const s = safeSections[i];
+    const itemCount = Array.isArray(s.items) ? s.items.length : 0;
+    const sectionWeight = 2 + Math.max(1, itemCount);
+    const maxWeight = pages.length === 0 ? maxWeightPage1 : maxWeightSubsequent;
+
+    if (currentPage.length > 0 && currentWeight + sectionWeight > maxWeight) {
+      pages.push(currentPage);
+      currentPage = [s];
+      currentWeight = sectionWeight;
+    } else {
+      currentPage.push(s);
+      currentWeight += sectionWeight;
+    }
+  }
+
+  if (currentPage.length > 0) {
+    pages.push(currentPage);
+  }
+
+  // If only 1 page was formed, split in half across 2 pages
+  if (pages.length === 1) {
+    const mid = Math.ceil(safeSections.length / 2);
+    return [safeSections.slice(0, mid), safeSections.slice(mid)];
+  }
+
+  // Ensure an even number of overview pages so Spread pairing stays clean (2, 4, etc.)
+  if (pages.length % 2 === 1) {
+    pages.push([]);
+  }
+
+  return pages;
+}
+
+/**
+ * Build the spreads (left/right page pairs) for the menu book.
+ * @param {{key: string, title: string, items: object[]}[]} sections
+ * @param {{itemsPerPage?: number, includeShowcaseSpread?: boolean}} [opts]
+ * @returns {{left: object, right: object}[]}
+ */
 export function buildSpreads(sections, opts = {}) {
   const requested = Math.floor(Number(opts.itemsPerPage));
   const perPage = requested > 0 ? requested : 4;
 
-  // Spread 0 is always the two overview pages (cover/index and categories).
-  const pages = [
-    { type: 'overview', index: 1 },
-    { type: 'overview', index: 2 },
-  ];
-
   const safeSections = Array.isArray(sections) ? sections : [];
+  const overviewPartitions = partitionOverviewSections(safeSections);
+  const totalOverviewPages = overviewPartitions.length;
+
+  const pages = [];
+  for (let i = 0; i < totalOverviewPages; i++) {
+    pages.push({
+      type: 'overview',
+      index: i + 1,
+      pageNumber: i + 1,
+      totalOverviewPages,
+      sections: overviewPartitions[i],
+    });
+  }
 
   // Flatten all items to discover showcase wings, cocktails, mocktails, desserts
   const allItems = [];
@@ -243,7 +318,7 @@ export function getSectionPageNumber(section, spreads, sections) {
   }
 
   if (Array.isArray(sections)) {
-    let pg = 3;
+    let pg = (Array.isArray(sections) ? partitionOverviewSections(sections).length : 2) + 1;
     for (const s of sections) {
       const sKey = (s.key ?? s.categoryKey ?? '').toLowerCase();
       if ((s.key ?? s.categoryKey) === key) return pg;

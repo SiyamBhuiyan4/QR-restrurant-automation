@@ -301,6 +301,8 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
         <MenuBookOverview
           page={page.index}
           sections={sections}
+          pageSections={page.sections}
+          totalPages={page.totalOverviewPages || 2}
           spreads={spreads}
           onGoToSection={goToSection}
           onGoToDish={goToDish}

@@ -1,13 +1,16 @@
 /*
- * Overview pages (page 1 = title page + contents, page 2 = chef's picks).
+ * menu-book-overview.css
+ * Two-Page Fine Dining Menu Layout for 'WORLDPLATE'
  *
- * These two pages are set like the rest of the printed menu: the paper texture
- * and the double gold keyline come from .mb-page / .mb-sheet in
- * menu-book-classic.css, headings reuse .mb-heading and the contents list
- * reuses the .mb-entry dotted-leader pattern. Everything here only adds the
- * bits those pages need on top: the title block, the ornamental rule and the
- * framed pick photos. Colours come from the --mbc-* tokens so the light theme
- * (cream paper, dark ink) follows automatically.
+ * Implements:
+ * - Classic vintage fine dining aesthetic with open parchment texture
+ * - Elegant dark green borders (#0f3d2a) and gold corner accents
+ * - Zig-Zag / Alternating 2-column layout:
+ *     Category 1 at top-left, Category 2 slightly lower on right side,
+ *     Category 3 at middle-left, Category 4 at lower-right
+ * - Prominent Category Headers with small decorative gold dividers above/below
+ * - Classic format: 'Food Item Name ................. $15'
+ * - Clean spacing, high readability, and premium serif typography
  */
 
 .mbo-page {
@@ -15,42 +18,114 @@
   flex-direction: column;
   min-height: 100%;
   color: var(--mbc-ink);
+  padding: 4px;
 }
 
-/* ---------- Page 1: title block ---------- */
+/* ==========================================================================
+   1. Sheet Frame with Dark Green Border and Gold Keyline
+   ========================================================================== */
+
+.mbo-sheet-frame {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid #0f3d2a; /* elegant dark green border */
+  box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.45),
+              0 4px 20px rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  padding: 16px 20px 14px;
+}
+
+/* Gold Corner Accents */
+.mbo-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.85;
+}
+
+.mbo-corner--tl {
+  top: 5px;
+  left: 5px;
+}
+
+.mbo-corner--tr {
+  top: 5px;
+  right: 5px;
+}
+
+.mbo-corner--bl {
+  bottom: 5px;
+  left: 5px;
+}
+
+.mbo-corner--br {
+  bottom: 5px;
+  right: 5px;
+}
+
+/* ==========================================================================
+   2. Vintage Title Block
+   ========================================================================== */
+
 .mbo-title {
   text-align: center;
   padding: 4px 0 2px;
 }
 
+.mbo-title--subsequent {
+  padding: 2px 0;
+}
+
 .mbo-title__eyebrow {
   margin: 0;
   font-size: 0.625rem;
-  letter-spacing: 0.34em;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
   color: var(--mbc-gold);
-  opacity: 0.85;
+  font-weight: 700;
+  opacity: 0.9;
 }
 
 .mbo-title__name {
-  margin: 10px 0 0;
+  margin: 6px 0 0;
   font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-weight: 600;
-  font-size: clamp(2rem, 6vw, 3rem);
-  line-height: 1.05;
-  letter-spacing: 0.1em;
+  font-weight: 800;
+  font-size: clamp(2rem, 5.2vw, 2.75rem);
+  line-height: 1;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--mbc-gold);
+  background: linear-gradient(135deg, #fae18c 0%, #d4af37 50%, #f0d27a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
 }
 
-/* Ornamental rule: a hairline either side of a small gold lozenge */
+.mbo-title__subname {
+  margin: 4px 0 0;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-weight: 700;
+  font-size: clamp(1.3rem, 3.8vw, 1.7rem);
+  line-height: 1.1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #fae18c 0%, #d4af37 60%, #b8902a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .mbo-rule {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin: 14px auto 0;
-  max-width: 230px;
+  margin: 6px auto 0;
+  max-width: 200px;
 }
 
 .mbo-rule::before,
@@ -62,44 +137,227 @@
 }
 
 .mbo-rule__mark {
-  flex: none;
-  width: 7px;
-  height: 7px;
-  transform: rotate(45deg);
-  background: var(--mbc-gold);
-  opacity: 0.9;
-}
-
-.mbo-rule__flourish {
-  flex: none;
   font-size: 0.65rem;
   color: var(--mbc-gold);
-  opacity: 0.75;
+  opacity: 0.95;
   line-height: 1;
 }
 
 .mbo-title__tagline {
-  margin: 12px 0 0;
+  margin: 4px 0 0;
   font-family: var(--font-display, "Playfair Display", Georgia, serif);
   font-style: italic;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: var(--mbc-ink);
-  opacity: 0.82;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--mbc-ink-soft);
+  opacity: 0.85;
 }
 
-/* ---------- Shared: section heading spacing on these pages ---------- */
-.mbo-heading {
-  margin-top: 22px;
+/* ==========================================================================
+   3. Zig-Zag / Alternating Menu Grid
+   ========================================================================== */
+
+.mbo-contents {
+  margin-top: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 4px 6px;
 }
 
-.mbo-note {
-  margin: 10px 0 0;
+.mbo-zigzag-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 32px;
+  row-gap: 24px;
+  align-items: start;
+}
+
+.mbo-column {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Category 1 at top-left, Category 3 at middle-left */
+.mbo-column--left {
+  padding-top: 0;
+}
+
+/* Category 2 slightly lower on the right side, Category 4 at lower-right */
+.mbo-column--right {
+  padding-top: 36px; /* Asymmetric zig-zag vertical offset */
+}
+
+.mbo-category-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Prominent Category Header with Gold Dividers Above/Below */
+.mbo-category-heading-group {
   text-align: center;
+  margin-bottom: 8px;
+}
+
+.mbo-category-title-btn {
+  background: transparent;
+  border: 0;
+  padding: 2px 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mbo-category-header {
+  margin: 4px 0;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #f0d27a;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  transition: color 150ms ease, text-shadow 150ms ease;
+}
+
+.mbo-category-title-btn:hover .mbo-category-header,
+.mbo-category-title-btn:focus-visible .mbo-category-header {
+  color: #fae18c;
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+}
+
+/* Small Decorative Gold Divider */
+.mbo-cat-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 180px;
+  margin: 0 auto;
+}
+
+.mbo-cat-divider--above {
+  margin-bottom: 2px;
+}
+
+.mbo-cat-divider--below {
+  margin-top: 2px;
+}
+
+.mbo-cat-divider__line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.75), transparent);
+}
+
+.mbo-cat-divider__mark {
+  font-size: 0.5rem;
+  color: var(--mbc-gold);
+  opacity: 0.9;
+  line-height: 1;
+}
+
+.mbo-cat-divider__flourish {
+  font-size: 0.55rem;
+  color: var(--mbc-gold);
+  opacity: 0.8;
+  line-height: 1;
+}
+
+/* ==========================================================================
+   4. Food Items List & 'Food Item Name ................. $15' Format
+   ========================================================================== */
+
+.mbo-item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mbo-item-wrapper {
+  width: 100%;
+}
+
+.mbo-menu-row {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  width: 100%;
+  padding: 4px 6px;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.mbo-menu-row:hover,
+.mbo-menu-row:focus-visible {
+  background-color: rgba(212, 175, 55, 0.09);
+  transform: translateX(4px);
+}
+
+.mbo-dish-name {
+  flex: 0 1 auto;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f5efe0;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 150ms ease;
+}
+
+.mbo-menu-row:hover .mbo-dish-name {
+  color: #fae18c;
+}
+
+/* Dotted Leader Line Spanning from Food Name to Price */
+.mbo-dotted-leader {
+  flex: 1 1 auto;
+  min-width: 24px;
+  margin: 0 8px;
+  height: 1px;
+  border-bottom: 2px dotted rgba(212, 175, 55, 0.42);
+  transition: border-bottom-color 150ms ease;
+}
+
+.mbo-menu-row:hover .mbo-dotted-leader {
+  border-bottom-color: rgba(212, 175, 55, 0.9);
+}
+
+.mbo-dish-price {
+  flex: none;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #d4af37;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  transition: color 150ms ease;
+}
+
+.mbo-menu-row:hover .mbo-dish-price {
+  color: #fae18c;
+}
+
+.mbo-empty-text {
+  margin: 6px 0;
   font-style: italic;
-  font-size: 0.78rem;
-  color: var(--mbc-ink);
-  opacity: 0.7;
+  font-size: 0.8rem;
+  color: var(--mbc-ink-muted);
+  text-align: center;
 }
 
 .mbo-empty {
@@ -107,311 +365,140 @@
   text-align: center;
   font-style: italic;
   font-size: 0.85rem;
-  color: var(--mbc-ink);
-  opacity: 0.7;
+  color: var(--mbc-ink-muted);
 }
 
-/* ---------- Page 1: contents list ---------- */
-.mbo-contents {
-  margin-top: 10px;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-}
+/* ==========================================================================
+   5. Footer Line
+   ========================================================================== */
 
-.mbo-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-/* Hairline between contents rows, like ruled menu stock */
-.mbo-list > li + li {
-  border-top: 1px solid rgba(212, 175, 55, 0.22);
-}
-
-.mbo-entry__num {
-  flex: none;
-  width: 1.85em;
-  font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.08em;
-  color: var(--mbc-gold);
-  opacity: 0.9;
-}
-
-/* The section title takes the "dish name" slot of the leader pattern.
-   Unlike a dish name it may run long, so let it use its natural width and
-   shrink only when the leader needs the room. */
-/* .mb-root prefix so this wins over .mb-entry__name in menu-book-classic.css,
-   which the bundler injects after this file. */
-.mb-root .mbo-entry__title {
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: none;
-  font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-size: 0.9rem;
-}
-
-.mb-root .mbo-entry__count,
-.mb-root .mbo-entry__page {
-  font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: 0.9rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.05em;
-  color: var(--mbc-gold);
-  white-space: nowrap;
-}
-
-/* ---------- Page 2: chef's picks ---------- */
-.mbo-picks {
-  list-style: none;
-  margin: 16px 0 0;
-  padding: 0 2px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px 16px;
-  align-content: start;
-}
-
-.mbo-picks > li {
-  min-width: 0;
-}
-
-.mbo-pick {
-  position: relative;
-  z-index: 6;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  min-height: 44px;
-  padding: 0;
-  background: transparent;
-  border: 0;
-  text-align: left;
-  color: var(--mbc-ink);
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Photo in the same double gold keyline as the page frame */
-.mbo-pick__frame {
-  position: relative;
-  display: block;
-  aspect-ratio: 1 / 1;
-  width: 100%;
-  overflow: hidden;
-  background-color: rgba(212, 175, 55, 0.12);
-  box-shadow:
-    0 0 0 1px rgba(212, 175, 55, 0.55),
-    0 0 0 4px var(--mbc-paper),
-    0 0 0 5px rgba(212, 175, 55, 0.3);
-  transition: box-shadow 180ms ease;
-}
-
-.mbo-pick__badge {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  padding: 2px 7px;
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-size: 0.55rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #0c1a13;
-  background: linear-gradient(135deg, #d4af37, #f5e4a8);
-  border-radius: 999px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-  z-index: 2;
-  pointer-events: none;
-}
-
-.mbo-pick__img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Placeholder when a dish has no photo: a quiet gold monogram */
-.mbo-pick__placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: 1.5rem;
-  letter-spacing: 0.1em;
-  color: var(--mbc-gold);
-  opacity: 0.7;
-}
-
-.mbo-pick__kicker {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  margin-top: 12px;
-  font-size: 0.6rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--mbc-gold);
-  opacity: 0.85;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Dish names under a photo run long, so the name gets its own line and the
-   dotted leader below it carries across to the price, as on the dish pages. */
-.mbo-pick__name {
-  display: block;
-  width: 100%;
-  margin-top: 3px;
-  font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: 0.9rem;
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mbo-pick__row {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-top: 1px;
-  width: 100%;
-}
-
-.mb-root .mbo-pick__leader {
-  flex: 1 1 auto;
-  min-width: 8px;
-}
-
-.mb-root .mbo-pick__price {
-  font-size: 0.9rem;
-}
-
-.mbo-pick:hover .mbo-pick__frame,
-.mbo-pick:focus-visible .mbo-pick__frame {
-  box-shadow:
-    0 0 0 1px rgba(212, 175, 55, 0.9),
-    0 0 0 4px var(--mbc-paper),
-    0 0 0 6px rgba(212, 175, 55, 0.55);
-}
-
-.mbo-pick:hover .mbo-pick__name {
-  color: var(--mbc-gold-soft);
-}
-
-/* ---------- Footer line at the bottom of both pages ---------- */
 .mbo-foot {
   margin-top: auto;
-  padding-top: 18px;
+  padding-top: 12px;
   text-align: center;
 }
 
 .mbo-foot__rule {
   display: block;
   height: 1px;
-  background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.6), transparent);
+  background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.65), transparent);
 }
 
 .mbo-foot__text {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   font-size: 0.625rem;
-  letter-spacing: 0.26em;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--mbc-gold);
-  opacity: 0.8;
+  opacity: 0.85;
+  font-weight: 600;
 }
 
-/* ---------- Focus ring, matching the dish entries ---------- */
-.mbo-entry:focus-visible,
-.mbo-pick:focus-visible {
+/* Focus Ring */
+.mbo-menu-row:focus-visible,
+.mbo-category-title-btn:focus-visible {
   outline: 2px solid var(--mbc-gold);
   outline-offset: 2px;
 }
 
-/* ---------- Light theme: cream paper, dark ink ---------- */
-html[data-theme="light"] .mb-root .mbo-rule::before,
-html[data-theme="light"] .mb-root .mbo-rule::after,
-html[data-theme="light"] .mb-root .mbo-foot__rule {
-  background: linear-gradient(to right, transparent, rgba(122, 95, 16, 0.75), transparent);
+/* ==========================================================================
+   6. Light Theme Support (Warm Cream Parchment)
+   ========================================================================== */
+
+html[data-theme="light"] .mb-root .mbo-sheet-frame {
+  border-color: #1a4231;
+  box-shadow: inset 0 0 0 1px rgba(122, 95, 16, 0.4),
+              0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
-html[data-theme="light"] .mb-root .mbo-list > li + li {
-  border-top-color: rgba(122, 95, 16, 0.28);
+html[data-theme="light"] .mb-root .mbo-corner svg {
+  color: #8c6d1f;
 }
 
-html[data-theme="light"] .mb-root .mbo-pick__frame {
-  background-color: rgba(122, 95, 16, 0.1);
-  box-shadow:
-    0 0 0 1px rgba(122, 95, 16, 0.55),
-    0 0 0 4px var(--mbc-paper),
-    0 0 0 5px rgba(122, 95, 16, 0.3);
+html[data-theme="light"] .mb-root .mbo-title__name,
+html[data-theme="light"] .mb-root .mbo-title__subname {
+  background: linear-gradient(135deg, #8c6d1f 0%, #aa8214 50%, #5e4610 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
-html[data-theme="light"] .mb-root .mbo-pick:hover .mbo-pick__frame,
-html[data-theme="light"] .mb-root .mbo-pick:focus-visible .mbo-pick__frame {
-  box-shadow:
-    0 0 0 1px rgba(122, 95, 16, 0.9),
-    0 0 0 4px var(--mbc-paper),
-    0 0 0 6px rgba(122, 95, 16, 0.55);
+html[data-theme="light"] .mb-root .mbo-category-header {
+  color: #5e4610;
+  text-shadow: none;
 }
 
-/* ---------- Phone ---------- */
-@media (max-width: 480px) {
-  .mbo-picks {
-    gap: 16px 12px;
+html[data-theme="light"] .mb-root .mbo-category-title-btn:hover .mbo-category-header {
+  color: #8c6d1f;
+}
+
+html[data-theme="light"] .mb-root .mbo-dish-name {
+  color: #1a1a1a;
+}
+
+html[data-theme="light"] .mb-root .mbo-menu-row:hover .mbo-dish-name {
+  color: #8c6d1f;
+}
+
+html[data-theme="light"] .mb-root .mbo-dish-price {
+  color: #8c6d1f;
+}
+
+html[data-theme="light"] .mb-root .mbo-menu-row:hover {
+  background-color: rgba(122, 95, 16, 0.08);
+}
+
+html[data-theme="light"] .mb-root .mbo-dotted-leader {
+  border-bottom-color: rgba(122, 95, 16, 0.35);
+}
+
+html[data-theme="light"] .mb-root .mbo-menu-row:hover .mbo-dotted-leader {
+  border-bottom-color: rgba(122, 95, 16, 0.8);
+}
+
+/* ==========================================================================
+   7. Responsive Small Screens
+   ========================================================================== */
+
+@media (max-width: 680px) {
+  .mbo-sheet-frame {
+    padding: 12px 14px 10px;
+  }
+
+  .mbo-zigzag-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .mbo-column--right {
+    padding-top: 0; /* Reset offset on single column */
+  }
+
+  .mbo-column {
+    gap: 18px;
+  }
+
+  .mbo-dish-name {
+    font-size: 0.88rem;
+  }
+
+  .mbo-dish-price {
+    font-size: 0.88rem;
+  }
+
+  .mbo-category-header {
+    font-size: 1rem;
+    letter-spacing: 0.14em;
   }
 
   .mbo-title__name {
-    letter-spacing: 0.06em;
-  }
-
-  /* Section titles are long; tighten them so they fit on one printed line */
-  .mb-root .mbo-entry__title {
-    font-size: 0.78rem;
-    letter-spacing: 0.03em;
-  }
-
-  .mbo-entry__num {
-    width: 1.6em;
-    font-size: 0.72rem;
-  }
-
-  .mb-root .mbo-entry__count,
-  .mb-root .mbo-entry__page {
-    font-size: 0.82rem;
-  }
-
-  .mbo-pick__badge {
-    font-size: 0.5rem;
-    padding: 1px 5px;
-  }
-
-  .mbo-pick__kicker {
-    font-size: 0.55rem;
-    letter-spacing: 0.18em;
-  }
-
-  .mb-root .mbo-pick__name,
-  .mb-root .mbo-pick__price {
-    font-size: 0.82rem;
+    letter-spacing: 0.08em;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mbo-pick__frame {
-    transition: none;
+  .mbo-menu-row {
+    transition: none !important;
+    transform: none !important;
   }
 }
