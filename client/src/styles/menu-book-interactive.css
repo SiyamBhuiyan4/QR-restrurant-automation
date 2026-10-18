@@ -1,0 +1,298 @@
+/*
+ * menu-book-interactive.css
+ * Interactive 3D Polish & Perspective Engine:
+ * - 3D Perspective angle toggle toolbar
+ * - Page corner dog-ear 3D curl hover effects & mobile touch pulse indicators
+ * - Tabletop lighting and dynamic sheen
+ * - Touch & mobile navigation polish
+ */
+
+/* ---------- 3D Perspective View Toggle Toolbar ---------- */
+.mb-toolbar {
+  width: 100%;
+  max-width: 1024px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  margin-bottom: 2px;
+  gap: 12px;
+}
+
+.mb-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: 9999px;
+  background: rgba(3, 35, 26, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.mb-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: rgba(245, 239, 224, 0.75);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mb-view-btn:hover {
+  color: #f5efe0;
+  background: rgba(212, 175, 55, 0.12);
+}
+
+.mb-view-btn[aria-checked="true"] {
+  background: #d4af37;
+  color: #064e3b;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.mb-view-btn:focus-visible {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
+}
+
+.mb-toolbar__hint {
+  font-size: 0.75rem;
+  color: rgba(212, 175, 55, 0.7);
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------- 3D Audio & Sound Toggle Styles ---------- */
+.mb-sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
+
+.mb-sound-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: rgba(245, 239, 224, 0.75);
+  background: rgba(3, 35, 26, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mb-sound-btn:hover {
+  color: #f5efe0;
+  background: rgba(6, 78, 59, 0.95);
+  border-color: rgba(212, 175, 55, 0.6);
+  transform: translateY(-1px);
+}
+
+.mb-sound-btn:active {
+  transform: translateY(0);
+}
+
+.mb-sound-btn--active {
+  border-color: rgba(212, 175, 55, 0.5);
+  color: #f5efe0;
+}
+
+.mb-sound-btn:focus-visible {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Page Corner Dog-Ear Touch & Hover Effect (.mb-dogear)
+   ========================================================================== */
+
+.mb-dogear {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  z-index: 25;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transform-style: preserve-3d;
+}
+
+/* Corner alignment & origin */
+.mb-dogear--top-right {
+  top: 0;
+  right: 0;
+  transform-origin: top right;
+}
+
+.mb-dogear--bottom-right {
+  bottom: 0;
+  right: 0;
+  transform-origin: bottom right;
+}
+
+.mb-dogear--top-left {
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
+
+.mb-dogear--bottom-left {
+  bottom: 0;
+  left: 0;
+  transform-origin: bottom left;
+}
+
+/* Desktop Hover 3D peel & curl effect */
+@media (hover: hover) and (pointer: fine) {
+  .mb-dogear:hover .mb-dogear__flap {
+    transform-origin: center center;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+  }
+
+  .mb-dogear--top-right:hover .mb-dogear__flap {
+    transform: translate(-3px, 3px) scale(1.18);
+  }
+
+  .mb-dogear--bottom-right:hover .mb-dogear__flap {
+    transform: translate(-3px, -3px) scale(1.18);
+  }
+
+  .mb-dogear--top-left:hover .mb-dogear__flap {
+    transform: translate(3px, 3px) scale(1.18);
+  }
+
+  .mb-dogear--bottom-left:hover .mb-dogear__flap {
+    transform: translate(3px, -3px) scale(1.18);
+  }
+
+  .mb-dogear:hover .mb-dogear__shadow {
+    opacity: 0.95;
+  }
+}
+
+/* Mobile & Touchscreen Touch Indicator: pre-curled dog-ear with inviting pulse */
+@media (max-width: 767.98px), (hover: none) {
+  .mb-dogear .mb-dogear__flap {
+    transform-origin: center center;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.55));
+  }
+
+  .mb-dogear--top-right .mb-dogear__flap {
+    transform: translate(-2px, 2px) scale(1.08);
+  }
+
+  .mb-dogear--bottom-right .mb-dogear__flap {
+    transform: translate(-2px, -2px) scale(1.08);
+  }
+
+  .mb-dogear--top-left .mb-dogear__flap {
+    transform: translate(2px, 2px) scale(1.08);
+  }
+
+  .mb-dogear--bottom-left .mb-dogear__flap {
+    transform: translate(2px, -2px) scale(1.08);
+  }
+
+  .mb-dogear .mb-dogear__shadow {
+    opacity: 0.9;
+  }
+
+  .mb-dogear .mb-dogear__chevron {
+    opacity: 0.85 !important;
+  }
+
+  /* Inviting rhythmic breathing animation signaling touch interaction */
+  .mb-dogear-pulse {
+    animation: mbDogEarTouchPulse 2.8s ease-in-out infinite;
+  }
+}
+
+@keyframes mbDogEarTouchPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 2px 4px rgba(212, 175, 55, 0.25));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 3px 8px rgba(212, 175, 55, 0.65));
+  }
+}
+
+/* Active click/tap feedback */
+.mb-dogear:active {
+  transform: scale(0.92);
+  filter: drop-shadow(0 1px 2px rgba(212, 175, 55, 0.8));
+}
+
+.mb-dogear:focus-visible {
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px #d4af37;
+}
+
+/* ---------- Parallax Ambient Tabletop Specular Sheen ---------- */
+@media (min-width: 768px) {
+  .mb-book[data-view="3d"]::before,
+  .mb-3d-book[data-view="3d"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 12;
+    background: radial-gradient(
+      circle 600px at var(--mb-glow-x, 50%) var(--mb-glow-y, 30%),
+      rgba(212, 175, 55, 0.08) 0%,
+      rgba(212, 175, 55, 0.02) 40%,
+      transparent 70%
+    );
+    opacity: 0.8;
+    mix-blend-mode: overlay;
+    transition: opacity 300ms ease;
+  }
+}
+
+/* ---------- Reduced motion preferences ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .mb-view-btn,
+  .mb-sound-btn,
+  .mb-dogear,
+  .mb-dogear *,
+  .mb-dogear-pulse {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .mb-dogear:hover .mb-dogear__flap {
+    transform: none !important;
+  }
+}

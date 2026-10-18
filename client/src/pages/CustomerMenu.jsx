@@ -40,7 +40,7 @@ const DEFAULT_MENU_ITEMS = [
     name: 'Truffle Parmesan Fries',
     description: 'Crispy skin-on fries tossed with white truffle oil, shaved aged parmesan, and fresh parsley with garlic aioli.',
     price: 7.99,
-    category: 'Starters',
+    category: 'Appetizers',
     isVeg: true,
     isSpicy: false,
     isPopular: true,
@@ -60,7 +60,7 @@ const DEFAULT_MENU_ITEMS = [
     name: 'Spicy Buffalo Wings',
     description: 'Crispy chicken wings glazed in our chef signature fiery cayenne sauce, served with blue cheese and celery sticks.',
     price: 10.99,
-    category: 'Starters',
+    category: 'Appetizers',
     isVeg: false,
     isSpicy: true,
     isPopular: true,
@@ -80,7 +80,7 @@ const DEFAULT_MENU_ITEMS = [
     name: 'Garlic Butter Cheesy Bread',
     description: 'Freshly baked artisanal sourdough baguette filled with herb garlic butter and melted mozzarella cheese.',
     price: 6.50,
-    category: 'Starters',
+    category: 'Appetizers',
     isVeg: true,
     isSpicy: false,
     prepTime: '8 min',
@@ -99,7 +99,7 @@ const DEFAULT_MENU_ITEMS = [
     name: 'Crispy Salt & Pepper Calamari',
     description: 'Tender Monterey squid lightly crusted with five-spice sea salt, served with lemon wedges and house tartar.',
     price: 11.50,
-    category: 'Starters',
+    category: 'Appetizers',
     isVeg: false,
     isSpicy: false,
     prepTime: '12 min',
@@ -120,7 +120,7 @@ const DEFAULT_MENU_ITEMS = [
     name: 'Grilled Ribeye Steak (10oz)',
     description: 'Prime dry-aged Angus ribeye char-grilled to perfection, accompanied by roasted garlic herb butter and rosemary baby potatoes.',
     price: 24.99,
-    category: 'Mains',
+    category: 'Special Steak',
     isVeg: false,
     isSpicy: false,
     isPopular: true,
@@ -140,7 +140,7 @@ const DEFAULT_MENU_ITEMS = [
     name: 'Fiery Peri-Peri Grilled Chicken',
     description: 'Half chicken marinated 24 hours in authentic African bird eye peri-peri marinade, flame grilled with charred lime.',
     price: 17.50,
-    category: 'Mains',
+    category: 'Special Steak',
     isVeg: false,
     isSpicy: true,
     isPopular: true,
@@ -160,7 +160,7 @@ const DEFAULT_MENU_ITEMS = [
     name: 'Pan-Seared Atlantic Salmon',
     description: 'Wild salmon fillet served over a bed of sautéed asparagus, cherry tomatoes, and saffron lemon-dill cream sauce.',
     price: 21.99,
-    category: 'Mains',
+    category: 'Special Steak',
     isVeg: false,
     isSpicy: false,
     prepTime: '15 min',
@@ -179,7 +179,7 @@ const DEFAULT_MENU_ITEMS = [
     name: 'Wild Forest Mushroom Risotto',
     description: 'Arborio rice slowly simmered with porcini stock, shiitake mushrooms, white truffle oil, and aged Pecorino.',
     price: 16.50,
-    category: 'Mains',
+    category: 'Special Steak',
     isVeg: true,
     isSpicy: false,
     prepTime: '18 min',
@@ -194,13 +194,94 @@ const DEFAULT_MENU_ITEMS = [
     ingredients: ['Italian Arborio Rice', 'Dried Porcini & Shiitake Stock', 'White Truffle Essence', 'Aged Pecorino Romano', 'Fresh Thyme']
   },
 
-  // Burgers
+  // Pizza Special
+  {
+    id: 'pizza-1',
+    name: 'Artisanal Margherita Pizza',
+    description: 'San Marzano tomato sauce, fresh buffalo mozzarella, hand-picked sweet basil, and extra virgin olive oil on blistered crust.',
+    price: 16.99,
+    category: 'Pizza Special',
+    isVeg: true,
+    isSpicy: false,
+    isPopular: true,
+    prepTime: '12 min',
+    image: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['San Marzano Tomatoes', 'Fresh Buffalo Mozzarella', 'Sweet Genovese Basil', 'Extra Virgin Olive Oil', 'Aged Sea Salt']
+  },
+  {
+    id: 'pizza-2',
+    name: 'Black Truffle & Wild Mushroom Pizza',
+    description: 'Roasted forest mushrooms, creamy fontina, thyme-infused ricotta, and shaved black summer truffles.',
+    price: 19.50,
+    category: 'Pizza Special',
+    isVeg: true,
+    isSpicy: false,
+    isPopular: true,
+    prepTime: '15 min',
+    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['Foraged Wild Mushrooms', 'Fontina Cheese', 'Thyme Ricotta', 'Shaved Black Truffle', 'Garlic Confit']
+  },
+  {
+    id: 'pizza-3',
+    name: 'Signature Spicy Pepperoni & Hot Honey',
+    description: 'Crispy cup-and-char pepperoni, house marinara, melted mozzarella, finished with a drizzle of Calabrian chili hot honey.',
+    price: 18.50,
+    category: 'Pizza Special',
+    isVeg: false,
+    isSpicy: true,
+    isPopular: true,
+    prepTime: '12 min',
+    image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['Cup & Char Pepperoni', 'Whole Milk Mozzarella', 'San Marzano Tomato Sauce', 'Calabrian Hot Honey', 'Crushed Red Pepper']
+  },
+  {
+    id: 'pizza-4',
+    name: 'Prosciutto di Parma & Fresh Arugula Pizza',
+    description: 'Aged Prosciutto di Parma draped over creamy burrata, peppery baby arugula, shaved parmesan, and balsamic glaze.',
+    price: 21.00,
+    category: 'Pizza Special',
+    isVeg: false,
+    isSpicy: false,
+    prepTime: '14 min',
+    image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=900&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=900&auto=format&fit=crop&q=80'
+    ],
+    makingVideoUrl: '/videos/reel-chef.mp4',
+    ingredients: ['24-Month Prosciutto di Parma', 'Creamy Burrata', 'Baby Arugula', 'Shaved Parmigiano-Reggiano', 'Aged Modena Balsamic Glaze']
+  },
+
+  // Special Food (Burgers & Artisan Sandwiches)
   {
     id: 'burger-1',
     name: 'SmartDine Classic Smash Burger',
     description: 'Two smashed prime beef patties, double American cheese, caramelized onions, crisp pickles, and secret burger spread on a brioche bun.',
     price: 13.50,
-    category: 'Burgers',
+    category: 'Special Food',
     isVeg: false,
     isSpicy: false,
     isPopular: true,
@@ -220,7 +301,7 @@ const DEFAULT_MENU_ITEMS = [
     name: 'The Volcano Jalapeño Burger',
     description: 'Spiced beef patty topped with grilled pickled jalapeños, pepper jack cheese, crispy fried onion strings, and habanero lava mayo.',
     price: 14.99,
-    category: 'Burgers',
+    category: 'Special Food',
     isVeg: false,
     isSpicy: true,
     isPopular: true,
@@ -240,7 +321,7 @@ const DEFAULT_MENU_ITEMS = [
     name: 'Beyond Plant-Based Burger',
     description: '100% plant-based grilled patty, vegan cheddar, butterhead lettuce, vine tomato, and avocado chimichurri on a toasted vegan potato bun.',
     price: 14.50,
-    category: 'Burgers',
+    category: 'Special Food',
     isVeg: true,
     isSpicy: false,
     prepTime: '12 min',
@@ -339,36 +420,43 @@ const DEFAULT_MENU_ITEMS = [
 export const CANONICAL_CATEGORIES = [
   {
     key: 'starters',
-    id: 'Starters',
-    title: 'Starters & Appetizers',
+    id: 'Appetizers',
+    title: 'APPETIZERS',
     icon: '🥗',
     subtitle: 'Crispy appetizers, signature bites, and table warmups'
   },
   {
     key: 'mains',
-    id: 'Mains',
-    title: "Chef's Signature Mains",
+    id: 'SpecialSteak',
+    title: 'SPECIAL STEAK',
     icon: '🥩',
     subtitle: 'Prime dry-aged steaks, flame-grilled specialties, and fresh catches'
   },
   {
+    key: 'pizza',
+    id: 'PizzaSpecial',
+    title: 'PIZZA SPECIAL',
+    icon: '🍕',
+    subtitle: 'Stone-baked artisanal pizzas with rich buffalo mozzarella'
+  },
+  {
     key: 'burgers',
-    id: 'Burgers',
-    title: 'Artisan Burgers & Sandwiches',
+    id: 'SpecialFood',
+    title: 'SPECIAL FOOD',
     icon: '🍔',
     subtitle: 'Artisan smashed wagyu patties, melted cheese, and toasted brioche'
   },
   {
     key: 'desserts',
     id: 'Desserts',
-    title: 'Decadent Desserts',
+    title: 'DESSERTS',
     icon: '🍰',
     subtitle: 'Warm lava cakes, artisanal tiramisu, and house sweets'
   },
   {
     key: 'beverages',
     id: 'Beverages',
-    title: 'Refreshing Beverages & Mocktails',
+    title: 'BEVERAGES',
     icon: '🍹',
     subtitle: 'Hand-crafted iced coolers, spritzers, and organic teas'
   }
@@ -377,15 +465,16 @@ export const CANONICAL_CATEGORIES = [
 export const getCategoryMetadata = (categoryName = '') => {
   const lower = String(categoryName).toLowerCase().trim();
   if (lower.includes('start') || lower.includes('appetiz')) return CANONICAL_CATEGORIES[0];
-  if (lower.includes('main') || lower.includes('steak') || lower.includes('meat') || lower.includes('entree')) return CANONICAL_CATEGORIES[1];
-  if (lower.includes('burger') || lower.includes('sandwich')) return CANONICAL_CATEGORIES[2];
-  if (lower.includes('dessert') || lower.includes('sweet') || lower.includes('cake')) return CANONICAL_CATEGORIES[3];
-  if (lower.includes('beverage') || lower.includes('drink') || lower.includes('cocktail') || lower.includes('mocktail')) return CANONICAL_CATEGORIES[4];
+  if (lower.includes('steak') || lower.includes('meat') || lower.includes('main') || lower.includes('entree')) return CANONICAL_CATEGORIES[1];
+  if (lower.includes('pizza')) return CANONICAL_CATEGORIES[2];
+  if (lower.includes('burger') || lower.includes('sandwich') || lower.includes('special food') || lower.includes('food')) return CANONICAL_CATEGORIES[3];
+  if (lower.includes('dessert') || lower.includes('sweet') || lower.includes('cake')) return CANONICAL_CATEGORIES[4];
+  if (lower.includes('beverage') || lower.includes('drink') || lower.includes('cocktail') || lower.includes('mocktail')) return CANONICAL_CATEGORIES[5];
   
   return {
     key: lower.replace(/[^a-z0-9]+/g, '-'),
     id: categoryName,
-    title: categoryName,
+    title: categoryName.toUpperCase(),
     icon: '🍽️',
     subtitle: 'Chef curated creations prepared fresh to order'
   };
@@ -760,8 +849,8 @@ export default function CustomerMenu({
   const categoriesList = useMemo(() => {
     const rawCategories = Array.from(new Set(allMenuItems.map((item) => item.category || 'Mains')));
     
-    // Canonical ordering: Starters, Mains, Burgers, Desserts, Beverages
-    const orderMap = { starters: 1, mains: 2, burgers: 3, desserts: 4, beverages: 5 };
+    // Canonical ordering: Appetizers/Starters, Steak/Mains, Pizza, Burgers/Special Food, Desserts, Beverages
+    const orderMap = { starters: 1, mains: 2, pizza: 3, burgers: 4, desserts: 5, beverages: 6 };
     rawCategories.sort((a, b) => {
       const ordA = orderMap[getCategoryMetadata(a).key] || 99;
       const ordB = orderMap[getCategoryMetadata(b).key] || 99;
@@ -793,6 +882,7 @@ export default function CustomerMenu({
     // Initialize canonical sections in exact order
     CANONICAL_CATEGORIES.forEach((cat) => {
       map.set(cat.key, {
+        key: cat.key,
         categoryKey: cat.key,
         canonicalId: cat.id,
         title: cat.title,
@@ -806,6 +896,7 @@ export default function CustomerMenu({
       const meta = getCategoryMetadata(dish.category || 'Mains');
       if (!map.has(meta.key)) {
         map.set(meta.key, {
+          key: meta.key,
           categoryKey: meta.key,
           canonicalId: meta.id,
           title: meta.title,
@@ -1309,7 +1400,7 @@ export default function CustomerMenu({
               <MenuBook
                 sections={selectedCategory === 'All'
                   ? categorizedSections
-                  : categorizedSections.filter((s) => s.canonicalId === selectedCategory)}
+                  : categorizedSections.filter((s) => s.canonicalId === selectedCategory || s.categoryKey === selectedCategory || s.key === selectedCategory)}
                 cart={cart}
                 onAddToCart={(item, qty = 1) => {
                   // handleAddToCart takes only (item), so repeat it for the requested quantity

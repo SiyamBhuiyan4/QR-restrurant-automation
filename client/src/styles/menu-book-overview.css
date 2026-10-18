@@ -70,6 +70,14 @@
   opacity: 0.9;
 }
 
+.mbo-rule__flourish {
+  flex: none;
+  font-size: 0.65rem;
+  color: var(--mbc-gold);
+  opacity: 0.75;
+  line-height: 1;
+}
+
 .mbo-title__tagline {
   margin: 12px 0 0;
   font-family: var(--font-display, "Playfair Display", Georgia, serif);
@@ -148,8 +156,14 @@
   font-size: 0.9rem;
 }
 
-.mb-root .mbo-entry__count {
+.mb-root .mbo-entry__count,
+.mb-root .mbo-entry__page {
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
   font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+  color: var(--mbc-gold);
+  white-space: nowrap;
 }
 
 /* ---------- Page 2: chef's picks ---------- */
@@ -168,6 +182,8 @@
 }
 
 .mbo-pick {
+  position: relative;
+  z-index: 6;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -180,6 +196,8 @@
   text-align: left;
   color: var(--mbc-ink);
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Photo in the same double gold keyline as the page frame */
@@ -195,6 +213,24 @@
     0 0 0 4px var(--mbc-paper),
     0 0 0 5px rgba(212, 175, 55, 0.3);
   transition: box-shadow 180ms ease;
+}
+
+.mbo-pick__badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 7px;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0c1a13;
+  background: linear-gradient(135deg, #d4af37, #f5e4a8);
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  z-index: 2;
+  pointer-events: none;
 }
 
 .mbo-pick__img {
@@ -353,8 +389,14 @@ html[data-theme="light"] .mb-root .mbo-pick:focus-visible .mbo-pick__frame {
     font-size: 0.72rem;
   }
 
-  .mb-root .mbo-entry__count {
+  .mb-root .mbo-entry__count,
+  .mb-root .mbo-entry__page {
     font-size: 0.82rem;
+  }
+
+  .mbo-pick__badge {
+    font-size: 0.5rem;
+    padding: 1px 5px;
   }
 
   .mbo-pick__kicker {

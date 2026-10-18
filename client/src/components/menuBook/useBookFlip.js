@@ -143,4 +143,5 @@ export function useBookFlip(spreadCount, { initial = 0 } = {}) {
   };
 }
 
+export { useBookFlip3D } from './useBookFlip3D.js';
 export default useBookFlip;

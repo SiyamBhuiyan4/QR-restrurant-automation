@@ -33,7 +33,7 @@ export function buildSpreads(sections, opts = {}) {
     for (let i = 0; i < items.length; i += perPage) {
       pages.push({
         type: 'items',
-        sectionKey: section.key,
+        sectionKey: section.key ?? section.categoryKey,
         sectionTitle: section.title,
         items: items.slice(i, i + perPage),
         pageNumber: pages.length + 1,
@@ -78,4 +78,43 @@ export function findPageForItem(spreads, itemId) {
     if (hasItem(spreads[i].left) || hasItem(spreads[i].right)) return i;
   }
   return -1;
+}
+
+/**
+ * Find the starting page number for a given section.
+ * @param {object} section
+ * @param {{left: object, right: object}[]} [spreads]
+ * @param {object[]} [sections]
+ * @returns {number} 1-based page number
+ */
+export function getSectionPageNumber(section, spreads, sections) {
+  const key = section?.key ?? section?.categoryKey;
+  if (Array.isArray(spreads) && spreads.length > 0) {
+    for (const spread of spreads) {
+      if (
+        spread.left?.type === 'items' &&
+        (spread.left.sectionKey === key || spread.left.sectionTitle === section?.title)
+      ) {
+        return spread.left.pageNumber;
+      }
+      if (
+        spread.right?.type === 'items' &&
+        (spread.right.sectionKey === key || spread.right.sectionTitle === section?.title)
+      ) {
+        return spread.right.pageNumber;
+      }
+    }
+  }
+
+  if (Array.isArray(sections)) {
+    let pg = 3;
+    for (const s of sections) {
+      if ((s.key ?? s.categoryKey) === key) return pg;
+      const count = Array.isArray(s.items) ? s.items.length : 0;
+      pg += Math.max(1, Math.ceil(count / 4));
+    }
+    return pg;
+  }
+
+  return 3;
 }

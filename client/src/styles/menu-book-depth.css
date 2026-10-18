@@ -11,7 +11,7 @@
   --mb-radius: 14px;
 }
 
-/* ---------- Book shell: flat, straight, no rotation ---------- */
+/* ---------- Book shell: 3D perspective & flat view modes ---------- */
 .mb-book {
   position: relative;
   width: 100%;
@@ -25,6 +25,25 @@
     0 3px 0 #061a10,
     0 22px 28px -10px rgba(0, 0, 0, 0.5),
     0 40px 60px -20px rgba(0, 0, 0, 0.6);
+  transform-style: preserve-3d;
+}
+
+@media (min-width: 768px) {
+  .mb-book[data-view="3d"],
+  .mb-3d-book[data-view="3d"] {
+    transform: perspective(2400px) rotateX(var(--mb-tilt-rx, 10deg)) rotateY(var(--mb-tilt-ry, 0deg));
+    box-shadow:
+      0 1px 0 #0b2619,
+      0 3px 0 #081d13,
+      0 6px 0 #061a10,
+      0 28px 42px -10px rgba(0, 0, 0, 0.58),
+      0 50px 75px -20px rgba(0, 0, 0, 0.7);
+  }
+
+  .mb-book[data-view="flat"],
+  .mb-3d-book[data-view="flat"] {
+    transform: perspective(2400px) rotateX(0deg) rotateY(0deg);
+  }
 }
 
 /* Soft ground shadow beneath the book */
@@ -39,6 +58,16 @@
   pointer-events: none;
   background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%);
   filter: blur(4px);
+  transition: bottom 300ms ease, height 300ms ease, opacity 300ms ease;
+}
+
+@media (min-width: 768px) {
+  .mb-book[data-view="3d"]::after {
+    bottom: -28px;
+    height: 42px;
+    opacity: 0.9;
+    filter: blur(7px);
+  }
 }
 
 /* ---------- Pages: slight curve toward the spine ---------- */

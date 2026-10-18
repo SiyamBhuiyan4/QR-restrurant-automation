@@ -1,106 +1,293 @@
 /*
- * Classic printed-menu look for the book pages:
- * textured dark paper, a decorative gold frame, centred category headings and
- * dotted leaders running from each dish name to its price.
+ * menu-book-classic.css
+ * Classic Restaurant Inner Menu Styling:
+ * - Rich dark parchment background (#071a12 to #0d2a1d) with fine antique grain texture
+ * - Elegant double gold filigree frame with ornate vintage corner flourishes
+ * - Centered uppercase serif category headers with ornamental gold ribbon rules (✦ CATEGORY ✦)
+ * - Clear, crisp dotted leaders (......) spanning from dish titles to flush right-aligned prices
+ * - Food pictures in vintage gold bezels with subtle drop shadows and dietary badges
  */
 
 .mb-root {
-  --mbc-paper: #0f2f22;
+  /* Rich dark vintage parchment & ink palette */
+  --mbc-paper: #071a12;
+  --mbc-paper-mid: #0a2318;
+  --mbc-paper-light: #0d2a1d;
+  --mbc-paper-deep: #04100b;
   --mbc-ink: #f5efe0;
+  --mbc-ink-soft: #dcd4c0;
+  --mbc-ink-muted: #a89f88;
+
+  /* Metallic & antique gold accents */
   --mbc-gold: #d4af37;
   --mbc-gold-soft: #f0d27a;
+  --mbc-gold-bright: #fae18c;
+  --mbc-gold-dark: #8c6d1f;
+  --mbc-gold-deep: #5e4610;
+  --mbc-gold-filigree: rgba(212, 175, 55, 0.75);
+  --mbc-gold-subtle: rgba(212, 175, 55, 0.18);
+  --mbc-gold-glow: rgba(212, 175, 55, 0.28);
 }
 
-/* ---------- Paper texture and decorative frame ---------- */
-.mb-root .mb-page {
-  background-color: var(--mbc-paper);
-  background-image:
-    radial-gradient(circle at 20% 10%, rgba(212, 175, 55, 0.07) 0%, transparent 55%),
-    radial-gradient(circle at 85% 85%, rgba(212, 175, 55, 0.05) 0%, transparent 55%),
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.05) 0 1px, transparent 1px 3px),
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px 3px);
-}
+/* ==========================================================================
+   1. Paper Parchment Texture & Vintage Filigree Page Frame
+   ========================================================================== */
 
-/* Double keyline border framing the whole page, the way a printed menu is set.
-   ::after on the page is used by the fold shading, so the frame lives on ::before. */
 .mb-root .mb-page {
   position: relative;
+  background-color: var(--mbc-paper);
+  background-image:
+    /* Center warm chandelier / candlelight illumination */
+    radial-gradient(circle at 50% 30%, rgba(212, 175, 55, 0.08) 0%, transparent 60%),
+    /* Antique vignette along edges and spine fold */
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(3, 10, 7, 0.65) 100%),
+    /* Parchment surface mottling */
+    radial-gradient(circle at 20% 12%, rgba(240, 210, 122, 0.05) 0%, transparent 45%),
+    radial-gradient(circle at 82% 85%, rgba(212, 175, 55, 0.04) 0%, transparent 50%),
+    /* Fine antique parchment grain weave */
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px 3px),
+    /* Deep emerald-tinted parchment gradient */
+    linear-gradient(155deg, #0d2a1d 0%, #0a2318 42%, #071a12 100%);
 }
 
+/* Double keyline gold filigree frame with ornate vintage corner flourishes.
+   ::after on .mb-page is reserved for page fold shading, so the frame lives on ::before. */
 .mb-root .mb-page::before {
   content: "";
   position: absolute;
   inset: 14px;
   pointer-events: none;
   z-index: 1;
-  border: 1px solid rgba(212, 175, 55, 0.5);
-  box-shadow: inset 0 0 0 5px transparent, inset 0 0 0 6px rgba(212, 175, 55, 0.2);
+  border: 1.5px solid var(--mbc-gold);
+  box-shadow:
+    inset 0 0 0 3px var(--mbc-paper),
+    inset 0 0 0 4.5px rgba(212, 175, 55, 0.45),
+    0 0 12px rgba(212, 175, 55, 0.15);
+  background-image:
+    /* Top-Left Ornate Corner Flourish */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M2 30 L2 2 L30 2' stroke='%23d4af37' stroke-width='1.5' fill='none'/%3E%3Cpath d='M6 26 L6 6 L26 6' stroke='%23f0d27a' stroke-width='0.75' fill='none' opacity='0.75'/%3E%3Cpath d='M6 6 C12 6 16 10 16 16 C16 22 20 26 26 26' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Cpath d='M6 6 C6 12 10 16 16 16' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='6' cy='6' r='2' fill='%23fae18c'/%3E%3Cpolygon points='12,4 14,6 12,8 10,6' fill='%23d4af37'/%3E%3Cpolygon points='4,12 6,14 4,16 2,14' fill='%23d4af37'/%3E%3Ccircle cx='16' cy='16' r='1.2' fill='%23f0d27a'/%3E%3C/svg%3E"),
+    /* Top-Right Ornate Corner Flourish */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M30 30 L30 2 L2 2' stroke='%23d4af37' stroke-width='1.5' fill='none'/%3E%3Cpath d='M26 26 L26 6 L6 6' stroke='%23f0d27a' stroke-width='0.75' fill='none' opacity='0.75'/%3E%3Cpath d='M26 6 C20 6 16 10 16 16 C16 22 12 26 6 26' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Cpath d='M26 6 C26 12 22 16 16 16' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='26' cy='6' r='2' fill='%23fae18c'/%3E%3Cpolygon points='20,4 22,6 20,8 18,6' fill='%23d4af37'/%3E%3Cpolygon points='28,12 30,14 28,16 26,14' fill='%23d4af37'/%3E%3Ccircle cx='16' cy='16' r='1.2' fill='%23f0d27a'/%3E%3C/svg%3E"),
+    /* Bottom-Left Ornate Corner Flourish */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M2 2 L2 30 L30 30' stroke='%23d4af37' stroke-width='1.5' fill='none'/%3E%3Cpath d='M6 6 L6 26 L26 26' stroke='%23f0d27a' stroke-width='0.75' fill='none' opacity='0.75'/%3E%3Cpath d='M6 26 C12 26 16 22 16 16 C16 10 20 6 26 6' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Cpath d='M6 26 C6 20 10 16 16 16' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='6' cy='26' r='2' fill='%23fae18c'/%3E%3Cpolygon points='12,24 14,26 12,28 10,26' fill='%23d4af37'/%3E%3Cpolygon points='4,18 6,20 4,22 2,20' fill='%23d4af37'/%3E%3Ccircle cx='16' cy='16' r='1.2' fill='%23f0d27a'/%3E%3C/svg%3E"),
+    /* Bottom-Right Ornate Corner Flourish */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M30 2 L30 30 L2 30' stroke='%23d4af37' stroke-width='1.5' fill='none'/%3E%3Cpath d='M26 6 L26 26 L6 26' stroke='%23f0d27a' stroke-width='0.75' fill='none' opacity='0.75'/%3E%3Cpath d='M26 26 C20 26 16 22 16 16 C16 10 12 6 6 6' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Cpath d='M26 26 C26 20 22 16 16 16' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='26' cy='26' r='2' fill='%23fae18c'/%3E%3Cpolygon points='20,24 22,26 20,28 18,26' fill='%23d4af37'/%3E%3Cpolygon points='28,18 30,20 28,22 26,20' fill='%23d4af37'/%3E%3Ccircle cx='16' cy='16' r='1.2' fill='%23f0d27a'/%3E%3C/svg%3E");
+  background-position:
+    top -1px left -1px,
+    top -1px right -1px,
+    bottom -1px left -1px,
+    bottom -1px right -1px;
+  background-repeat: no-repeat;
+  background-size: 32px 32px;
 }
 
 .mb-root .mb-sheet {
   position: relative;
   z-index: 2;
-  padding: 12px 10px;
+  padding: 14px 12px;
 }
 
-/* ---------- Category heading ---------- */
+/* ==========================================================================
+   2. Classic Category Headings (✦ CATEGORY ✦ with Gold Ribbon Rules)
+   ========================================================================== */
+
 .mb-heading {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
+  margin: 2px 0 14px;
+  padding: 4px 0;
+  text-align: center;
 }
 
 .mb-heading__rule {
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.75), transparent);
+  flex: 1 1 0%;
+  position: relative;
+  height: 2px;
+  min-width: 20px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(212, 175, 55, 0.4) 25%,
+    rgba(212, 175, 55, 0.95) 80%,
+    var(--mbc-gold) 100%
+  );
+  border-radius: 1px;
+}
+
+.mb-heading__rule:first-child {
+  background: linear-gradient(
+    to left,
+    var(--mbc-gold) 0%,
+    rgba(212, 175, 55, 0.95) 20%,
+    rgba(212, 175, 55, 0.4) 75%,
+    transparent 100%
+  );
+}
+
+/* Ornamental diamond finials on ribbon rules flanking the title */
+.mb-heading__rule::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  background: var(--mbc-gold-soft);
+  transform: translateY(-50%) rotate(45deg);
+  box-shadow: 0 0 5px rgba(212, 175, 55, 0.7);
+}
+
+.mb-heading__rule:first-child::after {
+  right: -2px;
+}
+
+.mb-heading__rule:last-child::after {
+  left: -2px;
 }
 
 .mb-heading__title {
+  flex: 0 0 auto;
   font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: clamp(1rem, 2.2vw, 1.35rem);
-  letter-spacing: 0.14em;
+  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--mbc-gold);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.8),
+    0 0 14px rgba(212, 175, 55, 0.25);
   white-space: nowrap;
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
 }
 
-/* ---------- Dish entry with a dotted leader ---------- */
+/* Ornamental stars "✦ ... ✦" framing category titles */
+.mb-heading__title::before {
+  content: "✦";
+  font-size: 0.75em;
+  color: var(--mbc-gold-soft);
+  text-shadow: 0 0 6px rgba(212, 175, 55, 0.6);
+  opacity: 0.95;
+}
+
+.mb-heading__title::after {
+  content: "✦";
+  font-size: 0.75em;
+  color: var(--mbc-gold-soft);
+  text-shadow: 0 0 6px rgba(212, 175, 55, 0.6);
+  opacity: 0.95;
+}
+
+/* ==========================================================================
+   3. Dish Entries with Vintage Gold Bezels & Clear Dotted Leaders
+   ========================================================================== */
+
 .mb-entry {
+  position: relative;
+  z-index: 6;
   width: 100%;
-  min-height: 44px;
+  min-height: 48px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 6px;
+  gap: 12px;
+  padding: 8px 10px;
   text-align: left;
   background: transparent;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 8px;
   color: var(--mbc-ink);
   cursor: pointer;
-  transition: background-color 180ms ease, color 180ms ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    transform 160ms ease;
 }
 
 .mb-entry:hover,
-.mb-entry:focus-visible {
-  background-color: rgba(212, 175, 55, 0.1);
+.mb-entry:focus-visible,
+.mb-entry.is-selected {
+  background: rgba(212, 175, 55, 0.12);
+  border-color: rgba(212, 175, 55, 0.5);
+  transform: translateX(2px);
 }
 
-.mb-entry:hover .mb-entry__name {
-  color: var(--mbc-gold-soft);
+.mb-entry.is-selected {
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.22);
 }
 
+.mb-entry:hover .mb-entry__name,
+.mb-entry.is-selected .mb-entry__name {
+  color: var(--mbc-gold-bright);
+}
+
+.mb-entry:hover .mb-entry__leader {
+  background-image: radial-gradient(
+    circle,
+    rgba(240, 210, 122, 0.85) 1.2px,
+    transparent 1.3px
+  );
+}
+
+.mb-entry:hover .mb-entry__thumb {
+  transform: scale(1.03);
+  box-shadow:
+    0 4px 14px -2px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(212, 175, 55, 0.8),
+    0 0 10px rgba(212, 175, 55, 0.4);
+}
+
+.mb-entry:hover .mb-entry__thumb img {
+  transform: scale(1.08);
+  filter: brightness(1.06);
+}
+
+/* ---------- Food picture: vintage gold bezel frame ---------- */
 .mb-entry__thumb {
   position: relative;
   flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 6px;
+  width: 48px;
+  height: 48px;
+  padding: 2px;
+  border-radius: 8px;
   overflow: hidden;
-  background-color: rgba(212, 175, 55, 0.12);
-  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.35);
+  background: linear-gradient(135deg, #fae18c 0%, #d4af37 45%, #8c6d1f 100%);
+  box-shadow:
+    0 3px 8px -1px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    inset 0 0 3px rgba(255, 255, 255, 0.25);
+  transition: box-shadow 220ms ease, transform 200ms ease;
+}
+
+.mb-entry__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+  transition: transform 260ms ease, filter 260ms ease;
+}
+
+.mb-entry__placeholder,
+.mb-entry__initial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  background: radial-gradient(circle, #0e3524 0%, #061810 100%);
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--mbc-gold);
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .mb-entry__count {
@@ -109,58 +296,311 @@
   right: -4px;
   min-width: 20px;
   height: 20px;
-  padding: 0 4px;
+  padding: 0 5px;
   border-radius: 999px;
-  background: var(--mbc-gold);
+  background: linear-gradient(135deg, var(--mbc-gold-bright), var(--mbc-gold));
   color: #06140e;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 0 1px #071a12;
+  z-index: 2;
+}
+
+/* Dietary badge overlay on food picture */
+.mb-entry__thumb-badge {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 999px;
+  border: 1px solid var(--mbc-paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.5px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  z-index: 2;
+}
+
+.mb-entry__thumb-badge--veg {
+  background: #15803d;
+  color: #ffffff;
+}
+
+.mb-entry__thumb-badge--spicy {
+  background: #b91c1c;
+  color: #ffffff;
+}
+
+.mb-entry__thumb-badge--popular {
+  background: #b45309;
+  color: #fef3c7;
+}
+
+/* ---------- Dish Content & Layout ---------- */
+.mb-entry__content {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mb-entry__header {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .mb-entry__name {
-  flex: none;
+  flex: 0 1 auto;
   max-width: 62%;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
   font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--mbc-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 180ms ease;
 }
 
-/* The leader fills the gap, so the price always sits flush right */
+/* Direct child fallback for Overview and older layouts */
+.mb-entry > .mb-entry__name {
+  flex: none;
+  max-width: 62%;
+}
+
+/* ---------- Dotted Leader (......) ---------- */
 .mb-entry__leader {
   flex: 1 1 auto;
-  min-width: 14px;
-  height: 1em;
-  margin: 0 2px;
-  background-image: radial-gradient(circle, rgba(245, 239, 224, 0.45) 1px, transparent 1px);
-  background-size: 6px 6px;
-  background-position: 0 bottom 0.35em;
+  min-width: 16px;
+  height: 1.1em;
+  margin: 0 6px;
+  background-image: radial-gradient(
+    circle,
+    rgba(212, 175, 55, 0.6) 1.15px,
+    transparent 1.25px
+  );
+  background-size: 7px 100%;
+  background-position: 0 72%;
   background-repeat: repeat-x;
+  transition: background-image 200ms ease;
 }
 
+/* ---------- Price ---------- */
 .mb-entry__price {
   flex: none;
   font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
   color: var(--mbc-gold);
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 }
 
-/* ---------- Light theme: cream paper with dark ink ---------- */
+/* Optional subtle dish description below name line */
+.mb-entry__desc {
+  font-size: 0.76rem;
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--mbc-ink-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---------- Dietary Badges ---------- */
+.mb-entry__badges {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mb-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  background: rgba(7, 26, 18, 0.85);
+  color: var(--mbc-gold-soft);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.mb-badge--veg {
+  border-color: rgba(74, 222, 128, 0.6);
+  background: rgba(6, 44, 20, 0.85);
+  color: #86efac;
+}
+
+.mb-badge--spicy {
+  border-color: rgba(248, 113, 113, 0.6);
+  background: rgba(69, 10, 10, 0.85);
+  color: #fca5a5;
+}
+
+.mb-badge--popular {
+  border-color: rgba(212, 175, 55, 0.75);
+  background: rgba(45, 30, 5, 0.85);
+  color: #fae18c;
+}
+
+/* ==========================================================================
+   4. Light Theme (Warm Cream Paper & Antique Bronze/Gold)
+   ========================================================================== */
+
 html[data-theme="light"] .mb-root {
-  --mbc-paper: #f3ead6;
+  --mbc-paper: #f4ecdc;
+  --mbc-paper-mid: #eee3ce;
+  --mbc-paper-light: #faf5ea;
+  --mbc-paper-deep: #e2d3b7;
   --mbc-ink: #2a2015;
+  --mbc-ink-soft: #4a3b2c;
+  --mbc-ink-muted: #6d5b45;
   --mbc-gold: #7a5f10;
   --mbc-gold-soft: #5d4708;
+  --mbc-gold-bright: #9e7b16;
+  --mbc-gold-dark: #4a3804;
+  --mbc-gold-filigree: rgba(122, 95, 16, 0.7);
+  --mbc-gold-subtle: rgba(122, 95, 16, 0.15);
+  --mbc-gold-glow: rgba(122, 95, 16, 0.2);
+}
+
+html[data-theme="light"] .mb-root .mb-page {
+  background-color: var(--mbc-paper);
+  background-image:
+    radial-gradient(circle at 50% 30%, rgba(122, 95, 16, 0.05) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(180, 160, 130, 0.35) 100%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.02) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.015) 0 1px, transparent 1px 3px),
+    linear-gradient(155deg, #faf5ea 0%, #eee3ce 50%, #e2d3b7 100%);
+}
+
+html[data-theme="light"] .mb-root .mb-page::before {
+  border-color: var(--mbc-gold);
+  box-shadow:
+    inset 0 0 0 3px var(--mbc-paper),
+    inset 0 0 0 4.5px rgba(122, 95, 16, 0.4),
+    0 0 10px rgba(122, 95, 16, 0.08);
+  background-image:
+    /* Top-Left Ornate Corner Flourish (Light Theme) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M2 30 L2 2 L30 2' stroke='%237a5f10' stroke-width='1.5' fill='none'/%3E%3Cpath d='M6 26 L6 6 L26 6' stroke='%235d4708' stroke-width='0.75' fill='none' opacity='0.75'/%3E%3Cpath d='M6 6 C12 6 16 10 16 16 C16 22 20 26 26 26' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Cpath d='M6 6 C6 12 10 16 16 16' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='6' cy='6' r='2' fill='%239e7b16'/%3E%3Cpolygon points='12,4 14,6 12,8 10,6' fill='%237a5f10'/%3E%3Cpolygon points='4,12 6,14 4,16 2,14' fill='%237a5f10'/%3E%3Ccircle cx='16' cy='16' r='1.2' fill='%235d4708'/%3E%3C/svg%3E"),
+    /* Top-Right Ornate Corner Flourish (Light Theme) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M30 30 L30 2 L2 2' stroke='%237a5f10' stroke-width='1.5' fill='none'/%3E%3Cpath d='M26 26 L26 6 L6 6' stroke='%235d4708' stroke-width='0.75' fill='none' opacity='0.75'/%3E%3Cpath d='M26 6 C20 6 16 10 16 16 C16 22 12 26 6 26' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Cpath d='M26 6 C26 12 22 16 16 16' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='26' cy='6' r='2' fill='%239e7b16'/%3E%3Cpolygon points='20,4 22,6 20,8 18,6' fill='%237a5f10'/%3E%3Cpolygon points='28,12 30,14 28,16 26,14' fill='%237a5f10'/%3E%3Ccircle cx='16' cy='16' r='1.2' fill='%235d4708'/%3E%3C/svg%3E"),
+    /* Bottom-Left Ornate Corner Flourish (Light Theme) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M2 2 L2 30 L30 30' stroke='%237a5f10' stroke-width='1.5' fill='none'/%3E%3Cpath d='M6 6 L6 26 L26 26' stroke='%235d4708' stroke-width='0.75' fill='none' opacity='0.75'/%3E%3Cpath d='M6 26 C12 26 16 22 16 16 C16 10 20 6 26 6' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Cpath d='M6 26 C6 20 10 16 16 16' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='6' cy='26' r='2' fill='%239e7b16'/%3E%3Cpolygon points='12,24 14,26 12,28 10,26' fill='%237a5f10'/%3E%3Cpolygon points='4,18 6,20 4,22 2,20' fill='%237a5f10'/%3E%3Ccircle cx='16' cy='16' r='1.2' fill='%235d4708'/%3E%3C/svg%3E"),
+    /* Bottom-Right Ornate Corner Flourish (Light Theme) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M30 2 L30 30 L2 30' stroke='%237a5f10' stroke-width='1.5' fill='none'/%3E%3Cpath d='M26 6 L26 26 L6 26' stroke='%235d4708' stroke-width='0.75' fill='none' opacity='0.75'/%3E%3Cpath d='M26 26 C20 26 16 22 16 16 C16 10 12 6 6 6' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Cpath d='M26 26 C26 20 22 16 16 16' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='26' cy='26' r='2' fill='%239e7b16'/%3E%3Cpolygon points='20,24 22,26 20,28 18,26' fill='%237a5f10'/%3E%3Cpolygon points='28,18 30,20 28,22 26,20' fill='%237a5f10'/%3E%3Ccircle cx='16' cy='16' r='1.2' fill='%235d4708'/%3E%3C/svg%3E");
+}
+
+html[data-theme="light"] .mb-root .mb-heading__rule {
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(122, 95, 16, 0.4) 25%,
+    rgba(122, 95, 16, 0.95) 80%,
+    var(--mbc-gold) 100%
+  );
+}
+
+html[data-theme="light"] .mb-root .mb-heading__rule:first-child {
+  background: linear-gradient(
+    to left,
+    var(--mbc-gold) 0%,
+    rgba(122, 95, 16, 0.95) 20%,
+    rgba(122, 95, 16, 0.4) 75%,
+    transparent 100%
+  );
 }
 
 html[data-theme="light"] .mb-root .mb-entry__leader {
-  background-image: radial-gradient(circle, rgba(42, 32, 21, 0.45) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(122, 95, 16, 0.55) 1.15px, transparent 1.25px);
+}
+
+html[data-theme="light"] .mb-root .mb-entry:hover .mb-entry__leader {
+  background-image: radial-gradient(circle, rgba(93, 71, 8, 0.8) 1.15px, transparent 1.25px);
+}
+
+html[data-theme="light"] .mb-root .mb-entry__thumb {
+  background: linear-gradient(135deg, #9e7b16 0%, #7a5f10 50%, #4a3804 100%);
+  box-shadow:
+    0 2px 6px -1px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(122, 95, 16, 0.4);
+}
+
+html[data-theme="light"] .mb-root .mb-badge {
+  background: rgba(244, 236, 220, 0.85);
+  border-color: rgba(122, 95, 16, 0.4);
+}
+
+/* ==========================================================================
+   5. Responsive Adjustments & Accessibility
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .mb-root .mb-page::before {
+    inset: 8px;
+    background-size: 24px 24px;
+  }
+
+  .mb-root .mb-sheet {
+    padding: 10px 8px;
+  }
+
+  .mb-entry {
+    padding: 6px 4px;
+    gap: 8px;
+  }
+
+  .mb-entry__thumb {
+    width: 42px;
+    height: 42px;
+  }
+
+  .mb-entry__name {
+    font-size: 0.88rem;
+    max-width: 55%;
+  }
+
+  .mb-entry__price {
+    font-size: 0.95rem;
+  }
+
+  .mb-heading__title {
+    font-size: 0.95rem;
+    letter-spacing: 0.1em;
+  }
+
+  .mb-heading__rule {
+    min-width: 14px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mb-entry { transition: none; }
+  .mb-entry,
+  .mb-entry__thumb,
+  .mb-entry__thumb img {
+    transition: none !important;
+    transform: none !important;
+  }
 }

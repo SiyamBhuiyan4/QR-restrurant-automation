@@ -1,101 +1,157 @@
 /*
  * menu-book-detail.css
- * The single-dish page inside the open menu book: the same classic printed-menu
- * treatment as the item pages (dark textured paper, gold keylines, serif display
- * headings, cream text), set as a bill of fare entry rather than a card.
- *
- * Owned by the detail page only. Colours come from the --mbc-* tokens defined on
- * .mb-root in menu-book-classic.css, so the light theme flips with the book.
+ * Luxurious illustrated feature page inside the 3D Menu Book:
+ * - Large appetizing food photography with vintage gold border and glowing vignette
+ * - Elegant typography: dish name in Playfair Display serif, vintage price tag badge in gold
+ * - Full description, artisanal ingredient pills with gold borders, dietary badges (Veg, Spicy, Chef Special)
+ * - Prominent "Order Now / Add to Cart" button with quantity stepper (+ / -), instant feedback animation ("Added to Table Order!"),
+ *   and a prominent "← Back to Menu" return button
+ * - Smooth transition animation when opening/closing the dish detail view inside the book leaf
  */
 
 .mbd {
-  /* Local fallbacks so the page is still correct if the book tokens are missing */
   --mbd-paper: var(--mbc-paper, #0f2f22);
   --mbd-ink: var(--mbc-ink, #f5efe0);
   --mbd-gold: var(--mbc-gold, #d4af37);
   --mbd-gold-soft: var(--mbc-gold-soft, #f0d27a);
-  --mbd-contrast: #06140e;
+  --mbd-gold-deep: #aa8214;
+  --mbd-gold-glow: rgba(212, 175, 55, 0.3);
+  --mbd-contrast: #071911;
 
   position: relative;
-  /* Sits above the page keyline (z 1) and the phone page-turn tap zones (z 2) */
-  z-index: 5;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   gap: 0;
   width: 100%;
-  max-width: 30rem;
+  max-width: 32rem;
   margin: 0 auto;
-  padding: 2px 2px 4px;
+  padding: 4px 6px 16px;
   color: var(--mbd-ink);
   text-align: center;
+
+  /* Smooth Entrance & Exit Transitions */
   opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 420ms ease-out, transform 420ms ease-out;
+  transform: translateY(16px) scale(0.98);
+  transition:
+    opacity 380ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 380ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 
 .mbd.is-mounted {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
-/* ---------- Back link above the dish ---------- */
+.mbd.is-exiting {
+  opacity: 0;
+  transform: translateY(12px) scale(0.97);
+  transition:
+    opacity 240ms cubic-bezier(0.4, 0, 1, 1),
+    transform 240ms cubic-bezier(0.4, 0, 1, 1);
+  pointer-events: none;
+}
+
+/* ---------- Top Navigation Bar ---------- */
+.mbd__nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+}
+
 .mbd__back-top {
-  align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 4px 8px 4px 0;
-  margin-bottom: 2px;
+  gap: 7px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 6px 12px 6px 0;
   background: none;
   border: 0;
   color: var(--mbd-gold-soft);
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: color 160ms ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 180ms ease, transform 180ms ease;
 }
 
 .mbd__back-top:hover,
 .mbd__back-top:focus-visible {
-  color: var(--mbd-gold);
+  color: #fff;
+  transform: translateX(-2px);
 }
 
-.mbd__back-top span[aria-hidden] {
-  font-size: 0.95em;
-  line-height: 1;
+.mbd__back-icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.2;
 }
 
-/* ---------- Heading block ---------- */
-.mbd__eyebrow {
-  margin: 0;
-  font-size: 0.68rem;
+.mbd__nav-kicker {
+  font-size: 0.65rem;
   font-weight: 600;
-  letter-spacing: 0.26em;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--mbd-gold);
+  opacity: 0.75;
+}
+
+/* ---------- Header & Title Block ---------- */
+.mbd__header {
+  margin-bottom: 12px;
+}
+
+.mbd__eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--mbd-gold-soft);
-  opacity: 0.9;
+  opacity: 0.95;
+}
+
+.mbd__flourish {
+  font-size: 0.85rem;
+  color: var(--mbd-gold);
+  opacity: 0.8;
 }
 
 .mbd__title {
   margin: 6px 0 0;
   font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: clamp(1.4rem, 4.2vw, 2rem);
-  line-height: 1.15;
+  font-size: clamp(1.5rem, 4.4vw, 2.15rem);
+  line-height: 1.18;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
   color: var(--mbd-gold);
+  background: linear-gradient(135deg, #fff2cc 0%, #f0d27a 40%, #d4af37 75%, #aa8214 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
   overflow-wrap: anywhere;
 }
 
-/* Gold keyline with a centre diamond, as on the item pages' headings */
+/* Ornamental Divider with Gold Filigree Diamond */
 .mbd__divider {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  margin: 10px 0 12px;
+  gap: 12px;
+  margin: 8px 0 10px;
 }
 
 .mbd__divider::before,
@@ -104,82 +160,304 @@
   flex: 1 1 auto;
   max-width: 5.5rem;
   height: 1px;
-  background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.75), transparent);
+  background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.85), transparent);
 }
 
 .mbd__diamond {
-  font-size: 0.6rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
   line-height: 1;
   color: var(--mbd-gold);
+  text-shadow: 0 0 8px var(--mbd-gold-glow);
 }
 
-/* ---------- Photo in a gold keyline frame ---------- */
+/* ---------- Appetizing Food Photography Frame with Vintage Gold Border & Vignette ---------- */
+.mbd__figure-wrap {
+  position: relative;
+  margin: 0 0 16px;
+}
+
 .mbd__figure {
-  margin: 0 0 14px;
-  padding: 5px;
-  border: 1px solid rgba(212, 175, 55, 0.55);
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.18);
+  position: relative;
+  margin: 0;
+  padding: 6px;
+  border: 1.5px solid rgba(212, 175, 55, 0.65);
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, rgba(0, 0, 0, 0.4) 100%);
+  box-shadow:
+    0 10px 28px -6px rgba(0, 0, 0, 0.7),
+    0 0 20px rgba(212, 175, 55, 0.15),
+    inset 0 0 0 1px rgba(212, 175, 55, 0.25);
+  overflow: hidden;
+}
+
+/* Vintage Ornamental Corner Brackets */
+.mbd__corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  z-index: 5;
+  border-color: var(--mbd-gold-soft);
+  border-style: solid;
+}
+
+.mbd__corner--tl {
+  top: 3px;
+  left: 3px;
+  border-width: 2px 0 0 2px;
+}
+
+.mbd__corner--tr {
+  top: 3px;
+  right: 3px;
+  border-width: 2px 2px 0 0;
+}
+
+.mbd__corner--bl {
+  bottom: 3px;
+  left: 3px;
+  border-width: 0 0 2px 2px;
+}
+
+.mbd__corner--br {
+  bottom: 3px;
+  right: 3px;
+  border-width: 0 2px 2px 0;
+}
+
+.mbd__photo-container {
+  position: relative;
+  width: 100%;
+  height: clamp(180px, 28vh, 260px);
+  overflow: hidden;
+  border-radius: 3px;
+  background: #091a13;
 }
 
 .mbd__photo {
   display: block;
   width: 100%;
-  height: clamp(130px, 26vh, 220px);
+  height: 100%;
   object-fit: cover;
-  border-radius: 2px;
+  transform: scale(1.01);
+  transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ---------- Badges ---------- */
+.mbd__figure:hover .mbd__photo {
+  transform: scale(1.05);
+}
+
+/* Glowing Vignette Overlay on the Photography */
+.mbd__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 38%, rgba(0, 0, 0, 0.3) 72%, rgba(5, 18, 12, 0.88) 100%);
+  box-shadow: inset 0 0 45px rgba(0, 0, 0, 0.7);
+}
+
+/* Fallback Crest if Photo is Missing */
+.mbd__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  height: clamp(160px, 25vh, 230px);
+  border-radius: 3px;
+  background: radial-gradient(circle at center, rgba(212, 175, 55, 0.15) 0%, rgba(8, 22, 16, 0.95) 85%);
+  padding: 20px;
+}
+
+.mbd__placeholder-crest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border: 1.5px solid var(--mbd-gold);
+  border-radius: 50%;
+  box-shadow: 0 0 20px var(--mbd-gold-glow), inset 0 0 15px rgba(212, 175, 55, 0.2);
+}
+
+.mbd__placeholder-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--mbd-gold);
+}
+
+.mbd__placeholder-name {
+  position: absolute;
+  bottom: -6px;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--mbd-gold-soft);
+  background: #091a13;
+  padding: 0 6px;
+  border-radius: 4px;
+}
+
+.mbd__placeholder-caption {
+  margin: 0;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 0.82rem;
+  font-style: italic;
+  letter-spacing: 0.08em;
+  color: var(--mbd-gold-soft);
+}
+
+/* ---------- Vintage Price Tag Badge in Gold ---------- */
+.mbd__price-tag-badge {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  padding: 4px 12px 5px;
+  background: linear-gradient(135deg, #fff2cc 0%, #f0d27a 35%, #d4af37 70%, #aa8214 100%);
+  color: var(--mbd-contrast);
+  border: 1px solid #fff6d9;
+  border-radius: 6px;
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.65),
+    0 0 12px rgba(212, 175, 55, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.mbd__price-tag-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1;
+}
+
+.mbd__price-tag-label {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #3b2a05;
+  margin-bottom: 2px;
+}
+
+.mbd__price-tag-amount {
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1a1202;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- Dietary & Chef Badges ---------- */
 .mbd__badges {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .mbd__badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border: 1px solid rgba(212, 175, 55, 0.6);
+  gap: 6px;
+  padding: 4px 12px;
   border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--mbd-gold-soft);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
-/* ---------- Description ---------- */
+.mbd__badge:hover {
+  transform: translateY(-1px);
+}
+
+.mbd__badge-icon {
+  width: 13px;
+  height: 13px;
+}
+
+/* Chef Special Badge (Royal Gold Foil) */
+.mbd__badge--special {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.28) 0%, rgba(26, 20, 5, 0.75) 100%);
+  border: 1px solid var(--mbd-gold);
+  color: var(--mbd-gold-soft);
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.25);
+}
+
+.mbd__badge--special .mbd__badge-icon {
+  color: #f7e7b4;
+  fill: #f7e7b4;
+}
+
+/* Vegetarian Badge (Emerald / Gold) */
+.mbd__badge--veg {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(10, 36, 24, 0.75) 100%);
+  border: 1px solid rgba(74, 222, 128, 0.6);
+  color: #86efac;
+}
+
+.mbd__badge--veg .mbd__badge-icon {
+  color: #4ade80;
+}
+
+/* Spicy Badge (Ruby / Gold) */
+.mbd__badge--spicy {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.22) 0%, rgba(45, 12, 12, 0.75) 100%);
+  border: 1px solid rgba(248, 113, 113, 0.65);
+  color: #fca5a5;
+}
+
+.mbd__badge--spicy .mbd__badge-icon {
+  color: #ef4444;
+  fill: #ef4444;
+}
+
+/* ---------- Full Description ---------- */
+.mbd__desc-box {
+  margin: 0 0 16px;
+  padding: 0 4px;
+}
+
 .mbd__desc {
-  margin: 0 0 14px;
+  margin: 0;
   font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: 0.95rem;
+  font-size: 0.98rem;
   font-style: italic;
-  line-height: 1.65;
+  line-height: 1.68;
   color: var(--mbd-ink);
-  opacity: 0.9;
+  opacity: 0.93;
   text-wrap: pretty;
 }
 
-/* ---------- Ingredients ---------- */
+.mbd__desc--fallback {
+  opacity: 0.8;
+  font-size: 0.92rem;
+}
+
+/* ---------- Artisanal Ingredients ---------- */
 .mbd__section {
-  margin: 0 0 14px;
+  margin: 0 0 16px;
 }
 
 .mbd__label {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  margin: 0 0 8px;
+  gap: 12px;
+  margin: 0 0 10px;
   font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--mbd-gold);
@@ -189,57 +467,73 @@
 .mbd__label::after {
   content: "";
   flex: 1 1 auto;
-  max-width: 3.5rem;
+  max-width: 4rem;
   height: 1px;
-  background: rgba(212, 175, 55, 0.4);
+  background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.65), transparent);
 }
 
 .mbd__ingredients {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .mbd__ingredient {
-  padding: 3px 9px;
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 1px solid rgba(212, 175, 55, 0.42);
   border-radius: 999px;
-  background: rgba(212, 175, 55, 0.08);
-  font-size: 0.72rem;
-  line-height: 1.5;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(12, 38, 28, 0.7) 100%);
+  font-size: 0.74rem;
+  line-height: 1.4;
   color: var(--mbd-ink);
-  opacity: 0.92;
+  box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.15), 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: border-color 160ms ease, background 160ms ease;
 }
 
-/* ---------- Price line with a dotted leader ---------- */
+.mbd__ingredient:hover {
+  border-color: var(--mbd-gold-soft);
+  background: rgba(212, 175, 55, 0.18);
+}
+
+.mbd__ingredient-dot {
+  font-size: 0.5rem;
+  color: var(--mbd-gold-soft);
+  line-height: 1;
+}
+
+/* ---------- Classic Dotted Leader Price Row ---------- */
 .mbd__price-row {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  margin: 2px 0 4px;
+  gap: 10px;
+  margin: 2px 0 6px;
   padding-top: 10px;
-  border-top: 1px solid rgba(212, 175, 55, 0.28);
+  border-top: 1px solid rgba(212, 175, 55, 0.35);
 }
 
 .mbd__price-label {
   flex: none;
-  font-size: 0.7rem;
-  letter-spacing: 0.2em;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--mbd-ink);
-  opacity: 0.7;
+  color: var(--mbd-gold-soft);
+  opacity: 0.85;
 }
 
 .mbd__leader {
   flex: 1 1 auto;
-  min-width: 14px;
+  min-width: 16px;
   height: 1em;
-  background-image: radial-gradient(circle, rgba(245, 239, 224, 0.45) 1px, transparent 1px);
-  background-size: 6px 6px;
+  background-image: radial-gradient(circle, rgba(245, 239, 224, 0.5) 1px, transparent 1px);
+  background-size: 7px 7px;
   background-position: 0 bottom 0.3em;
   background-repeat: repeat-x;
 }
@@ -247,143 +541,339 @@
 .mbd__price {
   flex: none;
   font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: 1.5rem;
+  font-size: 1.55rem;
   font-weight: 700;
   color: var(--mbd-gold);
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
 }
 
-.mbd__in-order {
-  margin: 0;
+/* ---------- In-Table Order Badge ---------- */
+.mbd__in-order-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px auto 10px;
+  padding: 4px 14px;
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.12);
   font-size: 0.75rem;
+  font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--mbd-gold-soft);
 }
 
-/* ---------- Actions ---------- */
-.mbd__actions {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.mbd__order {
-  min-height: 48px;
-  width: 100%;
-  padding: 0 20px;
-  border: 1px solid var(--mbd-gold);
-  border-radius: 6px;
-  background: linear-gradient(180deg, var(--mbd-gold-soft), var(--mbd-gold));
-  color: var(--mbd-contrast);
-  font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.7);
-  transition: filter 160ms ease, transform 120ms ease;
-}
-
-.mbd__order:hover {
-  filter: brightness(1.06);
-}
-
-.mbd__order:active {
-  transform: scale(0.99);
-}
-
-/* Confirmation state after Order Now: keeps the keyline, drops the gold fill */
-.mbd__order.is-added {
-  background: rgba(212, 175, 55, 0.16);
-  color: var(--mbd-gold-soft);
-}
-
-.mbd__back {
-  align-self: center;
-  min-height: 44px;
-  padding: 0 18px;
-  border: 1px solid rgba(212, 175, 55, 0.55);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--mbd-gold-soft);
-  font-size: 0.78rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background-color 160ms ease, color 160ms ease;
-}
-
-.mbd__back:hover,
-.mbd__back:focus-visible {
-  background-color: rgba(212, 175, 55, 0.12);
+.mbd__in-order-check {
+  width: 13px;
+  height: 13px;
   color: var(--mbd-gold);
 }
 
-/* ---------- Desktop: a touch more room ---------- */
-@media (min-width: 768px) {
-  .mbd__photo {
-    height: clamp(160px, 24vh, 240px);
+/* ---------- Order Controls & Quantity Stepper ---------- */
+.mbd__order-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 10px;
+  background: rgba(8, 24, 18, 0.55);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+.mbd__stepper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mbd__stepper-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mbd-gold-soft);
+}
+
+.mbd__stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px 6px;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 8px;
+}
+
+.mbd__stepper-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  min-height: 38px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--mbd-gold);
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.22) 0%, rgba(212, 175, 55, 0.08) 100%);
+  color: var(--mbd-gold-soft);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 160ms ease;
+}
+
+.mbd__stepper-btn:hover:not(:disabled) {
+  background: var(--mbd-gold);
+  color: var(--mbd-contrast);
+  box-shadow: 0 0 10px var(--mbd-gold-glow);
+}
+
+.mbd__stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+.mbd__stepper-val {
+  min-width: 28px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--mbd-gold-soft);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.mbd__stepper-subtotal {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--mbd-gold-soft);
+  letter-spacing: 0.04em;
+}
+
+/* Primary "Order Now / Add to Cart" Button */
+.mbd__order-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  width: 100%;
+  padding: 10px 24px;
+  border: 1.5px solid #fff0b8;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #f7e49e 0%, #d4af37 55%, #a88112 100%);
+  color: #071911;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow:
+    0 8px 24px -4px rgba(0, 0, 0, 0.65),
+    0 0 16px rgba(212, 175, 55, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mbd__order-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow:
+    0 12px 28px -4px rgba(0, 0, 0, 0.75),
+    0 0 24px rgba(212, 175, 55, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.mbd__order-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.mbd__order-btn-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Instant Feedback State ("Added to Table Order!") */
+.mbd__order-btn.is-added {
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.28) 0%, rgba(8, 48, 30, 0.95) 100%);
+  border-color: #4ade80;
+  color: #86efac;
+  box-shadow:
+    0 0 24px rgba(74, 222, 128, 0.4),
+    inset 0 0 14px rgba(74, 222, 128, 0.25);
+  animation: mbdAddedPulse 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes mbdAddedPulse {
+  0% {
+    box-shadow: 0 0 16px rgba(74, 222, 128, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 28px rgba(74, 222, 128, 0.6);
   }
 }
 
-/* ---------- Light theme: cream paper, dark ink ---------- */
+/* Bottom Return to Menu Button */
+.mbd__back-bottom {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  width: 100%;
+  padding: 8px 18px;
+  border: 1px solid rgba(212, 175, 55, 0.55);
+  border-radius: 7px;
+  background: rgba(212, 175, 55, 0.05);
+  color: var(--mbd-gold-soft);
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 180ms ease;
+}
+
+.mbd__back-bottom:hover,
+.mbd__back-bottom:focus-visible {
+  background-color: rgba(212, 175, 55, 0.18);
+  border-color: var(--mbd-gold);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
+}
+
+/* ---------- Staggered Entrance Animations ---------- */
+@keyframes mbdSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mbd.is-mounted .mbd__header {
+  animation: mbdSlideUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.mbd.is-mounted .mbd__figure-wrap {
+  animation: mbdSlideUp 440ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both;
+}
+
+.mbd.is-mounted .mbd__badges {
+  animation: mbdSlideUp 460ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both;
+}
+
+.mbd.is-mounted .mbd__desc-box {
+  animation: mbdSlideUp 480ms cubic-bezier(0.16, 1, 0.3, 1) 130ms both;
+}
+
+.mbd.is-mounted .mbd__section {
+  animation: mbdSlideUp 500ms cubic-bezier(0.16, 1, 0.3, 1) 170ms both;
+}
+
+.mbd.is-mounted .mbd__order-box {
+  animation: mbdSlideUp 520ms cubic-bezier(0.16, 1, 0.3, 1) 210ms both;
+}
+
+/* ---------- Desktop Adjustments ---------- */
+@media (min-width: 768px) {
+  .mbd {
+    padding: 6px 12px 18px;
+  }
+
+  .mbd__photo-container {
+    height: clamp(200px, 28vh, 280px);
+  }
+}
+
+/* ---------- Light Theme: Cream Paper & Dark Rich Ink ---------- */
 html[data-theme="light"] .mbd {
   --mbd-contrast: #fdfaf2;
+  --mbd-ink: #20170a;
+  --mbd-gold: #967412;
+  --mbd-gold-soft: #b89228;
+  --mbd-border-gold: rgba(150, 116, 18, 0.55);
+}
+
+html[data-theme="light"] .mbd__title {
+  background: linear-gradient(135deg, #7a5c09 0%, #967412 50%, #4a3703 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 html[data-theme="light"] .mbd__figure {
-  background: rgba(122, 95, 16, 0.08);
-  border-color: rgba(122, 95, 16, 0.45);
-  box-shadow: inset 0 0 0 1px rgba(122, 95, 16, 0.15);
+  background: rgba(150, 116, 18, 0.08);
+  border-color: rgba(150, 116, 18, 0.5);
+  box-shadow:
+    0 10px 24px -6px rgba(0, 0, 0, 0.25),
+    inset 0 0 0 1px rgba(150, 116, 18, 0.2);
 }
 
-html[data-theme="light"] .mbd__divider::before,
-html[data-theme="light"] .mbd__divider::after {
-  background: linear-gradient(to right, transparent, rgba(122, 95, 16, 0.7), transparent);
+html[data-theme="light"] .mbd__placeholder {
+  background: radial-gradient(circle at center, rgba(150, 116, 18, 0.12) 0%, rgba(247, 243, 232, 0.95) 85%);
 }
 
-html[data-theme="light"] .mbd__label::before,
-html[data-theme="light"] .mbd__label::after,
-html[data-theme="light"] .mbd__price-row {
-  background: none;
-  border-color: rgba(122, 95, 16, 0.35);
-}
-
-html[data-theme="light"] .mbd__label::before,
-html[data-theme="light"] .mbd__label::after {
-  background: rgba(122, 95, 16, 0.4);
-}
-
-html[data-theme="light"] .mbd__badge,
-html[data-theme="light"] .mbd__ingredient {
-  border-color: rgba(122, 95, 16, 0.4);
+html[data-theme="light"] .mbd__price-tag-badge {
+  background: linear-gradient(135deg, #fff2cc 0%, #ebd085 40%, #b89228 100%);
+  border-color: #b89228;
+  color: #1a1202;
 }
 
 html[data-theme="light"] .mbd__ingredient {
-  background: rgba(122, 95, 16, 0.08);
+  border-color: rgba(150, 116, 18, 0.38);
+  background: rgba(150, 116, 18, 0.08);
+  color: #261b0c;
 }
 
 html[data-theme="light"] .mbd__leader {
-  background-image: radial-gradient(circle, rgba(42, 32, 21, 0.45) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(40, 30, 15, 0.45) 1px, transparent 1px);
 }
 
-html[data-theme="light"] .mbd__order {
-  background: linear-gradient(180deg, #8a6d16, #6b530c);
-  border-color: #6b530c;
+html[data-theme="light"] .mbd__order-box {
+  background: rgba(247, 243, 232, 0.7);
+  border-color: rgba(150, 116, 18, 0.35);
 }
 
-html[data-theme="light"] .mbd__order.is-added {
-  background: rgba(122, 95, 16, 0.14);
-  color: #5d4708;
+html[data-theme="light"] .mbd__stepper {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(150, 116, 18, 0.4);
 }
 
-html[data-theme="light"] .mbd__back {
-  border-color: rgba(122, 95, 16, 0.5);
+html[data-theme="light"] .mbd__order-btn {
+  background: linear-gradient(180deg, #b89228 0%, #967412 60%, #735709 100%);
+  color: #fff;
+  border-color: #d4af37;
 }
 
+html[data-theme="light"] .mbd__order-btn.is-added {
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.2) 0%, rgba(22, 101, 52, 0.85) 100%);
+  border-color: #16a34a;
+  color: #14532d;
+}
+
+html[data-theme="light"] .mbd__back-bottom {
+  border-color: rgba(150, 116, 18, 0.5);
+  color: #735709;
+}
+
+/* ---------- Reduced Motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .mbd {
     opacity: 1;
@@ -391,13 +881,28 @@ html[data-theme="light"] .mbd__back {
     transition: none;
   }
 
-  .mbd__order,
-  .mbd__back,
-  .mbd__back-top {
+  .mbd.is-exiting {
+    opacity: 0;
+    transform: none;
     transition: none;
   }
 
-  .mbd__order:active {
-    transform: none;
+  .mbd.is-mounted .mbd__header,
+  .mbd.is-mounted .mbd__figure-wrap,
+  .mbd.is-mounted .mbd__badges,
+  .mbd.is-mounted .mbd__desc-box,
+  .mbd.is-mounted .mbd__section,
+  .mbd.is-mounted .mbd__order-box {
+    animation: none;
+  }
+
+  .mbd__photo {
+    transition: none;
+  }
+
+  .mbd__order-btn,
+  .mbd__back-top,
+  .mbd__back-bottom {
+    transition: none;
   }
 }

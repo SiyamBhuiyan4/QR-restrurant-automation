@@ -1,0 +1,920 @@
+/*
+ * menu-book-3d.css
+ * Photorealistic 3D Hardcover, Stacked Paper Depth, and Luxury Leather Binding Engine
+ * Restaurant Menu Book - Ultra-Realistic Visual Depth System
+ */
+
+:root {
+  /* Leather Hardcover Palette: Deep Emerald Green */
+  --mb-3d-leather-abyss: #03140d;
+  --mb-3d-leather-dark: #062318;
+  --mb-3d-leather-mid: #0a2e20;
+  --mb-3d-leather-light: #0f3d2a;
+  --mb-3d-leather-sheen: rgba(30, 95, 66, 0.45);
+
+  /* Metallic Gold Foil & Hardware Palette */
+  --mb-3d-gold-deep: #785309;
+  --mb-3d-gold-dark: #9e6d15;
+  --mb-3d-gold-base: #d4af37;
+  --mb-3d-gold-bright: #f6e27a;
+  --mb-3d-gold-highlight: #fff6cb;
+  --mb-3d-stitch-gold: rgba(212, 175, 55, 0.55);
+
+  /* Stacked 3D Paper Page Edges */
+  --mb-3d-paper-cream: #f7f2e4;
+  --mb-3d-paper-warm: #ebdcc0;
+  --mb-3d-paper-shade: #cbb48b;
+  --mb-3d-paper-groove: #8a6a37;
+  --mb-3d-paper-core: #64491e;
+
+  /* Dimensions & Geometry */
+  --mb-3d-radius: 16px;
+  --mb-3d-radius-mobile: 13px;
+  --mb-3d-spine-w: 48px;
+  --mb-3d-stack-thick: 10px;
+}
+
+/* ==========================================================================
+   1. 3D Stage & Table Lighting (Spotlight & Ground Ambient Occlusion)
+   ========================================================================== */
+
+.mb-3d-stage-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1060px;
+  margin: 0 auto;
+  perspective: 2600px;
+  perspective-origin: 50% 42%;
+}
+
+/* 3D stage holding the spreads, spine, and stacked paper */
+.mb-3d-stage {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+}
+
+/* Overhead ambient spotlight radiating warm restaurant chandelier light */
+.mb-3d-stage-wrapper::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 92%;
+  height: 220px;
+  background: radial-gradient(
+    ellipse at 50% 25%,
+    rgba(254, 243, 199, 0.14) 0%,
+    rgba(212, 175, 55, 0.05) 45%,
+    transparent 75%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Diffuse ground shadow & table ambient occlusion */
+.mb-3d-stage-wrapper::after {
+  content: "";
+  position: absolute;
+  left: 3%;
+  right: 3%;
+  bottom: -28px;
+  height: 56px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.52) 35%,
+    rgba(0, 0, 0, 0.18) 60%,
+    transparent 80%
+  );
+  filter: blur(10px);
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* Suppress redundant single-layer ground shadow from older depth sheet when 3D engine is active */
+.mb-book.mb-3d-book::after {
+  display: none;
+}
+
+/* ==========================================================================
+   2. 3D Book Container (Realistic Leather Hardcover Shell)
+   ========================================================================== */
+
+.mb-book.mb-3d-book,
+.mb-3d-book {
+  position: relative;
+  width: 100%;
+  max-width: 1024px;
+  margin: 0 auto;
+  border-radius: var(--mb-3d-radius-mobile);
+  background-color: var(--mb-3d-leather-dark);
+  /* Deep emerald green gradient (#062318 to #0f3d2a) with pebble grain texture */
+  background-image:
+    radial-gradient(ellipse at 50% 12%, rgba(255, 255, 255, 0.07) 0%, transparent 55%),
+    radial-gradient(circle at 50% 85%, rgba(0, 0, 0, 0.5) 0%, transparent 65%),
+    /* Micro leather pebble grain */
+    repeating-radial-gradient(circle at 18% 28%, rgba(0, 0, 0, 0.1) 0 1px, transparent 1px 3px),
+    repeating-radial-gradient(circle at 82% 72%, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 4px),
+    /* Deep emerald green gradient */
+    linear-gradient(135deg, var(--mb-3d-leather-dark) 0%, var(--mb-3d-leather-mid) 38%, var(--mb-3d-leather-light) 65%, var(--mb-3d-leather-dark) 100%);
+  padding: 10px 10px 14px 10px;
+  /* Multi-layer diffuse table drop shadows */
+  box-shadow:
+    0 1px 0 var(--mb-3d-leather-abyss),
+    0 2px 1px rgba(0, 0, 0, 0.9),
+    0 6px 14px -3px rgba(0, 0, 0, 0.8),
+    0 24px 48px -10px rgba(0, 0, 0, 0.7),
+    0 45px 85px -18px rgba(0, 0, 0, 0.85),
+    inset 0 1px 1px rgba(255, 255, 255, 0.18),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.7);
+  transform-style: preserve-3d;
+  box-sizing: border-box;
+}
+
+@media (min-width: 480px) and (max-width: 767.98px) {
+  .mb-book.mb-3d-book,
+  .mb-3d-book {
+    padding: 12px 14px 16px 14px;
+    border-radius: 14px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .mb-book.mb-3d-book,
+  .mb-3d-book {
+    padding: 14px 18px 20px 18px;
+    border-radius: var(--mb-3d-radius);
+  }
+}
+
+@media (min-width: 1024px) {
+  .mb-book.mb-3d-book,
+  .mb-3d-book {
+    padding: 16px 22px 24px 22px;
+    border-radius: var(--mb-3d-radius);
+  }
+
+  .mb-book.mb-3d-book[data-view="3d"],
+  .mb-3d-book[data-view="3d"] {
+    box-shadow:
+      0 1px 0 var(--mb-3d-leather-abyss),
+      0 3px 1px rgba(0, 0, 0, 0.95),
+      0 8px 18px -3px rgba(0, 0, 0, 0.85),
+      0 35px 70px -12px rgba(0, 0, 0, 0.75),
+      0 55px 110px -20px rgba(0, 0, 0, 0.9),
+      inset 0 1px 1px rgba(255, 255, 255, 0.22),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.75);
+  }
+}
+
+/* Perimeter stitched seam with gold thread accent */
+.mb-stitched-seam {
+  position: absolute;
+  inset: 6px;
+  border-radius: calc(var(--mb-3d-radius-mobile) - 3px);
+  border: 1.5px dashed var(--mb-3d-stitch-gold);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.65),
+    0 1px 1px rgba(255, 255, 255, 0.09);
+  pointer-events: none;
+  z-index: 2;
+}
+
+@media (min-width: 768px) {
+  .mb-stitched-seam {
+    inset: 9px;
+    border-radius: calc(var(--mb-3d-radius) - 4px);
+  }
+}
+
+/* Protruding hardcover boards underneath the pages (the 'squares') */
+.mb-3d-cover-left,
+.mb-3d-cover-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  pointer-events: none;
+  z-index: 0;
+  background: transparent;
+}
+
+.mb-3d-cover-left {
+  left: 0;
+  border-radius: var(--mb-3d-radius) 0 0 var(--mb-3d-radius);
+}
+
+.mb-3d-cover-right {
+  right: 0;
+  border-radius: 0 var(--mb-3d-radius) var(--mb-3d-radius) 0;
+}
+
+/* ==========================================================================
+   3. Ornate Gold Metallic Corner Brackets (.mb-gold-corner)
+   ========================================================================== */
+
+.mb-gold-corner {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  pointer-events: none;
+  z-index: 15;
+  filter: drop-shadow(2px 3px 5px rgba(0, 0, 0, 0.65));
+}
+
+/* 4 outer corners placement */
+.mb-gold-corner--tl {
+  top: 3px;
+  left: 3px;
+}
+
+.mb-gold-corner--tr {
+  top: 3px;
+  right: 3px;
+  transform: scaleX(-1);
+}
+
+.mb-gold-corner--bl {
+  bottom: 3px;
+  left: 3px;
+  transform: scaleY(-1);
+}
+
+.mb-gold-corner--br {
+  bottom: 3px;
+  right: 3px;
+  transform: scale(-1, -1);
+}
+
+/* Metallic gold L-shaped filigree bracket body */
+.mb-gold-corner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.85) 0%, transparent 40%),
+    linear-gradient(
+      135deg,
+      var(--mb-3d-gold-deep) 0%,
+      var(--mb-3d-gold-base) 25%,
+      var(--mb-3d-gold-highlight) 45%,
+      var(--mb-3d-gold-bright) 55%,
+      var(--mb-3d-gold-dark) 80%,
+      var(--mb-3d-gold-highlight) 100%
+    );
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 12px,
+    34px 12px,
+    34px 18px,
+    22px 18px,
+    22px 30px,
+    14px 30px,
+    14px 44px,
+    0 44px,
+    0 0
+  );
+  box-shadow:
+    inset 1px 1px 2px rgba(255, 255, 255, 0.9),
+    inset -1px -1px 2px rgba(0, 0, 0, 0.6);
+  border-top-left-radius: calc(var(--mb-3d-radius) - 2px);
+}
+
+/* Inner decorative filigree engraving line */
+.mb-gold-corner::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 26px;
+  height: 26px;
+  border-top: 1px solid rgba(255, 248, 214, 0.85);
+  border-left: 1px solid rgba(255, 248, 214, 0.85);
+  border-top-left-radius: 6px;
+  opacity: 0.75;
+}
+
+/* Metallic rivets on the bracket arms */
+.mb-gold-rivet {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    var(--mb-3d-gold-highlight) 0%,
+    var(--mb-3d-gold-bright) 35%,
+    var(--mb-3d-gold-dark) 75%,
+    var(--mb-3d-gold-deep) 100%
+  );
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.8),
+    inset 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+.mb-gold-rivet::before,
+.mb-gold-rivet::after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: inherit;
+  box-shadow: inherit;
+}
+
+/* Second rivet on top arm */
+.mb-gold-rivet::before {
+  top: -1px;
+  left: 20px;
+}
+
+/* Third rivet on vertical arm */
+.mb-gold-rivet::after {
+  top: 20px;
+  left: -1px;
+}
+
+/* Sizing for Mobile Viewports */
+@media (max-width: 767.98px) {
+  .mb-gold-corner {
+    width: 32px;
+    height: 32px;
+  }
+
+  .mb-gold-corner--tl { top: 2px; left: 2px; }
+  .mb-gold-corner--tr { top: 2px; right: 2px; }
+  .mb-gold-corner--bl { bottom: 2px; left: 2px; }
+  .mb-gold-corner--br { bottom: 2px; right: 2px; }
+
+  .mb-gold-corner::before {
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% 9px,
+      24px 9px,
+      24px 13px,
+      15px 13px,
+      15px 20px,
+      9px 20px,
+      9px 32px,
+      0 32px,
+      0 0
+    );
+    border-top-left-radius: calc(var(--mb-3d-radius-mobile) - 2px);
+  }
+
+  .mb-gold-corner::after {
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .mb-gold-rivet {
+    top: 4px;
+    left: 4px;
+    width: 4.5px;
+    height: 4.5px;
+  }
+
+  .mb-gold-rivet::before {
+    left: 14px;
+    width: 4px;
+    height: 4px;
+  }
+
+  .mb-gold-rivet::after {
+    top: 14px;
+    width: 4px;
+    height: 4px;
+  }
+}
+
+/* ==========================================================================
+   4. Spine Systems: Desktop Central Hinge & Mobile Gutter Spine Crease
+   ========================================================================== */
+
+/* ---------- 4A. Desktop / Tablet Center Spine Hinge (.mb-3d-spine) ---------- */
+.mb-3d-spine {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mb-spine.mb-3d-spine,
+  .mb-3d-spine {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: var(--mb-3d-spine-w);
+    transform: translateX(-50%);
+    z-index: 6;
+    pointer-events: none;
+    /* Deep ambient occlusion crease gradient down the spine */
+    background: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0.18) 20%,
+      rgba(0, 0, 0, 0.52) 38%,
+      rgba(0, 0, 0, 0.88) 50%,
+      rgba(0, 0, 0, 0.52) 62%,
+      rgba(0, 0, 0, 0.18) 80%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  /* Deep central crease groove */
+  .mb-spine.mb-3d-spine::before,
+  .mb-3d-spine::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    transform: translateX(-50%);
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.1),
+      rgba(0, 0, 0, 0.9) 8%,
+      rgba(0, 0, 0, 0.9) 92%,
+      rgba(0, 0, 0, 0.1)
+    );
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+  }
+
+  /* Raised horizontal leather spine bands / ribs with gold foil tooling */
+  .mb-spine-rib {
+    position: relative;
+    width: 100%;
+    height: 6px;
+    margin: 0 auto;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(0, 0, 0, 0.3) 50%,
+      rgba(0, 0, 0, 0.75) 100%
+    );
+    border-top: 1px solid rgba(212, 175, 55, 0.5);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.7),
+      inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    opacity: 0.85;
+  }
+
+  /* Gold debossed filigree crossbars on each rib */
+  .mb-spine-rib::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 15%;
+    right: 15%;
+    height: 1px;
+    transform: translateY(-50%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--mb-3d-gold-bright) 35%,
+      var(--mb-3d-gold-highlight) 50%,
+      var(--mb-3d-gold-bright) 65%,
+      transparent 100%
+    );
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+  }
+
+  /* Top Headband & Bottom Tailband (woven silk ribbon strip inside spine) */
+  .mb-spine-headband,
+  .mb-spine-tailband {
+    position: absolute;
+    left: 50%;
+    width: 32px;
+    height: 5px;
+    transform: translateX(-50%);
+    border-radius: 2px;
+    background: repeating-linear-gradient(
+      45deg,
+      var(--mb-3d-gold-base) 0px,
+      var(--mb-3d-gold-base) 3px,
+      var(--mb-3d-leather-dark) 3px,
+      var(--mb-3d-leather-dark) 6px
+    );
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    z-index: 7;
+  }
+
+  .mb-spine-headband {
+    top: -2px;
+  }
+
+  .mb-spine-tailband {
+    bottom: -2px;
+  }
+}
+
+/* ---------- 4B. Mobile Gutter Spine Crease (.mb-spine-crease-mobile) ---------- */
+.mb-spine-crease-mobile {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .mb-spine-crease-mobile {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 16px;
+    pointer-events: none;
+    z-index: 12;
+  }
+
+  /* Left-leaf / Verso Page: spine is on the RIGHT edge */
+  .mb-spine-crease-mobile--left {
+    right: 0;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(0, 0, 0, 0.12) 30%,
+      rgba(0, 0, 0, 0.45) 75%,
+      rgba(0, 0, 0, 0.82) 100%
+    );
+  }
+
+  /* Right-leaf / Recto Page: spine is on the LEFT edge */
+  .mb-spine-crease-mobile--right {
+    left: 0;
+    background: linear-gradient(
+      to left,
+      transparent 0%,
+      rgba(0, 0, 0, 0.12) 30%,
+      rgba(0, 0, 0, 0.45) 75%,
+      rgba(0, 0, 0, 0.82) 100%
+    );
+  }
+
+  /* Physical Crease Fold Line */
+  .mb-spine-crease-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.2) 0%,
+      rgba(0, 0, 0, 0.95) 8%,
+      rgba(0, 0, 0, 0.95) 92%,
+      rgba(0, 0, 0, 0.2) 100%
+    );
+  }
+
+  .mb-spine-crease-mobile--left .mb-spine-crease-line {
+    right: 0;
+    box-shadow: -1px 0 1px rgba(212, 175, 55, 0.35);
+  }
+
+  .mb-spine-crease-mobile--right .mb-spine-crease-line {
+    left: 0;
+    box-shadow: 1px 0 1px rgba(212, 175, 55, 0.35);
+  }
+
+  /* Stitched Gold Thread Perforations along Mobile Crease */
+  .mb-spine-crease-stitches {
+    position: absolute;
+    top: 12px;
+    bottom: 12px;
+    width: 2px;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(212, 175, 55, 0.6) 0px,
+      rgba(212, 175, 55, 0.6) 4px,
+      transparent 4px,
+      transparent 14px
+    );
+    opacity: 0.85;
+  }
+
+  .mb-spine-crease-mobile--left .mb-spine-crease-stitches {
+    right: 4px;
+  }
+
+  .mb-spine-crease-mobile--right .mb-spine-crease-stitches {
+    left: 4px;
+  }
+}
+
+/* ==========================================================================
+   5. 3D Stacked Paper Edge Block (.mb-paper-stack-*)
+   ========================================================================== */
+
+.mb-paper-stack-left,
+.mb-paper-stack-right,
+.mb-paper-stack-bottom {
+  display: none;
+}
+
+/* Desktop & Tablet Stacked Paper Blocks */
+@media (min-width: 768px) {
+  /* Left paper stack */
+  .mb-paper-stack-left {
+    display: block;
+    position: absolute;
+    top: 4px;
+    bottom: 0px;
+    left: -8px;
+    width: 8px;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 3px 0 0 3px;
+    background:
+      linear-gradient(to right, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.1) 40%, rgba(255, 255, 255, 0.15) 100%),
+      repeating-linear-gradient(
+        to bottom,
+        var(--mb-3d-paper-cream) 0px,
+        var(--mb-3d-paper-cream) 1px,
+        var(--mb-3d-paper-warm) 1.5px,
+        var(--mb-3d-paper-shade) 2px,
+        var(--mb-3d-paper-groove) 2.5px
+      );
+    box-shadow:
+      -1px 0 0 var(--mb-3d-paper-warm),
+      -2px 0 0 var(--mb-3d-paper-shade),
+      -3px 0 0 var(--mb-3d-paper-groove),
+      -5px 0 0 var(--mb-3d-paper-core),
+      -8px 0 10px -2px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Right paper stack */
+  .mb-paper-stack-right {
+    display: block;
+    position: absolute;
+    top: 4px;
+    bottom: 0px;
+    right: -8px;
+    width: 8px;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 0 3px 3px 0;
+    background:
+      linear-gradient(to left, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.1) 40%, rgba(255, 255, 255, 0.15) 100%),
+      repeating-linear-gradient(
+        to bottom,
+        var(--mb-3d-paper-cream) 0px,
+        var(--mb-3d-paper-cream) 1px,
+        var(--mb-3d-paper-warm) 1.5px,
+        var(--mb-3d-paper-shade) 2px,
+        var(--mb-3d-paper-groove) 2.5px
+      );
+    box-shadow:
+      1px 0 0 var(--mb-3d-paper-warm),
+      2px 0 0 var(--mb-3d-paper-shade),
+      3px 0 0 var(--mb-3d-paper-groove),
+      5px 0 0 var(--mb-3d-paper-core),
+      8px 0 10px -2px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Bottom paper stack */
+  .mb-paper-stack-bottom {
+    display: block;
+    position: absolute;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    height: 8px;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 0 0 4px 4px;
+    background:
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.1) 35%, rgba(255, 255, 255, 0.12) 100%),
+      repeating-linear-gradient(
+        to right,
+        var(--mb-3d-paper-cream) 0px,
+        var(--mb-3d-paper-cream) 1px,
+        var(--mb-3d-paper-warm) 1.5px,
+        var(--mb-3d-paper-shade) 2px,
+        var(--mb-3d-paper-groove) 2.5px
+      );
+    box-shadow:
+      0 1px 0 var(--mb-3d-paper-warm),
+      0 2px 0 var(--mb-3d-paper-shade),
+      0 3px 0 var(--mb-3d-paper-groove),
+      0 5px 0 var(--mb-3d-paper-core),
+      0 8px 12px -2px rgba(0, 0, 0, 0.75);
+  }
+}
+
+/* Mobile Stacked Paper Blocks (Synced to Current Visible Leaf) */
+@media (max-width: 767.98px) {
+  /* Bottom stacked paper edge under current leaf */
+  .mb-paper-stack-bottom {
+    display: block;
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: -6px;
+    height: 6px;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 0 0 4px 4px;
+    background:
+      repeating-linear-gradient(
+        to right,
+        var(--mb-3d-paper-cream) 0px,
+        var(--mb-3d-paper-cream) 1px,
+        var(--mb-3d-paper-warm) 1.5px,
+        var(--mb-3d-paper-shade) 2px
+      );
+    box-shadow: 0 3px 6px -1px rgba(0, 0, 0, 0.65);
+  }
+
+  /* When on left page: stacked pages visible along outer left edge */
+  .mb-stage[data-side="left"] .mb-paper-stack-left {
+    display: block;
+    position: absolute;
+    top: 4px;
+    bottom: 2px;
+    left: -5px;
+    width: 5px;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 2px 0 0 2px;
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--mb-3d-paper-cream) 0px,
+      var(--mb-3d-paper-cream) 1px,
+      var(--mb-3d-paper-warm) 1.5px,
+      var(--mb-3d-paper-shade) 2px
+    );
+    box-shadow: -2px 0 4px rgba(0, 0, 0, 0.5);
+  }
+
+  /* When on right page: stacked pages visible along outer right edge */
+  .mb-stage[data-side="right"] .mb-paper-stack-right {
+    display: block;
+    position: absolute;
+    top: 4px;
+    bottom: 2px;
+    right: -5px;
+    width: 5px;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 0 2px 2px 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--mb-3d-paper-cream) 0px,
+      var(--mb-3d-paper-cream) 1px,
+      var(--mb-3d-paper-warm) 1.5px,
+      var(--mb-3d-paper-shade) 2px
+    );
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* ==========================================================================
+   6. Silk Ribbon Bookmark (.mb-ribbon-bookmark)
+   ========================================================================== */
+
+.mb-ribbon-bookmark {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mb-ribbon-bookmark {
+    display: block;
+    position: absolute;
+    top: -6px;
+    left: calc(50% + 12px);
+    width: 20px;
+    height: 72%;
+    max-height: 480px;
+    pointer-events: none;
+    z-index: 14;
+    transform-origin: top left;
+    transform: rotate(-1.5deg) translateZ(8px);
+    /* Gold satin ribbon luster texture */
+    background:
+      repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 2.5px),
+      linear-gradient(
+        90deg,
+        var(--mb-3d-gold-deep) 0%,
+        var(--mb-3d-gold-base) 14%,
+        var(--mb-3d-gold-bright) 38%,
+        var(--mb-3d-gold-highlight) 54%,
+        var(--mb-3d-gold-base) 72%,
+        var(--mb-3d-gold-deep) 100%
+      );
+    /* Classic inverted V notched chevron tail */
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% 100%,
+      50% calc(100% - 14px),
+      0 100%
+    );
+    /* Soft 3D cast shadow underneath the ribbon onto the pages */
+    filter: drop-shadow(4px 7px 7px rgba(0, 0, 0, 0.48));
+  }
+
+  /* Ribbon top anchor fold entering spine */
+  .mb-ribbon-bookmark::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -12px;
+    width: 20px;
+    height: 8px;
+    background: linear-gradient(135deg, var(--mb-3d-gold-dark) 0%, var(--mb-3d-gold-deep) 100%);
+    border-radius: 4px 0 0 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 40%);
+  }
+}
+
+/* ==========================================================================
+   7. High-Contrast Gold Foiled Emblems & Ornamental Borders
+   ========================================================================== */
+
+/* Gold foil keyline page border with corner flourishes */
+.mb-gold-foil-border {
+  position: absolute;
+  inset: 12px;
+  pointer-events: none;
+  z-index: 2;
+  border: 1px solid var(--mb-3d-gold-base);
+  box-shadow:
+    inset 0 0 0 4px transparent,
+    inset 0 0 0 5px rgba(212, 175, 55, 0.3),
+    0 0 6px rgba(212, 175, 55, 0.15);
+}
+
+/* Luxury gold foil text gradient */
+.mb-gold-foil-text {
+  background: linear-gradient(
+    135deg,
+    var(--mb-3d-gold-dark) 0%,
+    var(--mb-3d-gold-bright) 32%,
+    var(--mb-3d-gold-highlight) 50%,
+    var(--mb-3d-gold-base) 70%,
+    var(--mb-3d-gold-dark) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.8));
+}
+
+/* Ornate gold embossed divider */
+.mb-gold-embossed-rule {
+  position: relative;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--mb-3d-gold-dark) 20%,
+    var(--mb-3d-gold-bright) 50%,
+    var(--mb-3d-gold-dark) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.7);
+}
+
+/* Central diamond emblem on divider */
+.mb-gold-embossed-rule::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--mb-3d-gold-bright);
+  box-shadow:
+    0 0 3px var(--mb-3d-gold-highlight),
+    0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* ==========================================================================
+   8. Reduced Motion & Performance Adaptations
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .mb-3d-book,
+  .mb-3d-spine,
+  .mb-ribbon-bookmark,
+  .mb-gold-corner,
+  .mb-spine-crease-mobile {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -1,43 +1,183 @@
-/* Menu book responsive layout.
-   Phone (<768px): one page at a time, full width.
-   Desktop (>=768px): two pages side by side, centred, with the spine between. */
+/*
+ * menu-book-responsive.css
+ * Photorealistic 3D Responsive & Mobile Viewport Engine
+ *
+ * Viewport Strategy:
+ *  - Mobile Phone (<768px): Single page view with realistic 3D cylindrical paper curve,
+ *    authentic binding spine crease (hinged on right edge for verso / left edge for recto),
+ *    inviting corner dog-ear touch indicators, stacked paper depth, and fluid swipe gestures.
+ *  - Tablet (768px - 1023.98px): Balanced two-page spread with 3D perspective fold,
+ *    optimized page margins, and comfortable reading column widths.
+ *  - Desktop (>=1024px): Full open two-page spread with 3D perspective depth (10deg fold),
+ *    luxurious emerald leather casing, gold metallic corner brackets, center leather spine,
+ *    and hanging silk ribbon bookmark.
+ */
+
+/* ==========================================================================
+   1. Root Container & Stage Setup
+   ========================================================================== */
 
 .mb-root {
   overflow-x: clip;
   max-width: 100%;
   box-sizing: border-box;
+  scroll-margin-top: 80px;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ---------- Grid: one column on phone, two on desktop ---------- */
+@media (min-width: 768px) {
+  .mb-root {
+    scroll-margin-top: 130px;
+  }
+}
+
+/* Base Stage Grid */
 .mb-stage {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
   width: 100%;
   box-sizing: border-box;
+  align-items: stretch;
+  touch-action: pan-y;
+  position: relative;
 }
 
 .mb-stage > * {
   min-width: 0;
+  height: 100%;
 }
 
-/* Each spread half fills its column; page is the visible sheet. */
-.mb-spread .mb-page {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 70vh;
-  overflow: hidden;
+.mb-spread {
+  height: 100%;
+  position: relative;
 }
 
-/* ---------- Desktop: two-page spread ---------- */
-@media (min-width: 768px) {
+/* ==========================================================================
+   2. Mobile Viewport (<768px): Single Page 3D Paper Curve & Spine Crease
+   ========================================================================== */
+
+@media (max-width: 767.98px) {
+  .mb-stage {
+    perspective: 1500px;
+    perspective-origin: 50% 50%;
+    transform-style: preserve-3d;
+  }
+
+  /* Each spread half acts as a 3D leaf */
+  .mb-stage > .mb-spread-left,
+  .mb-stage > .mb-spread-right {
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* Verso Page (Left leaf): Bound into spine on the RIGHT edge.
+     Subtle 3D paper arch lifting on left and curling into spine on right */
+  .mb-stage > .mb-spread-left {
+    transform-origin: right center;
+    transform: rotateY(2.5deg);
+  }
+
+  /* Recto Page (Right leaf): Bound into spine on the LEFT edge.
+     Subtle 3D paper arch lifting on right and curling into spine on left */
+  .mb-stage > .mb-spread-right {
+    transform-origin: left center;
+    transform: rotateY(-2.5deg);
+  }
+
+  /* Single Page Dimensions on Mobile */
+  .mb-spread .mb-page {
+    width: 100%;
+    min-height: 520px;
+    max-height: 82vh;
+    padding: 1.25rem 1rem;
+    box-sizing: border-box;
+    overflow: hidden;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+  }
+
+  /* Rounded outer page corners, crisp binding inner edge */
+  .mb-spread-left .mb-page {
+    border-radius: 12px 2px 2px 12px;
+    box-shadow:
+      inset -12px 0 16px -8px rgba(0, 0, 0, 0.4),
+      -1px 0 0 var(--mb-3d-paper-shade, #cbb48b),
+      -2px 0 0 var(--mb-3d-paper-warm, #ebdcc0),
+      -4px 0 8px -2px rgba(0, 0, 0, 0.45);
+  }
+
+  .mb-spread-right .mb-page {
+    border-radius: 2px 12px 12px 2px;
+    box-shadow:
+      inset 12px 0 16px -8px rgba(0, 0, 0, 0.4),
+      1px 0 0 var(--mb-3d-paper-shade, #cbb48b),
+      2px 0 0 var(--mb-3d-paper-warm, #ebdcc0),
+      4px 0 8px -2px rgba(0, 0, 0, 0.45);
+  }
+
+  /* Realistic 3D Paper Curve Shading & Cylindrical Ambient Light */
+  .mb-spread-left .mb-page::after,
+  .mb-spread-right .mb-page::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 3;
+  }
+
+  /* Verso: Light rolls down into the spine on the right edge */
+  .mb-spread-left .mb-page::after {
+    background:
+      /* Deep ambient shadow deepening into the spine on the right */
+      linear-gradient(to left, rgba(0, 0, 0, 0.48) 0%, rgba(0, 0, 0, 0.22) 5%, rgba(0, 0, 0, 0.06) 14%, transparent 26%),
+      /* Paper curve highlight crest ~18% inward from spine */
+      linear-gradient(to left, transparent 12%, rgba(255, 255, 255, 0.05) 16%, rgba(255, 255, 255, 0.09) 20%, transparent 28%),
+      /* Soft outer edge curling shadow on the left */
+      linear-gradient(to right, rgba(0, 0, 0, 0.12) 0%, transparent 6%);
+  }
+
+  /* Recto: Light rolls down into the spine on the left edge */
+  .mb-spread-right .mb-page::after {
+    background:
+      /* Deep ambient shadow deepening into the spine on the left */
+      linear-gradient(to right, rgba(0, 0, 0, 0.48) 0%, rgba(0, 0, 0, 0.22) 5%, rgba(0, 0, 0, 0.06) 14%, transparent 26%),
+      /* Paper curve highlight crest ~18% inward from spine */
+      linear-gradient(to right, transparent 12%, rgba(255, 255, 255, 0.05) 16%, rgba(255, 255, 255, 0.09) 20%, transparent 28%),
+      /* Soft outer edge curling shadow on the right */
+      linear-gradient(to left, rgba(0, 0, 0, 0.12) 0%, transparent 6%);
+  }
+
+  /* Small Phones (<480px) Spacing Refinements */
+  @media (max-width: 480px) {
+    .mb-spread .mb-page {
+      padding: 1.1rem 0.85rem;
+      min-height: 480px;
+    }
+  }
+}
+
+/* ==========================================================================
+   3. Tablet Viewport (768px - 1023.98px): Two-Page Spread
+   ========================================================================== */
+
+@media (min-width: 768px) and (max-width: 1023.98px) {
   .mb-stage {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    perspective: 2200px;
+    perspective-origin: 50% 46%;
+    transform-style: preserve-3d;
   }
 
   .mb-spread .mb-page {
-    min-height: 640px;
-    padding: 2rem 2.25rem;
+    min-height: 560px;
+    padding: 1.5rem 1.4rem;
+    overflow: hidden;
   }
 
   .mb-spread-left .mb-page {
@@ -47,22 +187,125 @@
   .mb-spread-right .mb-page {
     border-radius: 0 10px 10px 0;
   }
+
+  .mb-stage > .mb-spread-left {
+    transform-origin: right center;
+    transform: rotateY(8deg);
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+
+  .mb-stage > .mb-spread-right {
+    transform-origin: left center;
+    transform: rotateY(-8deg);
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+
+  .mb-spread-left .mb-page::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.35) 100%);
+  }
+
+  .mb-spread-right .mb-page::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(to left, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.35) 100%);
+  }
 }
 
-/* ---------- Tap zones (phone page-turn areas) ---------- */
+/* ==========================================================================
+   4. Desktop Viewport (>=1024px): Full Open 3D Spread
+   ========================================================================== */
+
+@media (min-width: 1024px) {
+  .mb-stage {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    perspective: 2600px;
+    perspective-origin: 50% 45%;
+    transform-style: preserve-3d;
+  }
+
+  .mb-spread .mb-page {
+    min-height: 640px;
+    padding: 2rem 2.25rem;
+    overflow: hidden;
+  }
+
+  .mb-spread-left .mb-page {
+    border-radius: 12px 0 0 12px;
+  }
+
+  .mb-spread-right .mb-page {
+    border-radius: 0 12px 12px 0;
+  }
+
+  .mb-stage > .mb-spread-left {
+    transform-origin: right center;
+    transform: rotateY(10deg);
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+
+  .mb-stage > .mb-spread-right {
+    transform-origin: left center;
+    transform: rotateY(-10deg);
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+
+  .mb-spread-left .mb-page::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.38) 100%);
+  }
+
+  .mb-spread-right .mb-page::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(to left, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.38) 100%);
+  }
+}
+
+/* ==========================================================================
+   5. Mobile Tap Zones (Narrow Margins Non-Obstructive to Dish Items)
+   ========================================================================== */
+
 .mb-tap-zone {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 30%;
-  min-width: 44px;
+  width: 28px;
+  min-width: 28px;
   background: transparent;
   border: 0;
   padding: 0;
   margin: 0;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  z-index: 2;
+  touch-action: manipulation;
+  z-index: 4;
+}
+
+.mb-tap-zone.mb-tap-prev {
+  left: 0;
+}
+
+.mb-tap-zone.mb-tap-next {
+  right: 0;
 }
 
 @media (min-width: 768px) {
@@ -71,90 +314,79 @@
   }
 }
 
-/* ---------- Page dots indicator ---------- */
+/* ==========================================================================
+   6. Navigation Controls & Pagination Dots (Touch Standards >=44px)
+   ========================================================================== */
+
+.mb-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.mb-btn-turn {
+  min-height: 44px;
+  min-width: 80px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 180ms ease;
+}
+
 .mb-dots {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   margin: 0 auto;
   box-sizing: border-box;
   max-width: 100%;
 }
 
 .mb-dot {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   border: 0;
   padding: 0;
   margin: 0;
+  background: transparent;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ---------- Phone book frame ---------- */
-@media (max-width: 767.98px) {
-  .mb-book {
-    width: 100%;
-  }
+.mb-dot > span {
+  display: block;
+  height: 9px;
+  border-radius: 9999px;
+  transition: all 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+
+/* ==========================================================================
+   7. Accessibility & Reduced Motion
+   ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
-  .mb-dot {
-    transition: none;
-  }
-}
-
-/* Equal page heights across the spread, and keep the book clear of the sticky category bar */
-.mb-stage { align-items: stretch; }
-.mb-stage > *, .mb-spread, .mb-spread .mb-page { height: 100%; }
-.mb-root { scroll-margin-top: 140px; }
-
-/* ---------- Open-book fold: pages lean toward the spine (about 160 degrees) ---------- */
-@media (min-width: 768px) {
-  .mb-stage {
-    perspective: 2600px;
-    perspective-origin: 50% 45%;
-    transform-style: preserve-3d;
-  }
-
-  /* Each half hinges on the spine so the spread reads as a real open book */
-  .mb-stage > .mb-spread-left {
-    transform-origin: right center;
-    transform: rotateY(10deg);
-  }
-
-  .mb-stage > .mb-spread-right {
-    transform-origin: left center;
-    transform: rotateY(-10deg);
-  }
-
+  .mb-stage,
   .mb-stage > .mb-spread-left,
-  .mb-stage > .mb-spread-right {
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
+  .mb-stage > .mb-spread-right,
+  .mb-dot > span,
+  .mb-btn-turn {
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
   }
-
-  /* Paper shades off toward the spine, which sells the curve */
-  .mb-spread-left .mb-page::after,
-  .mb-spread-right .mb-page::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: inherit;
-  }
-
-  .mb-spread-left .mb-page::after {
-    background: linear-gradient(to right, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.38) 100%);
-  }
-
-  .mb-spread-right .mb-page::after {
-    background: linear-gradient(to left, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.38) 100%);
-  }
-}
-
-/* Phone shows one page, so it stays flat */
-@media (max-width: 767px) {
-  .mb-stage > .mb-spread-left,
-  .mb-stage > .mb-spread-right { transform: none; }
 }
