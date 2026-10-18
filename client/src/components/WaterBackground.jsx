@@ -2,78 +2,87 @@ import React, { useRef, useEffect } from 'react';
 
 /**
  * CONFIGURATION
- * Easily tweakable parameters for performance, counts, and physics.
+ * Easily tweakable parameters for cinematic realism, counts, and physics.
  */
 const CONFIG = {
   FISH_COUNT: 5,
   STONE_COUNT: 55,
   GRASS_CLUSTERS: 28,
-  RIVER_FLOW_SPEED: 0.9,
-  RIPPLE_SENSITIVITY: 6
+  RIVER_FLOW_SPEED: 0.95,
+  RIPPLE_SENSITIVITY: 5
 };
 
 /**
  * WaterRipple Class
- * Simulates expanding, downstream-drifting dual-ring water ripples.
+ * Simulates expanding, downstream-drifting dual-ring water ripples with refractive highlights.
  */
 class WaterRipple {
   constructor(x, y) {
     this.x = x;
     this.y = y;
-    this.radius = 2;
-    this.maxRadius = 95 + Math.random() * 30;
-    this.opacity = 0.45;
+    this.radius = 3;
+    this.maxRadius = 140 + Math.random() * 45; // Expansive yet subtle (up to 180px)
+    this.opacity = 0.5;
   }
 
   update() {
-    this.radius += (this.maxRadius - this.radius) * 0.045;
-    this.x += CONFIG.RIVER_FLOW_SPEED * 0.6;
-    this.opacity *= 0.965;
+    this.radius += (this.maxRadius - this.radius) * 0.04;
+    this.x += CONFIG.RIVER_FLOW_SPEED * 0.7; // Ripples drift downstream (+X axis) as they grow
+    this.opacity *= 0.968;
   }
 
   draw(ctx) {
     if (this.opacity < 0.01) return;
 
-    // 1. Outer Highlight Ring (Sunlight catching the wave crest)
+    // 1. Thin bright refractive crest (rgba(230, 248, 255, 0.2))
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(225, 248, 255, ${this.opacity.toFixed(3)})`;
-    ctx.lineWidth = 2.2;
+    ctx.strokeStyle = `rgba(230, 248, 255, ${(this.opacity * 0.44).toFixed(3)})`;
+    ctx.lineWidth = 2.0;
     ctx.stroke();
 
-    // 2. Inner Shadow Trough (Dip of the water wave)
+    // 2. Darker shadow trough (rgba(5, 20, 38, 0.15))
     ctx.beginPath();
-    ctx.arc(this.x, this.y, Math.max(0.5, this.radius * 0.82), 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(8, 42, 68, ${(this.opacity * 0.7).toFixed(3)})`;
-    ctx.lineWidth = 1.5;
+    ctx.arc(this.x, this.y, Math.max(0.5, this.radius * 0.84), 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(5, 20, 38, ${(this.opacity * 0.32).toFixed(3)})`;
+    ctx.lineWidth = 1.6;
     ctx.stroke();
+
+    // 3. Subtle inner caustic echo ring for realistic wave interference
+    if (this.radius > 25) {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius * 0.68, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(200, 245, 255, ${(this.opacity * 0.18).toFixed(3)})`;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
   }
 }
 
 /**
  * CursorWake Class
- * Soft V-shaped wake line trailing behind the cursor when moving quickly.
+ * Soft V-shaped wake trailing behind cursor path during rapid movements.
  */
 class CursorWake {
   constructor(x, y, angle) {
     this.x = x;
     this.y = y;
     this.angle = angle;
-    this.life = 30;
-    this.maxLife = 30;
+    this.life = 32;
+    this.maxLife = 32;
   }
 
   update() {
     this.life--;
-    this.x += CONFIG.RIVER_FLOW_SPEED * 0.4;
+    this.x += CONFIG.RIVER_FLOW_SPEED * 0.45;
   }
 
   draw(ctx) {
     if (this.life <= 0) return;
     const progress = 1 - this.life / this.maxLife;
-    const alpha = (this.life / this.maxLife) * 0.35;
-    const armLength = 8 + progress * 24;
-    const spread = 0.42 + progress * 0.18; // ~24° to 35° divergence
+    const alpha = (this.life / this.maxLife) * 0.28;
+    const armLength = 10 + progress * 28;
+    const spread = 0.42 + progress * 0.18;
 
     const leftAngle = this.angle + Math.PI - spread;
     const rightAngle = this.angle + Math.PI + spread;
@@ -83,64 +92,64 @@ class CursorWake {
     const rx = this.x + Math.cos(rightAngle) * armLength;
     const ry = this.y + Math.sin(rightAngle) * armLength;
 
-    // Outer highlight
     ctx.beginPath();
     ctx.moveTo(lx, ly);
     ctx.lineTo(this.x, this.y);
     ctx.lineTo(rx, ry);
-    ctx.strokeStyle = `rgba(225, 248, 255, ${alpha.toFixed(3)})`;
+    ctx.strokeStyle = `rgba(230, 248, 255, ${alpha.toFixed(3)})`;
     ctx.lineWidth = 1.6;
     ctx.stroke();
 
-    // Inner shadow trough
     ctx.beginPath();
-    ctx.moveTo(lx + 0.8, ly + 0.8);
-    ctx.lineTo(this.x + 0.8, this.y + 0.8);
-    ctx.lineTo(rx + 0.8, ry + 0.8);
-    ctx.strokeStyle = `rgba(8, 42, 68, ${(alpha * 0.55).toFixed(3)})`;
+    ctx.moveTo(lx + 1, ly + 1);
+    ctx.lineTo(this.x + 1, this.y + 1);
+    ctx.lineTo(rx + 1, ry + 1);
+    ctx.strokeStyle = `rgba(5, 20, 38, ${(alpha * 0.5).toFixed(3)})`;
     ctx.lineWidth = 1.2;
     ctx.stroke();
   }
 }
 
 /**
- * Organic Spine-Kinematics Fish Class
- * 8-segment S-curve wave propagation, translucent fins/veil tail, and depth shadow.
+ * Spine-Kinematics Cinematic Fish Class (Goldfish & Red Carps)
+ * 13-segment articulated spine, S-curve propagation, 3D volumetric back shading,
+ * translucent rayed fins, trailing veil tail, and soft diffused riverbed shadow.
  */
-class RiverFish {
+class CinematicFish {
   constructor(width, height, initialSpawn = false) {
     this.reset(width, height, initialSpawn);
   }
 
   reset(width, height, initialSpawn = false) {
-    this.x = initialSpawn ? Math.random() * (width + 100) - 50 : -130 - Math.random() * 80;
-    this.y = Math.random() * (height - 120) + 60;
-    this.baseSpeed = 0.6 + Math.random() * 0.8; // gentle 0.6 to 1.4 px/frame
-    this.swimSpeed = 0.0035 + Math.random() * 0.002;
-    this.angle = (Math.random() - 0.5) * 0.3; // gentle rightward heading
+    this.x = initialSpawn ? Math.random() * (width + 120) - 60 : -160 - Math.random() * 100;
+    this.y = Math.random() * (height - 140) + 70;
+    this.baseSpeed = 0.7 + Math.random() * 0.75;
+    this.swimSpeed = 0.016 + Math.random() * 0.006;
+    this.angle = (Math.random() - 0.5) * 0.28; // gentle rightward heading
     this.targetAngle = this.angle;
-    this.scale = 0.85 + Math.random() * 0.3;
-    this.type = Math.random() > 0.45 ? 'goldfish' : 'redfish';
+    this.scale = 0.88 + Math.random() * 0.32;
+    // Two distinct types: Kohaku/Calico Goldfish or Village Red Carp
+    this.type = Math.random() > 0.42 ? 'kohaku' : 'red_carp';
     this.speedBoost = 1.0;
     this.boostTimer = 0;
     this.wigglePhase = Math.random() * Math.PI * 2;
-    this.driftFreq = 0.0008 + Math.random() * 0.0006;
+    this.driftFreq = 0.0007 + Math.random() * 0.0005;
     this.driftOffset = Math.random() * 1000;
   }
 
   update(width, height, time, cursor) {
-    // Cursor awareness: if within 120px, steer away and boost speed by 1.5x for 1s (~60 frames)
+    // Subtle cursor awareness: steer away and gain speed boost if within 120px
     if (cursor.active) {
       const distToCursor = Math.hypot(this.x - cursor.x, this.y - cursor.y);
-      if (distToCursor < 120) {
+      if (distToCursor < 125) {
         let awayAngle = Math.atan2(this.y - cursor.y, this.x - cursor.x);
-        // Ensure the fish still swims generally forward (+X), avoiding reversing into the screen edge
+        // Clamp to generally forward drift (+X)
         if (Math.abs(awayAngle) > Math.PI / 2) {
-          awayAngle = awayAngle > 0 ? Math.PI / 3 : -Math.PI / 3;
+          awayAngle = awayAngle > 0 ? Math.PI / 3.2 : -Math.PI / 3.2;
         }
         this.targetAngle = awayAngle;
-        this.speedBoost = 1.5;
-        this.boostTimer = 60;
+        this.speedBoost = 1.6;
+        this.boostTimer = 65;
       }
     }
 
@@ -150,68 +159,79 @@ class RiverFish {
         this.speedBoost = 1.0;
       }
     } else {
-      // Natural gentle diagonal drift
-      const naturalDrift = Math.sin(time * this.driftFreq + this.driftOffset) * 0.22;
+      // Natural diagonal drift
+      const naturalDrift = Math.sin(time * this.driftFreq + this.driftOffset) * 0.24;
       this.targetAngle = naturalDrift;
     }
 
-    // Smoothly interpolate angle
-    this.angle += (this.targetAngle - this.angle) * 0.06;
+    // Smooth heading interpolation
+    this.angle += (this.targetAngle - this.angle) * 0.055;
 
-    // Move forward with stream
-    const effectiveSpeed = (this.baseSpeed * this.speedBoost + CONFIG.RIVER_FLOW_SPEED * 0.35);
-    this.x += Math.cos(this.angle) * effectiveSpeed;
-    this.y += Math.sin(this.angle) * effectiveSpeed;
+    // Movement with river current
+    const currentSpeed = this.baseSpeed * this.speedBoost + CONFIG.RIVER_FLOW_SPEED * 0.35;
+    this.x += Math.cos(this.angle) * currentSpeed;
+    this.y += Math.sin(this.angle) * currentSpeed;
 
-    // Reset when off-screen right
-    if (this.x > width + 140) {
+    // Wrap around
+    if (this.x > width + 180) {
       this.reset(width, height, false);
     }
   }
 
   /**
-   * Computes the 8 spine points and lateral body contours
+   * Computes 13 articulated spine points and lateral body profiles
    */
   getGeometry(time) {
-    const segCount = 8;
-    const segDist = 7.5 * this.scale;
+    const segCount = 13;
+    const segDist = 5.2 * this.scale;
     const spine = [];
     const leftPts = [];
     const rightPts = [];
 
-    // Width profile along spine (Head to Tail)
-    const WIDTH_PROFILE = [5.5, 9.5, 10.5, 9.2, 7.5, 5.2, 3.4, 1.8];
+    // Anatomical width profile along the 13 points (Snout -> Belly -> Peduncle -> Tail)
+    const WIDTH_PROFILE = [
+      4.2,  // 0: Snout
+      7.0,  // 1: Head
+      9.8,  // 2: Shoulders / Gills
+      11.6, // 3: Widest Chest
+      11.8, // 4: Anterior Belly
+      11.0, // 5: Mid-body
+      9.8,  // 6: Posterior Mid-body
+      8.0,  // 7: Anterior Peduncle
+      6.4,  // 8: Mid Peduncle
+      4.8,  // 9: Posterior Peduncle
+      3.6,  // 10: Slender Wrist
+      2.6,  // 11: Tail Peduncle End
+      1.8   // 12: Caudal Fin Base
+    ];
 
     const currentSpeedVal = this.swimSpeed * this.speedBoost;
     const waveTime = time * currentSpeedVal + this.wigglePhase;
 
     for (let i = 0; i < segCount; i++) {
-      // S-curve wave equation from specification:
-      // lateralOffset = Math.sin(time * fish.swimSpeed - segmentIndex * 0.6) * (segmentIndex * 1.8)
-      const lateralOffset = Math.sin(waveTime - i * 0.6) * (i * 1.8 * this.scale);
+      // Natural S-curve body deformation using propagating sine wave:
+      // segment.x += Math.sin(time * 0.018 * speed + i * 0.45) * (i * 0.65) * scale;
+      const lateralOffset = Math.sin(waveTime - i * 0.45) * (i * 0.65) * this.scale;
 
-      // Spine base along swimming direction
       const baseX = this.x - Math.cos(this.angle) * (i * segDist);
       const baseY = this.y - Math.sin(this.angle) * (i * segDist);
 
-      // Perpendicular vector
       const perpX = -Math.sin(this.angle);
       const perpY = Math.cos(this.angle);
 
-      const pt = {
+      spine.push({
         x: baseX + perpX * lateralOffset,
         y: baseY + perpY * lateralOffset
-      };
-      spine.push(pt);
+      });
     }
 
-    // Calculate normal angles and lateral body contour points
+    // Tangent vectors and lateral boundary contours
     for (let i = 0; i < segCount; i++) {
       let tanAngle;
       if (i === 0) {
         tanAngle = Math.atan2(spine[1].y - spine[0].y, spine[1].x - spine[0].x);
       } else if (i === segCount - 1) {
-        tanAngle = Math.atan2(spine[7].y - spine[6].y, spine[7].x - spine[6].x);
+        tanAngle = Math.atan2(spine[segCount - 1].y - spine[segCount - 2].y, spine[segCount - 1].x - spine[segCount - 2].x);
       } else {
         tanAngle = Math.atan2(spine[i + 1].y - spine[i - 1].y, spine[i + 1].x - spine[i - 1].x);
       }
@@ -228,102 +248,153 @@ class RiverFish {
   }
 
   /**
-   * Draws fish geometry (either as depth shadow or realistic fish)
+   * Draws fish geometry (either as depth shadow or volumetric fish)
    */
   draw(ctx, time, isShadow = false) {
     const { spine, leftPts, rightPts } = this.getGeometry(time);
-    const ox = isShadow ? 14 : 0;
-    const oy = isShadow ? 14 : 0;
+    const ox = isShadow ? 16 : 0;
+    const oy = isShadow ? 16 : 0;
 
-    const shadowColor = 'rgba(3, 15, 28, 0.32)';
-
-    // Fin colors
-    const goldfishFin = 'rgba(255, 209, 102, 0.65)';
-    const redfishFin = 'rgba(255, 143, 163, 0.65)';
-    const finColor = isShadow ? shadowColor : (this.type === 'goldfish' ? goldfishFin : redfishFin);
+    const shadowColor = 'rgba(2, 10, 20, 0.45)';
+    const finBaseColor = isShadow
+      ? shadowColor
+      : (this.type === 'kohaku' ? 'rgba(255, 235, 215, 0.65)' : 'rgba(255, 150, 150, 0.65)');
 
     ctx.save();
 
-    // 1. PECTORAL FINS (Behind head at segment 1)
-    const finFlutter = Math.sin(time * 0.006 + this.wigglePhase) * 0.25;
+    // 1. PECTORAL FINS (Articulated behind head at segment 2)
+    const finFlutter = Math.sin(time * 0.007 + this.wigglePhase) * 0.22;
     const leftFinAngle = this.angle + 2.3 + finFlutter;
     const rightFinAngle = this.angle - 2.3 - finFlutter;
-    const finLen = 16 * this.scale;
+    const finLen = 20 * this.scale;
 
-    // Left fin
+    // Left pectoral fin with delicate ray ribs
     ctx.beginPath();
-    ctx.moveTo(leftPts[1].x + ox, leftPts[1].y + oy);
+    ctx.moveTo(leftPts[2].x + ox, leftPts[2].y + oy);
     ctx.bezierCurveTo(
-      leftPts[1].x + Math.cos(leftFinAngle) * (finLen * 0.7) + ox,
-      leftPts[1].y + Math.sin(leftFinAngle) * (finLen * 0.7) + oy,
-      leftPts[1].x + Math.cos(leftFinAngle + 0.25) * finLen + ox,
-      leftPts[1].y + Math.sin(leftFinAngle + 0.25) * finLen + oy,
-      leftPts[2].x + ox,
-      leftPts[2].y + oy
+      leftPts[2].x + Math.cos(leftFinAngle) * (finLen * 0.7) + ox,
+      leftPts[2].y + Math.sin(leftFinAngle) * (finLen * 0.7) + oy,
+      leftPts[2].x + Math.cos(leftFinAngle + 0.28) * finLen + ox,
+      leftPts[2].y + Math.sin(leftFinAngle + 0.28) * finLen + oy,
+      leftPts[3].x + ox,
+      leftPts[3].y + oy
     );
-    ctx.fillStyle = finColor;
+    ctx.fillStyle = finBaseColor;
     ctx.fill();
 
-    // Right fin
+    // Fin rays if not shadow
+    if (!isShadow) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(leftPts[2].x, leftPts[2].y);
+      ctx.lineTo(leftPts[2].x + Math.cos(leftFinAngle + 0.14) * (finLen * 0.85), leftPts[2].y + Math.sin(leftFinAngle + 0.14) * (finLen * 0.85));
+      ctx.stroke();
+    }
+
+    // Right pectoral fin
     ctx.beginPath();
-    ctx.moveTo(rightPts[1].x + ox, rightPts[1].y + oy);
+    ctx.moveTo(rightPts[2].x + ox, rightPts[2].y + oy);
     ctx.bezierCurveTo(
-      rightPts[1].x + Math.cos(rightFinAngle) * (finLen * 0.7) + ox,
-      rightPts[1].y + Math.sin(rightFinAngle) * (finLen * 0.7) + oy,
-      rightPts[1].x + Math.cos(rightFinAngle - 0.25) * finLen + ox,
-      rightPts[1].y + Math.sin(rightFinAngle - 0.25) * finLen + oy,
-      rightPts[2].x + ox,
-      rightPts[2].y + oy
+      rightPts[2].x + Math.cos(rightFinAngle) * (finLen * 0.7) + ox,
+      rightPts[2].y + Math.sin(rightFinAngle) * (finLen * 0.7) + oy,
+      rightPts[2].x + Math.cos(rightFinAngle - 0.28) * finLen + ox,
+      rightPts[2].y + Math.sin(rightFinAngle - 0.28) * finLen + oy,
+      rightPts[3].x + ox,
+      rightPts[3].y + oy
     );
-    ctx.fillStyle = finColor;
+    ctx.fillStyle = finBaseColor;
     ctx.fill();
 
-    // 2. FORKED FLOWING VEIL TAIL (Attached at segment 7)
-    const tailBase = spine[7];
-    const tailPrev = spine[6];
+    if (!isShadow) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(rightPts[2].x, rightPts[2].y);
+      ctx.lineTo(rightPts[2].x + Math.cos(rightFinAngle - 0.14) * (finLen * 0.85), rightPts[2].y + Math.sin(rightFinAngle - 0.14) * (finLen * 0.85));
+      ctx.stroke();
+    }
+
+    // 2. VENTRAL / PELVIC FINS (Segment 6)
+    const pelvLen = 12 * this.scale;
+    ctx.beginPath();
+    ctx.moveTo(leftPts[6].x + ox, leftPts[6].y + oy);
+    ctx.lineTo(leftPts[6].x + Math.cos(leftFinAngle) * pelvLen + ox, leftPts[6].y + Math.sin(leftFinAngle) * pelvLen + oy);
+    ctx.lineTo(leftPts[7].x + ox, leftPts[7].y + oy);
+    ctx.fillStyle = finBaseColor;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(rightPts[6].x + ox, rightPts[6].y + oy);
+    ctx.lineTo(rightPts[6].x + Math.cos(rightFinAngle) * pelvLen + ox, rightPts[6].y + Math.sin(rightFinAngle) * pelvLen + oy);
+    ctx.lineTo(rightPts[7].x + ox, rightPts[7].y + oy);
+    ctx.fillStyle = finBaseColor;
+    ctx.fill();
+
+    // 3. FLOWING VEIL TAIL (Delay trailing behind body sway)
+    const tailBase = spine[12];
+    const tailPrev = spine[10];
     const tailAngle = Math.atan2(tailBase.y - tailPrev.y, tailBase.x - tailPrev.x);
-    const tailLen = 30 * this.scale;
-    const tailWave = Math.sin(time * 0.005 + this.wigglePhase - 1.2) * 6;
+    const tailLen = 38 * this.scale;
+    // Trailing wave delay
+    const tailWave = Math.sin(time * 0.018 * this.swimSpeed * this.speedBoost + this.wigglePhase - 1.4) * 8 * this.scale;
 
-    // Upper veil lobe
     ctx.beginPath();
     ctx.moveTo(tailBase.x + ox, tailBase.y + oy);
+    // Upper veil lobe
     ctx.bezierCurveTo(
-      tailBase.x + Math.cos(tailAngle - 0.35) * (tailLen * 0.5) + ox,
-      tailBase.y + Math.sin(tailAngle - 0.35) * (tailLen * 0.5) + tailWave + oy,
-      tailBase.x + Math.cos(tailAngle - 0.2) * tailLen + ox,
-      tailBase.y + Math.sin(tailAngle - 0.2) * tailLen + tailWave * 1.3 + oy,
-      tailBase.x + Math.cos(tailAngle - 0.05) * (tailLen * 0.75) + ox,
-      tailBase.y + Math.sin(tailAngle - 0.05) * (tailLen * 0.75) + tailWave + oy
+      tailBase.x + Math.cos(tailAngle - 0.38) * (tailLen * 0.55) + ox,
+      tailBase.y + Math.sin(tailAngle - 0.38) * (tailLen * 0.55) + tailWave + oy,
+      tailBase.x + Math.cos(tailAngle - 0.22) * tailLen + ox,
+      tailBase.y + Math.sin(tailAngle - 0.22) * tailLen + tailWave * 1.4 + oy,
+      tailBase.x + Math.cos(tailAngle - 0.05) * (tailLen * 0.8) + ox,
+      tailBase.y + Math.sin(tailAngle - 0.05) * (tailLen * 0.8) + tailWave + oy
     );
-    // Lower veil lobe
+    // Center notch / Lower veil lobe
     ctx.bezierCurveTo(
-      tailBase.x + Math.cos(tailAngle + 0.2) * tailLen + ox,
-      tailBase.y + Math.sin(tailAngle + 0.2) * tailLen - tailWave * 1.3 + oy,
-      tailBase.x + Math.cos(tailAngle + 0.35) * (tailLen * 0.5) + ox,
-      tailBase.y + Math.sin(tailAngle + 0.35) * (tailLen * 0.5) - tailWave + oy,
+      tailBase.x + Math.cos(tailAngle + 0.22) * tailLen + ox,
+      tailBase.y + Math.sin(tailAngle + 0.22) * tailLen - tailWave * 1.4 + oy,
+      tailBase.x + Math.cos(tailAngle + 0.38) * (tailLen * 0.55) + ox,
+      tailBase.y + Math.sin(tailAngle + 0.38) * (tailLen * 0.55) - tailWave + oy,
       tailBase.x + ox,
       tailBase.y + oy
     );
     ctx.closePath();
-    ctx.fillStyle = finColor;
+    ctx.fillStyle = finBaseColor;
     ctx.fill();
 
-    // 3. MAIN FISH BODY CONTOUR
+    // Subtle fin rays in tail
+    if (!isShadow) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.lineWidth = 0.7;
+      for (let r = -2; r <= 2; r++) {
+        ctx.beginPath();
+        ctx.moveTo(tailBase.x, tailBase.y);
+        ctx.quadraticCurveTo(
+          tailBase.x + Math.cos(tailAngle + r * 0.1) * (tailLen * 0.5),
+          tailBase.y + Math.sin(tailAngle + r * 0.1) * (tailLen * 0.5) + tailWave * (r * 0.3),
+          tailBase.x + Math.cos(tailAngle + r * 0.08) * (tailLen * 0.85),
+          tailBase.y + Math.sin(tailAngle + r * 0.08) * (tailLen * 0.85) + tailWave * (r * 0.5)
+        );
+        ctx.stroke();
+      }
+    }
+
+    // 4. MAIN VOLUMETRIC FISH BODY CONTOUR
     ctx.beginPath();
-    // Head snout
+    // Rounded snout
     ctx.moveTo(spine[0].x + Math.cos(this.angle) * (6 * this.scale) + ox, spine[0].y + Math.sin(this.angle) * (6 * this.scale) + oy);
 
-    // Left body curve from head to tail
-    for (let i = 0; i < 7; i++) {
+    // Left body curvature
+    for (let i = 0; i < 12; i++) {
       const mx = (leftPts[i].x + leftPts[i + 1].x) / 2 + ox;
       const my = (leftPts[i].y + leftPts[i + 1].y) / 2 + oy;
       ctx.quadraticCurveTo(leftPts[i].x + ox, leftPts[i].y + oy, mx, my);
     }
-    ctx.lineTo(spine[7].x + ox, spine[7].y + oy);
+    ctx.lineTo(spine[12].x + ox, spine[12].y + oy);
 
-    // Right body curve from tail to head
-    for (let i = 7; i > 0; i--) {
+    // Right body curvature
+    for (let i = 12; i > 0; i--) {
       const mx = (rightPts[i].x + rightPts[i - 1].x) / 2 + ox;
       const my = (rightPts[i].y + rightPts[i - 1].y) / 2 + oy;
       ctx.quadraticCurveTo(rightPts[i].x + ox, rightPts[i].y + oy, mx, my);
@@ -334,44 +405,74 @@ class RiverFish {
       ctx.fillStyle = shadowColor;
       ctx.fill();
     } else {
-      // Fish color gradients
+      // 3D Volumetric body gradient
       const bodyGrad = ctx.createLinearGradient(
         spine[0].x, spine[0].y,
-        spine[7].x, spine[7].y
+        spine[12].x, spine[12].y
       );
 
-      if (this.type === 'goldfish') {
-        bodyGrad.addColorStop(0, '#ff7b00');      // Head/back
-        bodyGrad.addColorStop(0.45, '#ffaa00');   // Body
-        bodyGrad.addColorStop(1, 'rgba(255, 209, 102, 0.7)'); // Tail transition
+      if (this.type === 'kohaku') {
+        // Japanese Kohaku: Pearl white with vibrant crimson/orange saddle patches
+        bodyGrad.addColorStop(0, '#ff3b00');     // Vermilion snout
+        bodyGrad.addColorStop(0.2, '#ff6a00');    // Vibrant orange head
+        bodyGrad.addColorStop(0.42, '#ffffff');   // Pure white belly saddle
+        bodyGrad.addColorStop(0.68, '#ff4500');   // Crimson posterior patch
+        bodyGrad.addColorStop(1, '#fff5ea');      // Pale pearlescent peduncle
       } else {
-        bodyGrad.addColorStop(0, '#9b111e');      // Deep crimson back
-        bodyGrad.addColorStop(0.5, '#e63946');    // Bright red body
-        bodyGrad.addColorStop(1, 'rgba(255, 143, 163, 0.7)'); // Translucent
+        // Village Red Carp: Deep crimson back transitioning to glowing scarlet
+        bodyGrad.addColorStop(0, '#8a0815');     // Deep crimson back
+        bodyGrad.addColorStop(0.35, '#d91b2b');   // Glowing scarlet red body
+        bodyGrad.addColorStop(0.7, '#ff3344');    // Bright sunlit flanks
+        bodyGrad.addColorStop(1, 'rgba(255, 120, 140, 0.85)');
       }
 
       ctx.fillStyle = bodyGrad;
       ctx.fill();
 
-      // Delicate fish eye on head
-      const eyeSideDist = 3.2 * this.scale;
-      const eyeForwardDist = 2.0 * this.scale;
-      const eyeAngle = this.angle;
-      const ex1 = spine[0].x + Math.cos(eyeAngle) * eyeForwardDist - Math.sin(eyeAngle) * eyeSideDist;
-      const ey1 = spine[0].y + Math.sin(eyeAngle) * eyeForwardDist + Math.cos(eyeAngle) * eyeSideDist;
-      const ex2 = spine[0].x + Math.cos(eyeAngle) * eyeForwardDist + Math.sin(eyeAngle) * eyeSideDist;
-      const ey2 = spine[0].y + Math.sin(eyeAngle) * eyeForwardDist - Math.cos(eyeAngle) * eyeSideDist;
-
-      ctx.fillStyle = '#0a1d2a';
+      // Volumetric dorsal ridge highlight (catching sunlight along the spine)
       ctx.beginPath();
-      ctx.arc(ex1, ey1, 1.3 * this.scale, 0, Math.PI * 2);
-      ctx.arc(ex2, ey2, 1.3 * this.scale, 0, Math.PI * 2);
+      ctx.moveTo(spine[1].x, spine[1].y);
+      for (let i = 1; i < 9; i++) {
+        ctx.lineTo(spine[i].x, spine[i].y);
+      }
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.42)';
+      ctx.lineWidth = 2.2 * this.scale;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Translucent dorsal fin along spine
+      ctx.beginPath();
+      ctx.moveTo(spine[3].x, spine[3].y);
+      ctx.quadraticCurveTo(
+        spine[5].x - Math.sin(this.angle) * (4 * this.scale),
+        spine[5].y + Math.cos(this.angle) * (4 * this.scale),
+        spine[8].x,
+        spine[8].y
+      );
+      ctx.strokeStyle = finBaseColor;
+      ctx.lineWidth = 2.0 * this.scale;
+      ctx.stroke();
+
+      // Delicate Fish Eyes
+      const eyeSideDist = 4.2 * this.scale;
+      const eyeForwardDist = 3.2 * this.scale;
+      const ex1 = spine[0].x + Math.cos(this.angle) * eyeForwardDist - Math.sin(this.angle) * eyeSideDist;
+      const ey1 = spine[0].y + Math.sin(this.angle) * eyeForwardDist + Math.cos(this.angle) * eyeSideDist;
+      const ex2 = spine[0].x + Math.cos(this.angle) * eyeForwardDist + Math.sin(this.angle) * eyeSideDist;
+      const ey2 = spine[0].y + Math.sin(this.angle) * eyeForwardDist - Math.cos(this.angle) * eyeSideDist;
+
+      // Dark pupil
+      ctx.fillStyle = '#06131c';
+      ctx.beginPath();
+      ctx.arc(ex1, ey1, 1.4 * this.scale, 0, Math.PI * 2);
+      ctx.arc(ex2, ey2, 1.4 * this.scale, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      // Specular sunlight glint
+      ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(ex1 - 0.4, ey1 - 0.4, 0.5 * this.scale, 0, Math.PI * 2);
-      ctx.arc(ex2 - 0.4, ey2 - 0.4, 0.5 * this.scale, 0, Math.PI * 2);
+      ctx.arc(ex1 - 0.4, ey1 - 0.4, 0.55 * this.scale, 0, Math.PI * 2);
+      ctx.arc(ex2 - 0.4, ey2 - 0.4, 0.55 * this.scale, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -381,20 +482,23 @@ class RiverFish {
 
 /**
  * WaterBackground Component
- * Full production-grade implementation of the Village River Stream Background engine.
+ * Cinematic 2.5D Realistic Village River Background Engine
  */
 export default function WaterBackground() {
   const localCanvasRef = useRef(null);
 
   useEffect(() => {
     // 1. Get or attach to the canvas element
-    let canvas = document.getElementById('village-river-canvas');
+    let canvas = document.getElementById('cinematic-river');
+    if (!canvas) {
+      canvas = document.getElementById('village-river-canvas');
+    }
     if (!canvas) {
       canvas = localCanvasRef.current;
     }
     if (!canvas) return;
 
-    // Ensure requested styles are present
+    // Apply exact integration styles
     canvas.style.position = 'fixed';
     canvas.style.top = '0';
     canvas.style.left = '0';
@@ -411,11 +515,11 @@ export default function WaterBackground() {
     let height = 0;
     let dpr = 1;
 
-    // Offscreen Canvas for Layer 1 & Layer 2 Pre-rendering (60FPS Optimization)
+    // Offscreen Canvas for Layer 1 & Layer 2 Pre-rendering (Zero-Lag 60FPS Optimization)
     const offscreenCanvas = document.createElement('canvas');
     const offCtx = offscreenCanvas.getContext('2d');
 
-    // Pointer state
+    // Pointer tracking state
     const pointer = {
       x: -1000,
       y: -1000,
@@ -426,208 +530,279 @@ export default function WaterBackground() {
       lastStationaryRippleTime: 0
     };
 
-    // Layer 2: Stones data
+    // Layer 2: 3D River Stones data
     const STONE_PALETTES = [
-      { light: '#8898a3', mid: '#5c6b73', dark: '#384349' }, // Warm Slate
-      { light: '#728b77', mid: '#4a5d4e', dark: '#2d3b30' }, // Mossy Grey
-      { light: '#b5ada5', mid: '#8d867e', dark: '#59534c' }, // River Sandstone
-      { light: '#5f6a73', mid: '#3b444b', dark: '#22272b' }, // Deep Pebble
-      { light: '#a1947e', mid: '#7a6f5d', dark: '#4c4438' }  // Soft Ochre
+      { base: '#3e4a42', light: '#5c6e63', dark: '#202923', moss: true },  // Warm mossy Slate
+      { base: '#2a2f35', light: '#424952', dark: '#13171b', moss: false }, // Weathered River Basalt
+      { base: '#847565', light: '#a89784', dark: '#4a4136', moss: true },  // River Sandstone
+      { base: '#515751', light: '#747d74', dark: '#2e332e', moss: true }   // Wet Granite
     ];
     let stones = [];
 
-    // Layer 3: Grass clusters data
+    // Layer 3: Physical River Grass data
     let grassClusters = [];
 
     // Layer 4: Fish instances
     let fishList = [];
 
-    // Layer 5: Caustics, Shimmers, and Motes
+    // Layer 5 & 6: Caustics, Shimmers, Ripples, Wakes, and Motes
     let caustics = [];
     let shimmers = [];
     let motes = [];
-
-    // Layer 6: Ripples and Wakes
     const ripples = [];
     const wakes = [];
 
-    // Check reduced motion preference
     const prefersReducedMotion = () =>
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Helper: Draw organic rounded stone shape
+    // Helper: Draw organic rounded stone contour
     const drawStonePath = (targetCtx, s, ox = 0, oy = 0) => {
       targetCtx.beginPath();
       const numPts = s.deform.length;
+      const pts = [];
+
       for (let j = 0; j < numPts; j++) {
         const angle = s.rotation + (j / numPts) * Math.PI * 2;
         const rFactor = s.deform[j];
-        const px = s.x + ox + Math.cos(angle) * s.rx * rFactor;
-        const py = s.y + oy + Math.sin(angle) * s.ry * rFactor;
-        if (j === 0) targetCtx.moveTo(px, py);
-        else targetCtx.lineTo(px, py);
+        pts.push({
+          x: s.x + ox + Math.cos(angle) * s.rx * rFactor,
+          y: s.y + oy + Math.sin(angle) * s.ry * rFactor
+        });
+      }
+
+      // Smooth closed spline
+      targetCtx.moveTo((pts[0].x + pts[numPts - 1].x) / 2, (pts[0].y + pts[numPts - 1].y) / 2);
+      for (let j = 0; j < numPts; j++) {
+        const next = pts[(j + 1) % numPts];
+        const midX = (pts[j].x + next.x) / 2;
+        const midY = (pts[j].y + next.y) / 2;
+        targetCtx.quadraticCurveTo(pts[j].x, pts[j].y, midX, midY);
       }
       targetCtx.closePath();
     };
 
-    // Pre-render Layer 1 (Base & Silt) and Layer 2 (3D Stones) onto Offscreen Canvas
+    /**
+     * Pre-render Layer 1 (Riverbed Base & Sand) and Layer 2 (3D River Stones)
+     * Onto Offscreen Canvas Cache once at startup and resize.
+     */
     const preRenderRiverbed = () => {
       offscreenCanvas.width = canvas.width;
       offscreenCanvas.height = canvas.height;
       offCtx.setTransform(1, 0, 0, 1, 0, 0);
       offCtx.scale(dpr, dpr);
 
-      // --- LAYER 1: Sunlit Riverbed Base & Soft Silt ---
-      // Sky-Reflected Water Base (Linear Gradient from Top-Left to Bottom-Right)
-      const baseGrad = offCtx.createLinearGradient(0, 0, width, height);
-      baseGrad.addColorStop(0, '#0a2e46');     // Stop 0%: Deep shaded bank water
-      baseGrad.addColorStop(0.45, '#165b8a');  // Stop 45%: Clear mid-stream sky reflection
-      baseGrad.addColorStop(0.85, '#2980b9');  // Stop 85%: Bright sunlit shallow water
-      baseGrad.addColorStop(1, '#48a9e6');     // Stop 100%: Crystal sunlit edge
-
+      // =======================================================================
+      // LAYER 1: Natural Silt & Particle Bed (Bottom)
+      // =======================================================================
+      // Deep Volumetric Riverbed Gradient:
+      // Dark Indigo-Blue (#0a1f33) -> Sky-Reflected Azure (#144e76) -> Sunlit Turquoise (#2882a8)
+      const baseGrad = offCtx.createLinearGradient(0, height, width, 0);
+      baseGrad.addColorStop(0, '#0a1f33');     // Deep volumetric river channel
+      baseGrad.addColorStop(0.38, '#144e76');  // Sky-reflected azure
+      baseGrad.addColorStop(0.78, '#2882a8');  // Sunlit turquoise
+      baseGrad.addColorStop(1, '#3b9ec7');     // Shimmering bank edge
       offCtx.fillStyle = baseGrad;
       offCtx.fillRect(0, 0, width, height);
 
-      // 80 tiny static riverbed sand/silt specks
-      for (let i = 0; i < 80; i++) {
+      // Warm sandy riverbed glow along the rocky bank (left & lower stream)
+      const bankSandGrad = offCtx.createRadialGradient(
+        width * 0.18, height * 0.65, 30,
+        width * 0.3, height * 0.55, Math.max(width, height) * 0.75
+      );
+      bankSandGrad.addColorStop(0, 'rgba(148, 131, 107, 0.45)');
+      bankSandGrad.addColorStop(0.45, 'rgba(95, 108, 98, 0.22)');
+      bankSandGrad.addColorStop(1, 'rgba(10, 31, 51, 0)');
+      offCtx.fillStyle = bankSandGrad;
+      offCtx.fillRect(0, 0, width, height);
+
+      // 100+ fine, uneven speckled silt & river sand particles (0.5px to 3px, opacity 0.05 to 0.3)
+      for (let i = 0; i < 140; i++) {
         const sx = Math.random() * width;
         const sy = Math.random() * height;
-        const sRad = 0.5 + Math.random() * 0.75;
-        offCtx.fillStyle = i % 2 === 0 ? 'rgba(255, 255, 255, 0.12)' : 'rgba(10, 30, 45, 0.25)';
+        const sRad = 0.5 + Math.random() * 2.5;
+        const alpha = 0.05 + Math.random() * 0.25;
+
+        offCtx.fillStyle = (i % 3 === 0)
+          ? `rgba(235, 225, 205, ${alpha})`
+          : (i % 3 === 1 ? `rgba(180, 160, 135, ${alpha})` : `rgba(15, 35, 50, ${alpha * 1.2})`);
+
         offCtx.beginPath();
         offCtx.arc(sx, sy, sRad, 0, Math.PI * 2);
         offCtx.fill();
       }
 
-      // --- LAYER 2: 3D Submerged Stones (Pre-Rendered) ---
-      // Step 1: Drop Shadows for all stones
+      // =======================================================================
+      // LAYER 2: Ultra-Realistic 3D River Stones (Pre-rendered)
+      // =======================================================================
+      // 1. Deep, diffused underwater drop shadows (rgba(2, 10, 20, 0.75) with 15px offset)
       for (let i = 0; i < stones.length; i++) {
         const s = stones[i];
-        drawStonePath(offCtx, s, 6, 8);
-        offCtx.fillStyle = 'rgba(4, 18, 30, 0.45)';
+        drawStonePath(offCtx, s, 15, 15);
+        offCtx.fillStyle = 'rgba(2, 10, 20, 0.75)';
         offCtx.fill();
       }
 
-      // Step 2 & 3: 3D Body & Submerged Water Tint
+      // 2. 3D Rock Volumetric Bodies & Radial Gradient Overlaps
       for (let i = 0; i < stones.length; i++) {
         const s = stones[i];
 
-        // 3D Body: Off-center radial gradient (light from top-left)
-        const lx = s.x - s.rx * 0.35;
-        const ly = s.y - s.ry * 0.35;
-        const grad = offCtx.createRadialGradient(
-          lx, ly, s.rx * 0.08,
-          s.x, s.y, Math.max(s.rx, s.ry) * 1.15
+        // Bulging radial gradient with light source from top-left
+        const lx = s.x - s.rx * 0.38;
+        const ly = s.y - s.ry * 0.38;
+        const radGrad = offCtx.createRadialGradient(
+          lx, ly, s.rx * 0.1,
+          s.x, s.y, Math.max(s.rx, s.ry) * 1.35
         );
-        grad.addColorStop(0, s.palette.light);
-        grad.addColorStop(0.55, s.palette.mid);
-        grad.addColorStop(1, s.palette.dark);
+        radGrad.addColorStop(0, s.palette.light);
+        radGrad.addColorStop(0.55, s.palette.base);
+        radGrad.addColorStop(1, s.palette.dark);
 
         drawStonePath(offCtx, s, 0, 0);
-        offCtx.fillStyle = grad;
+        offCtx.fillStyle = radGrad;
         offCtx.fill();
 
-        // Submerged Water Tint: Overlay each stone with rgba(22, 91, 138, 0.22)
-        offCtx.fillStyle = 'rgba(22, 91, 138, 0.22)';
+        // Volumetric top highlight (rgba(255, 255, 255, 0.2)) on upper rim
+        offCtx.save();
+        offCtx.clip();
+        const highlightGrad = offCtx.createLinearGradient(
+          s.x - s.rx, s.y - s.ry,
+          s.x + s.rx * 0.5, s.y + s.ry * 0.5
+        );
+        highlightGrad.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
+        highlightGrad.addColorStop(0.4, 'rgba(255, 255, 255, 0.08)');
+        highlightGrad.addColorStop(0.7, 'rgba(0, 0, 0, 0)');
+        offCtx.fillStyle = highlightGrad;
+        offCtx.fillRect(s.x - s.rx * 1.2, s.y - s.ry * 1.2, s.rx * 2.4, s.ry * 2.4);
+
+        // Moss patches on upper edges (rgba(28, 69, 44, 0.4))
+        if (s.palette.moss) {
+          const mossGrad = offCtx.createRadialGradient(
+            s.x - s.rx * 0.2, s.y - s.ry * 0.35, 2,
+            s.x - s.rx * 0.2, s.y - s.ry * 0.35, s.rx * 0.75
+          );
+          mossGrad.addColorStop(0, 'rgba(56, 115, 68, 0.55)');
+          mossGrad.addColorStop(0.65, 'rgba(28, 69, 44, 0.38)');
+          mossGrad.addColorStop(1, 'rgba(28, 69, 44, 0)');
+          offCtx.fillStyle = mossGrad;
+          offCtx.fillRect(s.x - s.rx, s.y - s.ry, s.rx * 2, s.ry * 2);
+        }
+
+        offCtx.restore();
+
+        // Submerged Water Tint overlay
+        drawStonePath(offCtx, s, 0, 0);
+        offCtx.fillStyle = 'rgba(20, 78, 118, 0.22)';
         offCtx.fill();
       }
     };
 
     // Initialize scenes and entities
     const initScene = () => {
-      // 1. Generate 55 Stones (CONFIG.STONE_COUNT) with clustered pebbles
+      // 1. Generate 55 Stones (CONFIG.STONE_COUNT):
+      // Dense natural clustering along the left and lower riverbank, exactly like reference artwork!
       stones = [];
-      const primaryCount = 35;
+      const primaryCount = 36;
       for (let i = 0; i < primaryCount; i++) {
+        // Natural distribution biased along riverbank (left 65% and bottom 75%)
+        const clusterBiasX = Math.random() < 0.75 ? Math.random() * (width * 0.58) : Math.random() * width;
+        const clusterBiasY = Math.random() < 0.65 ? Math.random() * (height * 0.85) : Math.random() * height;
+
         stones.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          rx: 22 + Math.random() * 42, // radiusX: 22 to 64px
-          ry: 16 + Math.random() * 30, // radiusY: 16 to 46px
+          x: clusterBiasX,
+          y: clusterBiasY,
+          rx: 28 + Math.random() * 45, // radiusX: 28 to 73px
+          ry: 20 + Math.random() * 34, // radiusY: 20 to 54px
           rotation: Math.random() * Math.PI * 2,
           palette: STONE_PALETTES[Math.floor(Math.random() * STONE_PALETTES.length)],
-          deform: Array.from({ length: 10 }, () => 0.88 + Math.random() * 0.24)
+          deform: Array.from({ length: 12 }, () => 0.86 + Math.random() * 0.28)
         });
       }
 
-      const clusterPebblesCount = Math.max(0, CONFIG.STONE_COUNT - primaryCount);
-      for (let i = 0; i < clusterPebblesCount; i++) {
+      // Small pebble clusters tucked into the gaps
+      const pebbleCount = Math.max(0, CONFIG.STONE_COUNT - primaryCount);
+      for (let i = 0; i < pebbleCount; i++) {
         const parent = stones[Math.floor(Math.random() * primaryCount)];
         const ang = Math.random() * Math.PI * 2;
-        const dist = parent.rx + 8 + Math.random() * 22;
+        const dist = parent.rx + 10 + Math.random() * 26;
         stones.push({
           x: Math.max(20, Math.min(width - 20, parent.x + Math.cos(ang) * dist)),
           y: Math.max(20, Math.min(height - 20, parent.y + Math.sin(ang) * dist)),
-          rx: 11 + Math.random() * 11,
-          ry: 8 + Math.random() * 8,
+          rx: 10 + Math.random() * 12,
+          ry: 7 + Math.random() * 9,
           rotation: Math.random() * Math.PI * 2,
           palette: STONE_PALETTES[Math.floor(Math.random() * STONE_PALETTES.length)],
-          deform: Array.from({ length: 8 }, () => 0.9 + Math.random() * 0.2)
+          deform: Array.from({ length: 8 }, () => 0.90 + Math.random() * 0.20)
         });
       }
 
-      // 2. Generate 28 Grass Clusters (CONFIG.GRASS_CLUSTERS), anchored near stones
+      // Sort stones so background stones draw before foreground stones
+      stones.sort((a, b) => a.y - b.y);
+
+      // 2. Generate 28 dense tufts of River Grass (CONFIG.GRASS_CLUSTERS)
+      // Grouped together naturalistically around rocks as in reference art
       grassClusters = [];
       for (let c = 0; c < CONFIG.GRASS_CLUSTERS; c++) {
+        // Bias clusters toward the central-lower rocks
         const anchorStone = stones[c % stones.length];
         const cx = anchorStone
-          ? anchorStone.x + (Math.random() - 0.5) * anchorStone.rx * 1.4
-          : Math.random() * width;
+          ? anchorStone.x + (Math.random() - 0.3) * anchorStone.rx * 1.5
+          : Math.random() * (width * 0.7);
         const cy = anchorStone
-          ? anchorStone.y + anchorStone.ry * 0.55
+          ? anchorStone.y + anchorStone.ry * 0.4
           : Math.random() * height;
 
-        const bladeCount = 4 + Math.floor(Math.random() * 4); // 4 to 7 blades
+        const bladeCount = 5 + Math.floor(Math.random() * 5); // 5 to 9 blades per tuft
         const blades = [];
         for (let b = 0; b < bladeCount; b++) {
           blades.push({
-            ox: (b - bladeCount / 2) * 5 + (Math.random() - 0.5) * 3,
-            length: 65 + Math.random() * 65,
+            x: cx + (b - bladeCount / 2) * 5.5 + (Math.random() - 0.5) * 4,
+            y: cy + (Math.random() - 0.5) * 8,
+            length: 85 + Math.random() * 95, // Long, sweeping blades
             phase: Math.random() * Math.PI * 2,
-            baseWidth: 3.5 + Math.random() * 0.9,
-            lean: (Math.random() - 0.15) * 16
+            baseWidth: 3.5,
+            leanAngle: 0.2 + (Math.random() - 0.5) * 0.25
           });
         }
         grassClusters.push({ cx, cy, blades });
       }
 
-      // 3. Generate Fish (CONFIG.FISH_COUNT = 5)
+      // 3. Generate Cinematic Fish (CONFIG.FISH_COUNT = 5, strictly 4 to 6 fish)
       fishList = [];
       for (let f = 0; f < CONFIG.FISH_COUNT; f++) {
-        fishList.push(new RiverFish(width, height, true));
+        fishList.push(new CinematicFish(width, height, true));
       }
 
-      // 4. Generate Caustics ribbons (18 ribbons)
+      // 4. Generate Sunlight Caustic Web (distorted network of luminous bezier lines)
       caustics = [];
-      for (let r = 0; r < 18; r++) {
+      for (let r = 0; r < 20; r++) {
         caustics.push({
           baseX: Math.random() * width,
-          y: (height / 18) * r + (Math.random() - 0.5) * 35,
-          span: 320 + Math.random() * 260,
+          y: (height / 20) * r + (Math.random() - 0.5) * 40,
+          span: 340 + Math.random() * 280,
           phase: Math.random() * Math.PI * 2
         });
       }
 
-      // 5. Generate Sky Surface Shimmer patches (12 patches)
+      // 5. Generate Sky Reflection Blobs (15-20 large, soft drifting blobs)
       shimmers = [];
-      for (let s = 0; s < 12; s++) {
+      for (let s = 0; s < 18; s++) {
         shimmers.push({
           baseX: Math.random() * width,
           y: Math.random() * height,
-          radius: 100 + Math.random() * 140, // radius 100px to 240px
+          radius: 120 + Math.random() * 160,
           phase: Math.random() * Math.PI * 2
         });
       }
 
-      // 6. Generate Floating River Motes (25 particles)
+      // 6. Floating surface speckles/foam motes moving with current
       motes = [];
-      for (let m = 0; m < 25; m++) {
+      for (let m = 0; m < 30; m++) {
         motes.push({
           x: Math.random() * width,
           y: Math.random() * height,
-          size: 1 + Math.random() * 1.2,
-          speed: 0.15 + Math.random() * 0.35,
+          size: 1 + Math.random() * 1.8,
+          speed: 0.2 + Math.random() * 0.45,
           phase: Math.random() * Math.PI * 2
         });
       }
@@ -655,7 +830,7 @@ export default function WaterBackground() {
     handleResize();
     window.addEventListener('resize', handleResize, { passive: true });
 
-    // Non-Intrusive Mouse Tracking on window
+    // Interactive mouse velocity & movement tracking on window
     const handleMouseMove = (e) => {
       const x = e.clientX;
       const y = e.clientY;
@@ -673,11 +848,10 @@ export default function WaterBackground() {
       pointer.active = true;
       pointer.lastMoveTime = now;
 
-      // Spawn new WaterRipple object if distance > CONFIG.RIPPLE_SENSITIVITY (6px)
+      // Spawn subtle water waves if movement threshold met
       if (dist > CONFIG.RIPPLE_SENSITIVITY) {
         ripples.push(new WaterRipple(x, y));
 
-        // Cursor Wake Trail: fast mouse movement triggers V-shaped wake
         if (dist > 8) {
           const moveAngle = Math.atan2(y - pointer.lastY, x - pointer.lastX);
           wakes.push(new CursorWake(x, y, moveAngle));
@@ -697,7 +871,7 @@ export default function WaterBackground() {
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('mouseleave', handleMouseLeave, { passive: true });
 
-    // Continuous 60FPS Strict 6-Layer Rendering Loop
+    // Main 60FPS Cinematic Render Loop
     let lastTime = performance.now();
 
     const render = (now) => {
@@ -705,56 +879,69 @@ export default function WaterBackground() {
       lastTime = now;
       const time = now;
 
-      // Gentle periodic ripple when cursor is resting/stationary
-      if (!prefersReducedMotion() && pointer.active && now - pointer.lastMoveTime > 200) {
-        if (now - pointer.lastStationaryRippleTime > 800) {
+      // Gentle stationary ripple when cursor rests peacefully
+      if (!prefersReducedMotion() && pointer.active && now - pointer.lastMoveTime > 220) {
+        if (now - pointer.lastStationaryRippleTime > 850) {
           pointer.lastStationaryRippleTime = now;
           ripples.push(new WaterRipple(pointer.x, pointer.y));
         }
       }
 
-      // =========================================================================
-      // LAYERS 1 & 2: Sunlit Riverbed Base & Submerged Stones (Pre-rendered buffer)
-      // =========================================================================
+      // =======================================================================
+      // LAYERS 1 & 2: Sunlit Riverbed & 3D Stones (Zero-lag Offscreen Stamp)
+      // =======================================================================
       ctx.drawImage(offscreenCanvas, 0, 0, width, height);
 
-      // =========================================================================
-      // LAYER 3: Flowing Underwater River Grass
-      // =========================================================================
+      // =======================================================================
+      // LAYER 3: Physical River Grass (Water Sway & Current)
+      // =======================================================================
       ctx.save();
-      ctx.globalAlpha = 0.8;
+      ctx.globalAlpha = 0.7; // Translucent foliage at 0.7 opacity
 
       for (let c = 0; c < grassClusters.length; c++) {
         const cluster = grassClusters[c];
         for (let b = 0; b < cluster.blades.length; b++) {
           const blade = cluster.blades[b];
 
-          // Fluid Physics Equation from specification:
-          // sway = Math.sin(time * 0.0018 + blade.phase) * 14 + Math.cos(time * 0.0009 + blade.phase) * 6;
-          // Always bias sway +18px in the direction of the river current (+X)
-          const sway =
-            Math.sin(time * 0.0018 + blade.phase) * 14 +
-            Math.cos(time * 0.0009 + blade.phase) * 6 +
-            18;
+          // Dual-frequency wave algorithm from specification:
+          // windSway = Math.sin(time * 0.001 + blade.y * 0.01) * 6;
+          // currentDrift = Math.sin(time * 0.0025 + blade.x * 0.005) * 12;
+          // Heavily bowed towards +X responding to river current
+          const windSway = Math.sin(time * 0.001 + blade.y * 0.01) * 6;
+          const currentDrift = Math.sin(time * 0.0025 + blade.x * 0.005) * 12;
+          const totalSway = windSway + currentDrift + 28;
 
-          const rootX = cluster.cx + blade.ox;
-          const rootY = cluster.cy;
-          const tipX = rootX + sway + blade.lean;
-          const tipY = rootY - blade.length;
-          const midX = rootX + sway * 0.55;
-          const midY = rootY - blade.length * 0.52;
+          const rootX = blade.x;
+          const rootY = blade.y;
+          const tipX = rootX + totalSway + Math.sin(blade.leanAngle) * blade.length;
+          const tipY = rootY - Math.cos(blade.leanAngle) * blade.length;
+
+          // Mid joints for natural organic bending
+          const cp1X = rootX + totalSway * 0.35;
+          const cp1Y = rootY - blade.length * 0.38;
+          const cp2X = rootX + totalSway * 0.75;
+          const cp2Y = rootY - blade.length * 0.72;
 
           ctx.beginPath();
+          // Tapering width: base 3.5px, tip 0.2px
           ctx.moveTo(rootX - blade.baseWidth * 0.5, rootY);
-          ctx.quadraticCurveTo(midX - blade.baseWidth * 0.25, midY, tipX, tipY);
-          ctx.quadraticCurveTo(midX + blade.baseWidth * 0.25, midY, rootX + blade.baseWidth * 0.5, rootY);
+          ctx.bezierCurveTo(
+            cp1X - blade.baseWidth * 0.35, cp1Y,
+            cp2X - blade.baseWidth * 0.18, cp2Y,
+            tipX, tipY
+          );
+          ctx.bezierCurveTo(
+            cp2X + blade.baseWidth * 0.18, cp2Y,
+            cp1X + blade.baseWidth * 0.35, cp1Y,
+            rootX + blade.baseWidth * 0.5, rootY
+          );
           ctx.closePath();
 
-          // Palette: Base: #143627, Mid-blade: #245c42, Sunlit Tip: #52b788
+          // Palette: Jungle Green (#0c2e1b) -> Forest Green (#16442b) -> sunlit Emerald (#397a55)
           const grassGrad = ctx.createLinearGradient(rootX, rootY, tipX, tipY);
-          grassGrad.addColorStop(0, '#143627');
-          grassGrad.addColorStop(0.5, '#245c42');
-          grassGrad.addColorStop(1, '#52b788');
+          grassGrad.addColorStop(0, '#0c2e1b');
+          grassGrad.addColorStop(0.48, '#16442b');
+          grassGrad.addColorStop(1, '#397a55');
 
           ctx.fillStyle = grassGrad;
           ctx.fill();
@@ -762,90 +949,28 @@ export default function WaterBackground() {
       }
       ctx.restore();
 
-      // =========================================================================
-      // LAYER 4: Multi-Segment Realistic Swimming Fish
-      // =========================================================================
-      // 1. Update fish positions
+      // =======================================================================
+      // LAYER 4: Spine-Kinematics Cinematic Fish (Goldfish & Red Carps)
+      // =======================================================================
+      // 1. Update fish kinematics
       for (let f = 0; f < fishList.length; f++) {
         fishList[f].update(width, height, time, pointer);
       }
 
-      // 2. Render all Riverbed Depth Shadows (+14px offset) before real fish
+      // 2. Render soft diffused shadows on riverbed (+16px offset)
       for (let f = 0; f < fishList.length; f++) {
         fishList[f].draw(ctx, time, true);
       }
 
-      // 3. Render real fish bodies, fins, and eyes
+      // 3. Render 3D volumetric fish bodies, flowing fins, and sunlight glints
       for (let f = 0; f < fishList.length; f++) {
         fishList[f].draw(ctx, time, false);
       }
 
-      // =========================================================================
-      // LAYER 5: Underwater Sunlight Caustics & Sky Reflections
-      // =========================================================================
-      ctx.save();
-      ctx.globalCompositeOperation = 'overlay';
-
-      // 1. Sunlight Caustic Web (18 large soft overlapping wave ribbons)
-      ctx.strokeStyle = 'rgba(180, 235, 255, 0.07)';
-      ctx.lineWidth = 18;
-      ctx.lineCap = 'round';
-
-      for (let r = 0; r < caustics.length; r++) {
-        const rib = caustics[r];
-        const driftX = (rib.baseX + time * 0.025 * CONFIG.RIVER_FLOW_SPEED) % (width + 300) - 150;
-        const ribY = rib.y + Math.sin(time * 0.001 + rib.phase) * 20;
-
-        ctx.beginPath();
-        ctx.moveTo(driftX, ribY);
-        for (let seg = 1; seg <= 4; seg++) {
-          const segX = driftX + seg * (rib.span / 4);
-          const cpX = segX - rib.span / 8;
-          const cpY = ribY + Math.sin(time * 0.0012 + rib.phase + seg) * 32;
-          const endY = ribY + Math.cos(time * 0.0009 + rib.phase + seg * 1.3) * 18;
-          ctx.quadraticCurveTo(cpX, cpY, segX, endY);
-        }
-        ctx.stroke();
-      }
-
-      // 2. Sky Surface Shimmer (12 large radial light patches drifting with stream)
-      for (let s = 0; s < shimmers.length; s++) {
-        const sm = shimmers[s];
-        const sx = (sm.baseX + time * 0.03 * CONFIG.RIVER_FLOW_SPEED) % (width + sm.radius * 2) - sm.radius;
-        const sy = sm.y + Math.sin(time * 0.0008 + sm.phase) * 15;
-
-        const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, sm.radius);
-        grad.addColorStop(0, 'rgba(230, 248, 255, 0.14)');
-        grad.addColorStop(0.55, 'rgba(230, 248, 255, 0.05)');
-        grad.addColorStop(1, 'rgba(230, 248, 255, 0)');
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(sx, sy, sm.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // 3. Tiny Floating River Motes (25 glowing water particles)
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-      for (let m = 0; m < motes.length; m++) {
-        const mote = motes[m];
-        mote.x += (CONFIG.RIVER_FLOW_SPEED * 0.75 + mote.speed) * dt * 60;
-        if (mote.x > width + 10) {
-          mote.x = -10;
-          mote.y = Math.random() * height;
-        }
-        const pulse = (Math.sin(time * 0.002 + mote.phase) + 1) * 0.5;
-        ctx.beginPath();
-        ctx.arc(mote.x, mote.y + Math.sin(time * 0.001 + mote.phase) * 6, mote.size * (0.8 + pulse * 0.4), 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      ctx.restore(); // Restore globalCompositeOperation to 'source-over'
-
-      // =========================================================================
-      // LAYER 6: Interactive Cursor Water-Wave Engine (Pass-By Ripples & Wakes)
-      // =========================================================================
-      // 1. Draw and update Cursor Wakes
+      // =======================================================================
+      // LAYER 5: Interactive Natural Fluid Ripple Engine (Pass-By Waves)
+      // =======================================================================
+      // Wakes
       for (let i = wakes.length - 1; i >= 0; i--) {
         const wake = wakes[i];
         wake.update();
@@ -855,7 +980,7 @@ export default function WaterBackground() {
         }
       }
 
-      // 2. Draw and update Water Ripples
+      // Cascading ripples with downstream drift (+X)
       for (let i = ripples.length - 1; i >= 0; i--) {
         const r = ripples[i];
         r.update();
@@ -865,12 +990,81 @@ export default function WaterBackground() {
         }
       }
 
+      // =======================================================================
+      // LAYER 6: Sunlight Caustics & Sky Reflections (Top Layer)
+      // =======================================================================
+      ctx.save();
+      // Use 'overlay' or 'screen' for shimmering sunlight bathing the scene
+      ctx.globalCompositeOperation = 'overlay';
+
+      // 1. Dynamic Sunlight Caustic Web (moving slowly at diagonal across water)
+      ctx.strokeStyle = 'rgba(200, 245, 255, 0.12)';
+      ctx.lineWidth = 16;
+      ctx.lineCap = 'round';
+
+      for (let r = 0; r < caustics.length; r++) {
+        const rib = caustics[r];
+        const driftX = (rib.baseX + time * 0.026 * CONFIG.RIVER_FLOW_SPEED) % (width + 360) - 180;
+        const ribY = rib.y + Math.sin(time * 0.0011 + rib.phase) * 22;
+
+        ctx.beginPath();
+        ctx.moveTo(driftX, ribY);
+        for (let seg = 1; seg <= 4; seg++) {
+          const segX = driftX + seg * (rib.span / 4);
+          const cpX = segX - rib.span / 8;
+          const cpY = ribY + Math.sin(time * 0.0013 + rib.phase + seg) * 34;
+          const endY = ribY + Math.cos(time * 0.0009 + rib.phase + seg * 1.3) * 19;
+          ctx.quadraticCurveTo(cpX, cpY, segX, endY);
+        }
+        ctx.stroke();
+      }
+
+      // 2. Sky Reflection Blobs (rgba(173, 216, 230, 0.08))
+      for (let s = 0; s < shimmers.length; s++) {
+        const sm = shimmers[s];
+        const sx = (sm.baseX + time * 0.032 * CONFIG.RIVER_FLOW_SPEED) % (width + sm.radius * 2) - sm.radius;
+        const sy = sm.y + Math.sin(time * 0.0008 + sm.phase) * 16;
+
+        const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, sm.radius);
+        grad.addColorStop(0, 'rgba(173, 216, 230, 0.08)');
+        grad.addColorStop(0.55, 'rgba(173, 216, 230, 0.03)');
+        grad.addColorStop(1, 'rgba(173, 216, 230, 0)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(sx, sy, sm.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 3. Floating surface speckles/foam motes moving with current
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.32)';
+      for (let m = 0; m < motes.length; m++) {
+        const mote = motes[m];
+        mote.x += (CONFIG.RIVER_FLOW_SPEED * 0.8 + mote.speed) * dt * 60;
+        if (mote.x > width + 15) {
+          mote.x = -15;
+          mote.y = Math.random() * height;
+        }
+        const pulse = (Math.sin(time * 0.0022 + mote.phase) + 1) * 0.5;
+        ctx.beginPath();
+        ctx.arc(
+          mote.x,
+          mote.y + Math.sin(time * 0.0012 + mote.phase) * 5,
+          mote.size * (0.8 + pulse * 0.4),
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      ctx.restore(); // Restore globalCompositeOperation
+
       animId = requestAnimationFrame(render);
     };
 
     animId = requestAnimationFrame(render);
 
-    // Pause animation when tab is inactive to preserve resources
+    // Pause animation when tab is inactive to save GPU/CPU cycles
     const handleVisibilityChange = () => {
       if (document.hidden) {
         cancelAnimationFrame(animId);
@@ -890,7 +1084,9 @@ export default function WaterBackground() {
     };
   }, []);
 
-  const hasDirectCanvas = typeof document !== 'undefined' && !!document.getElementById('village-river-canvas');
+  const hasDirectCanvas =
+    typeof document !== 'undefined' &&
+    (!!document.getElementById('cinematic-river') || !!document.getElementById('village-river-canvas'));
 
   if (hasDirectCanvas) {
     return null;
@@ -898,7 +1094,7 @@ export default function WaterBackground() {
 
   return (
     <canvas
-      id="village-river-canvas"
+      id="cinematic-river"
       ref={localCanvasRef}
       style={{
         position: 'fixed',
