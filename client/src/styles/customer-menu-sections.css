@@ -96,11 +96,13 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: linear-gradient(180deg, #0e3725 0%, #0a271a 55%, #061810 100%);
-  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: linear-gradient(180deg, rgba(8, 47, 73, 0.78) 0%, rgba(3, 29, 51, 0.88) 60%, rgba(2, 20, 36, 0.95) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.32);
   border-radius: 1.25rem;
   padding: 1.15rem 1rem 1rem;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(240, 210, 122, 0.1);
+  box-shadow: 0 12px 32px -10px rgba(2, 20, 36, 0.75), 0 0 20px -5px rgba(56, 189, 248, 0.12), inset 0 1px 0 rgba(224, 242, 254, 0.12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
               box-shadow 320ms ease,
               border-color 320ms ease;
@@ -110,8 +112,8 @@
 
 .plate-card:hover {
   transform: translateY(-5px);
-  border-color: rgba(212, 175, 55, 0.85);
-  box-shadow: 0 20px 40px -12px rgba(212, 175, 55, 0.22), 0 12px 30px -10px rgba(0, 0, 0, 0.8);
+  border-color: rgba(56, 189, 248, 0.85);
+  box-shadow: 0 20px 42px -10px rgba(2, 20, 36, 0.85), 0 0 32px -4px rgba(56, 189, 248, 0.28);
 }
 
 .plate-card--unavailable {
@@ -213,8 +215,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #0f3d2a;
-  color: #f5efe0;
+  background: #032038;
+  color: #e0f2fe;
   padding: 0.5rem;
   text-align: center;
 }
@@ -254,9 +256,9 @@
   margin-top: 0.4rem;
   padding: 0.15rem 0.5rem;
   border-radius: 9999px;
-  background: rgba(15, 61, 42, 0.6);
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  color: #f0d27a;
+  background: rgba(8, 47, 73, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #7dd3fc;
   font-size: 0.65rem;
   font-weight: 500;
   max-width: 100%;
@@ -269,7 +271,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  border-top: 1px solid rgba(56, 189, 248, 0.22);
   margin-top: auto;
   position: relative;
   z-index: 2;
@@ -282,22 +284,22 @@
   width: 32px;
   height: 32px;
   border-radius: 9999px;
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  background: rgba(15, 61, 42, 0.4);
-  color: #f0d27a;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  background: rgba(8, 47, 73, 0.6);
+  color: #7dd3fc;
   cursor: pointer;
   transition: all 180ms ease;
 }
 
 .plate-note-btn:hover {
-  background: rgba(212, 175, 55, 0.25);
-  border-color: #f0d27a;
+  background: rgba(56, 189, 248, 0.25);
+  border-color: #38bdf8;
   color: #ffffff;
 }
 
 .plate-note-btn--active {
-  background: rgba(212, 175, 55, 0.3);
-  border-color: #f0d27a;
+  background: rgba(14, 165, 233, 0.35);
+  border-color: #38bdf8;
   color: #ffffff;
 }
 
@@ -307,20 +309,21 @@
   gap: 0.3rem;
   padding: 0.45rem 1rem;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #f0d27a 0%, #d4af37 60%, #b8902a 100%);
-  color: #06140e;
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 60%, #0369a1 100%);
+  color: #ffffff;
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.04em;
-  box-shadow: 0 4px 14px -3px rgba(212, 175, 55, 0.5);
+  box-shadow: 0 4px 14px -3px rgba(2, 132, 199, 0.6);
   cursor: pointer;
   border: none;
   transition: all 180ms ease;
 }
 
 .plate-order-btn:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.12);
   transform: scale(1.03);
+  box-shadow: 0 6px 18px -3px rgba(56, 189, 248, 0.5);
 }
 
 .plate-order-btn:active {
@@ -331,11 +334,11 @@
 .plate-stepper {
   display: inline-flex;
   align-items: center;
-  background: rgba(15, 61, 42, 0.85);
-  border: 1px solid rgba(212, 175, 55, 0.6);
+  background: rgba(8, 47, 73, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.6);
   border-radius: 9999px;
   padding: 0.15rem;
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 14px -2px rgba(2, 20, 36, 0.6);
 }
 
 .plate-stepper__btn {
@@ -347,13 +350,13 @@
   border-radius: 9999px;
   border: none;
   background: transparent;
-  color: #f0d27a;
+  color: #7dd3fc;
   cursor: pointer;
   transition: all 140ms ease;
 }
 
 .plate-stepper__btn:hover {
-  background: rgba(212, 175, 55, 0.25);
+  background: rgba(56, 189, 248, 0.25);
   color: #ffffff;
 }
 
@@ -363,7 +366,7 @@
   font-size: 0.8rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: #f5efe0;
+  color: #f0f9ff;
 }
 
 /* Light Theme Overrides */

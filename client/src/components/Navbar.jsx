@@ -153,21 +153,21 @@ export default function Navbar({
         ref={headerRef}
         data-scrolled="false"
         data-hidden="false"
-        className={`sticky top-0 z-40 w-full max-w-[100vw] overflow-hidden bg-[#06140e]/70 backdrop-blur-2xl saturate-150 border-b border-[#d4af37]/20 shadow-none transition-[transform,box-shadow,background-color,border-color] duration-300 ease-in-out will-change-transform data-[hidden=true]:-translate-y-full data-[hidden=false]:translate-y-0 motion-reduce:transition-none data-[scrolled=true]:bg-[#06140e]/90 data-[scrolled=true]:border-[#d4af37]/35 data-[scrolled=true]:shadow-[0_10px_30px_-8px_rgba(0,0,0,0.8)] ${className}`}
+        className={`sticky top-0 z-40 w-full max-w-[100vw] overflow-hidden bg-[#021424]/75 backdrop-blur-2xl saturate-150 border-b border-sky-400/25 shadow-none transition-[transform,box-shadow,background-color,border-color] duration-300 ease-in-out will-change-transform data-[hidden=true]:-translate-y-full data-[hidden=false]:translate-y-0 motion-reduce:transition-none data-[scrolled=true]:bg-[#021424]/90 data-[scrolled=true]:border-sky-400/35 data-[scrolled=true]:shadow-[0_10px_30px_-8px_rgba(0,0,0,0.8)] ${className}`}
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-2 sm:gap-3 min-w-0">
 
             {/* Left: Brand Identity */}
             <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#d4af37] to-[#f0d27a] flex items-center justify-center text-[#06140e] shadow-md shadow-[#d4af37]/30 shrink-0 ring-1 ring-[#f0d27a]/60 transition-transform duration-300 hover:rotate-[-4deg] motion-reduce:transition-none">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] flex items-center justify-center text-white shadow-md shadow-sky-500/30 shrink-0 ring-1 ring-sky-300/60 transition-transform duration-300 hover:rotate-[-4deg] motion-reduce:transition-none">
                 <UtensilsCrossed className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-base min-[400px]:text-lg sm:text-xl font-black tracking-tight text-[#f5efe0] leading-none flex items-center gap-1 whitespace-nowrap">
-                  World<span className="text-[#d4af37] drop-shadow-[0_0_8px_rgba(212,175,55,0.45)]">Plate</span>
+                <span className="text-base min-[400px]:text-lg sm:text-xl font-black tracking-tight text-white leading-none flex items-center gap-1 whitespace-nowrap">
+                  World<span className="text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.45)]">Plate</span>
                 </span>
-                <span className="hidden min-[400px]:block text-[11px] text-[#f5efe0]/60 font-medium truncate mt-0.5">
+                <span className="hidden min-[400px]:block text-[11px] text-sky-200/70 font-medium truncate mt-0.5">
                   Artisanal Global Dining
                 </span>
               </div>
@@ -182,7 +182,7 @@ export default function Navbar({
                 aria-label={isOnline ? 'Online' : 'Offline Mode'}
                 className={`max-[399px]:hidden inline-flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-full text-xs font-semibold border transition-colors duration-300 ${
                   isOnline
-                    ? 'bg-[#0f3d2a]/80 text-[#f0d27a] border-[#d4af37]/35'
+                    ? 'bg-[#032038]/80 text-sky-300 border-sky-400/35'
                     : 'bg-[#c8442b]/15 text-[#f5efe0] border-[#c8442b]/50 animate-pulse motion-reduce:animate-none'
                 }`}
                 title={isOnline ? 'System is online and connected' : 'Operating in offline local-first mode'}
@@ -190,8 +190,8 @@ export default function Navbar({
                 {isOnline ? (
                   <>
                     <span className="relative flex h-2 w-2">
-                      <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-[#d4af37] opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#d4af37]"></span>
+                      <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-400"></span>
                     </span>
                     <Wifi className="w-3.5 h-3.5 hidden sm:inline" />
                     <span className="hidden sm:inline text-[11px] font-semibold tracking-tight">Online</span>
@@ -207,7 +207,7 @@ export default function Navbar({
               {/* Table Badge: static label once a table is known (set via QR link) */}
               {tableNumber ? (
                 <span
-                  className="inline-flex items-center gap-1.5 h-11 px-2.5 sm:px-3 rounded-xl bg-[#0f3d2a]/70 text-[#f5efe0] font-bold text-xs sm:text-sm border border-[#d4af37]/30 select-none"
+                  className="inline-flex items-center gap-1.5 h-11 px-2.5 sm:px-3 rounded-xl bg-[#032038]/70 text-slate-100 font-bold text-xs sm:text-sm border border-sky-400/30 select-none"
                   title={`Table ${tableNumber}`}
                 >
                   <span className="text-base leading-none">🍽️</span>
@@ -217,7 +217,7 @@ export default function Navbar({
                 <button
                   type="button"
                   onClick={onChangeTable}
-                  className="inline-flex items-center gap-1.5 h-11 min-w-11 px-2.5 sm:px-3 rounded-xl bg-[#0f3d2a]/70 hover:bg-[#1f6b4a]/60 hover:border-[#d4af37]/60 active:scale-95 text-[#f5efe0] font-bold text-xs sm:text-sm border border-[#d4af37]/30 transition-[background-color,border-color,transform] duration-200 cursor-pointer motion-reduce:transition-none motion-reduce:active:scale-100"
+                  className="inline-flex items-center gap-1.5 h-11 min-w-11 px-2.5 sm:px-3 rounded-xl bg-[#032038]/70 hover:bg-[#073b61]/60 hover:border-sky-400/60 active:scale-95 text-slate-100 font-bold text-xs sm:text-sm border border-sky-400/30 transition-[background-color,border-color,transform] duration-200 cursor-pointer motion-reduce:transition-none motion-reduce:active:scale-100"
                   title="Set your table"
                 >
                   <span className="text-base leading-none">🍽️</span>
@@ -232,7 +232,7 @@ export default function Navbar({
                 aria-label="Light mode"
                 aria-pressed={isLight}
                 title={isLight ? "Switch to dark mode" : "Switch to light mode"}
-                className="inline-flex items-center justify-center h-11 w-11 shrink-0 rounded-xl border border-[#d4af37]/60 text-[#f0d27a] bg-[#0f3d2a]/50 hover:bg-[#1f6b4a]/45 active:scale-95 transition-[background-color,transform] duration-200 cursor-pointer motion-reduce:transition-none motion-reduce:active:scale-100"
+                className="inline-flex items-center justify-center h-11 w-11 shrink-0 rounded-xl border border-sky-400/40 text-sky-300 bg-[#032038]/60 hover:bg-[#073b61]/60 active:scale-95 transition-[background-color,transform] duration-200 cursor-pointer motion-reduce:transition-none motion-reduce:active:scale-100"
               >
                 {isLight ? <Moon className="w-5 h-5" aria-hidden="true" /> : <Sun className="w-5 h-5" aria-hidden="true" />}
               </button>
@@ -242,12 +242,12 @@ export default function Navbar({
                 <button
                   type="button"
                   onClick={onOpenCart}
-                  className="inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-xl font-bold text-xs sm:text-sm bg-[#0f3d2a] text-[#f0d27a] border border-[#d4af37]/50 shadow-md cursor-pointer hover:bg-[#1f6b4a] active:scale-95 transition-all"
+                  className="inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-xl font-bold text-xs sm:text-sm bg-[#032038] text-sky-200 border border-sky-400/50 shadow-md cursor-pointer hover:bg-[#073b61] active:scale-95 transition-all"
                   title="Open table order cart"
                 >
-                  <ShoppingBag className="w-4 h-4 text-[#d4af37]" />
+                  <ShoppingBag className="w-4 h-4 text-sky-400" />
                   <span className="hidden sm:inline">Order</span>
-                  <span className="w-5 h-5 rounded-full bg-[#d4af37] text-[#06140e] text-[10px] font-black flex items-center justify-center">
+                  <span className="w-5 h-5 rounded-full bg-sky-400 text-[#021424] text-[10px] font-black flex items-center justify-center">
                     {cartItemCount}
                   </span>
                 </button>
@@ -259,20 +259,20 @@ export default function Navbar({
                 onClick={() => setShowWaiterModal(true)}
                 className={`relative inline-flex items-center justify-center gap-1.5 h-11 min-w-11 px-3 rounded-xl font-bold text-xs sm:text-sm transition-[transform,box-shadow,background-color] duration-200 active:scale-95 shadow-md cursor-pointer border motion-reduce:transition-none motion-reduce:active:scale-100 ${
                   waiterCalled
-                    ? 'bg-[#1f6b4a] text-[#f5efe0] border-[#d4af37]/60 shadow-[#1f6b4a]/40 ring-2 ring-[#d4af37]/50'
-                    : 'bg-gradient-to-r from-[#d4af37] to-[#f0d27a] text-[#06140e] border-transparent shadow-[#d4af37]/30 hover:shadow-[#d4af37]/50'
+                    ? 'bg-sky-700 text-white border-sky-400/60 shadow-sky-900/40 ring-2 ring-sky-400/50'
+                    : 'bg-gradient-to-r from-sky-400 via-sky-500 to-sky-600 text-[#021424] border-transparent shadow-sky-500/30 hover:shadow-sky-500/50'
                 }`}
                 title="Call waiter to your table"
               >
                 {waiterCalled ? (
                   <>
-                    <CheckCircle2 className="w-4 h-4 text-[#f0d27a] animate-bounce motion-reduce:animate-none" />
+                    <CheckCircle2 className="w-4 h-4 text-sky-200 animate-bounce motion-reduce:animate-none" />
                     <span className="hidden sm:inline">Waiter Called!</span>
                     <span className="sm:hidden">Called</span>
                   </>
                 ) : (
                   <>
-                    <BellRing className="w-4 h-4 text-[#06140e]" />
+                    <BellRing className="w-4 h-4 text-[#021424]" />
                     <span className="hidden sm:inline">Call Waiter</span>
                     <span className="hidden min-[400px]:inline sm:hidden">Waiter</span>
                   </>

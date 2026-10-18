@@ -698,12 +698,12 @@ export default function FoodDetailModal({
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 pb-20 sm:p-4 bg-[#06140e]/90 backdrop-blur-xl fdm-backdrop ${isClosing ? 'fdm-backdrop-out' : ''}`}
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 pb-20 sm:p-4 bg-[#021424]/90 backdrop-blur-xl fdm-backdrop ${isClosing ? 'fdm-backdrop-out' : ''}`}
       onClick={handleClose}
     >
       {/* Modal Container: Modern Dark Glassmorphic Bistro Card */}
       <div
-        className={`fdm-sheet w-full sm:max-w-xl md:max-w-2xl max-h-[92vh] sm:max-h-[90vh] bg-[#0f3d2a] border border-[#d4af37]/25 sm:rounded-3xl rounded-t-3xl shadow-2xl shadow-black/80 flex flex-col overflow-hidden text-[#f5efe0] relative fdm-frame ${isClosing ? 'fdm-frame-out' : ''}`}
+        className={`fdm-sheet w-full sm:max-w-xl md:max-w-2xl max-h-[92vh] sm:max-h-[90vh] bg-[#02182b] border border-sky-400/25 sm:rounded-3xl rounded-t-3xl shadow-2xl shadow-black/80 flex flex-col overflow-hidden text-slate-100 relative fdm-frame ${isClosing ? 'fdm-frame-out' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Ambient Top Glow */}
@@ -712,9 +712,9 @@ export default function FoodDetailModal({
         {/* ------------------------------------------------------------------
             1. Sticky Top Bar: Category, Dietary Badges, Controls
            ------------------------------------------------------------------ */}
-        <div className="relative flex items-center justify-between px-4 sm:px-5 py-3 border-b border-[#d4af37]/25 bg-[#06140e]/70 backdrop-blur-md z-30 fdm-d1">
+        <div className="relative flex items-center justify-between px-4 sm:px-5 py-3 border-b border-sky-400/20 bg-[#021424]/85 backdrop-blur-md z-30 fdm-d1">
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-[#d4af37]/15 text-[#f0d27a] border border-[#d4af37]/30">
+            <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-sky-400/15 text-sky-300 border border-sky-400/30">
               {dish.category || 'Specialty'}
             </span>
 
@@ -735,10 +735,10 @@ export default function FoodDetailModal({
             <button
               type="button"
               onClick={() => setIsLiked(!isLiked)}
-              className={`w-11 h-11 flex items-center justify-center rounded-full transition-all border border-[#d4af37]/20 active:scale-90 ${
+              className={`w-11 h-11 flex items-center justify-center rounded-full transition-all border border-sky-400/25 active:scale-90 ${
                 isLiked 
                   ? 'text-rose-500 bg-rose-500/20 border-rose-500/30 shadow-lg shadow-rose-500/20 scale-105' 
-                  : 'text-[#f0d27a]/80 hover:text-[#f0d27a] bg-[#06140e]/70 hover:bg-[#1f6b4a]/60'
+                  : 'text-sky-300 hover:text-white bg-[#021424]/70 hover:bg-sky-900/60'
               }`}
               title="Save favorite"
             >
@@ -749,7 +749,7 @@ export default function FoodDetailModal({
             <button
               type="button"
               onClick={handleClose}
-              className="w-11 h-11 flex items-center justify-center text-[#f0d27a]/80 hover:text-[#f0d27a] bg-[#06140e]/70 hover:bg-[#1f6b4a]/60 rounded-full transition-all border border-[#d4af37]/20 active:scale-95"
+              className="w-11 h-11 flex items-center justify-center text-sky-300 hover:text-white bg-[#021424]/70 hover:bg-sky-900/60 rounded-full transition-all border border-sky-400/25 active:scale-95"
               aria-label="Close food detail modal"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
@@ -768,9 +768,9 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               2. MULTI-PHOTO SLIDER WITH TOUCH SWIPE & THUMBNAILS (ON TOP)
              ---------------------------------------------------------------- */}
-          <div className="relative bg-[#06140e] select-none fdm-hero">
+          <div className="relative bg-[#021424] select-none fdm-hero">
             <div
-              className="relative mx-3 mt-3 sm:mx-4 sm:mt-4 aspect-[16/10] sm:aspect-auto sm:h-[300px] max-h-[34vh] sm:max-h-[300px] overflow-hidden rounded-2xl ring-1 ring-[#d4af37]/30 shadow-lg shadow-black/50 bg-[#06140e] flex items-center justify-center touch-pan-y"
+              className="relative mx-3 mt-3 sm:mx-4 sm:mt-4 aspect-[16/10] sm:aspect-auto sm:h-[300px] max-h-[34vh] sm:max-h-[300px] overflow-hidden rounded-2xl ring-1 ring-sky-400/30 shadow-lg shadow-black/50 bg-[#021424] flex items-center justify-center touch-pan-y"
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -792,9 +792,9 @@ export default function FoodDetailModal({
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${
                           selectedImageIndex === idx
-                            ? 'bg-[#d4af37] shadow-xs shadow-[#d4af37]/50 w-full'
+                            ? 'bg-sky-400 shadow-xs shadow-sky-400/50 w-full'
                             : selectedImageIndex > idx
-                              ? 'bg-[#d4af37]/75 w-full'
+                              ? 'bg-sky-400/75 w-full'
                               : 'w-0'
                         }`}
                       />
@@ -805,8 +805,8 @@ export default function FoodDetailModal({
 
               {/* Floating Photo Counter Badge */}
               <div className="absolute top-5 sm:top-6 right-3 sm:right-4 z-20 pointer-events-none">
-                <span className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-[#f0d27a] bg-stone-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#d4af37]/30 shadow-lg">
-                  <ImageIcon className="w-3 h-3 text-[#d4af37]" />
+                <span className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-sky-200 bg-stone-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-sky-400/30 shadow-lg">
+                  <ImageIcon className="w-3 h-3 text-sky-400" />
                   <span>Slide {selectedImageIndex + 1} of {photos.length}</span>
                 </span>
               </div>
@@ -828,7 +828,7 @@ export default function FoodDetailModal({
                   <button
                     type="button"
                     onClick={handlePrevPhoto}
-                    className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#06140e]/75 hover:bg-[#06140e] text-[#f5efe0] backdrop-blur-md border border-[#d4af37]/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
+                    className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#021424]/75 hover:bg-[#021424] text-slate-100 backdrop-blur-md border border-sky-400/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
                     aria-label="Previous photo"
                     title="Previous photo (Left arrow)"
                   >
@@ -838,7 +838,7 @@ export default function FoodDetailModal({
                   <button
                     type="button"
                     onClick={handleNextPhoto}
-                    className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#06140e]/75 hover:bg-[#06140e] text-[#f5efe0] backdrop-blur-md border border-[#d4af37]/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
+                    className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#021424]/75 hover:bg-[#021424] text-slate-100 backdrop-blur-md border border-sky-400/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
                     aria-label="Next photo"
                     title="Next photo (Right arrow)"
                   >
@@ -952,7 +952,7 @@ export default function FoodDetailModal({
               {ingredients.map((ing, i) => (
                 <span
                   key={i}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-[#1f6b4a]/40 text-[#f5efe0] border border-[#d4af37]/25 rounded-xl font-medium"
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-sky-950/60 text-slate-100 border border-sky-400/25 rounded-xl font-medium"
                 >
                   <span className="text-sm">{getIngredientIcon(ing)}</span>
                   <span>{ing}</span>
@@ -964,10 +964,10 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               DEDICATED CHEF'S KITCHEN REEL IN SCROLLABLE BODY
              ---------------------------------------------------------------- */}
-          <div className="p-4 sm:p-5 space-y-3 bg-[#06140e] border-t border-[#d4af37]/20 fdm-d5">
+          <div className="p-4 sm:p-5 space-y-3 bg-[#021424] border-t border-sky-400/20 fdm-d5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-[#d4af37]/15 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37]">
+                <div className="w-8 h-8 rounded-xl bg-sky-400/15 border border-sky-400/30 flex items-center justify-center text-sky-400">
                   <ChefHat className="w-4 h-4" />
                 </div>
                 <div>
@@ -983,8 +983,8 @@ export default function FoodDetailModal({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#d4af37]/15 text-[#f0d27a] border border-[#d4af37]/30 text-xs font-bold shadow-xs whitespace-nowrap shrink-0">
-                <Video className="w-3.5 h-3.5 text-[#d4af37]" />
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-400/15 text-sky-300 border border-sky-400/30 text-xs font-bold shadow-xs whitespace-nowrap shrink-0">
+                <Video className="w-3.5 h-3.5 text-sky-400" />
                 <span>Kitchen Reel</span>
               </div>
             </div>
@@ -1005,7 +1005,7 @@ export default function FoodDetailModal({
               {/* Center Play/Pause Flash */}
               {showBodyPlayOverlay && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/35 animate-fadeOut">
-                  <div className="w-14 h-14 rounded-full bg-[#06140e]/80 backdrop-blur-md flex items-center justify-center text-[#f5efe0] border border-[#d4af37]/40 scale-110 transition-transform">
+                  <div className="w-14 h-14 rounded-full bg-[#021424]/80 backdrop-blur-md flex items-center justify-center text-white border border-sky-400/40 scale-110 transition-transform">
                     {isBodyVideoPlaying ? <Play className="w-7 h-7 fill-current translate-x-0.5" /> : <Pause className="w-7 h-7 fill-current" />}
                   </div>
                 </div>
@@ -1017,7 +1017,7 @@ export default function FoodDetailModal({
                   onClick={toggleBodyVideoPlay}
                   className="absolute inset-0 bg-black/45 backdrop-blur-2xs flex items-center justify-center cursor-pointer"
                 >
-                  <div className="w-14 h-14 rounded-full fdm-gold-btn flex items-center justify-center shadow-xl shadow-[#d4af37]/50 hover:scale-110 active:scale-95 transition-transform ring-2 ring-[#f0d27a]/40">
+                  <div className="w-14 h-14 rounded-full fdm-gold-btn flex items-center justify-center shadow-xl shadow-sky-400/50 hover:scale-110 active:scale-95 transition-transform ring-2 ring-sky-300/40">
                     <Play className="w-6 h-6 fill-current translate-x-0.5" />
                   </div>
                 </div>
@@ -1028,7 +1028,7 @@ export default function FoodDetailModal({
                 <button
                   type="button"
                   onClick={toggleBodyVideoPlay}
-                  className="min-w-11 min-h-11 flex items-center justify-center p-1.5 rounded-lg bg-[#06140e]/80 hover:bg-[#1f6b4a]/60 text-[#f5efe0] border border-[#d4af37]/25 cursor-pointer active:scale-90"
+                  className="min-w-11 min-h-11 flex items-center justify-center p-1.5 rounded-lg bg-[#021424]/80 hover:bg-sky-900/60 text-slate-100 border border-sky-400/25 cursor-pointer active:scale-90"
                   aria-label={isBodyVideoPlaying ? 'Pause video' : 'Play video'}
                 >
                   {isBodyVideoPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
@@ -1041,9 +1041,10 @@ export default function FoodDetailModal({
                   max="100"
                   value={bodyVideoProgress}
                   onChange={handleBodyVideoSeek}
-                  className="flex-1 h-1.5 rounded-lg appearance-none bg-white/25 accent-[#d4af37] cursor-pointer"
+                  className="flex-1 h-1.5 rounded-lg appearance-none bg-white/25 accent-sky-400 cursor-pointer"
                   aria-label="Seek video"
-                />
+                >
+                </input>
 
                 <span className="text-[10px] font-mono font-medium text-stone-300 shrink-0">
                   {formatTime(bodyVideoCurrentTime)} / {formatTime(bodyVideoDuration)}
@@ -1052,7 +1053,7 @@ export default function FoodDetailModal({
                 <button
                   type="button"
                   onClick={toggleBodyVideoMute}
-                  className="min-w-11 min-h-11 flex items-center justify-center p-1.5 rounded-lg bg-[#06140e]/80 hover:bg-[#1f6b4a]/60 text-[#f5efe0] border border-[#d4af37]/25 cursor-pointer active:scale-90"
+                  className="min-w-11 min-h-11 flex items-center justify-center p-1.5 rounded-lg bg-[#021424]/80 hover:bg-sky-900/60 text-slate-100 border border-sky-400/25 cursor-pointer active:scale-90"
                   aria-label={isBodyVideoMuted ? 'Unmute' : 'Mute'}
                 >
                   {isBodyVideoMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
@@ -1061,7 +1062,7 @@ export default function FoodDetailModal({
                 <button
                   type="button"
                   onClick={toggleBodyFullscreen}
-                  className="min-w-11 min-h-11 flex items-center justify-center p-1.5 rounded-lg bg-[#06140e]/80 hover:bg-[#1f6b4a]/60 text-[#f5efe0] border border-[#d4af37]/25 cursor-pointer active:scale-90"
+                  className="min-w-11 min-h-11 flex items-center justify-center p-1.5 rounded-lg bg-[#021424]/80 hover:bg-sky-900/60 text-slate-100 border border-sky-400/25 cursor-pointer active:scale-90"
                   aria-label="Fullscreen"
                   title="Fullscreen"
                 >
@@ -1099,11 +1100,11 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               5. Chef Customization & Voice Notes
              ---------------------------------------------------------------- */}
-          <div className="p-4 sm:p-5 space-y-3 bg-[#0f3d2a] border-t border-[#d4af37]/20 fdm-d5">
+          <div className="p-4 sm:p-5 space-y-3 bg-[#02182b] border-t border-sky-400/20 fdm-d5">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-stone-300 flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-[#d4af37]" />
+                  <MessageSquare className="w-3.5 h-3.5 text-sky-400" />
                   <span>Chef Customization Notes</span>
                 </h3>
                 <p className="text-[11px] text-stone-400">Add allergies, temperature, or preferences</p>
@@ -1115,7 +1116,7 @@ export default function FoodDetailModal({
                 className={`min-h-11 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all border shadow-xs cursor-pointer ${
                   showVoiceRecorder
                     ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                    : 'bg-[#d4af37]/15 text-[#f0d27a] border-[#d4af37]/30 hover:bg-[#d4af37]/25'
+                    : 'bg-sky-400/15 text-sky-300 border-sky-400/30 hover:bg-sky-400/25'
                 }`}
               >
                 <Mic className="w-3.5 h-3.5" />
@@ -1146,8 +1147,8 @@ export default function FoodDetailModal({
                     }}
                     className={`min-h-11 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all active:scale-95 cursor-pointer ${
                       isSelected
-                        ? 'bg-[#d4af37]/20 text-[#f0d27a] border-[#d4af37]/40 shadow-xs'
-                        : 'bg-[#06140e]/70 hover:bg-[#1f6b4a]/60 text-stone-300 border-stone-700/60'
+                        ? 'bg-sky-400/20 text-sky-300 border-sky-400/40 shadow-xs'
+                        : 'bg-[#021424]/70 hover:bg-sky-900/60 text-stone-300 border-stone-700/60'
                     }`}
                   >
                     + {chip}
@@ -1161,7 +1162,7 @@ export default function FoodDetailModal({
               value={customNote}
               onChange={(e) => setCustomNote(e.target.value)}
               placeholder="e.g. Please put dressing on the side..."
-              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-[#06140e] border border-[#d4af37]/30 rounded-xl text-[#f5efe0] placeholder-[#f5efe0]/40 focus:outline-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/40 transition"
+              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-[#021424] border border-sky-400/30 rounded-xl text-slate-100 placeholder-sky-200/40 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 transition"
             />
 
             {showVoiceRecorder && (
@@ -1179,7 +1180,7 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               6. INTERACTIVE REVIEWS & LEAVE A COMMENT SECTION
              ---------------------------------------------------------------- */}
-          <div id="reviews-section" className="p-4 sm:p-5 space-y-4 bg-[#06140e] border-t border-[#d4af37]/20 scroll-mt-4 fdm-d6">
+          <div id="reviews-section" className="p-4 sm:p-5 space-y-4 bg-[#021424] border-t border-sky-400/20 scroll-mt-4 fdm-d6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/10">
               <div>
                 <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-stone-200 flex items-center gap-1.5">
@@ -1266,7 +1267,7 @@ export default function FoodDetailModal({
                     value={reviewAuthor}
                     onChange={(e) => setReviewAuthor(e.target.value)}
                     placeholder="e.g. Table 01 Diner"
-                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-[#06140e] border border-[#d4af37]/30 rounded-xl text-[#f5efe0] placeholder-[#f5efe0]/40 focus:outline-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/40 transition"
+                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-[#021424] border border-sky-400/30 rounded-xl text-slate-100 placeholder-sky-200/40 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 transition"
                   />
                 </div>
 
@@ -1306,7 +1307,7 @@ export default function FoodDetailModal({
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
                     placeholder="What did you love most about this dish? Taste, texture, aroma, presentation..."
-                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-[#06140e] border border-[#d4af37]/30 rounded-xl text-[#f5efe0] placeholder-[#f5efe0]/40 focus:outline-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/40 transition resize-none"
+                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-[#021424] border border-sky-400/30 rounded-xl text-slate-100 placeholder-sky-200/40 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 transition resize-none"
                     required
                   />
                 </div>
@@ -1316,14 +1317,14 @@ export default function FoodDetailModal({
                   <button
                     type="button"
                     onClick={() => setIsReviewFormOpen(false)}
-                    className="px-3.5 py-1.5 rounded-xl border border-[#d4af37]/30 text-[#f0d27a]/80 hover:text-[#f0d27a] text-xs font-semibold cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-xl border border-sky-400/30 text-sky-300 hover:text-white text-xs font-semibold cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingReview || !reviewComment.trim()}
-                    className="px-4 py-2 rounded-xl fdm-gold-btn active:scale-95 text-xs font-black shadow-md shadow-[#d4af37]/30 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-xl fdm-gold-btn active:scale-95 text-xs font-black shadow-md shadow-sky-400/30 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>{isSubmittingReview ? 'Publishing...' : 'Publish Review'}</span>
@@ -1341,7 +1342,7 @@ export default function FoodDetailModal({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#d4af37] to-[#f0d27a] flex items-center justify-center text-white font-black text-xs shadow-xs uppercase">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-sky-400 to-sky-600 flex items-center justify-center text-white font-black text-xs shadow-xs uppercase">
                         {(rev.author || 'D').charAt(0)}
                       </div>
                       <div>
@@ -1382,26 +1383,26 @@ export default function FoodDetailModal({
         {/* ------------------------------------------------------------------
             7. Prominent Sticky Bottom Bar
            ------------------------------------------------------------------ */}
-        <div className="fdm-footer p-3.5 sm:p-4 bg-[#06140e]/95 backdrop-blur-xl border-t border-[#d4af37]/35 flex items-center gap-3 z-30 shadow-2xl fdm-d6">
+        <div className="fdm-footer p-3.5 sm:p-4 bg-[#021424]/95 backdrop-blur-xl border-t border-sky-400/35 flex items-center gap-3 z-30 shadow-2xl fdm-d6">
           {/* Stepper */}
-          <div className="flex items-center bg-[#0f3d2a] border border-[#d4af37]/30 rounded-xl p-1 shrink-0">
+          <div className="flex items-center bg-[#032038] border border-sky-400/30 rounded-xl p-1 shrink-0">
             <button
               type="button"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-11 h-11 rounded-lg flex items-center justify-center text-[#f0d27a] hover:text-[#f5efe0] hover:bg-[#1f6b4a]/60 transition-all active:scale-90 cursor-pointer"
+              className="w-11 h-11 rounded-lg flex items-center justify-center text-sky-300 hover:text-white hover:bg-sky-900/60 transition-all active:scale-90 cursor-pointer"
               aria-label="Decrease quantity"
             >
               <Minus className="w-3.5 h-3.5" />
             </button>
 
-            <span className="w-8 text-center font-black text-[#f5efe0] text-sm sm:text-base">
+            <span className="w-8 text-center font-black text-white text-sm sm:text-base">
               {quantity}
             </span>
 
             <button
               type="button"
               onClick={() => setQuantity(quantity + 1)}
-              className="w-11 h-11 rounded-lg flex items-center justify-center text-[#f0d27a] hover:text-[#f5efe0] hover:bg-[#1f6b4a]/60 transition-all active:scale-90 cursor-pointer"
+              className="w-11 h-11 rounded-lg flex items-center justify-center text-sky-300 hover:text-white hover:bg-sky-900/60 transition-all active:scale-90 cursor-pointer"
               aria-label="Increase quantity"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -1414,7 +1415,7 @@ export default function FoodDetailModal({
             onClick={handleConfirmAdd}
             className={`fdm-cta flex-1 flex items-center justify-center gap-2 py-3 px-4 font-black rounded-xl shadow-xl transition-all cursor-pointer text-sm sm:text-base ${
               isAddedAnimation
-                ? 'bg-[#1f6b4a] text-[#f5efe0] scale-95 shadow-emerald-900/50'
+                ? 'bg-sky-700 text-white scale-95 shadow-sky-900/50'
                 : 'fdm-gold-btn active:scale-[0.98]'
             }`}
           >

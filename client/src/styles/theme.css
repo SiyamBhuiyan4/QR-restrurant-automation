@@ -12,27 +12,27 @@
 :root {
   color-scheme: dark;
 
-  --app-bg: #06140e;
-  --app-text: #f5efe0;
-  --app-text-muted: rgba(245, 239, 224, 0.7);
-  --app-accent: #d4af37;
-  --app-accent-text: #f0d27a;
-  --app-surface: rgba(22, 22, 26, 0.88);
-  --app-border-card: rgba(255, 255, 255, 0.08);
-  --app-border-gold: rgba(212, 175, 55, 0.3);
-  --app-focus: rgba(212, 175, 55, 0.9);
-  --app-focus-halo: rgba(212, 175, 55, 0.18);
-  --app-selection: rgba(212, 175, 55, 0.4);
+  --app-bg: #021424;
+  --app-text: #f0f9ff;
+  --app-text-muted: rgba(224, 242, 254, 0.72);
+  --app-accent: #38bdf8;
+  --app-accent-text: #7dd3fc;
+  --app-surface: rgba(3, 29, 51, 0.88);
+  --app-border-card: rgba(56, 189, 248, 0.2);
+  --app-border-gold: rgba(56, 189, 248, 0.4);
+  --app-focus: rgba(56, 189, 248, 0.9);
+  --app-focus-halo: rgba(56, 189, 248, 0.25);
+  --app-selection: rgba(2, 132, 199, 0.45);
 
-  --ambient-base: #06140e;
-  --ambient-blob-a: rgba(31, 107, 74, 0.5);
-  --ambient-blob-b: rgba(212, 175, 55, 0.18);
-  --ambient-blob-c: rgba(240, 210, 122, 0.07);
-  --ambient-ember-1: rgba(240, 210, 122, 0.9);
-  --ambient-ember-2: rgba(212, 175, 55, 0.8);
-  --ambient-ember-3: rgba(245, 239, 224, 0.6);
+  --ambient-base: #021424;
+  --ambient-blob-a: rgba(2, 132, 199, 0.45);
+  --ambient-blob-b: rgba(14, 165, 233, 0.25);
+  --ambient-blob-c: rgba(56, 189, 248, 0.18);
+  --ambient-ember-1: rgba(186, 230, 253, 0.9);
+  --ambient-ember-2: rgba(56, 189, 248, 0.8);
+  --ambient-ember-3: rgba(224, 242, 254, 0.6);
   --ambient-ember-opacity: 0.55;
-  --ambient-vignette: rgba(6, 20, 14, 0.6);
+  --ambient-vignette: rgba(2, 20, 36, 0.65);
 }
 
 /* ---------- LIGHT ---------- */

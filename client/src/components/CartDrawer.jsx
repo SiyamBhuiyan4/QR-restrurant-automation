@@ -81,7 +81,7 @@ function ItemAudioPlayer({ url, onRemove }) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#06140e]/70 border border-[#d4af37]/30 text-[#f5efe0] transition-colors duration-200">
+    <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#02182b]/80 border border-sky-400/30 text-slate-100 transition-colors duration-200">
       <audio
         ref={audioRef}
         src={url}
@@ -93,7 +93,7 @@ function ItemAudioPlayer({ url, onRemove }) {
       <button
         type="button"
         onClick={togglePlay}
-        className="w-11 h-11 rounded-xl bg-[#d4af37] hover:bg-[#f0d27a] active:scale-95 text-[#06140e] flex items-center justify-center shrink-0 transition-transform duration-150 shadow-sm cursor-pointer motion-reduce:transform-none"
+        className="w-11 h-11 rounded-xl bg-sky-400 hover:bg-sky-300 active:scale-95 text-[#021424] flex items-center justify-center shrink-0 transition-transform duration-150 shadow-sm cursor-pointer motion-reduce:transform-none"
         title={isPlaying ? 'Pause' : 'Play dish voice note'}
       >
         {isPlaying ? (
@@ -104,18 +104,18 @@ function ItemAudioPlayer({ url, onRemove }) {
       </button>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between text-[11px] font-semibold text-[#f5efe0] leading-none mb-1">
+        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-100 leading-none mb-1">
           <span className="flex items-center gap-1 font-bold">
-            <Volume2 className="w-3 h-3 text-[#d4af37]" />
+            <Volume2 className="w-3 h-3 text-sky-400" />
             Chef Voice Note
           </span>
-          <span className="font-mono text-[#f5efe0]/50 text-[10px]">
+          <span className="font-mono text-sky-200/50 text-[10px]">
             {formatSec(currentTime)} / {formatSec(duration)}
           </span>
         </div>
-        <div className="w-full h-1.5 bg-[#1f6b4a] rounded-full overflow-hidden">
+        <div className="w-full h-1.5 bg-sky-950 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-[#d4af37] transition-all duration-100" 
+            className="h-full bg-sky-400 transition-all duration-100" 
             style={{ width: `${progress}%` }} 
           />
         </div>
@@ -458,7 +458,7 @@ export default function CartDrawer({
       {/* Backdrop overlay */}
       <div
         onClick={handleClose}
-        className={`fixed inset-0 bg-[#06140e]/75 backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none ${entered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-[#021424]/80 backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none ${entered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       />
 
       {/* Mobile: bottom sheet. Desktop: right-side panel. */}
@@ -466,7 +466,7 @@ export default function CartDrawer({
         className={`fixed inset-x-0 bottom-20 h-[calc(92dvh-5rem)] sm:inset-x-auto sm:inset-y-0 sm:bottom-0 sm:h-auto sm:right-0 max-w-full flex sm:pl-10 ${entered ? '' : 'pointer-events-none'}`}
       >
         <div
-          className={`w-screen max-w-md h-full bg-[#0f3d2a]/95 backdrop-blur-xl text-[#f5efe0] shadow-2xl shadow-black/70 flex flex-col border-t sm:border-t-0 sm:border-l border-[#d4af37]/40 sm:border-[#d4af37]/40 rounded-t-[28px] sm:rounded-t-none sm:rounded-l-3xl overflow-hidden transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none will-change-transform ${entered ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:translate-y-0 sm:translate-x-full'} ${className}`}
+          className={`w-screen max-w-md h-full bg-[#02182b]/95 backdrop-blur-xl text-slate-100 shadow-2xl shadow-black/70 flex flex-col border-t sm:border-t-0 sm:border-l border-sky-400/35 sm:border-sky-400/35 rounded-t-[28px] sm:rounded-t-none sm:rounded-l-3xl overflow-hidden transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none will-change-transform ${entered ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:translate-y-0 sm:translate-x-full'} ${className}`}
         >
           
           {/* ========================================================
@@ -476,10 +476,10 @@ export default function CartDrawer({
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-fadeIn motion-reduce:animate-none">
               <div className="relative mb-5">
                 <div
-                  className={`w-20 h-20 rounded-3xl flex items-center justify-center text-[#f5efe0] shadow-xl ${
+                  className={`w-20 h-20 rounded-3xl flex items-center justify-center text-white shadow-xl ${
                     orderConfirmation.isOfflineQueued
-                      ? 'bg-[linear-gradient(135deg,#f0d27a,#d4af37)] text-[#06140e] shadow-[#d4af37]/30'
-                      : 'bg-[#1f6b4a] shadow-[#1f6b4a]/40 text-[#f5efe0]'
+                      ? 'bg-sky-400 text-[#021424] shadow-sky-400/30'
+                      : 'bg-sky-700 shadow-sky-900/40 text-white'
                   }`}
                 >
                   {orderConfirmation.isOfflineQueued ? (
@@ -488,29 +488,29 @@ export default function CartDrawer({
                     <CheckCircle2 className="w-10 h-10 animate-bounce motion-reduce:animate-none" />
                   )}
                 </div>
-                <div className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-[#06140e]/60 border border-[#d4af37]/25 flex items-center justify-center shadow-md">
-                  <Sparkles className="w-3.5 h-3.5 text-[#d4af37]" />
+                <div className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-[#021424]/60 border border-sky-400/25 flex items-center justify-center shadow-md">
+                  <Sparkles className="w-3.5 h-3.5 text-sky-400" />
                 </div>
               </div>
 
-              <h3 className="text-xl sm:text-2xl font-black text-[#f5efe0] tracking-tight">
+              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                 {orderConfirmation.isOfflineQueued ? 'Order Saved Offline!' : 'Order Sent to Kitchen!'}
               </h3>
 
-              <p className="text-xs sm:text-sm text-[#f5efe0]/65 mt-1.5 max-w-xs font-medium leading-relaxed">
+              <p className="text-xs sm:text-sm text-sky-200/65 mt-1.5 max-w-xs font-medium leading-relaxed">
                 {orderConfirmation.isOfflineQueued
                   ? `Table ${orderConfirmation.tableNumber} order is safely cached and will automatically push to the kitchen display the moment Wi-Fi reconnects.`
                   : `Your order has been printed on the kitchen display. The chefs are preparing your meal now!`}
               </p>
 
               {/* Order Receipt Box */}
-              <div className="w-full bg-[#06140e]/55 border border-[#d4af37]/25 rounded-2xl p-4 my-5 text-left text-xs space-y-2.5 shadow-xl">
-                <div className="flex justify-between items-center pb-2.5 border-b border-[#d4af37]/25 font-bold text-[#f5efe0]">
+              <div className="w-full bg-[#032038]/60 border border-sky-400/25 rounded-2xl p-4 my-5 text-left text-xs space-y-2.5 shadow-xl">
+                <div className="flex justify-between items-center pb-2.5 border-b border-sky-400/25 font-bold text-white">
                   <span className="flex items-center gap-1.5">
-                    <Receipt className="w-4 h-4 text-[#d4af37]" />
+                    <Receipt className="w-4 h-4 text-sky-400" />
                     Order #{orderConfirmation.orderId}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/30 text-[#f0d27a] text-[11px] font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-sky-400/15 border border-sky-400/30 text-sky-300 text-[11px] font-bold">
                     Table {orderConfirmation.tableNumber}
                   </span>
                 </div>
@@ -542,7 +542,7 @@ export default function CartDrawer({
                   setOrderConfirmation(null);
                   handleClose();
                 }}
-                className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl bg-[linear-gradient(135deg,#f0d27a,#d4af37)] text-[#06140e] font-bold text-sm shadow-lg shadow-[#d4af37]/30 cursor-pointer transition-transform duration-150 active:scale-[0.98] motion-reduce:transform-none"
+                className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl bg-sky-400 hover:bg-sky-300 text-[#021424] font-bold text-sm shadow-lg shadow-sky-400/30 cursor-pointer transition-transform duration-150 active:scale-[0.98] motion-reduce:transform-none"
               >
                 Back to Menu &bull; Order More
               </button>
@@ -553,21 +553,21 @@ export default function CartDrawer({
                ======================================================== */
             <>
               {/* Drawer Header */}
-              <div className="p-4 sm:p-5 border-b border-[#d4af37]/25 flex items-center justify-between shrink-0 bg-[#06140e]/60">
+              <div className="p-4 sm:p-5 border-b border-sky-400/25 flex items-center justify-between shrink-0 bg-[#021424]/85">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#d4af37]/15 text-[#f0d27a] flex items-center justify-center font-bold border border-[#d4af37]/30 shadow-xs">
+                  <div className="w-10 h-10 rounded-2xl bg-sky-400/15 text-sky-300 flex items-center justify-center font-bold border border-sky-400/30 shadow-xs">
                     <ShoppingBag className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 id="cart-drawer-title" className="font-extrabold text-[#f5efe0] text-base sm:text-lg leading-tight flex items-center gap-2 tracking-tight">
+                    <h2 id="cart-drawer-title" className="font-extrabold text-white text-base sm:text-lg leading-tight flex items-center gap-2 tracking-tight">
                       Your Order
                       {totalItemCount > 0 && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#d4af37]/20 text-[#f0d27a] border border-[#d4af37]/40">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-sky-400/20 text-sky-300 border border-sky-400/40">
                           {totalItemCount}
                         </span>
                       )}
                     </h2>
-                    <p className="text-xs text-[#f5efe0]/65 font-medium mt-0.5">
+                    <p className="text-xs text-sky-200/65 font-medium mt-0.5">
                       {currentTable ? `Table ${currentTable}` : 'Select table below'} &bull; Dine-In Experience
                     </p>
                   </div>
@@ -576,7 +576,7 @@ export default function CartDrawer({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="w-11 h-11 rounded-2xl bg-[#1f6b4a]/40 hover:bg-[#1f6b4a]/60 active:scale-95 flex items-center justify-center text-[#f5efe0]/65 hover:text-[#f5efe0] transition-[transform,background-color,color] duration-150 cursor-pointer motion-reduce:transform-none shrink-0"
+                  className="w-11 h-11 rounded-2xl bg-sky-950/60 hover:bg-sky-900/80 active:scale-95 flex items-center justify-center text-sky-200/70 hover:text-white transition-[transform,background-color,color] duration-150 cursor-pointer motion-reduce:transform-none shrink-0 border border-sky-400/30"
                   aria-label="Close cart drawer"
                 >
                   <X className="w-4 h-4 stroke-[2.5]" />
@@ -584,24 +584,24 @@ export default function CartDrawer({
               </div>
 
               {/* Scrollable Content Container */}
-              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain divide-y divide-[#d4af37]/25">
+              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain divide-y divide-sky-400/25">
                 
                 {/* 1. Empty Cart State */}
                 {items.length === 0 ? (
                   <div className="py-20 px-6 text-center flex flex-col items-center justify-center">
-                    <div className="w-20 h-20 rounded-3xl bg-[#d4af37]/10 text-[#f0d27a] flex items-center justify-center mb-4 border border-[#d4af37]/20 shadow-xs">
+                    <div className="w-20 h-20 rounded-3xl bg-sky-400/10 text-sky-300 flex items-center justify-center mb-4 border border-sky-400/20 shadow-xs">
                       <ShoppingBag className="w-10 h-10 stroke-[1.5]" />
                     </div>
-                    <h3 className="font-extrabold text-[#f5efe0] text-lg mb-1 tracking-tight">
+                    <h3 className="font-extrabold text-white text-lg mb-1 tracking-tight">
                       Your cart is empty
                     </h3>
-                    <p className="text-xs text-[#f5efe0]/65 max-w-xs mb-6 leading-relaxed">
+                    <p className="text-xs text-sky-200/65 max-w-xs mb-6 leading-relaxed">
                       Explore our delicious appetizers, chef specials, beverages, and desserts to add items to your table order.
                     </p>
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="min-h-[48px] px-6 py-3 rounded-2xl bg-[linear-gradient(135deg,#f0d27a,#d4af37)] text-[#06140e] font-bold text-sm shadow-lg shadow-[#d4af37]/30 cursor-pointer transition-transform duration-150 active:scale-[0.98] motion-reduce:transform-none"
+                      className="min-h-[48px] px-6 py-3 rounded-2xl bg-sky-400 hover:bg-sky-300 text-[#021424] font-bold text-sm shadow-lg shadow-sky-400/30 cursor-pointer transition-transform duration-150 active:scale-[0.98] motion-reduce:transform-none"
                     >
                       Browse Menu
                     </button>
@@ -640,29 +640,29 @@ export default function CartDrawer({
                           return (
                             <div
                               key={dishId}
-                              className="bg-[#06140e]/55 border border-[#d4af37]/25 rounded-2xl p-4 transition-colors duration-200 hover:border-[#d4af37]/50 shadow-md shadow-black/30"
+                              className="bg-[#032038]/60 border border-sky-400/25 rounded-2xl p-4 transition-colors duration-200 hover:border-sky-400/50 shadow-md shadow-black/30"
                             >
                               <div className="flex items-start justify-between gap-3">
                                 <div className="flex-1 min-w-0 pt-1">
-                                  <h4 className="font-bold text-[#f5efe0] text-sm leading-snug truncate">
+                                  <h4 className="font-bold text-white text-sm leading-snug truncate">
                                     {dishName}
                                   </h4>
-                                  <p className="text-xs text-[#f5efe0]/65 font-semibold mt-1">
+                                  <p className="text-xs text-sky-200/65 font-semibold mt-1">
                                     ${dishPrice.toFixed(2)} each
                                   </p>
                                 </div>
 
                                 {/* Item Total + Stepper */}
                                 <div className="flex flex-col items-end gap-2 shrink-0">
-                                  <span className="font-extrabold text-sm text-[#f5efe0] tabular-nums">
+                                  <span className="font-extrabold text-sm text-white tabular-nums">
                                     ${itemTotal}
                                   </span>
 
-                                  <div className="inline-flex items-center bg-[#06140e] rounded-2xl p-0.5 border border-[#d4af37]/25 shadow-sm">
+                                  <div className="inline-flex items-center bg-[#021424] rounded-2xl p-0.5 border border-sky-400/25 shadow-sm">
                                     <button
                                       type="button"
                                       onClick={() => handleQuantityDelta(dishId, -1)}
-                                      className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-[#1f6b4a]/40 text-[#f5efe0]/85 transition-transform duration-150 active:scale-90 cursor-pointer motion-reduce:transform-none"
+                                      className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-sky-900/50 text-slate-100 transition-transform duration-150 active:scale-90 cursor-pointer motion-reduce:transform-none"
                                       title={quantity === 1 ? 'Remove item' : 'Decrease quantity'}
                                       aria-label="Decrease quantity"
                                     >
@@ -673,14 +673,14 @@ export default function CartDrawer({
                                       )}
                                     </button>
 
-                                    <span className="w-8 text-center text-sm font-black text-[#f5efe0] tabular-nums">
+                                    <span className="w-8 text-center text-sm font-black text-white tabular-nums">
                                       {quantity}
                                     </span>
 
                                     <button
                                       type="button"
                                       onClick={() => handleQuantityDelta(dishId, 1)}
-                                      className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-[#1f6b4a]/40 text-[#f5efe0]/85 transition-transform duration-150 active:scale-90 cursor-pointer motion-reduce:transform-none"
+                                      className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-sky-900/50 text-slate-100 transition-transform duration-150 active:scale-90 cursor-pointer motion-reduce:transform-none"
                                       title="Increase quantity"
                                       aria-label="Increase quantity"
                                     >
@@ -698,28 +698,28 @@ export default function CartDrawer({
                               )}
 
                               {/* Individual Dish Customization Accordion */}
-                              <div className="mt-2.5 pt-2 border-t border-[#d4af37]/25">
+                              <div className="mt-2.5 pt-2 border-t border-sky-400/20">
                                 {!isNoteOpen ? (
                                   <button
                                     type="button"
                                     onClick={() => toggleNoteExpand(dishId)}
-                                    className="min-h-11 -ml-1 px-1 inline-flex items-center gap-1.5 text-xs text-[#f5efe0]/65 hover:text-[#f0d27a] font-medium transition-colors cursor-pointer"
+                                    className="min-h-11 -ml-1 px-1 inline-flex items-center gap-1.5 text-xs text-sky-200/65 hover:text-sky-300 font-medium transition-colors cursor-pointer"
                                   >
-                                    <MessageSquare className="w-3.5 h-3.5 text-[#d4af37]" />
+                                    <MessageSquare className="w-3.5 h-3.5 text-sky-400" />
                                     <span>Add note for chef (e.g. &ldquo;less spicy&rdquo;)</span>
                                   </button>
                                 ) : (
                                   <div className="space-y-2">
                                     <div className="flex items-center justify-between">
-                                      <label className="text-[11px] font-bold text-[#f5efe0]/65 flex items-center gap-1">
-                                        <MessageSquare className="w-3 h-3 text-[#d4af37]" />
+                                      <label className="text-[11px] font-bold text-sky-200/65 flex items-center gap-1">
+                                        <MessageSquare className="w-3 h-3 text-sky-400" />
                                         <span>Cooking instructions:</span>
                                       </label>
                                       {!note && (
                                         <button
                                           type="button"
                                           onClick={() => toggleNoteExpand(dishId)}
-                                          className="min-h-11 px-2 -mr-2 inline-flex items-center text-xs text-[#f5efe0]/50 hover:text-[#f5efe0]/85 font-semibold cursor-pointer"
+                                          className="min-h-11 px-2 -mr-2 inline-flex items-center text-xs text-sky-200/50 hover:text-white font-semibold cursor-pointer"
                                         >
                                           Collapse
                                         </button>
@@ -738,7 +738,7 @@ export default function CartDrawer({
                                               handleItemNoteChange(dishId, `${note}${separator}${preset}`);
                                             }
                                           }}
-                                          className="min-h-11 px-3 rounded-xl bg-[#06140e] border border-[#d4af37]/25 text-[#f5efe0]/85 hover:border-[#d4af37]/50 hover:text-[#f0d27a] transition-[transform,border-color,color] duration-150 active:scale-95 cursor-pointer motion-reduce:transform-none"
+                                          className="min-h-11 px-3 rounded-xl bg-[#021424] border border-sky-400/25 text-slate-100 hover:border-sky-400/50 hover:text-sky-300 transition-[transform,border-color,color] duration-150 active:scale-95 cursor-pointer motion-reduce:transform-none"
                                         >
                                           + {preset}
                                         </button>
@@ -750,7 +750,7 @@ export default function CartDrawer({
                                       value={note}
                                       onChange={(e) => handleItemNoteChange(dishId, e.target.value)}
                                       placeholder="e.g. Extra sauce, no onions, well-done"
-                                      className="w-full min-h-11 px-3.5 py-2 text-base sm:text-xs bg-[#06140e] rounded-xl border border-[#d4af37]/25 focus:outline-none focus:ring-[1.5px] focus:ring-[#d4af37] focus:border-[#d4af37] placeholder:text-[#f5efe0]/40 text-[#f5efe0] transition"
+                                      className="w-full min-h-11 px-3.5 py-2 text-base sm:text-xs bg-[#021424] rounded-xl border border-sky-400/25 focus:outline-none focus:ring-[1.5px] focus:ring-sky-400 focus:border-sky-400 placeholder:text-sky-200/40 text-slate-100 transition"
                                     />
                                   </div>
                                 )}
@@ -771,7 +771,7 @@ export default function CartDrawer({
                         value={generalNote}
                         onChange={(e) => setGeneralNote(e.target.value)}
                         placeholder="Any general requests? (e.g. bring appetizers together, extra napkins, allergic to nuts...)"
-                        className="w-full p-3.5 text-base sm:text-xs bg-[#06140e] rounded-2xl border border-[#d4af37]/25 focus:outline-none focus:ring-1 focus:ring-[#d4af37] focus:border-[#d4af37] placeholder:text-[#f5efe0]/40 text-[#f5efe0] resize-none transition"
+                        className="w-full p-3.5 text-base sm:text-xs bg-[#021424] rounded-2xl border border-sky-400/25 focus:outline-none focus:ring-1 focus:ring-sky-400 focus:border-sky-400 placeholder:text-sky-200/40 text-slate-100 resize-none transition"
                       />
                     </div>
 
@@ -781,14 +781,14 @@ export default function CartDrawer({
                     </div>
 
                     {/* 5. Table Number Selector / Validator */}
-                    <div className="p-4 sm:p-5 bg-[#06140e]/55 border-t border-[#d4af37]/25 space-y-2.5">
+                    <div className="p-4 sm:p-5 bg-[#021424]/80 border-t border-sky-400/25 space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-[#f5efe0]/85 uppercase tracking-wider flex items-center gap-1.5">
+                        <label className="text-xs font-bold text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
                           <span>Table Assignment:</span>
                           <span className="text-[#e8795f] font-black">*</span>
                         </label>
                         {tableInput && (
-                          <span className="text-xs font-bold text-[#f0d27a] bg-[#d4af37]/15 px-2.5 py-0.5 rounded-full border border-[#d4af37]/30">
+                          <span className="text-xs font-bold text-sky-300 bg-sky-400/15 px-2.5 py-0.5 rounded-full border border-sky-400/30">
                             Table {tableInput}
                           </span>
                         )}
@@ -806,10 +806,10 @@ export default function CartDrawer({
                             }
                           }}
                           placeholder="Enter Table # (e.g. 4, Bar 2)"
-                          className={`w-full min-h-11 px-3.5 py-2.5 text-base sm:text-sm bg-[#06140e] rounded-xl border font-bold transition ${
+                          className={`w-full min-h-11 px-3.5 py-2.5 text-base sm:text-sm bg-[#021424] rounded-xl border font-bold transition ${
                             tableError
-                              ? 'border-[#c8442b] ring-2 ring-[#c8442b]/40 text-[#f5efe0]'
-                              : 'border-[#d4af37]/25 focus:ring-1 focus:ring-[#d4af37] focus:border-[#d4af37] text-[#f5efe0] placeholder-[#f5efe0]/40'
+                              ? 'border-[#c8442b] ring-2 ring-[#c8442b]/40 text-white'
+                              : 'border-sky-400/25 focus:ring-1 focus:ring-sky-400 focus:border-sky-400 text-white placeholder-sky-200/40'
                           }`}
                         />
 
@@ -828,8 +828,8 @@ export default function CartDrawer({
                               }}
                               className={`min-h-11 w-full rounded-xl text-sm font-black transition-[transform,background-color] duration-150 active:scale-95 cursor-pointer motion-reduce:transform-none ${
                                 String(tableInput) === String(num)
-                                  ? 'bg-[linear-gradient(135deg,#f0d27a,#d4af37)] text-[#06140e] shadow-sm'
-                                  : 'bg-[#06140e] text-[#f5efe0]/85 border border-[#d4af37]/25 hover:bg-[#1f6b4a]/40'
+                                  ? 'bg-sky-400 text-[#021424] shadow-sm'
+                                  : 'bg-[#021424] text-slate-100 border border-sky-400/25 hover:bg-sky-900/40'
                               }`}
                             >
                               {num}
@@ -851,24 +851,24 @@ export default function CartDrawer({
 
               {/* Drawer Footer: Bill Breakdown & Submit Button */}
               {items.length > 0 && (
-                <div className="relative z-10 shrink-0 px-4 sm:px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-5 bg-[#06140e]/90 backdrop-blur-md border-t border-[#d4af37]/25 space-y-3.5 shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.7)]">
+                <div className="relative z-10 shrink-0 px-4 sm:px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-5 bg-[#021424]/95 backdrop-blur-md border-t border-sky-400/25 space-y-3.5 shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.7)]">
 
                   {/* Bill Breakdown */}
-                  <div className="space-y-2 text-xs text-[#f5efe0]/65 font-medium">
+                  <div className="space-y-2 text-xs text-sky-200/65 font-medium">
                     <div className="flex justify-between">
                       <span>Items Subtotal</span>
-                      <span className="font-semibold text-[#f5efe0]/90">${subtotal.toFixed(2)}</span>
+                      <span className="font-semibold text-white">${subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="flex items-center gap-1">
                         Estimated Tax (5%)
-                        <span className="text-[10px] text-[#f5efe0]/50">(Local rate)</span>
+                        <span className="text-[10px] text-sky-200/50">(Local rate)</span>
                       </span>
-                      <span className="font-semibold text-[#f5efe0]/90">${tax.toFixed(2)}</span>
+                      <span className="font-semibold text-white">${tax.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-base font-black text-[#f5efe0] pt-2 border-t border-[#d4af37]/25">
+                    <div className="flex justify-between text-base font-black text-white pt-2 border-t border-sky-400/25">
                       <span>Total Amount</span>
-                      <span className="text-[#d4af37] font-black text-xl sm:text-2xl">
+                      <span className="text-sky-400 font-black text-xl sm:text-2xl">
                         ${grandTotal.toFixed(2)}
                       </span>
                     </div>
@@ -881,13 +881,13 @@ export default function CartDrawer({
                     disabled={isSubmitting || items.length === 0}
                     className={`w-full min-h-[52px] py-4 px-5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg transition-[transform,box-shadow] duration-150 active:scale-[0.98] cursor-pointer motion-reduce:transform-none ${
                       isSubmitting
-                        ? 'bg-[#d4af37]/70 text-[#06140e] cursor-wait'
-                        : 'bg-[linear-gradient(135deg,#f0d27a,#d4af37)] text-[#06140e] shadow-[#d4af37]/30'
+                        ? 'bg-sky-400/70 text-[#021424] cursor-wait'
+                        : 'bg-gradient-to-r from-sky-400 via-sky-500 to-sky-600 text-[#021424] shadow-sky-500/30 hover:shadow-sky-500/50'
                     }`}
                   >
                     {isSubmitting ? (
                       <>
-                        <div className="w-5 h-5 border-2 border-[#06140e] border-t-transparent rounded-full animate-spin" />
+                        <div className="w-5 h-5 border-2 border-[#021424] border-t-transparent rounded-full animate-spin" />
                         <span>Sending Order to Kitchen...</span>
                       </>
                     ) : (

@@ -867,7 +867,7 @@ export default function MenuItemCard({
               <div className="menu-card__vignette" />
 
               {!isAvailable && (
-                <div className="absolute inset-0 bg-[#06140e]/80 flex items-center justify-center">
+                <div className="absolute inset-0 bg-[#021424]/80 flex items-center justify-center">
                   <span className="px-2.5 py-1 rounded-full bg-[#c8442b] text-[#f5efe0] font-extrabold text-[10px] sm:text-[11px] uppercase tracking-wider">
                     Sold Out
                   </span>

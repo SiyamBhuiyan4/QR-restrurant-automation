@@ -6,6 +6,7 @@ import CategoryBar from '../components/CategoryBar';
 import CartDrawer from '../components/CartDrawer';
 import FoodDetailModal from '../components/FoodDetailModal';
 import MenuItemCard from '../components/MenuItemCard';
+import WaterBackground from '../components/WaterBackground';
 import '../styles/customer-hero.css';
 import '../styles/customer-menu-sections.css';
 import { 
@@ -1231,39 +1232,11 @@ export default function CustomerMenu({
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-stone-100 pb-32 selection:bg-[#FF5A26] selection:text-white relative">
+    <div className="min-h-screen bg-[#021424] text-slate-100 pb-32 selection:bg-[#0284c7] selection:text-white relative">
       {/* =====================================================================
-          WorldPlate Flame Orange & Noir Ambient Atmosphere (GPU 60 FPS)
+          Serene River Mirror & Sky Reflection Water Background (Interactive Ripple Waves)
          ===================================================================== */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 select-none">
-        {/* Soft Radial Flame Warmth Base */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_80%_at_50%_-20%,rgba(255,90,38,0.14),rgba(10,10,12,0)_75%)]" />
-
-        {/* 1. Flame Coral Warm Ambient Orb (Top Left) */}
-        <div className="absolute -top-32 -left-28 w-[450px] h-[450px] sm:w-[580px] sm:h-[580px] rounded-full bg-gradient-to-tr from-[#FF5A26]/25 via-[#FF7A45]/15 to-transparent blur-[130px] animate-ambient-drift-1" />
-
-        {/* 2. Soft Golden Hearth Orb (Top Right) */}
-        <div className="absolute top-16 -right-32 w-[400px] h-[400px] sm:w-[520px] sm:h-[520px] rounded-full bg-gradient-to-bl from-amber-500/18 via-[#FF5A26]/12 to-transparent blur-[120px] animate-ambient-drift-2" />
-
-        {/* 3. Deep Noir Hearth Glow (Middle Left) */}
-        <div className="absolute top-[42%] -left-36 w-[420px] h-[420px] rounded-full bg-gradient-to-r from-[#FF5A26]/16 via-amber-600/10 to-transparent blur-[140px] animate-ambient-drift-3" />
-
-        {/* 4. Honey Hearth Warm Glow Accent (Bottom Center / Right) */}
-        <div className="absolute bottom-12 right-[8%] w-[480px] h-[480px] rounded-full bg-gradient-to-tl from-[#FF7A45]/18 via-amber-500/10 to-transparent blur-[130px] animate-ambient-pulse" />
-
-        {/* 5. Floating Culinary Ember Particles */}
-        <div className="ember-sparkle sparkle-1" />
-        <div className="ember-sparkle sparkle-2" />
-        <div className="ember-sparkle sparkle-3" />
-        <div className="ember-sparkle sparkle-4" />
-        <div className="ember-sparkle sparkle-5" />
-        <div className="ember-sparkle sparkle-6" />
-        <div className="ember-sparkle sparkle-7" />
-        <div className="ember-sparkle sparkle-8" />
-
-        {/* 6. Subtle Micro-texture Dot Grid */}
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,122,69,0.035)_1px,transparent_1px)] [background-size:24px_24px] opacity-70" />
-      </div>
+      <WaterBackground />
       
       {/* 1. Header Navigation */}
       <Navbar
@@ -1380,15 +1353,15 @@ export default function CustomerMenu({
         <section id="menu-food-grid" className="w-full max-w-7xl pt-4 sm:pt-6 pb-12 scroll-mt-24">
           {/* Section Divider & Heading */}
           <div className="text-center mb-7">
-            <div className="inline-flex items-center gap-3 text-[#d4af37] text-xs font-bold tracking-[0.22em] uppercase mb-2">
+            <div className="inline-flex items-center gap-3 text-sky-400 text-xs font-bold tracking-[0.22em] uppercase mb-2">
               <span className="opacity-60">✦ ─────</span>
               <span>À LA CARTE SELECTION</span>
               <span className="opacity-60">───── ✦</span>
             </div>
-            <h2 className="text-2xl sm:text-4xl font-normal text-[#f5efe0] tracking-tight [font-family:Playfair_Display,Georgia,serif]">
+            <h2 className="text-2xl sm:text-4xl font-normal text-white tracking-tight [font-family:Playfair_Display,Georgia,serif]">
               Chef's Culinary Creations
             </h2>
-            <p className="text-xs sm:text-sm text-[#f5efe0]/70 max-w-md mx-auto mt-2 font-normal">
+            <p className="text-xs sm:text-sm text-sky-200/70 max-w-md mx-auto mt-2 font-normal">
               Freshly prepared to order. Tap any dish for 360° views and culinary details, or add directly to your dining order.
             </p>
           </div>
@@ -1411,14 +1384,14 @@ export default function CustomerMenu({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search dishes, ingredients..."
-                className="w-full pl-9 pr-9 py-2 text-xs sm:text-sm rounded-full bg-[#0f3d2a]/60 border border-[#d4af37]/35 text-[#f5efe0] placeholder-[#f5efe0]/45 focus:outline-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/40 transition shadow-inner"
+                className="w-full pl-9 pr-9 py-2 text-xs sm:text-sm rounded-full bg-[#032038]/70 border border-sky-400/35 text-slate-100 placeholder-sky-200/50 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 transition shadow-inner"
               />
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#d4af37]" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-sky-400" />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#f5efe0]/60 hover:text-[#f5efe0] cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-200/60 hover:text-white cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -1432,7 +1405,7 @@ export default function CustomerMenu({
                 className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
                   vegOnlyFilter
                     ? 'bg-emerald-600 text-white shadow-md'
-                    : 'bg-[#0f3d2a]/50 text-[#f5efe0]/80 border border-[#d4af37]/30 hover:border-[#d4af37]'
+                    : 'bg-[#032038]/60 text-sky-100 border border-sky-400/30 hover:border-sky-400'
                 }`}
               >
                 <Leaf className="w-3.5 h-3.5" />
@@ -1445,7 +1418,7 @@ export default function CustomerMenu({
                 className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
                   spicyFilter
                     ? 'bg-rose-600 text-white shadow-md'
-                    : 'bg-[#0f3d2a]/50 text-[#f5efe0]/80 border border-[#d4af37]/30 hover:border-[#d4af37]'
+                    : 'bg-[#032038]/60 text-sky-100 border border-sky-400/30 hover:border-sky-400'
                 }`}
               >
                 <Flame className="w-3.5 h-3.5" />
@@ -1460,7 +1433,7 @@ export default function CustomerMenu({
                     setVegOnlyFilter(false);
                     setSpicyFilter(false);
                   }}
-                  className="text-xs text-[#f0d27a] hover:text-[#d4af37] font-semibold underline underline-offset-2 ml-1 cursor-pointer"
+                  className="text-xs text-sky-300 hover:text-white font-semibold underline underline-offset-2 ml-1 cursor-pointer"
                 >
                   Reset
                 </button>
@@ -1476,17 +1449,17 @@ export default function CustomerMenu({
                 {categorizedSections.map((section) => (
                   <div key={section.categoryKey} id={`cat-section-${section.categoryKey}`} className="space-y-4 scroll-mt-28">
                     {/* Category Title Banner */}
-                    <div className="flex items-center justify-between pb-3 border-b border-[#d4af37]/30">
+                    <div className="flex items-center justify-between pb-3 border-b border-sky-400/25">
                       <div className="flex items-center gap-3">
                         <span className="text-xl sm:text-2xl">{section.icon}</span>
                         <div>
-                          <h3 className="text-lg sm:text-2xl font-normal text-[#f0d27a] tracking-tight [font-family:Playfair_Display,Georgia,serif]">
+                          <h3 className="text-lg sm:text-2xl font-normal text-sky-200 tracking-tight [font-family:Playfair_Display,Georgia,serif]">
                             {section.title}
                           </h3>
-                          <p className="text-xs text-[#f5efe0]/60">{section.subtitle}</p>
+                          <p className="text-xs text-sky-200/60">{section.subtitle}</p>
                         </div>
                       </div>
-                      <span className="text-xs font-bold text-[#d4af37] bg-[#0f3d2a] border border-[#d4af37]/40 px-2.5 py-0.5 rounded-full">
+                      <span className="text-xs font-bold text-sky-300 bg-[#032038] border border-sky-400/40 px-2.5 py-0.5 rounded-full">
                         {section.items.length} {section.items.length === 1 ? 'dish' : 'dishes'}
                       </span>
                     </div>
@@ -1518,11 +1491,11 @@ export default function CustomerMenu({
             ) : (
               // Filtered / Searched Single Grid
               <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-[#d4af37]/30">
-                  <h3 className="text-lg sm:text-2xl font-normal text-[#f0d27a] tracking-tight [font-family:Playfair_Display,Georgia,serif]">
+                <div className="flex items-center justify-between pb-3 border-b border-sky-400/25">
+                  <h3 className="text-lg sm:text-2xl font-normal text-sky-200 tracking-tight [font-family:Playfair_Display,Georgia,serif]">
                     {selectedCategory === 'All' ? 'Search Results' : (getCategoryMetadata(selectedCategory).title || selectedCategory)}
                   </h3>
-                  <span className="text-xs font-bold text-[#d4af37] bg-[#0f3d2a] border border-[#d4af37]/40 px-2.5 py-0.5 rounded-full">
+                  <span className="text-xs font-bold text-sky-300 bg-[#032038] border border-sky-400/40 px-2.5 py-0.5 rounded-full">
                     {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'}
                   </span>
                 </div>
@@ -1551,14 +1524,14 @@ export default function CustomerMenu({
             )
           ) : (
             /* Empty State */
-            <div className="bg-[#0f3d2a]/60 rounded-3xl border border-[#1f6b4a] p-8 sm:p-12 text-center max-w-md mx-auto my-10 shadow-lg">
-              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-[#d4af37] mx-auto flex items-center justify-center mb-3.5 border border-[#d4af37]/30">
+            <div className="bg-[#032038]/70 rounded-3xl border border-sky-500/30 p-8 sm:p-12 text-center max-w-md mx-auto my-10 shadow-lg">
+              <div className="w-16 h-16 rounded-2xl bg-sky-500/15 text-sky-400 mx-auto flex items-center justify-center mb-3.5 border border-sky-400/30">
                 <UtensilsCrossed className="w-8 h-8 stroke-[1.8]" />
               </div>
-              <h3 className="font-normal text-[#f0d27a] text-xl mb-1 [font-family:Playfair_Display,Georgia,serif]">
+              <h3 className="font-normal text-sky-200 text-xl mb-1 [font-family:Playfair_Display,Georgia,serif]">
                 No matching dishes found
               </h3>
-              <p className="text-xs sm:text-sm text-[#f5efe0]/70 mb-5 leading-relaxed">
+              <p className="text-xs sm:text-sm text-sky-200/70 mb-5 leading-relaxed">
                 Try adjusting your search query or reset dietary filters to view all chef-crafted menu choices.
               </p>
               <button
@@ -1569,7 +1542,7 @@ export default function CustomerMenu({
                   setSpicyFilter(false);
                   setSelectedCategory('All');
                 }}
-                className="min-h-11 px-5 py-2.5 bg-[#d4af37] hover:bg-[#f0d27a] text-[#06140e] rounded-full text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer"
+                className="min-h-11 px-5 py-2.5 bg-sky-400 hover:bg-sky-300 text-[#021424] rounded-full text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer"
               >
                 Reset All Filters
               </button>
