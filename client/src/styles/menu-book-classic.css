@@ -1080,3 +1080,10 @@ html[data-theme="light"] .mbc-menu-page .mb-drinks-item:active {
     transition: none !important;
   }
 }
+
+/* Light theme: the blank verso is warm cream paper, not dark green */
+html[data-theme="light"] .mb-root {
+  --mb-verso-bg: linear-gradient(105deg, #f3ead6 0%, #ece2cb 48%, #e6dbc2 100%);
+  --mb-verso-shade: rgba(90, 65, 25, 0.22);
+  --mb-verso-sheen: rgba(255, 255, 255, 0.45);
+}

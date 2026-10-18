@@ -273,8 +273,8 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
         // so the verso stretches to the spread's height instead of stopping at
         // the page min-height and leaving the cover showing underneath.
         minHeight: '100%',
-        background: 'linear-gradient(105deg, #04100b 0%, #081710 48%, #030d08 100%)',
-        boxShadow: 'inset -14px 0 26px -12px rgba(0, 0, 0, 0.75)',
+        background: 'var(--mb-verso-bg, linear-gradient(105deg, #04100b 0%, #081710 48%, #030d08 100%))',
+        boxShadow: 'inset -14px 0 26px -12px var(--mb-verso-shade, rgba(0, 0, 0, 0.75))',
       }}
     >
       <div
@@ -286,8 +286,8 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
           pointerEvents: 'none',
           borderRadius: 'inherit',
           background:
-            'radial-gradient(ellipse at 88% 42%, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 32%, transparent 62%),' +
-            'linear-gradient(105deg, #04100b 0%, #081710 48%, #030d08 100%)',
+            'radial-gradient(ellipse at 88% 42%, var(--mb-verso-sheen, rgba(255, 255, 255, 0.05)) 0%, transparent 62%),' +
+            'var(--mb-verso-bg, linear-gradient(105deg, #04100b 0%, #081710 48%, #030d08 100%))',
         }}
       />
     </section>
