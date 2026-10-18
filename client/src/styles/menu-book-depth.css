@@ -1,7 +1,26 @@
 /*
  * menu-book-depth.css
- * Open menu book shell: straight (untilted) book, leather board, central spine
- * crease, and a gentle curve of each page toward the spine.
+ * Open menu book shell: the physical form of the booklet.
+ *
+ * The book is a real object resting on a surface, not a flat image:
+ *  - the whole case reclines a few degrees away from the reader (one transform
+ *    on the container, so hit testing is never routed through a 3D subtree);
+ *  - each half of the spread folds a modest amount toward the spine, so the
+ *    outer edges sit closer to the reader than the gutter does;
+ *  - layered gradients do the rest of the bend, which is what makes the paper
+ *    read as bowed rather than creased: a deep gutter core, a crest of light a
+ *    third of the way out, and the outer edge rolling away again.
+ *
+ * Geometry lives here; the per-breakpoint fold and the page shading live in
+ * menu-book-responsive.css, the page-block edges and the spine in
+ * menu-book-3d.css.
+ *
+ * HIT TESTING: an earlier build put rotateY on the spread halves inside a
+ * transform-style: preserve-3d stage. Chromium then hit-tested the whole 3D
+ * subtree against the scrolling ancestor and every click in the book was
+ * swallowed. The fold is kept, but every container that carries or contains it
+ * is flattened (transform-style: flat), so each half is one ordinary painted
+ * layer and clicks land on the element under the cursor.
  */
 
 :root {
@@ -9,15 +28,42 @@
   --mb-gold: #d4af37;
   --mb-spine-w: 44px;
   --mb-radius: 14px;
+
+  /* Dihedral fold of the open spread: how far each half leans back toward the
+     spine. Small on purpose - the bend is carried mostly by shading. */
+  --mb-fold: 0deg;
+  /* How far the whole case reclines on the table. */
+  --mb-recline: 0deg;
 }
 
-/* ---------- Book shell: 3D perspective & flat view modes ---------- */
+@media (min-width: 768px) {
+  :root {
+    --mb-fold: 9deg;
+    --mb-recline: 7deg;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --mb-fold: 10deg;
+    --mb-recline: 8deg;
+  }
+}
+
+/* Phones show a single leaf: almost flat, just enough to hint at the binding. */
+@media (max-width: 767.98px) {
+  :root {
+    --mb-fold: 1.5deg;
+    --mb-recline: 0deg;
+  }
+}
+
+/* ---------- Book shell ---------- */
 .mb-book {
   position: relative;
   width: 100%;
   max-width: 1024px;
   margin: 0 auto;
-  transform: none;
   border-radius: var(--mb-radius);
   box-shadow:
     0 1px 0 #0b2619,
@@ -25,96 +71,72 @@
     0 3px 0 #061a10,
     0 22px 28px -10px rgba(0, 0, 0, 0.5),
     0 40px 60px -20px rgba(0, 0, 0, 0.6);
-  transform-style: preserve-3d;
+  /* Flattened on purpose: see the hit-testing note at the top of this file. */
+  transform-style: flat;
 }
 
+/* The case reclines away from the reader. One transform on one container, so
+   the entire book is a single flat plane tilted in 3D space. */
 @media (min-width: 768px) {
-  .mb-book[data-view="3d"],
-  .mb-3d-book[data-view="3d"] {
-    transform: perspective(2400px) rotateX(var(--mb-tilt-rx, 10deg)) rotateY(var(--mb-tilt-ry, 0deg));
-    box-shadow:
-      0 1px 0 #0b2619,
-      0 3px 0 #081d13,
-      0 6px 0 #061a10,
-      0 28px 42px -10px rgba(0, 0, 0, 0.58),
-      0 50px 75px -20px rgba(0, 0, 0, 0.7);
-  }
-
-  .mb-book[data-view="flat"],
-  .mb-3d-book[data-view="flat"] {
-    transform: none !important;
-  }
-
-  .mb-book[data-view="flat"] .mb-stage > .mb-spread-left,
-  .mb-book[data-view="flat"] .mb-stage > .mb-spread-right,
-  .mb-book[data-view="flat"] .mb-spread-left,
-  .mb-book[data-view="flat"] .mb-spread-right {
-    transform: none !important;
+  .mb-book,
+  .mb-3d-book {
+    transform: perspective(2000px) rotateX(var(--mb-recline)) translateZ(0);
+    transform-origin: 50% 92%;
   }
 }
 
-/* Soft ground shadow beneath the book */
+/* Soft contact shadow: the book touches the surface along its bottom edge and
+   the shadow spreads out and away from there. */
 .mb-book::after {
   content: "";
   position: absolute;
-  left: 6%;
-  right: 6%;
-  bottom: -22px;
-  height: 30px;
+  left: 4%;
+  right: 4%;
+  bottom: -16px;
+  height: 26px;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%);
-  filter: blur(4px);
-  transition: bottom 300ms ease, height 300ms ease, opacity 300ms ease;
+  background: radial-gradient(ellipse at 50% 20%, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.22) 45%, rgba(0, 0, 0, 0) 72%);
+  filter: blur(6px);
 }
 
 @media (min-width: 768px) {
-  .mb-book[data-view="3d"]::after {
-    bottom: -28px;
-    height: 42px;
-    opacity: 0.9;
-    filter: blur(7px);
+  .mb-book::after {
+    left: 2%;
+    right: 2%;
+    bottom: -20px;
+    height: 36px;
+    filter: blur(9px);
   }
 }
 
-/* ---------- Pages: slight curve toward the spine ---------- */
-/* Paper texture: faint fibre grain plus a shadow that deepens toward the spine. */
+/* ---------- Pages: the bend ---------- */
+/* Paper fibre grain. The curve shading itself is painted by ::after in
+   menu-book-responsive.css so it stays above the parchment texture that
+   menu-book-classic.css paints on .mb-page. */
 .mb-page {
   position: relative;
-  background-image:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0)),
-    repeating-linear-gradient(0deg, rgba(120, 95, 40, 0.035) 0 1px, transparent 1px 3px),
-    repeating-linear-gradient(90deg, rgba(120, 95, 40, 0.025) 0 1px, transparent 1px 4px);
   box-shadow: inset 0 0 18px rgba(90, 65, 20, 0.08);
 }
 
-/* Left page: its inner edge (right side) curves down into the spine. */
 .mb-page-left {
-  background-image:
-    linear-gradient(270deg, rgba(60, 40, 10, 0.22) 0%, rgba(60, 40, 10, 0.08) 6%, rgba(0, 0, 0, 0) 18%),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0)),
-    repeating-linear-gradient(0deg, rgba(120, 95, 40, 0.035) 0 1px, transparent 1px 3px),
-    repeating-linear-gradient(90deg, rgba(120, 95, 40, 0.025) 0 1px, transparent 1px 4px);
   border-radius: 10px 0 0 10px;
 }
 
-/* Right page: its inner edge (left side) curves down into the spine. */
 .mb-page-right {
-  background-image:
-    linear-gradient(90deg, rgba(60, 40, 10, 0.22) 0%, rgba(60, 40, 10, 0.08) 6%, rgba(0, 0, 0, 0) 18%),
-    linear-gradient(270deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0)),
-    repeating-linear-gradient(0deg, rgba(120, 95, 40, 0.035) 0 1px, transparent 1px 3px),
-    repeating-linear-gradient(90deg, rgba(120, 95, 40, 0.025) 0 1px, transparent 1px 4px);
   border-radius: 0 10px 10px 0;
 }
 
-/* ---------- Spine: visible central crease with shadow (desktop spread only) ---------- */
+/* ---------- Spine: deep central crease ---------- */
+/* The wide, soft gutter shadow is drawn by .mb-3d-spine (menu-book-3d.css);
+   this legacy single-layer spine is kept only as a fallback for markup that
+   does not carry the 3D class. */
 .mb-spine {
   display: none;
 }
 
 @media (min-width: 768px) {
-  .mb-spine {
+  .mb-spine:not(.mb-3d-spine) {
     display: block;
     position: absolute;
     top: 0;
@@ -136,8 +158,7 @@
     );
   }
 
-  /* Crease line */
-  .mb-spine::before {
+  .mb-spine:not(.mb-3d-spine)::before {
     content: "";
     position: absolute;
     top: 0;
@@ -145,10 +166,12 @@
     left: 50%;
     width: 2px;
     transform: translateX(-50%);
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.0), rgba(0, 0, 0, 0.35) 8%, rgba(0, 0, 0, 0.35) 92%, rgba(0, 0, 0, 0));
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.35) 8%, rgba(0, 0, 0, 0.35) 92%, rgba(0, 0, 0, 0));
   }
 }
 
+/* Reduced motion removes animation, not the book's static shape: a shape is
+   not movement. */
 @media (prefers-reduced-motion: reduce) {
   .mb-book,
   .mb-book *,

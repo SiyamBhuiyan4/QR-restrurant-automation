@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { buildSpreads, pageCountOf, findPageForItem } from './buildSpreads.js';
+import { buildSpreads, findPageForItem } from './buildSpreads.js';
 import useBookFlip3D from './useBookFlip3D.js';
 import MenuBookTurningLeaf from './MenuBookTurningLeaf.jsx';
 import MenuBookOverview from './MenuBookOverview.jsx';
@@ -10,7 +10,7 @@ import useBookParallax from './useBookParallax.js';
 import useBookSwipe from './useBookSwipe.js';
 import MenuBookDogEar from './MenuBookDogEar.jsx';
 import useBookSound from './useBookSound.js';
-import { Sparkles, Volume2, VolumeX, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Volume2, VolumeX, ChevronLeft, ChevronRight } from 'lucide-react';
 import '../../styles/menu-book-flip.css';
 import '../../styles/menu-book-3d-flip.css';
 import '../../styles/menu-book-depth.css';
@@ -22,7 +22,16 @@ import '../../styles/menu-book-interactive.css';
 import '../../styles/menu-book-showcase.css';
 import '../../styles/menu-book-drinks.css';
 
+// The floating hover preview lives in its own component. It is picked up with a
+// glob instead of a direct import so the book still builds while that component
+// is being added; once the file exists this resolves to its default export.
+const hoverPreviewModules = import.meta.glob('./DishHoverPreview.jsx', { eager: true });
+const DishHoverPreview = Object.values(hoverPreviewModules)[0]?.default || null;
+
 const PAPER = 'bg-[#0f2f22] text-[#f5efe0]';
+
+// The verso (left) leaf of the spread is bare, unlit paper: no content at all.
+const BLANK_PAGE = { type: 'blank' };
 
 function dishImage(dish) {
   return dish?.image || dish?.imageUrl || dish?.img || null;
@@ -38,7 +47,23 @@ function formatPrice(price) {
 // `onSelectDish` is accepted for backwards compatibility but intentionally
 // unused: dish details are shown on a page inside the book (see handleSelectItem).
 export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSelectDish }) {
-  const spreads = useMemo(() => buildSpreads(sections), [sections]);
+  const sourceSpreads = useMemo(() => buildSpreads(sections), [sections]);
+
+  // Real menu books in the reference photo keep the left-hand leaf completely
+  // dark and empty and print everything on the right-hand leaf. So the paired
+  // spreads coming out of buildSpreads() are flattened back into their real
+  // pages, and every page gets a spread of its own: blank verso + content recto.
+  // The reading order is unchanged, it just advances one page per turn.
+  const spreads = useMemo(() => {
+    const flat = [];
+    sourceSpreads.forEach((sp) => {
+      if (sp?.left && sp.left.type !== 'blank') flat.push(sp.left);
+      if (sp?.right && sp.right.type !== 'blank') flat.push(sp.right);
+    });
+    if (flat.length === 0) flat.push(BLANK_PAGE);
+    return flat.map((page) => ({ left: BLANK_PAGE, right: page }));
+  }, [sourceSpreads]);
+
   const spreadCount = Math.max(spreads.length, 1);
   const flip = useBookFlip3D(spreadCount, { initial: 0 });
   const {
@@ -57,19 +82,20 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
 
   const [selectedDish, setSelectedDish] = useState(null);
 
+  // Hover preview state, reported by the content page (or by the item rows
+  // rendered here) and handed to DishHoverPreview.
+  const [hoverPreview, setHoverPreview] = useState({ dish: null, rect: null });
+
   const {
     isMuted,
-    volume,
     toggleMute,
-    setVolume,
     playPageFlip,
     playDogEarCue,
   } = useBookSound();
 
-  // Phone shows one leaf at a time, so it has to walk left page -> right page ->
-  // next spread. Desktop keeps the two-page spread untouched.
+  // Phones show a single leaf. That leaf is always the content (right) page -
+  // the blank verso is never the page on screen.
   const [isPhone, setIsPhone] = useState(false);
-  const [phoneSide, setPhoneSide] = useState('left');
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
@@ -84,78 +110,64 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
     return () => mq.removeListener(sync);
   }, []);
 
-  // Flat reading order of the real (non-blank) pages, used only on phone.
-  const pages = useMemo(() => {
-    const list = [];
-    spreads.forEach((sp, i) => {
-      if (sp?.left && sp.left.type !== 'blank') list.push({ spreadIndex: i, side: 'left' });
-      if (sp?.right && sp.right.type !== 'blank') list.push({ spreadIndex: i, side: 'right' });
-    });
-    return list;
-  }, [spreads]);
-
-  const currentSpread = spreads[currentSpreadIndex] || { left: null, right: null };
+  const currentSpread = spreads[currentSpreadIndex] || { left: BLANK_PAGE, right: BLANK_PAGE };
   const targetSpread = targetSpreadIndex !== null && spreads[targetSpreadIndex]
     ? spreads[targetSpreadIndex]
     : currentSpread;
 
-  const spread = currentSpread;
-
-  // Stationary left/right pages during 3D flip on desktop:
-  const leftDisplayPage = !isPhone && isFlipping && direction === 'prev'
-    ? targetSpread.left
-    : currentSpread.left;
+  // Stationary left/right pages during the 3D flip on desktop:
+  const leftDisplayPage = BLANK_PAGE;
 
   const rightDisplayPage = !isPhone && isFlipping && direction === 'next'
     ? targetSpread.right
     : currentSpread.right;
 
   const turningFrontPage = isFlipping
-    ? (direction === 'next' ? currentSpread.right : currentSpread.left)
+    ? (direction === 'next' ? currentSpread.right : BLANK_PAGE)
     : null;
 
   const turningBackPage = isFlipping
-    ? (direction === 'next' ? targetSpread.left : targetSpread.right)
+    ? (direction === 'next' ? BLANK_PAGE : targetSpread.right)
     : null;
 
-  let phoneIndex = pages.findIndex((p) => p.spreadIndex === spreadIndex && p.side === phoneSide);
-  if (phoneIndex < 0) phoneIndex = Math.max(pages.findIndex((p) => p.spreadIndex === spreadIndex), 0);
-  const phonePage = pages[phoneIndex];
-  const visibleSide = phonePage ? phonePage.side : 'left';
+  // One content page per spread, and it is always the recto.
+  const visibleSide = 'right';
 
-  // Desktop (md+) always shows both halves; on phone only the current leaf.
-  const leftVisibility = !isPhone || visibleSide === 'left' ? 'block' : 'hidden';
-  const rightVisibility = !isPhone || visibleSide === 'right' ? 'block' : 'hidden';
+  // Desktop (md+) always shows both halves; on phone only the content leaf.
+  const leftVisibility = isPhone ? 'hidden' : 'block';
+  const rightVisibility = 'block';
 
-  const goToPage = useCallback((index) => {
-    const target = pages[index];
-    if (!target) return;
-    setSelectedDish(null);
-    setPhoneSide(target.side);
-    if (index !== phoneIndex) {
-      playPageFlip(index > phoneIndex ? 'next' : 'prev');
-    }
-    if (target.spreadIndex !== spreadIndex) goTo(target.spreadIndex);
-  }, [pages, spreadIndex, goTo, phoneIndex, playPageFlip]);
+  const clearHover = useCallback(() => {
+    setHoverPreview((prevState) => (prevState.dish === null ? prevState : { dish: null, rect: null }));
+  }, []);
 
-  const canPrevPage = isPhone ? phoneIndex > 0 : canPrev;
-  const canNextPage = isPhone ? phoneIndex < pages.length - 1 : canNext;
-  const dotCount = isPhone ? Math.max(pages.length, 1) : spreadCount;
-  const activeDot = isPhone ? phoneIndex : spreadIndex;
+  const handleDishHover = useCallback((dish, rect) => {
+    if (!dish) { clearHover(); return; }
+    setHoverPreview({ dish, rect: rect || null });
+  }, [clearHover]);
+
+  const handleDishHoverEnd = useCallback(() => {
+    clearHover();
+  }, [clearHover]);
+
+  const canPrevPage = canPrev;
+  const canNextPage = canNext;
+  const dotCount = spreadCount;
+  const activeDot = spreadIndex;
 
   const turnPrev = useCallback(() => {
     setSelectedDish(null);
+    clearHover();
     playPageFlip('prev');
-    if (isPhone) { goToPage(phoneIndex - 1); return; }
     prev();
-  }, [isPhone, goToPage, phoneIndex, prev, playPageFlip]);
+  }, [prev, playPageFlip, clearHover]);
 
   const turnNext = useCallback(() => {
     setSelectedDish(null);
+    clearHover();
     playPageFlip('next');
-    if (isPhone) { goToPage(phoneIndex + 1); return; }
     next();
-  }, [isPhone, goToPage, phoneIndex, next, playPageFlip]);
+  }, [next, playPageFlip, clearHover]);
 
   const viewMode = 'flat';
   const { containerRef } = useBookParallax({ enabled: false });
@@ -169,22 +181,36 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
   const jumpTo = useCallback((i) => {
     if (i === spreadIndex) return;
     setSelectedDish(null);
-    setPhoneSide('left');
+    clearHover();
     playPageFlip(i > spreadIndex ? 'next' : 'prev');
     goTo(i);
-  }, [goTo, spreadIndex, playPageFlip]);
+  }, [goTo, spreadIndex, playPageFlip, clearHover]);
 
   const goToSection = useCallback((sectionKey, targetPageNumber) => {
     const section = sections.find((s) => (s.categoryKey ?? s.key) === sectionKey || s.title === sectionKey);
     const key = section ? (section.categoryKey ?? section.key) : sectionKey;
     const normKey = String(key || sectionKey || '').toLowerCase();
 
-    let target = spreads.findIndex((sp) =>
-      (sp.left?.type === 'items' && (sp.left.sectionKey === key || sp.left.sectionTitle === section?.title)) ||
-      (sp.right?.type === 'items' && (sp.right.sectionKey === key || sp.right.sectionTitle === section?.title)) ||
-      (sp.left?.type === 'showcase' && (sp.left.sectionKey === key || normKey.includes('starter') || normKey.includes('appetiz') || normKey.includes('chicken') || normKey.includes('wing'))) ||
-      (sp.right?.type === 'drinksDessert' && (sp.right.sectionKey === key || normKey.includes('beverag') || normKey.includes('drink') || normKey.includes('cocktail') || normKey.includes('mocktail') || normKey.includes('dessert')))
-    );
+    const matchesPage = (page) => {
+      if (!page) return false;
+      if (page.type === 'items') {
+        return page.sectionKey === key || page.sectionTitle === section?.title;
+      }
+      if (page.type === 'showcase') {
+        return page.sectionKey === key ||
+          normKey.includes('starter') || normKey.includes('appetiz') ||
+          normKey.includes('chicken') || normKey.includes('wing');
+      }
+      if (page.type === 'drinksDessert') {
+        return page.sectionKey === key ||
+          normKey.includes('beverag') || normKey.includes('drink') ||
+          normKey.includes('cocktail') || normKey.includes('mocktail') ||
+          normKey.includes('dessert');
+      }
+      return false;
+    };
+
+    let target = spreads.findIndex((sp) => matchesPage(sp.right));
 
     if (target < 0) {
       const firstItemId = section?.items?.[0]?.id;
@@ -195,57 +221,26 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
     }
 
     if ((typeof target !== 'number' || target < 0) && typeof targetPageNumber === 'number') {
-      target = spreads.findIndex((sp) =>
-        sp.left?.pageNumber === targetPageNumber || sp.right?.pageNumber === targetPageNumber
-      );
-      if (target < 0) {
-        target = Math.max(0, Math.floor((targetPageNumber - 1) / 2));
-      }
+      target = spreads.findIndex((sp) => sp.right?.pageNumber === targetPageNumber);
+      // Pages and spreads are now 1:1, so page N is simply spread N - 1.
+      if (target < 0) target = Math.max(0, targetPageNumber - 1);
     }
 
     if (typeof target !== 'number' || target < 0 || target >= spreads.length) return;
-
-    if (isPhone) {
-      const sp = spreads[target];
-      const onLeft =
-        (sp?.left?.type === 'items' &&
-          (sp.left.sectionKey === key ||
-            (section?.items?.[0]?.id && sp.left.items?.some((item) => item.id === section.items[0].id)))) ||
-        (sp?.left?.type === 'showcase' &&
-          (normKey.includes('starter') || normKey.includes('appetiz') || normKey.includes('chicken') || normKey.includes('wing')));
-      const idx = pages.findIndex((p) => p.spreadIndex === target && p.side === (onLeft ? 'left' : 'right'));
-      if (idx >= 0) { goToPage(idx); return; }
-    }
     jumpTo(target);
-  }, [sections, spreads, jumpTo, isPhone, pages, goToPage]);
+  }, [sections, spreads, jumpTo]);
 
-  const goToDish = useCallback((item, sectionKey) => {
+  const goToDish = useCallback((item) => {
     if (!item) return;
     const pageIdx = findPageForItem(spreads, item.id);
     const target = typeof pageIdx === 'number' ? pageIdx : pageIdx?.spreadIndex;
 
     if (typeof target === 'number' && target >= 0 && target < spreads.length) {
-      if (isPhone) {
-        const sp = spreads[target];
-        const onLeft =
-          (sp?.left?.type === 'items' && sp.left.items?.some((it) => it.id === item.id)) ||
-          (sp?.left?.type === 'showcase' &&
-            (sp.left.dishTop?.id === item.id ||
-              sp.left.dishBottom?.id === item.id ||
-              sp.left.dishes?.some?.((d) => d.id === item.id)));
-        const idx = pages.findIndex((p) => p.spreadIndex === target && p.side === (onLeft ? 'left' : 'right'));
-        if (idx >= 0) {
-          goToPage(idx);
-          setSelectedDish(item);
-          return;
-        }
-      }
       jumpTo(target);
-      setSelectedDish(item);
-    } else {
-      setSelectedDish(item);
     }
-  }, [spreads, isPhone, pages, goToPage, jumpTo]);
+    clearHover();
+    setSelectedDish(item);
+  }, [spreads, jumpTo, clearHover]);
 
   const handleAddToCart = useCallback((dish, qty) => {
     onAddToCart?.(dish, qty);
@@ -256,14 +251,53 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
   // a separate full-screen dish modal, which would stack on top of the book's own
   // dish page. One tap, one view - and that view is the page inside the book.
   const handleSelectItem = useCallback((item) => {
+    clearHover();
     setSelectedDish(item);
-  }, []);
+  }, [clearHover]);
+
+  // The verso leaf: dark, bare paper. No frame, no folio, no dog-ears, nothing
+  // focusable - just unlit paper with a little light rolling off the spine.
+  //
+  // `.mb-page` is kept for the page geometry (size, radius, the paper-curve
+  // shading layer), but its parchment fill is replaced inline and its gold
+  // filigree frame - a `::before` that cannot be reached from here - is covered
+  // by one aria-hidden sheet sitting above it (frame is z-index 1, the curve
+  // shading is z-index 3, so this sheet sits in between at 2).
+  const renderBlankLeftPage = () => (
+    <section
+      className="mb-page mb-page-left mb-page--blank relative flex flex-col"
+      aria-hidden="true"
+      style={{
+        transform: 'translateZ(0)',
+        // The recto grows with its content (a dish page is taller than a list),
+        // so the verso stretches to the spread's height instead of stopping at
+        // the page min-height and leaving the cover showing underneath.
+        minHeight: '100%',
+        background: 'linear-gradient(105deg, #04100b 0%, #081710 48%, #030d08 100%)',
+        boxShadow: 'inset -14px 0 26px -12px rgba(0, 0, 0, 0.75)',
+      }}
+    >
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 2,
+          pointerEvents: 'none',
+          borderRadius: 'inherit',
+          background:
+            'radial-gradient(ellipse at 88% 42%, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 32%, transparent 62%),' +
+            'linear-gradient(105deg, #04100b 0%, #081710 48%, #030d08 100%)',
+        }}
+      />
+    </section>
+  );
 
   const renderPage = (page, side, { isLeaf = false } = {}) => {
-    // The dish page takes over the right leaf of the spread, even if that leaf is
-    // the blank padding page at the end of the book. On phone only one leaf is on
-    // screen, so the dish page takes over whichever leaf that is.
-    const showDetail = Boolean(selectedDish) && side === (isPhone ? visibleSide : 'right');
+    if (side === 'left') return renderBlankLeftPage();
+
+    // The dish page takes over the content leaf of the spread.
+    const showDetail = Boolean(selectedDish);
     const pageNumber = showDetail ? null
       : typeof page?.pageNumber === 'number' ? page.pageNumber
       : page?.type === 'overview' ? page.index : null;
@@ -290,6 +324,8 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
           onGoToDish={goToDish}
           onSelectItem={handleSelectItem}
           onSelectDish={handleSelectItem}
+          onDishHover={handleDishHover}
+          onDishHoverEnd={handleDishHoverEnd}
         />
       );
     } else if (page.type === 'showcase') {
@@ -303,6 +339,8 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
           dishes={page.dishes}
           onSelectDish={handleSelectItem}
           onSelectItem={handleSelectItem}
+          onDishHover={handleDishHover}
+          onDishHoverEnd={handleDishHoverEnd}
           pageNumber={page.pageNumber}
         />
       );
@@ -313,6 +351,8 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
           onSelectDish={handleSelectItem}
           onSelectItem={handleSelectItem}
           onAddToCart={handleAddToCart}
+          onDishHover={handleDishHover}
+          onDishHoverEnd={handleDishHoverEnd}
           cocktails={page.cocktails}
           mocktails={page.mocktails}
           desserts={page.desserts}
@@ -334,14 +374,15 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
               const inCart = cart?.[item.id]?.quantity ?? 0;
               const img = dishImage(item);
               const isSelected = selectedDish?.id === item.id;
-              const isVeg = item.isVeg === true || item.veg === true;
-              const isSpicy = item.isSpicy === true || item.spicy === true;
-              const isPopular = item.isPopular === true || item.popular === true;
               return (
                 <li key={item.id}>
                   <button
                     type="button"
                     onClick={() => handleSelectItem(item)}
+                    onMouseEnter={(e) => handleDishHover(item, e.currentTarget.getBoundingClientRect())}
+                    onMouseLeave={handleDishHoverEnd}
+                    onFocus={(e) => handleDishHover(item, e.currentTarget.getBoundingClientRect())}
+                    onBlur={handleDishHoverEnd}
                     className={`mb-entry${isSelected ? ' is-selected' : ''}`}
                   >
                     <span className="mb-entry__thumb">
@@ -381,13 +422,10 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
     // 3D turn is unchanged.
     const hitTestFix = { transform: 'translateZ(0)' };
 
-    const showLeftDogEars = !isLeaf && !showDetail && (isPhone
-      ? visibleSide === side && canPrevPage
-      : side === 'left' && canPrevPage);
-
-    const showRightDogEars = !isLeaf && !showDetail && (isPhone
-      ? visibleSide === side && canNextPage
-      : side === 'right' && canNextPage);
+    // Only the outer (right-hand) corners carry dog-ears now: the inner corners
+    // sit on the spine, and the blank verso stays untouched. Previous-page
+    // navigation lives in the toolbar arrow, the left tap zone, swipe and keys.
+    const showRightDogEars = !isLeaf && !showDetail && canNextPage;
 
     const isSpecialLayout = (page?.type === 'showcase' || page?.type === 'drinksDessert') && !showDetail;
     const pagePadding = isSpecialLayout ? 'p-0' : 'p-4 sm:p-5 md:p-6';
@@ -406,26 +444,8 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
             <span className="mb-spine-crease-stitches" />
           </div>
         )}
-        {/* Interactive 3D Corner Dog-Ears for Page Turning */}
-        {showLeftDogEars && (
-          <>
-            <MenuBookDogEar
-              corner="top-left"
-              onClick={turnPrev}
-              onHover={playDogEarCue}
-              disabled={isFlipping || !canPrevPage}
-              ariaLabel="Turn to previous page"
-            />
-            <MenuBookDogEar
-              corner="bottom-left"
-              onClick={turnPrev}
-              onHover={playDogEarCue}
-              disabled={isFlipping || !canPrevPage}
-              ariaLabel="Turn to previous page"
-            />
-          </>
-        )}
 
+        {/* Interactive 3D Corner Dog-Ears for Page Turning */}
         {showRightDogEars && (
           <>
             <MenuBookDogEar
@@ -478,7 +498,7 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
           {/* Page Counter Badge */}
           <div className="flex items-center px-3.5 py-1.5 rounded-full bg-[#03231a]/85 border border-[#d4af37]/35 text-[#d4af37] text-xs font-semibold tracking-wider uppercase shadow-md">
-            <span>{isPhone ? `Page ${activeDot + 1} of ${dotCount}` : `Spread ${activeDot + 1} of ${dotCount}`}</span>
+            <span>{`Page ${activeDot + 1} of ${dotCount}`}</span>
           </div>
 
           {/* Sound Effect Mute/Unmute Toggle */}
@@ -529,8 +549,8 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
           <div className="mb-gold-corner mb-gold-corner--bl" aria-hidden="true"><span className="mb-gold-rivet" /></div>
           <div className="mb-gold-corner mb-gold-corner--br" aria-hidden="true"><span className="mb-gold-rivet" /></div>
 
-          {/* Desktop: two pages side by side. Phone: one leaf at a time, stepping
-              page 1 -> page 2 -> each dish page. */}
+          {/* Desktop: blank verso on the left, the menu page on the right.
+              Phone: only the menu page. One page per turn either way. */}
           <div className="mb-stage mb-3d-stage relative" data-side={visibleSide} {...swipeHandlers}>
             {/* Hardcover squares / backing boards */}
             <div className="mb-3d-cover-left" aria-hidden="true" />
@@ -541,7 +561,7 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
             <div className="mb-paper-stack-right" aria-hidden="true" />
             <div className="mb-paper-stack-bottom" aria-hidden="true" />
 
-            <div className={`mb-spread mb-spread-left ${leftVisibility} md:block`}>
+            <div className={`mb-spread mb-spread-left mb-spread--blank ${leftVisibility} md:block`}>
               {renderPage(leftDisplayPage, 'left')}
               {!isPhone && isFlipping && direction === 'next' && (
                 <div className="mb-cast-shadow mb-cast-next" aria-hidden="true" />
@@ -595,14 +615,14 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
 
           <div className="mb-controls mt-4 flex items-center justify-center gap-3">
             <div className="mb-dots flex items-center gap-2 flex-wrap justify-center">
-              {/* One dot per spread on desktop, one per page on phone. */}
+              {/* One dot per page: pages and spreads are 1:1 now. */}
               {Array.from({ length: dotCount }).map((_, i) => (
                 <button
                   key={i}
                   type="button"
-                  aria-label={isPhone ? `Go to page ${i + 1}` : `Go to spread ${i + 1}`}
+                  aria-label={`Go to page ${i + 1}`}
                   aria-current={i === activeDot ? 'true' : undefined}
-                  onClick={() => (isPhone ? goToPage(i) : jumpTo(i))}
+                  onClick={() => jumpTo(i)}
                   className="mb-dot min-h-[44px] min-w-[44px] flex items-center justify-center"
                 >
                   <span
@@ -614,6 +634,11 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
               ))}
             </div>
           </div>
+
+          {/* Floating hover preview, fed by whichever content page reports a hover */}
+          {DishHoverPreview && (
+            <DishHoverPreview dish={hoverPreview.dish} anchorRect={hoverPreview.rect} />
+          )}
         </div>
       </div>
     </div>

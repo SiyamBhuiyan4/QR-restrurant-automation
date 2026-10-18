@@ -604,3 +604,479 @@ html[data-theme="light"] .mb-root .mb-badge {
     transform: none !important;
   }
 }
+
+/* ==========================================================================
+   6. Printed Vintage Menu - Right Page (.mbc-menu-page)
+   --------------------------------------------------------------------------
+   The right-hand page of the open book is set as a printed menu: dark textured
+   paper, a double gold keyline with ornate corner flourishes, category labels on
+   gold ribbon banners, and dish lines of NAME ........ PRICE.
+   TYPE ONLY - no photographs, icons, emoji, dietary badges or thumbnails.
+   Selectors are double-class so they win over the baseline in menu-book-drinks.css.
+   ========================================================================== */
+
+.mb-drinks-page.mbc-menu-page {
+  /* Local palette so this page never depends on the drinks baseline variables */
+  --mbv-paper: #071a12;
+  --mbv-ink: #f3ecdb;
+  --mbv-ink-soft: #cfc6ad;
+  --mbv-gold: #d4af37;
+  --mbv-gold-bright: #fae18c;
+  --mbv-gold-soft: #f0d27a;
+  --mbv-gold-dark: #8c6d1f;
+  --mbv-rule: rgba(212, 175, 55, 0.45);
+  --mbv-dot: rgba(212, 175, 55, 0.62);
+  --mbv-dot-strong: rgba(250, 225, 140, 0.9);
+  --mbv-ribbon-face: linear-gradient(180deg, #f6e2a4 0%, #d9b545 42%, #a9861f 100%);
+  --mbv-ribbon-text: #11231a;
+  --mbv-ribbon-fold: #9a7a22;
+  --mbv-row-hover: rgba(212, 175, 55, 0.12);
+
+  background-color: var(--mbv-paper);
+  background-image:
+    radial-gradient(circle at 50% 24%, rgba(212, 175, 55, 0.09) 0%, transparent 62%),
+    radial-gradient(ellipse at 50% 50%, transparent 52%, rgba(3, 10, 7, 0.7) 100%),
+    radial-gradient(circle at 18% 14%, rgba(240, 210, 122, 0.05) 0%, transparent 46%),
+    radial-gradient(circle at 84% 86%, rgba(212, 175, 55, 0.04) 0%, transparent 50%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.045) 0 1px, transparent 1px 3px),
+    linear-gradient(155deg, #0d2a1d 0%, #0a2318 42%, #071a12 100%);
+  color: var(--mbv-ink);
+  font-family: var(--font-display, "Playfair Display", Georgia, "Times New Roman", serif);
+  padding: 14px 12px;
+}
+
+.mbc-menu-page .mb-drinks-frame {
+  border: 1.5px solid var(--mbv-gold);
+  border-radius: 2px;
+  padding: 16px 16px 10px;
+  box-shadow:
+    inset 0 0 0 3px var(--mbv-paper),
+    inset 0 0 0 4.5px rgba(212, 175, 55, 0.45),
+    0 0 14px rgba(212, 175, 55, 0.12);
+}
+
+/* ---------- Ornate gold corner flourishes (vector, drawn in CSS) ---------- */
+.mbc-menu-page .mb-drinks-corner {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.mbc-menu-page .mb-drinks-corner::after {
+  content: none;
+}
+
+.mbc-menu-page .mb-drinks-corner--tl {
+  top: -2px;
+  left: -2px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M2 30 L2 2 L30 2' stroke='%23d4af37' stroke-width='1.5' fill='none'/%3E%3Cpath d='M6 26 L6 6 L26 6' stroke='%23f0d27a' stroke-width='0.75' fill='none' opacity='0.75'/%3E%3Cpath d='M6 6 C12 6 16 10 16 16 C16 22 20 26 26 26' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Cpath d='M6 6 C6 12 10 16 16 16' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='6' cy='6' r='2' fill='%23fae18c'/%3E%3Cpolygon points='12,4 14,6 12,8 10,6' fill='%23d4af37'/%3E%3Cpolygon points='4,12 6,14 4,16 2,14' fill='%23d4af37'/%3E%3C/svg%3E");
+}
+
+.mbc-menu-page .mb-drinks-corner--tr {
+  top: -2px;
+  right: -2px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M30 30 L30 2 L2 2' stroke='%23d4af37' stroke-width='1.5' fill='none'/%3E%3Cpath d='M26 26 L26 6 L6 6' stroke='%23f0d27a' stroke-width='0.75' fill='none' opacity='0.75'/%3E%3Cpath d='M26 6 C20 6 16 10 16 16 C16 22 12 26 6 26' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Cpath d='M26 6 C26 12 22 16 16 16' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='26' cy='6' r='2' fill='%23fae18c'/%3E%3Cpolygon points='20,4 22,6 20,8 18,6' fill='%23d4af37'/%3E%3Cpolygon points='28,12 30,14 28,16 26,14' fill='%23d4af37'/%3E%3C/svg%3E");
+}
+
+.mbc-menu-page .mb-drinks-corner--bl {
+  bottom: -2px;
+  left: -2px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M2 2 L2 30 L30 30' stroke='%23d4af37' stroke-width='1.5' fill='none'/%3E%3Cpath d='M6 6 L6 26 L26 26' stroke='%23f0d27a' stroke-width='0.75' fill='none' opacity='0.75'/%3E%3Cpath d='M6 26 C12 26 16 22 16 16 C16 10 20 6 26 6' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Cpath d='M6 26 C6 20 10 16 16 16' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='6' cy='26' r='2' fill='%23fae18c'/%3E%3Cpolygon points='12,24 14,26 12,28 10,26' fill='%23d4af37'/%3E%3Cpolygon points='4,18 6,20 4,22 2,20' fill='%23d4af37'/%3E%3C/svg%3E");
+}
+
+.mbc-menu-page .mb-drinks-corner--br {
+  bottom: -2px;
+  right: -2px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M30 2 L30 30 L2 30' stroke='%23d4af37' stroke-width='1.5' fill='none'/%3E%3Cpath d='M26 6 L26 26 L6 26' stroke='%23f0d27a' stroke-width='0.75' fill='none' opacity='0.75'/%3E%3Cpath d='M26 26 C20 26 16 22 16 16 C16 10 12 6 6 6' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Cpath d='M26 26 C26 20 22 16 16 16' stroke='%23d4af37' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='26' cy='26' r='2' fill='%23fae18c'/%3E%3Cpolygon points='20,24 22,26 20,28 18,26' fill='%23d4af37'/%3E%3Cpolygon points='28,18 30,20 28,22 26,20' fill='%23d4af37'/%3E%3C/svg%3E");
+}
+
+/* ---------- Plate title: [ DRINKS & DESSERT ] ---------- */
+.mbc-menu-page .mb-drinks-bracket-header {
+  padding: 2px 6px 8px;
+  margin-bottom: 2px;
+}
+
+.mbc-menu-page .mb-drinks-title-line {
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  color: var(--mbv-ink);
+  font-size: clamp(1.1rem, 2.6vw, 1.5rem);
+  letter-spacing: 0.24em;
+  text-indent: 0.24em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+}
+
+.mbc-menu-page .mb-drinks-bracket--left,
+.mbc-menu-page .mb-drinks-bracket--right {
+  border-color: var(--mbv-gold);
+}
+
+.mbc-menu-page .mb-drinks-bracket--left::before,
+.mbc-menu-page .mb-drinks-bracket--left::after,
+.mbc-menu-page .mb-drinks-bracket--right::before,
+.mbc-menu-page .mb-drinks-bracket--right::after {
+  background-color: var(--mbv-gold-bright);
+}
+
+.mbc-menu-page .mb-drinks-header-rule .mb-drinks-rule-line {
+  background: linear-gradient(90deg, transparent, var(--mbv-rule), transparent);
+}
+
+.mbc-menu-page .mb-drinks-header-rule .mb-drinks-rule-diamond {
+  color: var(--mbv-gold-soft);
+  text-shadow: none;
+}
+
+/* The listing column stretches so the folio stays pinned to the foot of the page */
+.mbc-menu-page .mb-drinks-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* ---------- Category banner: bold uppercase label on a gold ribbon ---------- */
+.mbc-menu-page .mb-drinks-section {
+  margin-bottom: 6px;
+}
+
+.mbc-menu-page .mb-drinks-section-heading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 12px 0 7px;
+}
+
+/* Hairline ruled right across the page, with the banner tied over it */
+.mbc-menu-page .mb-drinks-section-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  flex: none;
+  height: 1px;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, transparent 0%, var(--mbv-rule) 16%, var(--mbv-rule) 84%, transparent 100%);
+}
+
+/* The wrapper carries the folded-under tails; the label itself carries the
+   banner face. The two are kept separate because clip-path on an element also
+   clips its own pseudo-elements. */
+.mbc-menu-page .mb-drinks-ribbon {
+  position: relative;
+  z-index: 1;
+  max-width: 86%;
+  display: block;
+}
+
+.mbc-menu-page .mb-drinks-ribbon::before,
+.mbc-menu-page .mb-drinks-ribbon::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  bottom: -4px;
+  width: 9px;
+  background: var(--mbv-ribbon-fold);
+}
+
+.mbc-menu-page .mb-drinks-ribbon::before {
+  left: -9px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+
+.mbc-menu-page .mb-drinks-ribbon::after {
+  right: -9px;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+.mbc-menu-page .mb-drinks-section-title {
+  display: block;
+  margin: 0;
+  padding: 4px 24px;
+  background: var(--mbv-ribbon-face);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 13px) 50%, 100% 100%, 0 100%, 13px 50%);
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: clamp(0.72rem, 1.6vw, 0.88rem);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: var(--mbv-ribbon-text);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.28);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ---------- Dish lines: NAME ......... PRICE ---------- */
+.mbc-menu-page .mb-drinks-list {
+  gap: 0;
+}
+
+.mbc-menu-page .mb-drinks-item {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--mbv-ink);
+  text-align: left;
+  transition: background-color 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.mbc-menu-page .mb-drinks-item-left {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 74%;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.mbc-menu-page .mb-drinks-item-name {
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: clamp(0.84rem, 1.8vw, 0.98rem);
+  font-weight: 500;
+  letter-spacing: 0.045em;
+  color: var(--mbv-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 180ms ease;
+}
+
+/* Plain typographic order count - no pill, no icon */
+.mbc-menu-page .mb-drinks-cart-badge {
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--mbv-gold-soft);
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dotted leader printed from the dish name across to the price */
+.mbc-menu-page .mb-drinks-item-leader {
+  flex: 1 1 auto;
+  min-width: 18px;
+  height: 1em;
+  margin: 0 9px;
+  border: 0;
+  transform: none;
+  background-image: radial-gradient(circle, var(--mbv-dot) 1.1px, transparent 1.25px);
+  background-size: 6.5px 100%;
+  background-position: 0 78%;
+  background-repeat: repeat-x;
+  transition: background-image 180ms ease;
+}
+
+.mbc-menu-page .mb-drinks-item-price {
+  flex: none;
+  min-width: 4.6em;
+  text-align: right;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: clamp(0.84rem, 1.8vw, 0.98rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--mbv-gold-soft);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  transition: color 180ms ease;
+}
+
+/* ---------- Hover / focus / press ---------- */
+.mbc-menu-page .mb-drinks-item:hover,
+.mbc-menu-page .mb-drinks-item:focus-visible {
+  background-color: var(--mbv-row-hover);
+  border-color: rgba(212, 175, 55, 0.42);
+  box-shadow: inset 2px 0 0 var(--mbv-gold);
+  transform: none;
+  outline: none;
+}
+
+.mbc-menu-page .mb-drinks-item:focus-visible {
+  outline: 1px dashed var(--mbv-gold-bright);
+  outline-offset: -3px;
+}
+
+.mbc-menu-page .mb-drinks-item:hover .mb-drinks-item-name,
+.mbc-menu-page .mb-drinks-item:focus-visible .mb-drinks-item-name {
+  color: var(--mbv-gold-bright);
+}
+
+.mbc-menu-page .mb-drinks-item:hover .mb-drinks-item-price,
+.mbc-menu-page .mb-drinks-item:focus-visible .mb-drinks-item-price {
+  color: var(--mbv-gold-bright);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.mbc-menu-page .mb-drinks-item:hover .mb-drinks-item-leader,
+.mbc-menu-page .mb-drinks-item:focus-visible .mb-drinks-item-leader {
+  background-image: radial-gradient(circle, var(--mbv-dot-strong) 1.1px, transparent 1.25px);
+}
+
+.mbc-menu-page .mb-drinks-item:active {
+  background-color: rgba(212, 175, 55, 0.18);
+  transform: none;
+}
+
+/* ---------- Dessert columns ---------- */
+.mbc-menu-page .mb-drinks-desserts-grid {
+  column-gap: 22px;
+  row-gap: 0;
+}
+
+.mbc-menu-page .mb-drinks-desserts-grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.mbc-menu-page .mb-drinks-desserts-col {
+  gap: 0;
+}
+
+/* ---------- Folio ---------- */
+.mbc-menu-page .mb-drinks-footer-rule {
+  background: linear-gradient(90deg, transparent, var(--mbv-rule), transparent);
+}
+
+.mbc-menu-page .mb-drinks-page-number {
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  color: var(--mbv-gold-dark);
+}
+
+/* ---------- Light theme: cream paper, dark ink, deeper gold ---------- */
+html[data-theme="light"] .mb-drinks-page.mbc-menu-page {
+  --mbv-paper: #f4ecdc;
+  --mbv-ink: #241b11;
+  --mbv-ink-soft: #4a3b2c;
+  --mbv-gold: #7a5f10;
+  --mbv-gold-bright: #4a3804;
+  --mbv-gold-soft: #5d4708;
+  --mbv-gold-dark: #8a6f22;
+  --mbv-rule: rgba(122, 95, 16, 0.55);
+  --mbv-dot: rgba(122, 95, 16, 0.7);
+  --mbv-dot-strong: rgba(60, 45, 4, 0.95);
+  --mbv-ribbon-face: linear-gradient(180deg, #8d6f18 0%, #75590f 45%, #5a4408 100%);
+  --mbv-ribbon-text: #fdf6e4;
+  --mbv-ribbon-fold: #4f3c06;
+  --mbv-row-hover: rgba(122, 95, 16, 0.14);
+
+  background-color: var(--mbv-paper);
+  background-image:
+    radial-gradient(circle at 50% 24%, rgba(122, 95, 16, 0.05) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 50%, transparent 54%, rgba(176, 155, 120, 0.4) 100%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.022) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.018) 0 1px, transparent 1px 3px),
+    linear-gradient(155deg, #faf5ea 0%, #eee3ce 50%, #e2d3b7 100%);
+  color: var(--mbv-ink);
+}
+
+html[data-theme="light"] .mbc-menu-page .mb-drinks-frame {
+  border-color: var(--mbv-gold);
+  box-shadow:
+    inset 0 0 0 3px var(--mbv-paper),
+    inset 0 0 0 4.5px rgba(122, 95, 16, 0.4),
+    0 0 10px rgba(122, 95, 16, 0.08);
+}
+
+html[data-theme="light"] .mbc-menu-page .mb-drinks-corner--tl {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M2 30 L2 2 L30 2' stroke='%237a5f10' stroke-width='1.5' fill='none'/%3E%3Cpath d='M6 26 L6 6 L26 6' stroke='%235d4708' stroke-width='0.75' fill='none' opacity='0.8'/%3E%3Cpath d='M6 6 C12 6 16 10 16 16 C16 22 20 26 26 26' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Cpath d='M6 6 C6 12 10 16 16 16' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='6' cy='6' r='2' fill='%235d4708'/%3E%3Cpolygon points='12,4 14,6 12,8 10,6' fill='%237a5f10'/%3E%3Cpolygon points='4,12 6,14 4,16 2,14' fill='%237a5f10'/%3E%3C/svg%3E");
+}
+
+html[data-theme="light"] .mbc-menu-page .mb-drinks-corner--tr {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M30 30 L30 2 L2 2' stroke='%237a5f10' stroke-width='1.5' fill='none'/%3E%3Cpath d='M26 26 L26 6 L6 6' stroke='%235d4708' stroke-width='0.75' fill='none' opacity='0.8'/%3E%3Cpath d='M26 6 C20 6 16 10 16 16 C16 22 12 26 6 26' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Cpath d='M26 6 C26 12 22 16 16 16' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='26' cy='6' r='2' fill='%235d4708'/%3E%3Cpolygon points='20,4 22,6 20,8 18,6' fill='%237a5f10'/%3E%3Cpolygon points='28,12 30,14 28,16 26,14' fill='%237a5f10'/%3E%3C/svg%3E");
+}
+
+html[data-theme="light"] .mbc-menu-page .mb-drinks-corner--bl {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M2 2 L2 30 L30 30' stroke='%237a5f10' stroke-width='1.5' fill='none'/%3E%3Cpath d='M6 6 L6 26 L26 26' stroke='%235d4708' stroke-width='0.75' fill='none' opacity='0.8'/%3E%3Cpath d='M6 26 C12 26 16 22 16 16 C16 10 20 6 26 6' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Cpath d='M6 26 C6 20 10 16 16 16' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='6' cy='26' r='2' fill='%235d4708'/%3E%3Cpolygon points='12,24 14,26 12,28 10,26' fill='%237a5f10'/%3E%3Cpolygon points='4,18 6,20 4,22 2,20' fill='%237a5f10'/%3E%3C/svg%3E");
+}
+
+html[data-theme="light"] .mbc-menu-page .mb-drinks-corner--br {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Cpath d='M30 2 L30 30 L2 30' stroke='%237a5f10' stroke-width='1.5' fill='none'/%3E%3Cpath d='M26 6 L26 26 L6 26' stroke='%235d4708' stroke-width='0.75' fill='none' opacity='0.8'/%3E%3Cpath d='M26 26 C20 26 16 22 16 16 C16 10 12 6 6 6' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Cpath d='M26 26 C26 20 22 16 16 16' stroke='%237a5f10' stroke-width='0.9' fill='none'/%3E%3Ccircle cx='26' cy='26' r='2' fill='%235d4708'/%3E%3Cpolygon points='20,24 22,26 20,28 18,26' fill='%237a5f10'/%3E%3Cpolygon points='28,18 30,20 28,22 26,20' fill='%237a5f10'/%3E%3C/svg%3E");
+}
+
+html[data-theme="light"] .mbc-menu-page .mb-drinks-title-line {
+  color: var(--mbv-ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+html[data-theme="light"] .mbc-menu-page .mb-drinks-item-price {
+  text-shadow: none;
+}
+
+html[data-theme="light"] .mbc-menu-page .mb-drinks-item:hover,
+html[data-theme="light"] .mbc-menu-page .mb-drinks-item:focus-visible {
+  border-color: rgba(122, 95, 16, 0.4);
+  box-shadow: inset 2px 0 0 var(--mbv-gold);
+}
+
+html[data-theme="light"] .mbc-menu-page .mb-drinks-item:active {
+  background-color: rgba(122, 95, 16, 0.2);
+}
+
+/* ---------- Narrow pages ---------- */
+@media (max-width: 520px) {
+  .mb-drinks-page.mbc-menu-page {
+    padding: 9px 7px;
+  }
+
+  .mbc-menu-page .mb-drinks-frame {
+    padding: 12px 10px 8px;
+  }
+
+  .mbc-menu-page .mb-drinks-ribbon {
+    max-width: 92%;
+  }
+
+  .mbc-menu-page .mb-drinks-section-title {
+    padding: 3px 16px;
+    letter-spacing: 0.14em;
+    text-indent: 0.14em;
+  }
+
+  .mbc-menu-page .mb-drinks-item {
+    padding: 4px 5px;
+  }
+
+  .mbc-menu-page .mb-drinks-item-leader {
+    margin: 0 6px;
+  }
+
+  .mbc-menu-page .mb-drinks-item-price {
+    min-width: 3.9em;
+  }
+
+  .mbc-menu-page .mb-drinks-desserts-grid {
+    column-gap: 14px;
+  }
+}
+
+@media (max-width: 400px) {
+  .mbc-menu-page .mb-drinks-desserts-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mbc-menu-page .mb-drinks-item,
+  .mbc-menu-page .mb-drinks-item-name,
+  .mbc-menu-page .mb-drinks-item-price,
+  .mbc-menu-page .mb-drinks-item-leader {
+    transition: none !important;
+  }
+}

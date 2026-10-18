@@ -1,16 +1,24 @@
 /*
  * menu-book-responsive.css
- * Photorealistic 3D Responsive & Mobile Viewport Engine
+ * Responsive viewport engine for the open book, and the paper's curve shading.
  *
  * Viewport Strategy:
- *  - Mobile Phone (<768px): Single page view with realistic 3D cylindrical paper curve,
- *    authentic binding spine crease (hinged on right edge for verso / left edge for recto),
- *    inviting corner dog-ear touch indicators, stacked paper depth, and fluid swipe gestures.
- *  - Tablet (768px - 1023.98px): Balanced two-page spread with 3D perspective fold,
- *    optimized page margins, and comfortable reading column widths.
- *  - Desktop (>=1024px): Full open two-page spread with 3D perspective depth (10deg fold),
- *    luxurious emerald leather casing, gold metallic corner brackets, center leather spine,
- *    and hanging silk ribbon bookmark.
+ *  - Mobile Phone (<768px): Single leaf, kept nearly flat - a 1.5deg lean, an
+ *    edge curve and a hint of the binding crease, nothing more.
+ *  - Tablet (768px - 1023.98px): Two-page spread, 6deg dihedral fold.
+ *  - Desktop (>=1024px): Two-page spread, 7.5deg fold.
+ *
+ * THE BEND. Each half leans back toward the spine by --mb-fold (declared in
+ * menu-book-depth.css), which is a fold - two flat planes meeting at an angle.
+ * Paper does not fold, it bows, so the geometry is deliberately modest and the
+ * actual curvature is painted: .mb-page::after layers a deep gutter core, a
+ * crest of light roughly a third of the way out from the spine, and a soft
+ * roll-off at the outer edge. Together they read as one continuous bow with
+ * the outer edges nearest the reader.
+ *
+ * ::after on .mb-page belongs to this sheet (the fold shade); ::before is the
+ * gold frame in menu-book-classic.css; menu-book-flip.css overrides ::after on
+ * the travelling sheet mid-turn. All of it is pointer-events: none.
  */
 
 /* ==========================================================================
@@ -62,30 +70,25 @@
   .mb-stage {
     perspective: 1500px;
     perspective-origin: 50% 50%;
-    transform-style: preserve-3d;
   }
 
-  /* Each spread half acts as a 3D leaf */
+  /* Each half is one flattened painted layer, so clicks hit-test normally. */
   .mb-stage > .mb-spread-left,
   .mb-stage > .mb-spread-right {
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform-style: flat;
   }
 
-  /* Verso Page (Left leaf): Bound into spine on the RIGHT edge.
-     Subtle 3D paper arch lifting on left and curling into spine on right */
+  /* Verso leaf: bound into the spine on its RIGHT edge, so the outer (left)
+     edge sits a touch closer to the reader. */
   .mb-stage > .mb-spread-left {
     transform-origin: right center;
-    transform: rotateY(2.5deg);
+    transform: rotateY(var(--mb-fold));
   }
 
-  /* Recto Page (Right leaf): Bound into spine on the LEFT edge.
-     Subtle 3D paper arch lifting on right and curling into spine on left */
+  /* Recto leaf: bound into the spine on its LEFT edge. */
   .mb-stage > .mb-spread-right {
     transform-origin: left center;
-    transform: rotateY(-2.5deg);
+    transform: rotateY(calc(-1 * var(--mb-fold)));
   }
 
   /* Single Page Dimensions on Mobile */
@@ -166,12 +169,11 @@
    3. Tablet Viewport (768px - 1023.98px): Two-Page Spread
    ========================================================================== */
 
-@media (min-width: 768px) and (max-width: 1023.98px) {
+@media (min-width: 768px) {
   .mb-stage {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    perspective: 2200px;
-    perspective-origin: 50% 46%;
-    transform-style: preserve-3d;
+    perspective: 1900px;
+    perspective-origin: 50% 44%;
   }
 
   .mb-spread .mb-page {
@@ -181,102 +183,135 @@
   }
 
   .mb-spread-left .mb-page {
-    border-radius: 10px 0 0 10px;
+    border-radius: 10px 2px 2px 10px;
   }
 
   .mb-spread-right .mb-page {
-    border-radius: 0 10px 10px 0;
+    border-radius: 2px 10px 10px 2px;
   }
 
+  /* ---------- The fold ----------
+     Each half hinges on the gutter and leans back, so the outer edges of the
+     spread stand closer to the reader than the spine does. Flattened
+     (transform-style: flat) so the half is a single painted layer: this is the
+     difference between a clickable book and the earlier build where Chromium
+     sent every click to the scroll container instead. */
   .mb-stage > .mb-spread-left {
     transform-origin: right center;
-    transform: rotateY(8deg);
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
+    transform: rotateY(var(--mb-fold));
+    transform-style: flat;
   }
 
   .mb-stage > .mb-spread-right {
     transform-origin: left center;
-    transform: rotateY(-8deg);
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
+    transform: rotateY(calc(-1 * var(--mb-fold)));
+    transform-style: flat;
   }
 
-  .mb-spread-left .mb-page::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: inherit;
-    background: linear-gradient(to right, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.35) 100%);
-  }
-
+  /* ---------- The bow ----------
+     Four stacked gradients per page, read from the spine outward:
+       1. the gutter core - paper disappearing into the binding;
+       2. the crest, where the bow turns over and catches the light;
+       3. the outer edge rolling away from the reader again;
+       4. a faint top-to-bottom gradient, because the case is reclined. */
+  .mb-spread-left .mb-page::after,
   .mb-spread-right .mb-page::after {
     content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
     border-radius: inherit;
-    background: linear-gradient(to left, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.35) 100%);
+    z-index: 3;
+  }
+
+  .mb-spread-left .mb-page::after {
+    background:
+      linear-gradient(
+        to left,
+        rgba(16, 9, 2, 0.52) 0%,
+        rgba(16, 9, 2, 0.36) 2%,
+        rgba(16, 9, 2, 0.24) 5%,
+        rgba(16, 9, 2, 0.16) 9%,
+        rgba(16, 9, 2, 0.1) 14%,
+        rgba(16, 9, 2, 0.06) 20%,
+        rgba(16, 9, 2, 0.03) 28%,
+        rgba(16, 9, 2, 0.01) 36%,
+        rgba(16, 9, 2, 0) 46%
+      ),
+      linear-gradient(
+        to left,
+        rgba(255, 250, 235, 0) 24%,
+        rgba(255, 250, 235, 0.11) 40%,
+        rgba(255, 250, 235, 0.15) 52%,
+        rgba(255, 250, 235, 0.1) 66%,
+        rgba(255, 250, 235, 0) 82%
+      ),
+      linear-gradient(
+        to right,
+        rgba(16, 9, 2, 0.26) 0%,
+        rgba(16, 9, 2, 0.14) 2%,
+        rgba(16, 9, 2, 0.07) 5%,
+        rgba(16, 9, 2, 0.03) 9%,
+        rgba(16, 9, 2, 0) 16%
+      ),
+      linear-gradient(to bottom, rgba(16, 9, 2, 0.1) 0%, rgba(16, 9, 2, 0) 9%, rgba(16, 9, 2, 0) 88%, rgba(16, 9, 2, 0.08) 100%);
+  }
+
+  .mb-spread-right .mb-page::after {
+    background:
+      linear-gradient(
+        to right,
+        rgba(16, 9, 2, 0.52) 0%,
+        rgba(16, 9, 2, 0.36) 2%,
+        rgba(16, 9, 2, 0.24) 5%,
+        rgba(16, 9, 2, 0.16) 9%,
+        rgba(16, 9, 2, 0.1) 14%,
+        rgba(16, 9, 2, 0.06) 20%,
+        rgba(16, 9, 2, 0.03) 28%,
+        rgba(16, 9, 2, 0.01) 36%,
+        rgba(16, 9, 2, 0) 46%
+      ),
+      linear-gradient(
+        to right,
+        rgba(255, 250, 235, 0) 24%,
+        rgba(255, 250, 235, 0.11) 40%,
+        rgba(255, 250, 235, 0.15) 52%,
+        rgba(255, 250, 235, 0.1) 66%,
+        rgba(255, 250, 235, 0) 82%
+      ),
+      linear-gradient(
+        to left,
+        rgba(16, 9, 2, 0.26) 0%,
+        rgba(16, 9, 2, 0.14) 2%,
+        rgba(16, 9, 2, 0.07) 5%,
+        rgba(16, 9, 2, 0.03) 9%,
+        rgba(16, 9, 2, 0) 16%
+      ),
+      linear-gradient(to bottom, rgba(16, 9, 2, 0.1) 0%, rgba(16, 9, 2, 0) 9%, rgba(16, 9, 2, 0) 88%, rgba(16, 9, 2, 0.08) 100%);
   }
 }
 
 /* ==========================================================================
-   4. Desktop Viewport (>=1024px): Full Open 3D Spread
+   4. Desktop Viewport (>=1024px): Full Open Spread
    ========================================================================== */
 
 @media (min-width: 1024px) {
   .mb-stage {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    perspective: 2600px;
-    perspective-origin: 50% 45%;
-    transform-style: preserve-3d;
+    perspective: 2000px;
+    perspective-origin: 50% 44%;
   }
 
   .mb-spread .mb-page {
     min-height: 640px;
     padding: 2rem 2.25rem;
-    overflow: hidden;
   }
 
   .mb-spread-left .mb-page {
-    border-radius: 12px 0 0 12px;
+    border-radius: 12px 2px 2px 12px;
   }
 
   .mb-spread-right .mb-page {
-    border-radius: 0 12px 12px 0;
-  }
-
-  .mb-stage > .mb-spread-left {
-    transform-origin: right center;
-    transform: rotateY(10deg);
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
-  }
-
-  .mb-stage > .mb-spread-right {
-    transform-origin: left center;
-    transform: rotateY(-10deg);
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
-  }
-
-  .mb-spread-left .mb-page::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: inherit;
-    background: linear-gradient(to right, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.38) 100%);
-  }
-
-  .mb-spread-right .mb-page::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: inherit;
-    background: linear-gradient(to left, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.38) 100%);
+    border-radius: 2px 12px 12px 2px;
   }
 }
 
@@ -379,14 +414,21 @@
    7. Accessibility & Reduced Motion
    ========================================================================== */
 
+/* No animated transforms when motion is reduced. The book's static shape is
+   not motion, so the fold and its shading stay: flattening the book here would
+   just give reduced-motion readers a worse-looking page. */
 @media (prefers-reduced-motion: reduce) {
   .mb-stage,
   .mb-stage > .mb-spread-left,
   .mb-stage > .mb-spread-right,
   .mb-dot > span,
   .mb-btn-turn {
-    transform: none !important;
     transition: none !important;
     animation: none !important;
+  }
+
+  .mb-dot > span,
+  .mb-btn-turn {
+    transform: none !important;
   }
 }

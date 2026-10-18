@@ -48,3 +48,73 @@ export default function MenuBookTurningLeaf({
     </div>
   );
 }
+
+/**
+ * MenuBookDishLeaf
+ *
+ * The single sheet that turns when a diner taps a dish, and turns back when
+ * they leave. It covers the whole page it sits in (its containing block is
+ * `.mb-page`, which is transformed, so it escapes the page's scroll box) and
+ * swings on the spine-side edge through just past 90deg - the only part of a
+ * page turn you can actually see on a single leaf.
+ *
+ * Three stacked layers sell the paper:
+ *   1. `__sweep`  - a soft shadow band travelling across the revealed page.
+ *   2. `__under`  - the contact shadow that recedes with the turning edge.
+ *   3. `__leaf`   - the sheet itself: lifts off the page, flexes, curls at its
+ *                   free edge and catches a specular highlight.
+ *
+ * Purely decorative: `aria-hidden` and `pointer-events: none`, so the dish page
+ * underneath stays reachable by pointer, keyboard and screen readers.
+ *
+ * @param {object} props
+ * @param {'in'|'out'} props.direction 'in' reveals the dish page, 'out' covers it.
+ * @param {number|string} props.turnId Changing this restarts the animation.
+ * @param {string} [props.kicker] Small caps line on the sheet.
+ * @param {string} [props.title]  Serif line on the sheet.
+ * @param {number} [props.duration] Turn length in ms.
+ */
+export function MenuBookDishLeaf({
+  direction = 'in',
+  turnId = 0,
+  kicker,
+  title,
+  duration,
+}) {
+  if (direction !== 'in' && direction !== 'out') return null;
+
+  const style = Number.isFinite(duration) && duration > 0
+    ? { '--mbd-flip-dur': `${duration}ms` }
+    : undefined;
+
+  return (
+    <div
+      className="mbd-flip"
+      data-dir={direction}
+      aria-hidden="true"
+      style={style}
+      key={`turn-${turnId}`}
+    >
+      <span className="mbd-flip__sweep" />
+      <span className="mbd-flip__under" />
+
+      <div className="mbd-flip__leaf">
+        <div className="mbd-flip__face">
+          <span className="mbd-flip__keyline" />
+          <span className="mbd-flip__grain" />
+
+          <div className="mbd-flip__plate">
+            <span className="mbd-flip__orn">&#10087;</span>
+            {kicker ? <span className="mbd-flip__kicker">{kicker}</span> : null}
+            {title ? <span className="mbd-flip__title font-display">{title}</span> : null}
+            <span className="mbd-flip__rule" />
+          </div>
+
+          <span className="mbd-flip__sheen" />
+          <span className="mbd-flip__curl" />
+          <span className="mbd-flip__spine-shade" />
+        </div>
+      </div>
+    </div>
+  );
+}

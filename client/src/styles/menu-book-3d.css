@@ -47,11 +47,61 @@
   perspective-origin: 50% 42%;
 }
 
-/* 3D stage holding the spreads, spine, and stacked paper */
+/* Stage holding the spreads, spine, and stacked paper.
+   Flattened on purpose: the stage still gives its children a perspective, so
+   the folded halves and the turning leaf keep their depth, but nothing shares
+   a 3D rendering context with its siblings. That is what keeps clicks landing
+   on the dish rows - see the hit-testing note in menu-book-depth.css. */
 .mb-3d-stage {
   position: relative;
   width: 100%;
-  transform-style: preserve-3d;
+  transform-style: flat;
+}
+
+/* The paper block dips into the gutter: along the top and bottom edges the
+   sheets sink toward the binding, so the silhouette of the block arcs instead
+   of running dead straight. Painted over the pages, never clickable. */
+.mb-3d-stage::before,
+.mb-3d-stage::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 46px;
+  z-index: 8;
+  pointer-events: none;
+}
+
+.mb-3d-stage::before {
+  top: -1px;
+  background: radial-gradient(
+    46% 46px at 50% -6px,
+    rgba(4, 18, 12, 0.92) 0%,
+    rgba(4, 18, 12, 0.72) 42%,
+    rgba(4, 18, 12, 0.4) 64%,
+    rgba(4, 18, 12, 0.16) 82%,
+    rgba(4, 18, 12, 0) 100%
+  );
+}
+
+.mb-3d-stage::after {
+  bottom: -1px;
+  background: radial-gradient(
+    46% 46px at 50% calc(100% + 6px),
+    rgba(4, 18, 12, 0.92) 0%,
+    rgba(4, 18, 12, 0.72) 42%,
+    rgba(4, 18, 12, 0.4) 64%,
+    rgba(4, 18, 12, 0.16) 82%,
+    rgba(4, 18, 12, 0) 100%
+  );
+}
+
+/* On phones there is no gutter in the middle of the leaf, so no dip. */
+@media (max-width: 767.98px) {
+  .mb-3d-stage::before,
+  .mb-3d-stage::after {
+    display: none;
+  }
 }
 
 /* Overhead ambient spotlight radiating warm restaurant chandelier light */
@@ -73,29 +123,25 @@
   z-index: 1;
 }
 
-/* Diffuse ground shadow & table ambient occlusion */
+/* Diffuse ground shadow: the wide, soft half of the book's contact with the
+   table. The tight core sits on .mb-book::after (menu-book-depth.css). */
 .mb-3d-stage-wrapper::after {
   content: "";
   position: absolute;
-  left: 3%;
-  right: 3%;
-  bottom: -28px;
-  height: 56px;
+  left: 6%;
+  right: 6%;
+  bottom: -34px;
+  height: 64px;
   background: radial-gradient(
-    ellipse at center,
-    rgba(0, 0, 0, 0.85) 0%,
-    rgba(0, 0, 0, 0.52) 35%,
-    rgba(0, 0, 0, 0.18) 60%,
-    transparent 80%
+    ellipse at 50% 15%,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.34) 35%,
+    rgba(0, 0, 0, 0.12) 62%,
+    transparent 82%
   );
-  filter: blur(10px);
+  filter: blur(16px);
   pointer-events: none;
   z-index: -2;
-}
-
-/* Suppress redundant single-layer ground shadow from older depth sheet when 3D engine is active */
-.mb-book.mb-3d-book::after {
-  display: none;
 }
 
 /* ==========================================================================
@@ -129,7 +175,10 @@
     0 45px 85px -18px rgba(0, 0, 0, 0.85),
     inset 0 1px 1px rgba(255, 255, 255, 0.18),
     inset 0 -1px 2px rgba(0, 0, 0, 0.7);
-  transform-style: preserve-3d;
+  /* Flat, not preserve-3d: the case is one plane tilted in 3D by the transform
+     in menu-book-depth.css. Keeping it flat is what stops Chromium from
+     hit-testing the book's contents against the wrong element. */
+  transform-style: flat;
   box-sizing: border-box;
 }
 
@@ -156,8 +205,10 @@
     border-radius: var(--mb-3d-radius);
   }
 
-  .mb-book.mb-3d-book[data-view="3d"],
-  .mb-3d-book[data-view="3d"] {
+  /* Deeper drop shadow on a large screen, where the book is big enough that a
+     shallow one makes it look pasted on. */
+  .mb-book.mb-3d-book,
+  .mb-3d-book {
     box-shadow:
       0 1px 0 var(--mb-3d-leather-abyss),
       0 3px 1px rgba(0, 0, 0, 0.95),
@@ -409,6 +460,9 @@
 }
 
 @media (min-width: 768px) {
+  /* The gutter shadow. It is wide on purpose: where two bowed pages run into
+     the binding, the shadow is not a line, it spills a long way onto both
+     sheets and fades out as the paper turns back up toward its crest. */
   .mb-spine.mb-3d-spine,
   .mb-3d-spine {
     display: flex;
@@ -418,21 +472,30 @@
     top: 0;
     bottom: 0;
     left: 50%;
-    width: var(--mb-3d-spine-w);
+    width: clamp(150px, 22%, 260px);
     transform: translateX(-50%);
-    z-index: 1;
+    /* Above both pages: the shadow falls onto the paper, it is not under it.
+       The turning leaf (z-index 30) still passes over the top. */
+    z-index: 6;
     pointer-events: none;
-    /* Deep ambient occlusion crease gradient down the spine */
     background: linear-gradient(
       90deg,
-      rgba(0, 0, 0, 0) 0%,
-      rgba(0, 0, 0, 0.18) 20%,
-      rgba(0, 0, 0, 0.52) 38%,
-      rgba(0, 0, 0, 0.88) 50%,
-      rgba(0, 0, 0, 0.52) 62%,
-      rgba(0, 0, 0, 0.18) 80%,
-      rgba(0, 0, 0, 0) 100%
+      rgba(10, 5, 0, 0) 0%,
+      rgba(10, 5, 0, 0.05) 14%,
+      rgba(10, 5, 0, 0.14) 27%,
+      rgba(10, 5, 0, 0.3) 38%,
+      rgba(10, 5, 0, 0.52) 46%,
+      rgba(10, 5, 0, 0.62) 50%,
+      rgba(10, 5, 0, 0.52) 54%,
+      rgba(10, 5, 0, 0.3) 62%,
+      rgba(10, 5, 0, 0.14) 73%,
+      rgba(10, 5, 0, 0.05) 86%,
+      rgba(10, 5, 0, 0) 100%
     );
+    /* Fade the very ends so the shadow does not cut a hard line across the
+       head and tail of the book. */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 3%, #000 97%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 3%, #000 97%, transparent 100%);
   }
 
   /* Deep central crease groove */
@@ -443,16 +506,16 @@
     top: 0;
     bottom: 0;
     left: 50%;
-    width: 2px;
+    width: 3px;
     transform: translateX(-50%);
     background: linear-gradient(
       to bottom,
       rgba(0, 0, 0, 0.1),
-      rgba(0, 0, 0, 0.9) 8%,
-      rgba(0, 0, 0, 0.9) 92%,
+      rgba(0, 0, 0, 0.92) 8%,
+      rgba(0, 0, 0, 0.92) 92%,
       rgba(0, 0, 0, 0.1)
     );
-    box-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 6px 2px rgba(0, 0, 0, 0.75);
   }
 
   /* Hide raised horizontal leather ribs so they do not overlap text or bowls */
@@ -611,17 +674,19 @@
 
 /* Desktop & Tablet Stacked Paper Blocks */
 @media (min-width: 768px) {
-  /* Left paper stack */
+  /* Left paper stack: the edge of the page block, seen end-on. It is inset a
+     little at the head and tail so the block reads as bowed rather than as a
+     rectangular slab. */
   .mb-paper-stack-left {
     display: block;
     position: absolute;
-    top: 4px;
-    bottom: 0px;
-    left: -8px;
-    width: 8px;
+    top: 10px;
+    bottom: 6px;
+    left: -11px;
+    width: 11px;
+    border-radius: 4px 1px 1px 4px;
     pointer-events: none;
     z-index: 1;
-    border-radius: 3px 0 0 3px;
     background:
       linear-gradient(to right, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.1) 40%, rgba(255, 255, 255, 0.15) 100%),
       repeating-linear-gradient(
@@ -644,13 +709,13 @@
   .mb-paper-stack-right {
     display: block;
     position: absolute;
-    top: 4px;
-    bottom: 0px;
-    right: -8px;
-    width: 8px;
+    top: 10px;
+    bottom: 6px;
+    right: -11px;
+    width: 11px;
     pointer-events: none;
     z-index: 1;
-    border-radius: 0 3px 3px 0;
+    border-radius: 1px 4px 4px 1px;
     background:
       linear-gradient(to left, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.1) 40%, rgba(255, 255, 255, 0.15) 100%),
       repeating-linear-gradient(
@@ -669,17 +734,20 @@
       8px 0 10px -2px rgba(0, 0, 0, 0.7);
   }
 
-  /* Bottom paper stack */
+  /* Bottom paper stack: the fore-edge of the block along the tail. It thins to
+     nothing at the gutter, where the sheets dive into the binding. */
   .mb-paper-stack-bottom {
     display: block;
     position: absolute;
-    left: -8px;
-    right: -8px;
-    bottom: -8px;
-    height: 8px;
+    left: -11px;
+    right: -11px;
+    bottom: -11px;
+    height: 11px;
     pointer-events: none;
     z-index: 1;
-    border-radius: 0 0 4px 4px;
+    border-radius: 0 0 5px 5px;
+    -webkit-mask-image: linear-gradient(to right, #000 0%, #000 34%, rgba(0, 0, 0, 0.12) 50%, #000 66%, #000 100%);
+    mask-image: linear-gradient(to right, #000 0%, #000 34%, rgba(0, 0, 0, 0.12) 50%, #000 66%, #000 100%);
     background:
       linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.1) 35%, rgba(255, 255, 255, 0.12) 100%),
       repeating-linear-gradient(

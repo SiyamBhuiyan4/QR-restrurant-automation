@@ -12,11 +12,23 @@ export const FLIP_DURATION_MS = 750;
  */
 export const FLIP_TIMEOUT_BUFFER_MS = 160;
 
+/**
+ * Dish-page turn durations.
+ *
+ * Tapping a dish turns a single leaf (the right-hand page) rather than a whole
+ * spread, so it is deliberately quicker than the spread turn above: fast enough
+ * to feel like a flick of the wrist, slow enough to still read as paper.
+ * Must stay in sync with --mbd-flip-dur / --mbd-flip-back-dur in
+ * styles/menu-book-detail.css.
+ */
+export const DISH_FLIP_IN_MS = 470;
+export const DISH_FLIP_OUT_MS = 430;
+
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-const prefersReducedMotion = () => {
+export const prefersReducedMotion = () => {
   try {
     return typeof window !== 'undefined' &&
       typeof window.matchMedia === 'function' &&
@@ -228,6 +240,133 @@ export function useBookFlip3D(spreadCount, {
     goTo,
     onFlipEnd,
     duration,
+  };
+}
+
+/**
+ * useReducedMotion
+ *
+ * Live `prefers-reduced-motion: reduce` subscription, so toggling the OS
+ * setting takes effect without a reload.
+ */
+export function useReducedMotion() {
+  const [reduced, setReduced] = useState(prefersReducedMotion);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
+    let mq;
+    try {
+      mq = window.matchMedia(REDUCED_MOTION_QUERY);
+    } catch {
+      return undefined;
+    }
+    const sync = (event) => setReduced(Boolean(event.matches));
+    setReduced(Boolean(mq.matches));
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', sync);
+      return () => mq.removeEventListener('change', sync);
+    }
+    if (typeof mq.addListener === 'function') {
+      mq.addListener(sync);
+      return () => mq.removeListener(sync);
+    }
+    return undefined;
+  }, []);
+
+  return reduced;
+}
+
+/**
+ * useDishPageFlip
+ *
+ * Drives the single-leaf paper turn that opens and closes a dish page.
+ *
+ * Phases:
+ *   'turning-in'  - a leaf is swinging off the page, revealing the dish page.
+ *   'open'        - the dish page is settled and fully interactive.
+ *   'turning-out' - a leaf is swinging back over the dish page; `onBack` fires
+ *                   as it lands, so the menu list appears under a covered page
+ *                   instead of popping in.
+ *
+ * With `prefers-reduced-motion: reduce` there is no leaf at all: the dish page
+ * is 'open' immediately and `onBack` fires synchronously.
+ *
+ * @param {object}   options
+ * @param {*}        options.dishKey     Changing this restarts the opening turn.
+ * @param {function} options.onBack      Called once the closing turn lands.
+ * @param {number}   [options.inDuration]
+ * @param {number}   [options.outDuration]
+ */
+export function useDishPageFlip({
+  dishKey,
+  onBack,
+  inDuration = DISH_FLIP_IN_MS,
+  outDuration = DISH_FLIP_OUT_MS,
+} = {}) {
+  const reduced = useReducedMotion();
+
+  const [phase, setPhase] = useState(() => (prefersReducedMotion() ? 'open' : 'turning-in'));
+  // Bumped on every turn so React remounts the leaf and the CSS animation
+  // restarts from 0 even when two dishes are opened back to back.
+  const [turnId, setTurnId] = useState(0);
+
+  const inTimer = useRef(null);
+  const outTimer = useRef(null);
+  const closingRef = useRef(false);
+  const onBackRef = useRef(onBack);
+  onBackRef.current = onBack;
+
+  // Open (or re-open, for a different dish) with a fresh inward turn.
+  useEffect(() => {
+    closingRef.current = false;
+    clearTimeout(inTimer.current);
+    clearTimeout(outTimer.current);
+
+    if (reduced || inDuration <= 0) {
+      setPhase('open');
+      return undefined;
+    }
+
+    setTurnId((id) => id + 1);
+    setPhase('turning-in');
+    inTimer.current = setTimeout(() => setPhase('open'), inDuration);
+    return () => clearTimeout(inTimer.current);
+  }, [dishKey, reduced, inDuration]);
+
+  const requestBack = useCallback(() => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    clearTimeout(inTimer.current);
+
+    if (reduced || outDuration <= 0) {
+      onBackRef.current?.();
+      return;
+    }
+
+    setTurnId((id) => id + 1);
+    setPhase('turning-out');
+    clearTimeout(outTimer.current);
+    outTimer.current = setTimeout(() => {
+      onBackRef.current?.();
+    }, outDuration);
+  }, [reduced, outDuration]);
+
+  useEffect(() => () => {
+    clearTimeout(inTimer.current);
+    clearTimeout(outTimer.current);
+  }, []);
+
+  return {
+    phase,
+    turnId,
+    reduced,
+    requestBack,
+    isTurning: phase !== 'open',
+    isClosing: phase === 'turning-out',
+    /** 'in' | 'out' | null - direction of the leaf currently on screen. */
+    turnDirection: phase === 'turning-in' ? 'in' : phase === 'turning-out' ? 'out' : null,
+    inDuration,
+    outDuration,
   };
 }
 
