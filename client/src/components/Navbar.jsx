@@ -41,29 +41,77 @@ export default function Navbar({
 
   const isOnline = propIsOnline !== undefined ? propIsOnline : internalOnline;
 
-  // Scroll-aware shadow: a passive listener that only flips data-scrolled on the header
-  // (no React re-render per scroll tick). Throttled to one update per animation frame.
+  // Smart Roll-Back & Auto-Hiding Navbar Listener:
+  // - When at the very top (scrollY <= 20): Always in natural visible position
+  // - When scrolling DOWN into the menu (scrollY > 60): Rolls back up out of view (-translate-y-full)
+  //   giving 100% of the screen height to the menu book!
+  // - When scrolling UP ("jokhon e ektu norachora korbo"): Drops smoothly back down (translate-y-0)
+  // - When cursor moves to the top edge (e.clientY <= 24): Reveals navbar for quick access
   const headerRef = useRef(null);
   useEffect(() => {
     const el = headerRef.current;
     if (!el) return undefined;
+
     let frame = 0;
-    let scrolled = null;
+    let lastScrollY = Math.max(0, window.scrollY || 0);
+    let isHidden = false;
+    let isScrolled = false;
+
     const update = () => {
       frame = 0;
-      const next = window.scrollY > 8;
-      if (next !== scrolled) {
-        scrolled = next;
-        el.dataset.scrolled = next ? 'true' : 'false';
+      const currentScrollY = Math.max(0, window.scrollY || 0);
+      const scrollDiff = currentScrollY - lastScrollY;
+
+      // Scrolled state for backdrop blur & border accent
+      const nextScrolled = currentScrollY > 12;
+      if (nextScrolled !== isScrolled) {
+        isScrolled = nextScrolled;
+        el.dataset.scrolled = nextScrolled ? 'true' : 'false';
       }
+
+      // Roll-back / Auto-hide behavior
+      if (currentScrollY <= 20) {
+        // At the very top: always fully visible
+        if (isHidden) {
+          isHidden = false;
+          el.dataset.hidden = 'false';
+        }
+      } else if (scrollDiff > 6 && currentScrollY > 60) {
+        // Scrolling DOWN into the menu: roll back up and hide
+        if (!isHidden) {
+          isHidden = true;
+          el.dataset.hidden = 'true';
+        }
+      } else if (scrollDiff < -4) {
+        // Scrolling UP (even slightly): drop smoothly back down
+        if (isHidden) {
+          isHidden = false;
+          el.dataset.hidden = 'false';
+        }
+      }
+
+      lastScrollY = currentScrollY;
     };
+
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
     };
+
+    // If mouse moves to the very top edge of the viewport, reveal the navbar
+    const onMouseMove = (e) => {
+      if (e.clientY <= 24 && isHidden) {
+        isHidden = false;
+        el.dataset.hidden = 'false';
+      }
+    };
+
     update();
     window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
+
     return () => {
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('mousemove', onMouseMove);
       if (frame) cancelAnimationFrame(frame);
     };
   }, []);
@@ -104,7 +152,8 @@ export default function Navbar({
       <header
         ref={headerRef}
         data-scrolled="false"
-        className={`sticky top-0 z-40 w-full max-w-[100vw] overflow-hidden bg-[#06140e]/70 backdrop-blur-2xl saturate-150 border-b border-[#d4af37]/20 shadow-none transition-[box-shadow,background-color,border-color] duration-300 ease-out motion-reduce:transition-none data-[scrolled=true]:bg-[#06140e]/90 data-[scrolled=true]:border-[#d4af37]/35 data-[scrolled=true]:shadow-[0_10px_30px_-8px_rgba(0,0,0,0.8)] ${className}`}
+        data-hidden="false"
+        className={`sticky top-0 z-40 w-full max-w-[100vw] overflow-hidden bg-[#06140e]/70 backdrop-blur-2xl saturate-150 border-b border-[#d4af37]/20 shadow-none transition-[transform,box-shadow,background-color,border-color] duration-300 ease-in-out will-change-transform data-[hidden=true]:-translate-y-full data-[hidden=false]:translate-y-0 motion-reduce:transition-none data-[scrolled=true]:bg-[#06140e]/90 data-[scrolled=true]:border-[#d4af37]/35 data-[scrolled=true]:shadow-[0_10px_30px_-8px_rgba(0,0,0,0.8)] ${className}`}
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-2 sm:gap-3 min-w-0">

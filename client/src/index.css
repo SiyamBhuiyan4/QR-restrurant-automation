@@ -699,5 +699,12 @@
   }
 }
 
+/* Roll-Back Navbar on Scroll Down to maximize Menu Book reading area */
+header[data-hidden="true"] {
+  transform: translateY(-100%) !important;
+}
 
+header[data-hidden="false"] {
+  transform: translateY(0) !important;
+}
 
