@@ -64,7 +64,8 @@ export function createPaperNoiseBuffer(ctx, duration = 1.2) {
 
     // Natural paper fiber friction modulation: irregular micro-variations
     const friction = 1 + 0.12 * Math.sin(i / 137) + 0.08 * Math.sin(i / 47);
-    data[i] = pink * 0.11 * friction;
+    const sample = pink * 0.11 * friction;
+    data[i] = Math.max(-1, Math.min(1, sample));
   }
 
   return buffer;

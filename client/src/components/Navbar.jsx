@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UtensilsCrossed, Bell, BellRing, Wifi, WifiOff, CheckCircle2, Sun, Moon } from 'lucide-react';
+import { UtensilsCrossed, Bell, BellRing, Wifi, WifiOff, CheckCircle2, Sun, Moon, ShoppingBag } from 'lucide-react';
 import CallWaiterModal from './CallWaiterModal';
 import useTheme from '../hooks/useTheme';
 
@@ -173,35 +173,10 @@ export default function Navbar({
               </div>
             </div>
 
-            {/* Center: Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1 bg-[#0f3d2a]/50 border border-[#d4af37]/15 p-1 rounded-full text-xs font-semibold backdrop-blur-md">
-              <a
-                href="#menu-hero"
-                className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#d4af37] to-[#f0d27a] text-[#06140e] font-bold shadow-sm shadow-[#d4af37]/30 transition-all duration-200"
-              >
-                Home
-              </a>
-              {[
-                ['#menu-content-root', 'Menu'],
-                ['#special-section', 'Specials'],
-                ['#reviews-section', 'Reviews'],
-                ['#chefs-section', 'Chefs'],
-                ['#footer-section', 'Contact']
-              ].map(([href, label]) => (
-                <a
-                  key={href}
-                  href={href}
-                  className="px-3.5 py-1.5 rounded-full text-[#f5efe0]/75 hover:text-[#f0d27a] hover:bg-[#1f6b4a]/45 transition-all duration-200"
-                >
-                  {label}
-                </a>
-              ))}
-            </nav>
-
-            {/* Right: Table Badge, Call Waiter & Network Badge */}
+            {/* Right: Table Badge, Call Waiter, Order Cart & Network Badge */}
             <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
 
-              {/* Network Status Badge (text hidden on very small phones; dot/icon + aria stay) */}
+              {/* Network Status Badge */}
               <div
                 role="status"
                 aria-label={isOnline ? 'Online' : 'Offline Mode'}
@@ -250,7 +225,7 @@ export default function Navbar({
                 </button>
               )}
 
-              {/* Theme Toggle: 44px target, gold outline */}
+              {/* Theme Toggle */}
               <button
                 type="button"
                 onClick={toggleTheme}
@@ -261,6 +236,22 @@ export default function Navbar({
               >
                 {isLight ? <Moon className="w-5 h-5" aria-hidden="true" /> : <Sun className="w-5 h-5" aria-hidden="true" />}
               </button>
+
+              {/* Cart Trigger Button (When items exist in cart) */}
+              {cartItemCount > 0 && (
+                <button
+                  type="button"
+                  onClick={onOpenCart}
+                  className="inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-xl font-bold text-xs sm:text-sm bg-[#0f3d2a] text-[#f0d27a] border border-[#d4af37]/50 shadow-md cursor-pointer hover:bg-[#1f6b4a] active:scale-95 transition-all"
+                  title="Open table order cart"
+                >
+                  <ShoppingBag className="w-4 h-4 text-[#d4af37]" />
+                  <span className="hidden sm:inline">Order</span>
+                  <span className="w-5 h-5 rounded-full bg-[#d4af37] text-[#06140e] text-[10px] font-black flex items-center justify-center">
+                    {cartItemCount}
+                  </span>
+                </button>
+              )}
 
               {/* Call Waiter Trigger Button */}
               <button

@@ -208,81 +208,80 @@ function AppRouter() {
         {renderView()}
       </div>
 
-      {/* =========================================================================
-          QUICK ROLE-SWITCHING FLOATING DOCK (Hidden during print)
-          Enables instant jump across Customer, KDS, Waiter, Admin, and QR codes
-          ========================================================================= */}
-      <div className={`no-print fixed bottom-4 left-4 z-50 ${isModalOpen ? 'hidden' : 'flex'} flex-col items-start pointer-events-none`}>
+      {/* QUICK ROLE-SWITCHING FLOATING DOCK (Hidden on Customer Menu and during print) */}
+      {activeView !== 'customer' && (
+        <div className={`no-print fixed bottom-4 left-4 z-50 ${isModalOpen ? 'hidden' : 'flex'} flex-col items-start pointer-events-none`}>
 
-        {/* Expanded Navigation Drawer */}
-        {isDockOpen && (
-          <div className="mb-2 bg-[#06140e]/95 backdrop-blur-md rounded-2xl p-3 shadow-2xl border border-[#d4af37]/60 w-64 pointer-events-auto transform transition-all animate-scaleUp">
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#d4af37]/20">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#f0d27a]">
-                <Compass className="w-3.5 h-3.5 text-[#d4af37]" />
-                <span>Role Switcher</span>
+          {/* Expanded Navigation Drawer */}
+          {isDockOpen && (
+            <div className="mb-2 bg-[#06140e]/95 backdrop-blur-md rounded-2xl p-3 shadow-2xl border border-[#d4af37]/60 w-64 pointer-events-auto transform transition-all animate-scaleUp">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#d4af37]/20">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#f0d27a]">
+                  <Compass className="w-3.5 h-3.5 text-[#d4af37]" />
+                  <span>Role Switcher</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDockOpen(false)}
+                  className="text-[#f5efe0]/60 hover:text-[#f0d27a] p-1 rounded-lg"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsDockOpen(false)}
-                className="text-[#f5efe0]/60 hover:text-[#f0d27a] p-1 rounded-lg"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+
+              <div className="space-y-1">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeView === item.id;
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        navigate(item.path);
+                        setIsDockOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer border ${
+                        isActive
+                          ? 'bg-[#0f3d2a] text-[#f5efe0] border-[#d4af37]/70'
+                          : 'bg-[#0f3d2a]/30 hover:bg-[#1f6b4a]/40 text-[#f5efe0]/85 border-[#1f6b4a]/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#f0d27a]' : 'text-[#d4af37]/80'}`} />
+                        <span>{item.label}</span>
+                      </div>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase ${
+                        isActive ? 'bg-[#d4af37]/20 text-[#f0d27a]' : 'bg-[#06140e] text-[#f5efe0]/60'
+                      }`}>
+                        {item.badge}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-
-            <div className="space-y-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeView === item.id;
-
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      navigate(item.path);
-                      setIsDockOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer border ${
-                      isActive
-                        ? 'bg-[#0f3d2a] text-[#f5efe0] border-[#d4af37]/70'
-                        : 'bg-[#0f3d2a]/30 hover:bg-[#1f6b4a]/40 text-[#f5efe0]/85 border-[#1f6b4a]/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#f0d27a]' : 'text-[#d4af37]/80'}`} />
-                      <span>{item.label}</span>
-                    </div>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase ${
-                      isActive ? 'bg-[#d4af37]/20 text-[#f0d27a]' : 'bg-[#06140e] text-[#f5efe0]/60'
-                    }`}>
-                      {item.badge}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Floating Toggle Pill */}
-        <button
-          type="button"
-          onClick={() => setIsDockOpen(prev => !prev)}
-          className="pointer-events-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#06140e]/90 hover:bg-[#0f3d2a]/90 text-[#f5efe0] shadow-xl shadow-black/40 backdrop-blur-md border border-[#d4af37] text-xs font-semibold tracking-wide transition-all active:scale-95 cursor-pointer"
-          title="Quick switch between Customer, Kitchen, Waiter, and Admin views"
-        >
-          <Compass className="w-4 h-4 text-[#d4af37] animate-spin-slow" />
-          <span className="hidden sm:inline text-[#f0d27a]">Switch Role</span>
-          {isDockOpen ? (
-            <ChevronDown className="w-3.5 h-3.5 text-[#d4af37]" />
-          ) : (
-            <ChevronUp className="w-3.5 h-3.5 text-[#d4af37]" />
           )}
-        </button>
 
-      </div>
+          {/* Floating Toggle Pill */}
+          <button
+            type="button"
+            onClick={() => setIsDockOpen(prev => !prev)}
+            className="pointer-events-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#06140e]/90 hover:bg-[#0f3d2a]/90 text-[#f5efe0] shadow-xl shadow-black/40 backdrop-blur-md border border-[#d4af37] text-xs font-semibold tracking-wide transition-all active:scale-95 cursor-pointer"
+            title="Quick switch between Customer, Kitchen, Waiter, and Admin views"
+          >
+            <Compass className="w-4 h-4 text-[#d4af37] animate-spin-slow" />
+            <span className="hidden sm:inline text-[#f0d27a]">Switch Role</span>
+            {isDockOpen ? (
+              <ChevronDown className="w-3.5 h-3.5 text-[#d4af37]" />
+            ) : (
+              <ChevronUp className="w-3.5 h-3.5 text-[#d4af37]" />
+            )}
+          </button>
+
+        </div>
+      )}
 
     </div>
   );
