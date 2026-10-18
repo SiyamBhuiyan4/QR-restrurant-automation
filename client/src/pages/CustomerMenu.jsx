@@ -1124,12 +1124,29 @@ export default function CustomerMenu({
             </div>
           </div>
 
+          {/* Feature cards: emerald and gold, same rhythm as a high-end restaurant landing page */}
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4 mt-10">
+            {[
+              { icon: ChefHat, title: 'Master Chefs', text: 'Every dish is cooked to order by our kitchen team, with fresh ingredients every day.' },
+              { icon: Leaf, title: 'Fresh Ingredients', text: 'Vegetables, herbs and seafood are sourced fresh, with clear dietary tags on every item.' },
+              { icon: Clock, title: 'Served Hot', text: 'Order from your table, track the kitchen live, and enjoy your meal while it is hot.' }
+            ].map((f, i) => (
+              <div key={f.title} style={{ '--wp-d': `${420 + i * 90}ms` }} className="wp-enter rounded-2xl bg-[#0f3d2a]/60 border border-[#d4af37]/25 p-6 text-center">
+                <div className="mx-auto w-12 h-12 rounded-full border border-[#d4af37]/50 flex items-center justify-center mb-4">
+                  <f.icon className="w-5 h-5 text-[#d4af37]" />
+                </div>
+                <h3 className="wp-serif text-lg font-semibold text-[#f0d27a] mb-2">{f.title}</h3>
+                <p className="text-sm text-[#f5efe0]/70 leading-relaxed">{f.text}</p>
+              </div>
+            ))}
+          </div>
+
           {/* Stadium Discount Banner from Screenshot 1 */}
-          <div className="relative mt-8 rounded-3xl sm:rounded-full bg-white text-neutral-900 shadow-2xl p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4 overflow-hidden border border-zinc-200">
+          <div className="relative mt-8 rounded-3xl sm:rounded-full bg-[#0f3d2a]/70 text-[#f5efe0] shadow-2xl p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4 overflow-hidden border border-[#d4af37]/30">
             {/* Left Sub-Section */}
             <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-center sm:text-left z-10">
               <div>
-                <h4 className="font-black text-sm sm:text-base text-neutral-950 tracking-tight">
+                <h4 className="font-black text-sm sm:text-base text-[#f5efe0] tracking-tight">
                   Great food and lots of discounted prices
                 </h4>
                 <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
@@ -1138,7 +1155,7 @@ export default function CustomerMenu({
                     <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&auto=format&fit=crop&q=80" alt="Diner" className="w-6 h-6 rounded-full object-cover ring-2 ring-white" />
                     <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=60&auto=format&fit=crop&q=80" alt="Diner" className="w-6 h-6 rounded-full object-cover ring-2 ring-white" />
                   </div>
-                  <span className="text-xs font-extrabold text-neutral-800">
+                  <span className="text-xs font-extrabold text-[#f0d27a]">
                     +40 People grabbed the offer
                   </span>
                 </div>
@@ -1155,10 +1172,10 @@ export default function CustomerMenu({
             {/* Right Sub-Section: 50% Offer + Dish Plate */}
             <div className="flex items-center gap-4 z-10">
               <div className="text-right">
-                <span className="block text-2xl sm:text-4xl font-black text-neutral-950 tracking-tight leading-none">
+                <span className="block text-2xl sm:text-4xl font-black text-[#f5efe0] tracking-tight leading-none">
                   50%
                 </span>
-                <span className="text-[11px] font-black uppercase text-neutral-600 tracking-wider">
+                <span className="text-[11px] font-black uppercase text-[#f5efe0]/70 tracking-wider">
                   Offer On Now
                 </span>
               </div>
