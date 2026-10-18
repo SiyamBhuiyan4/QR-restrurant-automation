@@ -276,33 +276,33 @@ export default function CallWaiterModal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none ${entered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#06140e]/80 backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none ${entered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className={`w-full max-w-md max-h-[92dvh] overflow-y-auto overflow-x-hidden overscroll-contain bg-[#161619] rounded-t-[28px] sm:rounded-3xl shadow-2xl shadow-black/70 border border-white/[0.06] sm:border-zinc-800 text-white transform transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${entered ? 'translate-y-0 sm:scale-100 opacity-100' : 'translate-y-8 sm:translate-y-0 sm:scale-95 opacity-0'}`}
+        className={`w-full max-w-md max-h-[92dvh] overflow-y-auto overflow-x-hidden overscroll-contain bg-[#0f3d2a] rounded-t-[28px] sm:rounded-3xl shadow-2xl shadow-black/70 border border-[#d4af37]/30 sm:border-[#d4af37]/40 text-[#f5efe0] transform transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:transform-none ${entered ? 'translate-y-0 sm:scale-100 opacity-100' : 'translate-y-8 sm:translate-y-0 sm:scale-95 opacity-0'}`}
       >
         {/* Header Bar */}
-        <div className="flame-gradient-btn p-5 text-white relative shadow-lg shadow-[#FF5A26]/30">
+        <div className="bg-[linear-gradient(135deg,#1f6b4a,#0f3d2a)] border-b border-[#d4af37]/40 p-5 text-[#f5efe0] relative shadow-lg shadow-black/40">
           <button
             type="button"
             onClick={handleDismiss}
             disabled={isSubmitting}
-            className="absolute top-3 right-3 w-11 h-11 rounded-full bg-black/25 hover:bg-black/40 flex items-center justify-center text-white transition-transform duration-150 active:scale-95 cursor-pointer disabled:opacity-50 motion-reduce:transform-none"
+            className="absolute top-3 right-3 w-11 h-11 rounded-full bg-[#06140e]/60 hover:bg-[#06140e]/80 border border-[#d4af37]/40 flex items-center justify-center text-[#f0d27a] transition-transform duration-150 active:scale-95 cursor-pointer disabled:opacity-50 motion-reduce:transform-none"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
 
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center shadow-inner">
-              <BellRing className="w-6 h-6 text-white animate-wiggle" />
+            <div className="w-12 h-12 rounded-2xl bg-[#d4af37]/20 border border-[#d4af37]/50 flex items-center justify-center shadow-inner">
+              <BellRing className="w-6 h-6 text-[#f0d27a] animate-wiggle motion-reduce:animate-none" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold tracking-tight">Call Waiter</h2>
-              <div className="flex items-center gap-2 mt-0.5 text-xs text-white/90 font-medium">
-                <span className="bg-black/30 px-2.5 py-0.5 rounded-full font-bold text-white border border-white/20">
+              <h2 className="text-xl font-extrabold tracking-tight text-[#f5efe0]">Call Waiter</h2>
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-[#f5efe0]/80 font-medium">
+                <span className="bg-[#06140e]/60 px-2.5 py-0.5 rounded-full font-bold text-[#f0d27a] border border-[#d4af37]/50">
                   Table {tableNumber || '?'}
                 </span>
                 <span>&bull; Instant Floor Bell</span>
@@ -315,25 +315,25 @@ export default function CallWaiterModal({
         <div className="px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6">
           {/* CONFIRMED STATE */}
           {isConfirmed ? (
-            <div className="text-center py-4 space-y-4 animate-scaleUp">
-              <div className="w-20 h-20 mx-auto rounded-3xl bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shadow-lg shadow-emerald-900/30">
-                <CheckCircle2 className="w-10 h-10 animate-bounce" />
+            <div className="text-center py-4 space-y-4 animate-scaleUp motion-reduce:animate-none">
+              <div className="w-20 h-20 mx-auto rounded-3xl bg-[#06140e] text-[#f0d27a] border border-[#d4af37]/60 flex items-center justify-center shadow-lg shadow-black/40">
+                <CheckCircle2 className="w-10 h-10 animate-bounce motion-reduce:animate-none" />
               </div>
 
               <div>
-                <h3 className="text-2xl font-black text-white">
+                <h3 className="text-2xl font-black text-[#f5efe0]">
                   Waiter Alerted!
                 </h3>
-                <p className="text-sm font-semibold text-emerald-400 mt-1">
+                <p className="text-sm font-semibold text-[#f0d27a] mt-1">
                   Staff has been notified for Table {tableNumber}.
                 </p>
-                <div className="mt-3 p-3 bg-zinc-900/90 rounded-2xl border border-zinc-800 text-xs text-zinc-300 inline-block max-w-xs text-left">
-                  <span className="font-semibold text-zinc-400">Requested:</span>{' '}
-                  <span className="font-bold text-[#FF7A45]">
+                <div className="mt-3 p-3 bg-[#06140e]/70 rounded-2xl border border-[#d4af37]/30 text-xs text-[#f5efe0]/80 inline-block max-w-xs text-left">
+                  <span className="font-semibold text-[#f5efe0]/70">Requested:</span>{' '}
+                  <span className="font-bold text-[#d4af37]">
                     {selectedReason.label}
                   </span>
                   {customMessage.trim() && (
-                    <p className="mt-1 italic text-zinc-400">
+                    <p className="mt-1 italic text-[#f5efe0]/70">
                       "{customMessage.trim()}"
                     </p>
                   )}
@@ -341,22 +341,22 @@ export default function CallWaiterModal({
               </div>
 
               {isOfflineQueued && (
-                <div className="p-3 bg-amber-950/50 rounded-2xl border border-amber-500/40 text-xs text-amber-300 flex items-center gap-2 text-left">
-                  <WifiOff className="w-4 h-4 shrink-0 text-amber-400" />
+                <div className="p-3 bg-[#c8442b]/15 rounded-2xl border border-[#c8442b]/50 text-xs text-[#f5efe0] flex items-center gap-2 text-left">
+                  <WifiOff className="w-4 h-4 shrink-0 text-[#f0d27a]" />
                   <span>
                     Offline Mode: Alert has been saved locally and will auto-sync the moment Wi-Fi reconnects!
                   </span>
                 </div>
               )}
 
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-[#f5efe0]/60">
                 Floor staff will be at your table in a moment. Auto-closing in {dismissCountdown}s...
               </p>
 
               <button
                 type="button"
                 onClick={handleDismiss}
-                className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl flame-gradient-btn text-white font-bold text-sm transition-transform duration-150 active:scale-[0.98] shadow-md shadow-[#FF5A26]/30 cursor-pointer motion-reduce:transform-none"
+                className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl bg-[linear-gradient(135deg,#f0d27a,#d4af37)] text-[#06140e] font-bold text-sm transition-transform duration-150 active:scale-[0.98] shadow-md shadow-black/40 cursor-pointer motion-reduce:transform-none"
               >
                 Done
               </button>
@@ -365,26 +365,26 @@ export default function CallWaiterModal({
             /* SELECTION STATE */
             <div className="space-y-4">
               {/* Optional Table Number Confirmation */}
-              <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              <div className="flex items-center justify-between pb-3 border-b border-[#d4af37]/25">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#f0d27a]/80">
                   Your Table Number
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium text-zinc-500">Table #</span>
+                  <span className="text-sm font-medium text-[#f5efe0]/60">Table #</span>
                   <input
                     type="number"
                     min="1"
                     max="99"
                     value={tableNumber}
                     onChange={(e) => setTableNumber(e.target.value)}
-                    className="w-20 min-h-11 text-center font-bold text-base py-2 px-2 border border-zinc-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#FF5A26] bg-zinc-900 text-white"
+                    className="w-20 min-h-11 text-center font-bold text-base py-2 px-2 border border-[#d4af37]/40 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#d4af37] bg-[#06140e] text-[#f5efe0]"
                   />
                 </div>
               </div>
 
               {/* Preset Reason Choices */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#f0d27a]/80 mb-2">
                   Select Reason (One-Tap)
                 </label>
                 <div className="grid grid-cols-1 gap-2">
@@ -397,8 +397,8 @@ export default function CallWaiterModal({
                         onClick={() => setSelectedReason(preset)}
                         className={`w-full min-h-[56px] flex items-center justify-between p-3 rounded-2xl border transition-[transform,background-color,box-shadow] duration-200 text-left cursor-pointer active:scale-[0.98] motion-reduce:transform-none ${
                           isSelected
-                            ? 'flame-gradient-btn text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50 border-transparent'
-                            : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border-zinc-800'
+                            ? 'bg-[linear-gradient(135deg,#f0d27a,#d4af37)] text-[#06140e] shadow-md shadow-[#d4af37]/30 ring-1 ring-[#f0d27a]/60 border-transparent'
+                            : 'bg-[#06140e]/60 hover:bg-[#1f6b4a]/40 text-[#f5efe0] border-[#d4af37]/30'
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -409,7 +409,7 @@ export default function CallWaiterModal({
                             </p>
                             <p
                               className={`text-[11px] ${
-                                isSelected ? 'text-white/80' : 'text-zinc-400'
+                                isSelected ? 'text-[#06140e]/75' : 'text-[#f5efe0]/65'
                               }`}
                             >
                               {preset.desc}
@@ -418,11 +418,11 @@ export default function CallWaiterModal({
                         </div>
 
                         {isSelected ? (
-                          <div className="w-6 h-6 rounded-full bg-white text-[#FF5A26] flex items-center justify-center shrink-0">
+                          <div className="w-6 h-6 rounded-full bg-[#06140e] text-[#f0d27a] flex items-center justify-center shrink-0">
                             <CheckCircle2 className="w-4 h-4" />
                           </div>
                         ) : (
-                          <span className="text-xs font-medium text-zinc-500">
+                          <span className="text-xs font-medium text-[#d4af37]">
                             Select
                           </span>
                         )}
@@ -434,8 +434,8 @@ export default function CallWaiterModal({
 
               {/* Optional Custom Message Field */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5 flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-[#FF5A26]" />
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#f0d27a]/80 mb-1.5 flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-[#d4af37]" />
                   <span>Custom Request Note (Optional)</span>
                 </label>
                 <input
@@ -444,14 +444,14 @@ export default function CallWaiterModal({
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
                   placeholder="e.g., Warm water, extra spice, split bill..."
-                  className="w-full min-h-11 py-2.5 px-3.5 text-base sm:text-sm border border-zinc-700/80 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#FF5A26] bg-zinc-900 text-white placeholder-zinc-500 transition"
+                  className="w-full min-h-11 py-2.5 px-3.5 text-base sm:text-sm border border-[#d4af37]/40 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#d4af37] bg-[#06140e] text-[#f5efe0] placeholder-[#f5efe0]/40 transition"
                 />
               </div>
 
               {/* Error message */}
               {errorMessage && (
-                <div className="p-3 bg-rose-500/15 border border-rose-500/30 rounded-xl flex items-center gap-2 text-rose-300 text-xs">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                <div className="p-3 bg-[#c8442b]/15 border border-[#c8442b]/40 rounded-xl flex items-center gap-2 text-[#f5efe0] text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-[#e8745c]" />
                   <span>{errorMessage}</span>
                 </div>
               )}
@@ -462,7 +462,7 @@ export default function CallWaiterModal({
                   type="button"
                   onClick={handleDismiss}
                   disabled={isSubmitting}
-                  className="flex-1 min-h-12 py-3 px-4 rounded-2xl border border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-sm font-bold transition-colors duration-150 cursor-pointer disabled:opacity-50"
+                  className="flex-1 min-h-12 py-3 px-4 rounded-2xl border border-[#f5efe0]/20 text-[#f5efe0]/80 hover:bg-[#1f6b4a]/40 hover:text-[#f5efe0] text-sm font-bold transition-colors duration-150 cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -471,11 +471,11 @@ export default function CallWaiterModal({
                   type="button"
                   onClick={() => handleSubmit()}
                   disabled={isSubmitting || !tableNumber}
-                  className="flex-[2] min-h-12 py-3 px-5 rounded-2xl flame-gradient-btn text-white font-bold text-sm transition-transform duration-150 active:scale-[0.98] shadow-lg shadow-[#FF5A26]/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed motion-reduce:transform-none"
+                  className="flex-[2] min-h-12 py-3 px-5 rounded-2xl bg-[linear-gradient(135deg,#f0d27a,#d4af37)] text-[#06140e] font-bold text-sm transition-transform duration-150 active:scale-[0.98] shadow-lg shadow-[#d4af37]/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed motion-reduce:transform-none"
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" />
                       <span>Ringing Waiter...</span>
                     </>
                   ) : (

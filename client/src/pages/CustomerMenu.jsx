@@ -7,6 +7,7 @@ import MenuItemCard from '../components/MenuItemCard';
 import CartDrawer from '../components/CartDrawer';
 import FoodDetailModal from '../components/FoodDetailModal';
 import '../styles/customer-hero.css';
+import '../styles/customer-menu-sections.css';
 import { 
   Search, 
   X, 
@@ -1024,49 +1025,63 @@ export default function CustomerMenu({
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 relative z-10">
 
-        {/* 1. WorldPlate Hero Banner & Fixed Table QR Badge (Screenshots 1 & 2) */}
-        <div id="menu-hero" className="relative mb-8 rounded-3xl overflow-hidden bg-gradient-to-br from-[#121216] via-[#16161c] to-[#0a0a0c] text-white p-6 sm:p-10 shadow-2xl border border-zinc-800/90 animate-fadeIn">
-          {/* Animated backdrop: slow gradient drift, film grain, light sweep (CSS only) */}
-          <div className="ch-hero-drift" aria-hidden="true" />
-          <div className="ch-hero-grain" aria-hidden="true" />
-          <div className="ch-hero-sweep" aria-hidden="true" />
+        {/* 1. WorldPlate Hero: cinematic emerald & gold (styles scoped to .wp-hero, motion disabled under reduced-motion) */}
+        <div id="menu-hero" className="wp-hero relative mb-8 rounded-3xl overflow-hidden bg-[#06140e] text-[#f5efe0] p-4 sm:p-10 lg:p-12 shadow-2xl border border-[#d4af37]/20 animate-fadeIn">
+          <style>{`
+            @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap');
+            @keyframes wp-rise { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+            @keyframes wp-float { 0%, 100% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(0, -10px, 0); } }
+            @keyframes wp-glow { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 0.95; transform: scale(1.08); } }
+            @keyframes wp-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+            .wp-hero .wp-enter { opacity: 0; animation: wp-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; animation-delay: var(--wp-d, 0ms); }
+            .wp-hero .wp-float { animation: wp-float 7s ease-in-out infinite; }
+            .wp-hero .wp-glow { animation: wp-glow 5s ease-in-out infinite; }
+            .wp-hero .wp-dot { animation: wp-dot 2.4s ease-in-out infinite; }
+            .wp-hero .wp-serif { font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; }
+            .wp-hero .wp-gold-text { background-image: linear-gradient(100deg, #f0d27a 0%, #d4af37 45%, #f0d27a 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+            .wp-hero .wp-cta:hover { filter: brightness(1.08); }
+            @media (prefers-reduced-motion: reduce) {
+              .wp-hero .wp-enter { opacity: 1; animation: none; transform: none; }
+              .wp-hero .wp-float, .wp-hero .wp-glow, .wp-hero .wp-dot { animation: none; }
+            }
+          `}</style>
 
-          {/* Subtle Ambient Flame Glow Orbs */}
-          <div className="absolute top-0 right-10 w-96 h-96 bg-[#FF5A26]/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-72 h-72 bg-[#FF7A45]/10 rounded-full blur-2xl pointer-events-none" />
+          {/* Cinematic backdrop: emerald light falloff, ember warmth, film grain (no network request for grain) */}
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ background: 'radial-gradient(60% 60% at 78% 42%, rgba(31,107,74,0.55) 0%, transparent 70%), radial-gradient(45% 50% at 6% 0%, rgba(15,61,42,0.9) 0%, transparent 70%), radial-gradient(40% 40% at 10% 100%, rgba(200,68,43,0.14) 0%, transparent 70%)' }} />
+          <div className="absolute inset-0 pointer-events-none opacity-[0.07]" aria-hidden="true" style={{ backgroundImage: "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")" }} />
 
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10">
-            {/* Left Column: Big Headline & Action Buttons (Screenshot 1) */}
+            {/* Left Column: Display headline, subtitle and actions */}
             <div className="max-w-xl text-left">
-              <div style={{ '--ch-d': '60ms' }} className="ch-enter inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] text-xs font-bold mb-4 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 text-[#FF5A26]" />
-                <span className="tracking-wide uppercase text-[10px] font-extrabold">Taste the Tradition, Served Fresh Daily</span>
+              <div style={{ '--wp-d': '60ms' }} className="wp-enter inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/40 text-[#f0d27a] mb-5">
+                <Sparkles className="w-3.5 h-3.5 text-[#d4af37]" />
+                <span className="tracking-[0.18em] uppercase text-[10px] font-bold">Taste the Tradition, Served Fresh Daily</span>
               </div>
 
-              {/* Exact Display Typography from Screenshot 1 */}
-              <h1 style={{ '--ch-d': '160ms' }} className="ch-enter text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12]">
+              <h1 style={{ '--wp-d': '160ms' }} className="wp-enter wp-serif text-[2.1rem] sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#f5efe0] leading-[1.1]">
                 Experience the <br />
                 <span className="inline-flex flex-wrap items-center gap-2.5 sm:gap-3.5 my-1.5">
-                  <span className="text-[#FF5A26] underline decoration-[#FF5A26]/60 underline-offset-8 flame-text-glow">Taste</span>
-                  <span className="inline-flex items-center -space-x-2 px-2.5 py-1 rounded-full bg-zinc-800/90 border border-zinc-700/80 shadow-md">
-                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80" alt="Diner" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover ring-2 ring-[#0a0a0c]" />
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80" alt="Diner" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover ring-2 ring-[#0a0a0c]" />
-                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80" alt="Diner" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover ring-2 ring-[#0a0a0c]" />
+                  <span className="wp-gold-text italic font-semibold">Taste</span>
+                  <span className="inline-flex items-center -space-x-2 px-2.5 py-1 rounded-full bg-[#0f3d2a]/80 border border-[#d4af37]/30">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80" alt="Diner" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover ring-2 ring-[#06140e]" />
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80" alt="Diner" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover ring-2 ring-[#06140e]" />
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80" alt="Diner" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover ring-2 ring-[#06140e]" />
                   </span>
-                  <span className="text-white">of the</span>
+                  <span className="text-[#f5efe0]">of the</span>
                 </span> <br />
-                World
+                <span className="wp-gold-text">World</span>
               </h1>
 
-              <p style={{ '--ch-d': '260ms' }} className="ch-enter text-xs sm:text-sm md:text-base text-zinc-400 mt-4 leading-relaxed font-normal">
+              <p style={{ '--wp-d': '260ms' }} className="wp-enter text-sm sm:text-base text-[#f5efe0]/70 mt-5 leading-relaxed font-normal">
                 From classic favorites to exotic delights, explore a diverse menu inspired by cuisines from across the globe and freshly prepared by master chefs.
               </p>
 
               {/* CTA Buttons */}
-              <div style={{ '--ch-d': '360ms' }} className="ch-enter flex flex-wrap items-center gap-3.5 mt-6">
+              <div style={{ '--wp-d': '360ms' }} className="wp-enter flex flex-wrap items-center gap-3 mt-7">
                 <a
                   href="#menu-content-root"
-                  className="ch-shine ch-btn px-6 py-3 min-h-11 rounded-full flame-gradient-btn text-white text-xs sm:text-sm font-black shadow-lg shadow-[#FF5A26]/40 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                  className="wp-cta min-h-11 px-7 py-3 rounded-full text-[#06140e] text-sm font-bold tracking-wide transition-all duration-300 hover:-translate-y-0.5 active:scale-95 flex items-center gap-2 cursor-pointer"
+                  style={{ background: 'linear-gradient(135deg, #f0d27a 0%, #d4af37 55%, #b8902a 100%)', boxShadow: '0 12px 30px -10px rgba(212,175,55,0.65), inset 0 1px 0 rgba(255,255,255,0.35)' }}
                 >
                   <span>Explore Menu</span>
                   <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -1075,35 +1090,35 @@ export default function CustomerMenu({
                 <button
                   type="button"
                   onClick={() => setIsTableModalOpen(true)}
-                  className="ch-btn px-5 py-3 min-h-11 rounded-full bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 hover:text-white border border-zinc-700/80 hover:border-[#FF5A26]/50 text-xs sm:text-sm font-bold transition-all shadow-md active:scale-95 cursor-pointer flex items-center gap-2"
+                  className="min-h-11 px-5 py-3 rounded-full bg-[#0f3d2a]/60 hover:bg-[#0f3d2a] text-[#f5efe0] border border-[#d4af37]/40 hover:border-[#d4af37] text-sm font-semibold transition-all duration-300 active:scale-95 cursor-pointer flex items-center gap-2"
                 >
-                  <UtensilsCrossed className="w-3.5 h-3.5 text-[#FF5A26]" />
+                  <UtensilsCrossed className="w-3.5 h-3.5 text-[#d4af37]" />
                   <span>{tableNumber ? `Table ${tableNumber}` : 'Set Dining Table'}</span>
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+                  <span className="wp-dot w-2 h-2 rounded-full bg-[#1f6b4a] ring-1 ring-[#f0d27a]/70 ml-0.5" />
                 </button>
               </div>
             </div>
 
-            {/* Right Column: Floating Ceramic Artisanal Ramen Bowl (Screenshot 1) */}
-            <div style={{ '--ch-d': '220ms' }} className="ch-enter relative shrink-0 flex items-center justify-center select-none py-2 lg:py-6">
-              {/* Radiant Orange Glow Behind Bowl */}
-              <div className="absolute w-72 h-72 sm:w-80 sm:h-80 bg-[#FF5A26]/20 rounded-full blur-3xl pointer-events-none animate-pulse" />
-              
-              {/* Floating Ceramic Dish */}
-              <div className="ch-float relative w-64 h-64 sm:w-80 sm:h-80 md:w-92 md:h-92 rounded-full p-2.5 bg-gradient-to-tr from-[#FF5A26]/50 via-transparent to-[#FF7A45]/30 shadow-2xl">
-                <div className="w-full h-full rounded-full overflow-hidden shadow-2xl ring-4 ring-white/10 hover:scale-104 transition-transform duration-700 bg-zinc-900">
+            {/* Right Column: Glowing signature dish with warm light */}
+            <div style={{ '--wp-d': '220ms' }} className="wp-enter relative shrink-0 flex items-center justify-center select-none py-2 lg:py-6">
+              {/* Warm glow pulsing behind the dish */}
+              <div className="wp-glow absolute w-72 h-72 sm:w-96 sm:h-96 rounded-full pointer-events-none" aria-hidden="true" style={{ background: 'radial-gradient(circle, rgba(240,210,122,0.55) 0%, rgba(212,175,55,0.22) 38%, rgba(200,68,43,0.10) 60%, transparent 72%)' }} />
+
+              {/* Floating dish */}
+              <div className="wp-float relative w-64 h-64 sm:w-80 sm:h-80 md:w-[22rem] md:h-[22rem] rounded-full p-2.5" style={{ background: 'linear-gradient(135deg, rgba(240,210,122,0.85) 0%, rgba(15,61,42,0.4) 45%, rgba(212,175,55,0.7) 100%)', boxShadow: '0 40px 70px -25px rgba(0,0,0,0.8), 0 0 90px -10px rgba(212,175,55,0.35)' }}>
+                <div className="w-full h-full rounded-full overflow-hidden bg-[#0f3d2a]">
                   <img
                     src="https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=900&auto=format&fit=crop&q=80"
                     alt="WorldPlate Signature Artisanal Ramen Bowl"
-                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-700"
+                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                   />
                 </div>
 
-                {/* Floating Highlight Badge */}
-                <div className="absolute -bottom-2 -left-2 bg-[#161619]/95 backdrop-blur-md border border-zinc-800 px-3.5 py-2 rounded-2xl shadow-xl flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF5A26] animate-ping" />
-                  <span className="text-xs font-black text-white">Chef Special</span>
-                  <span className="text-[10px] text-[#FF7A45] font-bold">&bull; Fresh Daily</span>
+                {/* Highlight Badge */}
+                <div className="absolute -bottom-2 -left-2 bg-[#06140e]/95 backdrop-blur-md border border-[#d4af37]/40 px-3.5 py-2 rounded-2xl shadow-xl flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#c8442b]" />
+                  <span className="text-xs font-bold text-[#f5efe0]">Chef Special</span>
+                  <span className="text-[10px] text-[#f0d27a] font-bold">&bull; Fresh Daily</span>
                 </div>
               </div>
             </div>
@@ -1297,6 +1312,9 @@ export default function CustomerMenu({
           </div>
         </section>
 
+        {/* Emerald & gold menu panel: category bar, headings and dish showcase */}
+        <div className="cm-theme relative mb-10 rounded-[2rem] bg-[#06140e] border border-[#1f6b4a]/40 px-3 py-6 sm:px-6 sm:py-8 text-[#f5efe0]">
+
         {/* Category Horizontal Sticky Pill Bar */}
         <section className="ch-sticky-bar sticky top-16 z-30 -mx-3 sm:mx-0 mb-4 pt-1 pb-1.5 border-b border-zinc-800/80 shadow-md">
           <CategoryBar
@@ -1308,11 +1326,11 @@ export default function CustomerMenu({
         </section>
 
         {/* Results Info Bar & 3-way Layout Switcher (Showcase / Grid / List) */}
-        <div id="menu-content-root" className="flex items-center justify-between mb-6 px-1 scroll-mt-32">
+        <div id="menu-content-root" className="flex flex-wrap items-center justify-between gap-3 mb-8 px-1 scroll-mt-32">
           <div className="flex items-center gap-2 sm:gap-2.5">
-            <h2 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-2">
+            <h2 className="text-lg sm:text-2xl font-normal italic text-[#f0d27a] tracking-tight flex items-center gap-2 [font-family:Georgia,'Times_New_Roman',serif]">
               <span>{selectedCategory === 'All' ? 'All Menu Choices' : `${getCategoryMetadata(selectedCategory).title}`}</span>
-              <span className="text-xs font-bold font-mono text-[#FF7A45] bg-[#FF5A26]/15 border border-[#FF5A26]/30 px-2.5 py-0.5 rounded-full shadow-2xs">
+              <span className="text-xs font-bold font-mono text-[#d4af37] bg-[#0f3d2a] border border-[#d4af37]/40 px-2.5 py-0.5 rounded-full">
                 {filteredItems.length}
               </span>
             </h2>
@@ -1324,7 +1342,7 @@ export default function CustomerMenu({
                   setVegOnlyFilter(false);
                   setSpicyFilter(false);
                 }}
-                className="text-xs text-[#FF7A45] hover:text-[#FF5A26] font-bold cursor-pointer underline decoration-[#FF5A26] underline-offset-2 ml-1"
+                className="min-h-11 inline-flex items-center text-xs text-[#f0d27a] hover:text-[#d4af37] font-bold cursor-pointer underline decoration-[#d4af37] underline-offset-2 ml-1"
               >
                 Reset Filters
               </button>
@@ -1332,14 +1350,14 @@ export default function CustomerMenu({
           </div>
 
           {/* View Mode Switcher: Showcase (Unboxed 1-by-1 floating) / Grid / List */}
-          <div className="flex items-center bg-[#161619] p-1 rounded-2xl border border-zinc-800 shadow-md">
+          <div className="flex items-center bg-[#0f3d2a] p-1 rounded-2xl border border-[#1f6b4a] shadow-md">
             <button
               type="button"
               onClick={() => setLayoutMode('showcase')}
               className={`min-h-11 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                 layoutMode === 'showcase'
-                  ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50'
-                  : 'text-zinc-400 hover:text-white'
+                  ? 'bg-gradient-to-r from-[#d4af37] to-[#f0d27a] text-[#06140e] shadow-md shadow-[#d4af37]/30 ring-1 ring-[#f0d27a]/50'
+                  : 'text-[#f5efe0]/70 hover:text-[#f0d27a]'
               }`}
               title="Showcase View: Unboxed 1-by-1 Alternating Layout"
             >
@@ -1352,8 +1370,8 @@ export default function CustomerMenu({
               onClick={() => setLayoutMode('grid')}
               className={`min-h-11 min-w-11 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 ${
                 layoutMode === 'grid'
-                  ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50'
-                  : 'text-zinc-400 hover:text-white'
+                  ? 'bg-gradient-to-r from-[#d4af37] to-[#f0d27a] text-[#06140e] shadow-md shadow-[#d4af37]/30 ring-1 ring-[#f0d27a]/50'
+                  : 'text-[#f5efe0]/70 hover:text-[#f0d27a]'
               }`}
               title="2-Column Compact Grid"
             >
@@ -1366,8 +1384,8 @@ export default function CustomerMenu({
               onClick={() => setLayoutMode('list')}
               className={`min-h-11 min-w-11 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 ${
                 layoutMode === 'list'
-                  ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50'
-                  : 'text-zinc-400 hover:text-white'
+                  ? 'bg-gradient-to-r from-[#d4af37] to-[#f0d27a] text-[#06140e] shadow-md shadow-[#d4af37]/30 ring-1 ring-[#f0d27a]/50'
+                  : 'text-[#f5efe0]/70 hover:text-[#f0d27a]'
               }`}
               title="Compact List View"
             >
@@ -1385,26 +1403,23 @@ export default function CustomerMenu({
               categorizedSections.map((section) => (
                 <section
                   key={section.categoryKey}
-                  data-ch-reveal
                   id={`cat-section-${section.categoryKey}`}
-                  className="space-y-6 scroll-mt-32 pt-2"
+                  className="cm-reveal space-y-6 scroll-mt-32 pt-2"
                 >
                   {/* Category Header with WorldPlate Stylized Brackets [ Title ] */}
-                  <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-                    <div className="flex items-center gap-2.5 sm:gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-white flex items-center justify-center text-lg sm:text-xl shadow-sm shrink-0">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#d4af37]/40">
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                      <div className="w-12 h-12 rounded-full bg-[#0f3d2a] border border-[#d4af37]/60 text-[#f0d27a] flex items-center justify-center text-lg sm:text-xl shadow-sm shrink-0">
                         {section.icon}
                       </div>
                       <div>
-                        <h3 className="text-base sm:text-xl lg:text-2xl font-black text-white tracking-tight flex items-center gap-1.5">
-                          <span className="text-[#FF5A26] font-mono text-xl sm:text-2xl font-black">[</span>
+                        <h3 className="text-2xl sm:text-3xl lg:text-4xl font-normal text-[#f0d27a] tracking-tight flex flex-wrap items-center gap-x-3 gap-y-1 [font-family:Georgia,'Times_New_Roman',serif]">
                           <span>{section.title}</span>
-                          <span className="text-[#FF5A26] font-mono text-xl sm:text-2xl font-black">]</span>
-                          <span className="text-[11px] sm:text-xs font-bold font-mono text-[#FF7A45] bg-[#FF5A26]/15 border border-[#FF5A26]/30 px-2 sm:px-2.5 py-0.5 rounded-full shadow-2xs ml-1">
+                          <span className="text-[11px] sm:text-xs font-bold font-mono text-[#d4af37] bg-[#0f3d2a] border border-[#d4af37]/40 px-2 sm:px-2.5 py-0.5 rounded-full">
                             {section.items.length} {section.items.length === 1 ? 'dish' : 'dishes'}
                           </span>
                         </h3>
-                        <p className="text-xs sm:text-sm text-zinc-400 font-normal line-clamp-1 mt-0.5">
+                        <p className="text-xs sm:text-sm text-[#f5efe0]/70 font-normal line-clamp-2 mt-1">
                           {section.subtitle}
                         </p>
                       </div>
@@ -1416,17 +1431,17 @@ export default function CustomerMenu({
                         setSelectedCategory(section.canonicalId);
                         window.scrollTo({ top: 160, behavior: 'smooth' });
                       }}
-                      className="ch-btn inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 hover:border-[#FF5A26]/40 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
+                      className="ch-btn inline-flex items-center gap-1.5 px-4 py-2 min-h-11 rounded-full bg-transparent hover:bg-[#0f3d2a] text-[#f0d27a] border border-[#d4af37]/60 hover:border-[#f0d27a] text-xs font-bold transition-all cursor-pointer shrink-0"
                     >
                       <span>Filter</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-[#FF7A45]" />
+                      <ArrowRight className="w-3.5 h-3.5 text-[#d4af37]" />
                     </button>
                   </div>
 
                   {/* Dishes Display: Unboxed Showcase (1-by-1 alternating) | Grid | List */}
                   <div className={
                     layoutMode === 'showcase'
-                      ? "flex flex-col"
+                      ? "cm-showcase flex flex-col"
                       : layoutMode === 'list'
                       ? "flex flex-col gap-2.5 sm:gap-3"
                       : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
@@ -1457,22 +1472,20 @@ export default function CustomerMenu({
               (() => {
                 const activeMeta = getCategoryMetadata(selectedCategory);
                 return (
-                  <section className="space-y-6" data-ch-reveal>
-                    <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-                      <div className="flex items-center gap-2.5 sm:gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-white flex items-center justify-center text-lg sm:text-xl shadow-sm shrink-0">
+                  <section className="cm-reveal space-y-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#d4af37]/40">
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                        <div className="w-12 h-12 rounded-full bg-[#0f3d2a] border border-[#d4af37]/60 text-[#f0d27a] flex items-center justify-center text-lg sm:text-xl shadow-sm shrink-0">
                           {activeMeta.icon}
                         </div>
                         <div>
-                          <h3 className="text-base sm:text-xl lg:text-2xl font-black text-white tracking-tight flex items-center gap-1.5">
-                            <span className="text-[#FF5A26] font-mono text-xl sm:text-2xl font-black">[</span>
+                          <h3 className="text-2xl sm:text-3xl lg:text-4xl font-normal text-[#f0d27a] tracking-tight flex flex-wrap items-center gap-x-3 gap-y-1 [font-family:Georgia,'Times_New_Roman',serif]">
                             <span>{activeMeta.title}</span>
-                            <span className="text-[#FF5A26] font-mono text-xl sm:text-2xl font-black">]</span>
-                            <span className="text-[11px] sm:text-xs font-bold font-mono text-[#FF7A45] bg-[#FF5A26]/15 border border-[#FF5A26]/30 px-2 sm:px-2.5 py-0.5 rounded-full shadow-2xs ml-1">
+                            <span className="text-[11px] sm:text-xs font-bold font-mono text-[#d4af37] bg-[#0f3d2a] border border-[#d4af37]/40 px-2 sm:px-2.5 py-0.5 rounded-full">
                               {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'}
                             </span>
                           </h3>
-                          <p className="text-xs sm:text-sm text-zinc-400 font-normal line-clamp-1 mt-0.5">
+                          <p className="text-xs sm:text-sm text-[#f5efe0]/70 font-normal line-clamp-2 mt-1">
                             {activeMeta.subtitle}
                           </p>
                         </div>
@@ -1484,7 +1497,7 @@ export default function CustomerMenu({
                           setSelectedCategory('All');
                           window.scrollTo({ top: 160, behavior: 'smooth' });
                         }}
-                        className="ch-shine ch-btn inline-flex items-center gap-1.5 px-4 py-2 min-h-11 rounded-xl flame-gradient-btn text-white text-xs font-bold transition shadow-md cursor-pointer shrink-0"
+                        className="ch-shine ch-btn inline-flex items-center gap-1.5 px-4 py-2 min-h-11 rounded-full bg-gradient-to-r from-[#d4af37] to-[#f0d27a] text-[#06140e] text-xs font-bold transition shadow-md cursor-pointer shrink-0"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>View All Categories</span>
@@ -1494,7 +1507,7 @@ export default function CustomerMenu({
                     {/* Dishes Display: Unboxed Showcase (1-by-1 alternating) | Grid | List */}
                     <div className={
                       layoutMode === 'showcase'
-                        ? "flex flex-col"
+                        ? "cm-showcase flex flex-col"
                         : layoutMode === 'list'
                         ? "flex flex-col gap-2.5 sm:gap-3"
                         : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
@@ -1525,14 +1538,14 @@ export default function CustomerMenu({
           </div>
         ) : (
           /* Empty State */
-          <div className="bg-zinc-900/90 rounded-3xl border border-zinc-800 p-8 sm:p-12 text-center max-w-md mx-auto my-10 shadow-lg">
+          <div className="bg-[#0f3d2a]/60 rounded-3xl border border-[#1f6b4a] p-8 sm:p-12 text-center max-w-md mx-auto my-10 shadow-lg">
             <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 mx-auto flex items-center justify-center mb-3.5 shadow-2xs">
               <UtensilsCrossed className="w-8 h-8 stroke-[1.8]" />
             </div>
-            <h3 className="font-black text-stone-900 text-lg mb-1 tracking-tight">
+            <h3 className="font-normal text-[#f0d27a] text-xl mb-1 [font-family:Georgia,'Times_New_Roman',serif]">
               No matching dishes found
             </h3>
-            <p className="text-xs sm:text-sm text-stone-500 mb-5 leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#f5efe0]/70 mb-5 leading-relaxed">
               Try adjusting your search query or reset dietary filters to view all chef-crafted menu choices.
             </p>
             <button
@@ -1543,12 +1556,14 @@ export default function CustomerMenu({
                 setSpicyFilter(false);
                 setSelectedCategory('All');
               }}
-              className="px-5 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer"
+              className="min-h-11 px-5 py-2.5 bg-[#d4af37] hover:bg-[#f0d27a] text-[#06140e] rounded-full text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer"
             >
               View Full Menu
             </button>
           </div>
         )}
+        </div>
+
         {/* 3. REVIEWS TESTIMONIALS SECTION [ What They Say? ] (Screenshot 1) */}
         <section id="reviews-section" data-ch-reveal className="my-16 sm:my-24 scroll-mt-24">
           <div className="flex items-center justify-center mb-8 sm:mb-12">
@@ -1806,7 +1821,7 @@ export default function CustomerMenu({
                     {cartSummary.totalCount}
                   </span>
                 </div>
-                <div className="flex flex-col">
+                <div className="cm-showcase flex flex-col">
                   <span className="text-xs text-zinc-400 font-medium leading-tight">
                     {cartSummary.totalCount} {cartSummary.totalCount === 1 ? 'dish' : 'dishes'}
                     {tableNumber ? ` • Table ${tableNumber}` : ''}

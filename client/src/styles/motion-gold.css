@@ -1,0 +1,188 @@
+/* ==========================================================================
+   mg- : gold motion kit (pure CSS, no JS)
+   Palette: emerald #0f3d2a, gold #d4af37, gold-soft #f0d27a, ember #c8442b
+
+   Rules of this kit:
+   - Animations only touch opacity and transform, except mg-gold-text which
+     moves background-position on a short gradient (cheap, no layout).
+   - All animation is gated behind prefers-reduced-motion: no-preference, so
+     reduced-motion users get the static, fully visible design.
+   - mg-reveal never depends on JS: it is a load-time animation, and its
+     end state is the normal visible state (fill-mode both).
+   ========================================================================== */
+
+:root {
+  --mg-gold: #d4af37;
+  --mg-gold-soft: #f0d27a;
+  --mg-emerald: #0f3d2a;
+  --mg-ember: #c8442b;
+  --mg-ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --mg-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --mg-stagger: 110ms;
+}
+
+/* ---------- Keyframes (named mg* so they never collide with other files) ---------- */
+
+@keyframes mgGlowPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+@keyframes mgFloat {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+@keyframes mgShimmerSweep {
+  0% {
+    transform: translate3d(-100%, 0, 0);
+  }
+  60%,
+  100% {
+    transform: translate3d(320%, 0, 0);
+  }
+}
+
+@keyframes mgRevealUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes mgGoldFlow {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 200% 50%;
+  }
+}
+
+/* ---------- Animated rules: only when the user has not asked for less motion ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Soft gold radial glow that breathes. The gradient is static; only its
+     opacity and scale animate, so it stays on the compositor. */
+  .mg-glow {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .mg-glow::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -1;
+    background: radial-gradient(
+      circle,
+      rgba(240, 210, 122, 0.45) 0%,
+      rgba(212, 175, 55, 0.18) 40%,
+      rgba(15, 61, 42, 0) 70%
+    );
+    transform: translate(-50%, -50%) scale(1);
+    will-change: opacity, transform;
+    animation: mgGlowPulse 5s var(--mg-ease-soft) infinite;
+  }
+
+  /* Gentle vertical float, 6-8s loop. */
+  .mg-float {
+    animation: mgFloat 7s var(--mg-ease-soft) infinite;
+    will-change: transform;
+  }
+
+  /* Gold line sweep. The line is a pseudo element pinned to the bottom edge
+     and moved with transform; the host must not be the only clipping box,
+     so overflow is hidden here to keep the sweep inside the element. */
+  .mg-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mg-shimmer::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      rgba(212, 175, 55, 0) 0%,
+      var(--mg-gold-soft) 50%,
+      rgba(212, 175, 55, 0) 100%
+    );
+    transform: translate3d(-100%, 0, 0);
+    will-change: transform;
+    animation: mgShimmerSweep 4.2s var(--mg-ease-soft) infinite;
+  }
+
+  /* Fade up reveal. --i sets the stagger index: style="--i: 0", "--i: 1", ...
+     Works without JS because it is a plain load-time animation. */
+  .mg-reveal {
+    animation: mgRevealUp 800ms var(--mg-ease-out) both;
+    animation-delay: calc(var(--i, 0) * var(--mg-stagger));
+    will-change: opacity, transform;
+  }
+
+  /* Animated gold text. A short three-stop gradient is oversized and its
+     position slides, so the gold reads as light moving across the word. */
+  .mg-gold-text {
+    background-image: linear-gradient(
+      90deg,
+      var(--mg-gold) 0%,
+      var(--mg-gold-soft) 30%,
+      var(--mg-gold) 60%
+    );
+    background-size: 200% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: mgGoldFlow 6s linear infinite;
+  }
+}
+
+/* ---------- Reduced motion: explicit reset, belt and braces ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .mg-glow::before,
+  .mg-float,
+  .mg-shimmer::after,
+  .mg-reveal,
+  .mg-gold-text {
+    animation: none;
+  }
+
+  .mg-glow::before {
+    transform: translate(-50%, -50%);
+  }
+
+  .mg-gold-text {
+    color: var(--mg-gold);
+    -webkit-text-fill-color: currentColor;
+    background: none;
+  }
+}

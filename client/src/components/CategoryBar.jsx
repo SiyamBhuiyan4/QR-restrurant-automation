@@ -5,11 +5,12 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
  * CategoryBar Component for SmartDine Customer Menu
  *
  * Features:
- * - Horizontal smooth-scrolling chip/pill bar (scrolls only the pill row,
+ * - Horizontal smooth-scrolling pill bar (scrolls only the pill row,
  *   never the page)
- * - A single sliding gradient pill that glides between categories
+ * - Dark emerald pills with a single gold indicator that slides between
+ *   categories
  * - Active pill auto-centering on selection
- * - Dynamic count badges per category
+ * - Gold count badges per category
  * - Optional category icons / emojis
  * - Left/right desktop quick navigation controls
  */
@@ -87,7 +88,7 @@ export default function CategoryBar({
     }
   };
 
-  // Michelin-grade Bistro category icons
+  // Category icons
   const defaultCategoryIcons = {
     all: '✨',
     starters: '🥗',
@@ -118,7 +119,7 @@ export default function CategoryBar({
 
   return (
     <div
-      className={`relative w-full bg-[#0a0a0c]/80 backdrop-blur-xl saturate-150 py-2.5 border-b border-zinc-800/80 transition-shadow duration-300 ${className}`}
+      className={`relative w-full bg-[#06140e] border-b border-[#d4af37]/25 py-2.5 ${className}`}
     >
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 relative flex items-center min-w-0">
 
@@ -126,7 +127,7 @@ export default function CategoryBar({
         <button
           type="button"
           onClick={() => scrollByAmount(-220)}
-          className="hidden md:flex items-center justify-center w-11 h-11 rounded-full bg-[#18181c]/90 backdrop-blur-xs border border-zinc-800 shadow-md text-zinc-400 hover:text-white hover:border-[#FF5A26]/50 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 mr-1.5 z-10 cursor-pointer"
+          className="hidden md:flex items-center justify-center w-11 h-11 rounded-full bg-[#0f3d2a] border border-[#d4af37]/40 shadow-md text-[#f0d27a] hover:text-[#06140e] hover:bg-[#d4af37] hover:border-[#d4af37] active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 mr-1.5 z-10 cursor-pointer"
           aria-label="Scroll left"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -138,11 +139,11 @@ export default function CategoryBar({
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           className="relative flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth motion-reduce:scroll-auto py-1 px-1 w-full min-w-0"
         >
-          {/* Sliding active indicator (sits behind the pills) */}
+          {/* Sliding gold indicator (sits behind the pills) */}
           {indicator && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute left-0 top-0 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] shadow-lg shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50 transition-[transform,width,height] duration-300 ease-out motion-reduce:transition-none"
+              className="pointer-events-none absolute left-0 top-0 rounded-full border-[1.5px] border-[#d4af37] bg-gradient-to-r from-[#1f6b4a] to-[#0f3d2a] shadow-[0_0_14px_rgba(212,175,55,0.35)] transition-[transform,width,height] duration-300 ease-out motion-reduce:transition-none"
               style={{
                 width: indicator.width,
                 height: indicator.height,
@@ -175,10 +176,10 @@ export default function CategoryBar({
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => onSelectCategory && onSelectCategory(categoryId)}
-                className={`group relative z-10 inline-flex items-center gap-2 min-h-11 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight transition-[color,background-color,border-color,transform] duration-300 ease-out shrink-0 select-none cursor-pointer active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${
+                className={`group relative z-10 inline-flex items-center gap-2 h-11 min-h-11 px-3.5 sm:px-4 rounded-full text-xs sm:text-sm font-semibold tracking-tight text-[#f5efe0] transition-[color,background-color,border-color,transform] duration-300 ease-out shrink-0 select-none cursor-pointer active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${
                   isSelected
-                    ? 'text-white border border-transparent'
-                    : 'bg-[#161619]/80 hover:bg-[#1f1f24] text-zinc-300 hover:text-white border border-white/5 hover:border-zinc-700 hover:-translate-y-px motion-reduce:hover:translate-y-0'
+                    ? 'border border-transparent'
+                    : 'bg-[#0f3d2a] hover:bg-[#1f6b4a] border border-[#1f6b4a]/60 hover:border-[#d4af37]/60 hover:-translate-y-px motion-reduce:hover:translate-y-0'
                 }`}
               >
                 <span className="text-base leading-none transition-transform duration-200 group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100">
@@ -190,10 +191,8 @@ export default function CategoryBar({
 
                 {count !== undefined && (
                   <span
-                    className={`ml-0.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold font-mono leading-none transition-colors duration-300 ${
-                      isSelected
-                        ? 'bg-black/25 text-white border border-white/20'
-                        : 'bg-zinc-800/80 text-zinc-400 group-hover:bg-zinc-700 group-hover:text-zinc-200'
+                    className={`ml-0.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold font-mono leading-none bg-[#d4af37] text-[#06140e] transition-colors duration-300 ${
+                      isSelected ? 'shadow-[0_0_8px_rgba(240,210,122,0.6)]' : 'group-hover:bg-[#f0d27a]'
                     }`}
                   >
                     {count}
@@ -208,7 +207,7 @@ export default function CategoryBar({
         <button
           type="button"
           onClick={() => scrollByAmount(220)}
-          className="hidden md:flex items-center justify-center w-11 h-11 rounded-full bg-[#18181c]/90 backdrop-blur-xs border border-zinc-800 shadow-md text-zinc-400 hover:text-white hover:border-[#FF5A26]/50 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 ml-1.5 z-10 cursor-pointer"
+          className="hidden md:flex items-center justify-center w-11 h-11 rounded-full bg-[#0f3d2a] border border-[#d4af37]/40 shadow-md text-[#f0d27a] hover:text-[#06140e] hover:bg-[#d4af37] hover:border-[#d4af37] active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 ml-1.5 z-10 cursor-pointer"
           aria-label="Scroll right"
         >
           <ChevronRight className="w-4 h-4" />

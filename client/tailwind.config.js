@@ -27,6 +27,18 @@ export default {
           DEFAULT: '#FF5A26',
           soft: '#FF7A45',
         },
+        // Emerald & gold customer palette (mirrors :root vars in src/index.css)
+        'emerald-deep': '#06140e',
+        'emerald-mid': '#0f3d2a',
+        'emerald-light': '#1f6b4a',
+        gold: '#d4af37',
+        'gold-soft': '#f0d27a',
+        cream: '#f5efe0',
+        ember: '#c8442b',
+      },
+      fontFamily: {
+        display: ['"Playfair Display"', 'Georgia', '"Times New Roman"', 'serif'],
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       transitionTimingFunction: {
         'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',

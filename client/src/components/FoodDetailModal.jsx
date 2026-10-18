@@ -698,23 +698,23 @@ export default function FoodDetailModal({
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-950/85 backdrop-blur-xl fdm-backdrop ${isClosing ? 'fdm-backdrop-out' : ''}`}
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#06140e]/90 backdrop-blur-xl fdm-backdrop ${isClosing ? 'fdm-backdrop-out' : ''}`}
       onClick={handleClose}
     >
       {/* Modal Container: Modern Dark Glassmorphic Bistro Card */}
       <div
-        className={`fdm-sheet w-full sm:max-w-xl md:max-w-2xl max-h-[92vh] sm:max-h-[90vh] bg-stone-900/95 backdrop-blur-2xl border border-white/10 sm:rounded-3xl rounded-t-3xl shadow-2xl shadow-black/80 flex flex-col overflow-hidden text-stone-100 relative fdm-frame ${isClosing ? 'fdm-frame-out' : ''}`}
+        className={`fdm-sheet w-full sm:max-w-xl md:max-w-2xl max-h-[92vh] sm:max-h-[90vh] bg-[#0f3d2a] border border-[#d4af37]/25 sm:rounded-3xl rounded-t-3xl shadow-2xl shadow-black/80 flex flex-col overflow-hidden text-[#f5efe0] relative fdm-frame ${isClosing ? 'fdm-frame-out' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Ambient Top Glow */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-48 bg-[#FF5A26]/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="fdm-glow absolute inset-x-0 -top-10 h-56 pointer-events-none" aria-hidden="true" />
 
         {/* ------------------------------------------------------------------
             1. Sticky Top Bar: Category, Dietary Badges, Controls
            ------------------------------------------------------------------ */}
-        <div className="relative flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/10 bg-stone-900/90 backdrop-blur-md z-30 fdm-d1">
+        <div className="relative flex items-center justify-between px-4 sm:px-5 py-3 border-b border-[#d4af37]/25 bg-[#06140e]/70 backdrop-blur-md z-30 fdm-d1">
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-[#FF5A26]/15 text-[#FF7A45] border border-[#FF5A26]/30">
+            <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-[#d4af37]/15 text-[#f0d27a] border border-[#d4af37]/30">
               {dish.category || 'Specialty'}
             </span>
 
@@ -735,10 +735,10 @@ export default function FoodDetailModal({
             <button
               type="button"
               onClick={() => setIsLiked(!isLiked)}
-              className={`p-2 rounded-full transition-all border border-white/5 active:scale-90 ${
+              className={`p-2 rounded-full transition-all border border-[#d4af37]/20 active:scale-90 ${
                 isLiked 
                   ? 'text-rose-500 bg-rose-500/20 border-rose-500/30 shadow-lg shadow-rose-500/20 scale-105' 
-                  : 'text-stone-400 hover:text-white bg-stone-800/80 hover:bg-stone-700/80'
+                  : 'text-[#f0d27a]/80 hover:text-[#f0d27a] bg-[#06140e]/70 hover:bg-[#1f6b4a]/60'
               }`}
               title="Save favorite"
             >
@@ -749,7 +749,7 @@ export default function FoodDetailModal({
             <button
               type="button"
               onClick={handleClose}
-              className="p-2 text-stone-400 hover:text-white bg-stone-800/80 hover:bg-stone-700/80 rounded-full transition-all border border-white/5 active:scale-95"
+              className="p-2 text-[#f0d27a]/80 hover:text-[#f0d27a] bg-[#06140e]/70 hover:bg-[#1f6b4a]/60 rounded-full transition-all border border-[#d4af37]/20 active:scale-95"
               aria-label="Close food detail modal"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
@@ -760,7 +760,7 @@ export default function FoodDetailModal({
         {/* ------------------------------------------------------------------
             Scrollable Body
            ------------------------------------------------------------------ */}
-        <div className="flex-1 overflow-y-auto divide-y divide-white/5 scrollbar-thin scrollbar-thumb-stone-700/60">
+        <div className="flex-1 overflow-y-auto divide-y divide-[#d4af37]/15 scrollbar-thin scrollbar-thumb-stone-700/60">
           
           {/* ----------------------------------------------------------------
               2. SEPARATED MULTIMEDIA SECTION: PHOTOS VS KITCHEN REEL
@@ -768,9 +768,9 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               2. MULTI-PHOTO SLIDER WITH TOUCH SWIPE & THUMBNAILS (ON TOP)
              ---------------------------------------------------------------- */}
-          <div className="relative bg-black select-none fdm-hero">
+          <div className="relative bg-[#06140e] select-none fdm-hero">
             <div
-              className="relative mx-3 mt-3 sm:mx-4 sm:mt-4 aspect-[16/10] sm:aspect-[16/9] max-h-[34vh] sm:max-h-[300px] overflow-hidden rounded-2xl ring-1 ring-white/10 shadow-lg shadow-black/50 bg-stone-950 flex items-center justify-center touch-pan-y"
+              className="relative mx-3 mt-3 sm:mx-4 sm:mt-4 aspect-[16/10] sm:aspect-[16/9] max-h-[34vh] sm:max-h-[300px] overflow-hidden rounded-2xl ring-1 ring-[#d4af37]/30 shadow-lg shadow-black/50 bg-[#06140e] flex items-center justify-center touch-pan-y"
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -792,9 +792,9 @@ export default function FoodDetailModal({
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${
                           selectedImageIndex === idx
-                            ? 'bg-[#FF5A26] shadow-xs shadow-[#FF5A26]/50 w-full'
+                            ? 'bg-[#d4af37] shadow-xs shadow-[#d4af37]/50 w-full'
                             : selectedImageIndex > idx
-                              ? 'bg-[#FF5A26]/75 w-full'
+                              ? 'bg-[#d4af37]/75 w-full'
                               : 'w-0'
                         }`}
                       />
@@ -805,8 +805,8 @@ export default function FoodDetailModal({
 
               {/* Floating Photo Counter Badge */}
               <div className="absolute top-5 sm:top-6 right-3 sm:right-4 z-20 pointer-events-none">
-                <span className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-[#FF7A45] bg-stone-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#FF5A26]/30 shadow-lg">
-                  <ImageIcon className="w-3 h-3 text-[#FF5A26]" />
+                <span className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-[#f0d27a] bg-stone-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#d4af37]/30 shadow-lg">
+                  <ImageIcon className="w-3 h-3 text-[#d4af37]" />
                   <span>Slide {selectedImageIndex + 1} of {photos.length}</span>
                 </span>
               </div>
@@ -828,7 +828,7 @@ export default function FoodDetailModal({
                   <button
                     type="button"
                     onClick={handlePrevPhoto}
-                    className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-stone-950/75 hover:bg-black text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
+                    className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#06140e]/75 hover:bg-[#06140e] text-[#f5efe0] backdrop-blur-md border border-[#d4af37]/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
                     aria-label="Previous photo"
                     title="Previous photo (Left arrow)"
                   >
@@ -838,7 +838,7 @@ export default function FoodDetailModal({
                   <button
                     type="button"
                     onClick={handleNextPhoto}
-                    className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-stone-950/75 hover:bg-black text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
+                    className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#06140e]/75 hover:bg-[#06140e] text-[#f5efe0] backdrop-blur-md border border-[#d4af37]/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
                     aria-label="Next photo"
                     title="Next photo (Right arrow)"
                   >
@@ -866,7 +866,7 @@ export default function FoodDetailModal({
                         }}
                         className={`relative w-12 h-9 sm:w-16 sm:h-11 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer shrink-0 ${
                           selectedImageIndex === idx
-                            ? 'border-[#FF5A26] scale-105 shadow-md shadow-[#FF5A26]/40 opacity-100 ring-2 ring-[#FF7A45]/50'
+                            ? 'border-[#d4af37] scale-105 shadow-md shadow-[#d4af37]/40 opacity-100 ring-2 ring-[#f0d27a]/50'
                             : 'border-white/20 opacity-60 hover:opacity-100 hover:scale-102'
                         }`}
                         aria-label={`Jump to photo ${idx + 1}`}
@@ -889,7 +889,7 @@ export default function FoodDetailModal({
           <div className="p-4 sm:p-5 space-y-2.5 fdm-d3">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
+                <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-[#f5efe0] tracking-tight leading-tight">
                   {dish.name || dish.title}
                 </h2>
                 <div className="flex flex-wrap items-center gap-2 mt-1.5">
@@ -901,18 +901,18 @@ export default function FoodDetailModal({
                       const el = document.getElementById('reviews-section');
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="flex items-center gap-1.5 bg-[#FF5A26]/15 hover:bg-[#FF5A26]/25 border border-[#FF5A26]/35 px-2.5 py-1 rounded-xl text-[#FF7A45] text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                    className="flex items-center gap-1.5 bg-[#d4af37]/15 hover:bg-[#d4af37]/25 border border-[#d4af37]/35 px-2.5 py-1 rounded-xl text-[#f0d27a] text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
                     title="Click to view reviews or write a comment"
                   >
-                    <Star className="w-3.5 h-3.5 fill-current text-[#FF7A45]" />
+                    <Star className="w-3.5 h-3.5 fill-current text-[#f0d27a]" />
                     <span>{averageRating} / 5</span>
                     <span className="text-stone-300 font-normal">({combinedReviews.length} ratings)</span>
-                    <span className="text-[#FF5A26] text-[11px] underline ml-1 font-semibold">✍️ Review</span>
+                    <span className="text-[#d4af37] text-[11px] underline ml-1 font-semibold">✍️ Review</span>
                   </button>
 
                   {dish.prepTime && (
                     <div className="flex items-center gap-1 text-xs text-stone-400 font-medium bg-stone-800/60 px-2 py-0.5 rounded-lg border border-white/5">
-                      <Clock className="w-3.5 h-3.5 text-[#FF7A45]" />
+                      <Clock className="w-3.5 h-3.5 text-[#f0d27a]" />
                       <span>{dish.prepTime}</span>
                     </div>
                   )}
@@ -921,10 +921,10 @@ export default function FoodDetailModal({
 
               {/* Price */}
               <div className="text-right shrink-0">
-                <span className="text-2xl sm:text-3xl font-black text-[#FF5A26] tracking-tight font-sans flame-text-glow">
+                <span className="text-2xl sm:text-3xl font-serif font-semibold text-[#d4af37] tracking-tight">
                   {currency}{priceNum.toFixed(2)}
                 </span>
-                <span className="block text-[10px] text-stone-400 uppercase font-semibold">
+                <span className="block text-[10px] text-[#f0d27a]/70 uppercase font-semibold tracking-widest">
                   Taxes Included
                 </span>
               </div>
@@ -940,7 +940,7 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               4. Ingredients Profile
              ---------------------------------------------------------------- */}
-          <div className="p-4 sm:p-5 space-y-2.5 bg-stone-900/60 fdm-d4">
+          <div className="p-4 sm:p-5 space-y-2.5 bg-[#0a2a1c] border-t border-[#d4af37]/20 fdm-d4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-stone-300 flex items-center justify-between">
               <span>Fresh Ingredients Profile</span>
               <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
@@ -952,7 +952,7 @@ export default function FoodDetailModal({
               {ingredients.map((ing, i) => (
                 <span
                   key={i}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-stone-800/90 text-stone-200 border border-stone-700/60 rounded-xl font-medium shadow-xs"
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-[#1f6b4a]/40 text-[#f5efe0] border border-[#d4af37]/25 rounded-xl font-medium"
                 >
                   <span className="text-sm">{getIngredientIcon(ing)}</span>
                   <span>{ing}</span>
@@ -964,10 +964,10 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               DEDICATED CHEF'S KITCHEN REEL IN SCROLLABLE BODY
              ---------------------------------------------------------------- */}
-          <div className="p-4 sm:p-5 space-y-3 bg-stone-950/70 border-t border-white/5 fdm-d5">
+          <div className="p-4 sm:p-5 space-y-3 bg-[#06140e] border-t border-[#d4af37]/20 fdm-d5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 flex items-center justify-center text-[#FF5A26]">
+                <div className="w-8 h-8 rounded-xl bg-[#d4af37]/15 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37]">
                   <ChefHat className="w-4 h-4" />
                 </div>
                 <div>
@@ -983,8 +983,8 @@ export default function FoodDetailModal({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FF5A26]/15 text-[#FF7A45] border border-[#FF5A26]/30 text-xs font-bold shadow-xs">
-                <Video className="w-3.5 h-3.5 text-[#FF5A26]" />
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#d4af37]/15 text-[#f0d27a] border border-[#d4af37]/30 text-xs font-bold shadow-xs">
+                <Video className="w-3.5 h-3.5 text-[#d4af37]" />
                 <span>Kitchen Reel</span>
               </div>
             </div>
@@ -1005,7 +1005,7 @@ export default function FoodDetailModal({
               {/* Center Play/Pause Flash */}
               {showBodyPlayOverlay && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/35 animate-fadeOut">
-                  <div className="w-14 h-14 rounded-full bg-black/80 backdrop-blur-md flex items-center justify-center text-white border border-white/20 scale-110 transition-transform">
+                  <div className="w-14 h-14 rounded-full bg-[#06140e]/80 backdrop-blur-md flex items-center justify-center text-[#f5efe0] border border-[#d4af37]/40 scale-110 transition-transform">
                     {isBodyVideoPlaying ? <Play className="w-7 h-7 fill-current translate-x-0.5" /> : <Pause className="w-7 h-7 fill-current" />}
                   </div>
                 </div>
@@ -1017,7 +1017,7 @@ export default function FoodDetailModal({
                   onClick={toggleBodyVideoPlay}
                   className="absolute inset-0 bg-black/45 backdrop-blur-2xs flex items-center justify-center cursor-pointer"
                 >
-                  <div className="w-14 h-14 rounded-full flame-gradient-btn text-white flex items-center justify-center shadow-xl shadow-[#FF5A26]/50 hover:scale-110 active:scale-95 transition-transform ring-2 ring-[#FF7A45]/40">
+                  <div className="w-14 h-14 rounded-full fdm-gold-btn flex items-center justify-center shadow-xl shadow-[#d4af37]/50 hover:scale-110 active:scale-95 transition-transform ring-2 ring-[#f0d27a]/40">
                     <Play className="w-6 h-6 fill-current translate-x-0.5" />
                   </div>
                 </div>
@@ -1028,7 +1028,7 @@ export default function FoodDetailModal({
                 <button
                   type="button"
                   onClick={toggleBodyVideoPlay}
-                  className="p-1.5 rounded-lg bg-stone-900/80 hover:bg-stone-800 text-white border border-white/10 cursor-pointer active:scale-90"
+                  className="p-1.5 rounded-lg bg-[#06140e]/80 hover:bg-[#1f6b4a]/60 text-[#f5efe0] border border-[#d4af37]/25 cursor-pointer active:scale-90"
                   aria-label={isBodyVideoPlaying ? 'Pause video' : 'Play video'}
                 >
                   {isBodyVideoPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
@@ -1041,7 +1041,7 @@ export default function FoodDetailModal({
                   max="100"
                   value={bodyVideoProgress}
                   onChange={handleBodyVideoSeek}
-                  className="flex-1 h-1.5 rounded-lg appearance-none bg-white/25 accent-[#FF5A26] cursor-pointer"
+                  className="flex-1 h-1.5 rounded-lg appearance-none bg-white/25 accent-[#d4af37] cursor-pointer"
                   aria-label="Seek video"
                 />
 
@@ -1052,7 +1052,7 @@ export default function FoodDetailModal({
                 <button
                   type="button"
                   onClick={toggleBodyVideoMute}
-                  className="p-1.5 rounded-lg bg-stone-900/80 hover:bg-stone-800 text-white border border-white/10 cursor-pointer active:scale-90"
+                  className="p-1.5 rounded-lg bg-[#06140e]/80 hover:bg-[#1f6b4a]/60 text-[#f5efe0] border border-[#d4af37]/25 cursor-pointer active:scale-90"
                   aria-label={isBodyVideoMuted ? 'Unmute' : 'Mute'}
                 >
                   {isBodyVideoMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
@@ -1061,7 +1061,7 @@ export default function FoodDetailModal({
                 <button
                   type="button"
                   onClick={toggleBodyFullscreen}
-                  className="p-1.5 rounded-lg bg-stone-900/80 hover:bg-stone-800 text-white border border-white/10 cursor-pointer active:scale-90"
+                  className="p-1.5 rounded-lg bg-[#06140e]/80 hover:bg-[#1f6b4a]/60 text-[#f5efe0] border border-[#d4af37]/25 cursor-pointer active:scale-90"
                   aria-label="Fullscreen"
                   title="Fullscreen"
                 >
@@ -1074,8 +1074,8 @@ export default function FoodDetailModal({
             <div className="grid grid-cols-3 gap-2 pt-1">
               <div className="p-2 rounded-xl bg-stone-900/80 border border-white/5 text-center">
                 <span className="block text-[10px] text-stone-400 uppercase font-semibold">Prep Time</span>
-                <span className="text-xs font-bold text-[#FF7A45] flex items-center justify-center gap-1 mt-0.5">
-                  <Clock className="w-3 h-3 text-[#FF5A26]" />
+                <span className="text-xs font-bold text-[#f0d27a] flex items-center justify-center gap-1 mt-0.5">
+                  <Clock className="w-3 h-3 text-[#d4af37]" />
                   {dish.prepTime || '10-15 min'}
                 </span>
               </div>
@@ -1088,8 +1088,8 @@ export default function FoodDetailModal({
               </div>
               <div className="p-2 rounded-xl bg-stone-900/80 border border-white/5 text-center">
                 <span className="block text-[10px] text-stone-400 uppercase font-semibold">Quality</span>
-                <span className="text-xs font-bold text-[#FF7A45] flex items-center justify-center gap-1 mt-0.5">
-                  <ShieldCheck className="w-3 h-3 text-[#FF5A26]" />
+                <span className="text-xs font-bold text-[#f0d27a] flex items-center justify-center gap-1 mt-0.5">
+                  <ShieldCheck className="w-3 h-3 text-[#d4af37]" />
                   100% Artisan
                 </span>
               </div>
@@ -1099,11 +1099,11 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               5. Chef Customization & Voice Notes
              ---------------------------------------------------------------- */}
-          <div className="p-4 sm:p-5 space-y-3 bg-stone-900/40 fdm-d5">
+          <div className="p-4 sm:p-5 space-y-3 bg-[#0f3d2a] border-t border-[#d4af37]/20 fdm-d5">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-stone-300 flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-[#FF5A26]" />
+                  <MessageSquare className="w-3.5 h-3.5 text-[#d4af37]" />
                   <span>Chef Customization Notes</span>
                 </h3>
                 <p className="text-[11px] text-stone-400">Add allergies, temperature, or preferences</p>
@@ -1115,7 +1115,7 @@ export default function FoodDetailModal({
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all border shadow-xs cursor-pointer ${
                   showVoiceRecorder
                     ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                    : 'bg-[#FF5A26]/15 text-[#FF7A45] border-[#FF5A26]/30 hover:bg-[#FF5A26]/25'
+                    : 'bg-[#d4af37]/15 text-[#f0d27a] border-[#d4af37]/30 hover:bg-[#d4af37]/25'
                 }`}
               >
                 <Mic className="w-3.5 h-3.5" />
@@ -1146,8 +1146,8 @@ export default function FoodDetailModal({
                     }}
                     className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all active:scale-95 cursor-pointer ${
                       isSelected
-                        ? 'bg-[#FF5A26]/20 text-[#FF7A45] border-[#FF5A26]/40 shadow-xs'
-                        : 'bg-stone-800/80 hover:bg-stone-700/80 text-stone-300 border-stone-700/60'
+                        ? 'bg-[#d4af37]/20 text-[#f0d27a] border-[#d4af37]/40 shadow-xs'
+                        : 'bg-[#06140e]/70 hover:bg-[#1f6b4a]/60 text-stone-300 border-stone-700/60'
                     }`}
                   >
                     + {chip}
@@ -1161,7 +1161,7 @@ export default function FoodDetailModal({
               value={customNote}
               onChange={(e) => setCustomNote(e.target.value)}
               placeholder="e.g. Please put dressing on the side..."
-              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-stone-800/90 border border-stone-700/80 rounded-xl text-white placeholder-stone-500 focus:outline-none focus:border-[#FF5A26] focus:ring-1 focus:ring-[#FF5A26]/40 transition"
+              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-[#06140e] border border-[#d4af37]/30 rounded-xl text-[#f5efe0] placeholder-[#f5efe0]/40 focus:outline-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/40 transition"
             />
 
             {showVoiceRecorder && (
@@ -1179,23 +1179,23 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               6. INTERACTIVE REVIEWS & LEAVE A COMMENT SECTION
              ---------------------------------------------------------------- */}
-          <div id="reviews-section" className="p-4 sm:p-5 space-y-4 bg-stone-900/80 scroll-mt-4 fdm-d6">
+          <div id="reviews-section" className="p-4 sm:p-5 space-y-4 bg-[#06140e] border-t border-[#d4af37]/20 scroll-mt-4 fdm-d6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/10">
               <div>
                 <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-stone-200 flex items-center gap-1.5">
-                  <Star className="w-4 h-4 text-[#FF7A45] fill-current" />
+                  <Star className="w-4 h-4 text-[#f0d27a] fill-current" />
                   <span>Diner Reviews &amp; Comments</span>
                 </h3>
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="flex items-center text-[#FF7A45]">
+                  <div className="flex items-center text-[#f0d27a]">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
-                        className={`w-3.5 h-3.5 ${star <= Math.round(Number(averageRating)) ? 'fill-current text-[#FF7A45]' : 'text-stone-600'}`}
+                        className={`w-3.5 h-3.5 ${star <= Math.round(Number(averageRating)) ? 'fill-current text-[#f0d27a]' : 'text-stone-600'}`}
                       />
                     ))}
                   </div>
-                  <span className="text-xs font-bold text-[#FF7A45] font-mono">{averageRating} / 5</span>
+                  <span className="text-xs font-bold text-[#f0d27a] font-mono">{averageRating} / 5</span>
                   <span className="text-[11px] text-stone-400">• {combinedReviews.length} verified ratings</span>
                 </div>
               </div>
@@ -1204,7 +1204,7 @@ export default function FoodDetailModal({
               <button
                 type="button"
                 onClick={() => setIsReviewFormOpen(!isReviewFormOpen)}
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl flame-gradient-btn active:scale-95 text-white text-xs font-black shadow-md shadow-[#FF5A26]/30 transition-all cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl fdm-gold-btn active:scale-95 text-xs font-black shadow-md shadow-[#d4af37]/30 transition-all cursor-pointer"
               >
                 <span>{isReviewFormOpen ? '✖ Close Form' : '✍️ Write Review / Leave a Comment'}</span>
               </button>
@@ -1220,7 +1220,7 @@ export default function FoodDetailModal({
 
             {/* EXPANDABLE REVIEW / COMMENT FORM */}
             {isReviewFormOpen && (
-              <form onSubmit={handleSubmitReview} className="p-4 sm:p-5 bg-stone-800/90 rounded-2xl border border-[#FF5A26]/35 space-y-3.5 animate-fadeIn shadow-xl">
+              <form onSubmit={handleSubmitReview} className="p-4 sm:p-5 bg-stone-800/90 rounded-2xl border border-[#d4af37]/35 space-y-3.5 animate-fadeIn shadow-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-stone-700/60">
                   <span className="text-xs font-bold text-stone-200 uppercase tracking-wide">
                     Rate Your Experience:
@@ -1228,7 +1228,7 @@ export default function FoodDetailModal({
                   
                   {/* Interactive Star Rating Selector (Hover & Tap) */}
                   <div 
-                    className="flex items-center gap-1 text-[#FF7A45]"
+                    className="flex items-center gap-1 text-[#f0d27a]"
                     onMouseLeave={() => setHoverRating(0)}
                   >
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -1244,13 +1244,13 @@ export default function FoodDetailModal({
                         <Star 
                           className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors ${
                             star <= (hoverRating || reviewRating)
-                              ? 'fill-current text-[#FF5A26] drop-shadow-[0_0_8px_rgba(255,90,38,0.6)]'
+                              ? 'fill-current text-[#d4af37] drop-shadow-[0_0_8px_rgba(255,90,38,0.6)]'
                               : 'text-stone-600 hover:text-stone-400'
                           }`} 
                         />
                       </button>
                     ))}
-                    <span className="ml-2 text-xs sm:text-sm font-extrabold text-[#FF7A45] font-mono">
+                    <span className="ml-2 text-xs sm:text-sm font-extrabold text-[#f0d27a] font-mono">
                       {(hoverRating || reviewRating)}.0
                     </span>
                   </div>
@@ -1266,7 +1266,7 @@ export default function FoodDetailModal({
                     value={reviewAuthor}
                     onChange={(e) => setReviewAuthor(e.target.value)}
                     placeholder="e.g. Table 01 Diner"
-                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-stone-900 border border-stone-700 rounded-xl text-white placeholder-stone-500 focus:outline-none focus:border-[#FF5A26] focus:ring-1 focus:ring-[#FF5A26]/40 transition"
+                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-[#06140e] border border-[#d4af37]/30 rounded-xl text-[#f5efe0] placeholder-[#f5efe0]/40 focus:outline-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/40 transition"
                   />
                 </div>
 
@@ -1306,7 +1306,7 @@ export default function FoodDetailModal({
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
                     placeholder="What did you love most about this dish? Taste, texture, aroma, presentation..."
-                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-stone-900 border border-stone-700 rounded-xl text-white placeholder-stone-500 focus:outline-none focus:border-[#FF5A26] focus:ring-1 focus:ring-[#FF5A26]/40 transition resize-none"
+                    className="w-full px-3.5 py-2 text-xs sm:text-sm bg-[#06140e] border border-[#d4af37]/30 rounded-xl text-[#f5efe0] placeholder-[#f5efe0]/40 focus:outline-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/40 transition resize-none"
                     required
                   />
                 </div>
@@ -1316,14 +1316,14 @@ export default function FoodDetailModal({
                   <button
                     type="button"
                     onClick={() => setIsReviewFormOpen(false)}
-                    className="px-3.5 py-1.5 rounded-xl border border-stone-700 text-stone-400 hover:text-white text-xs font-semibold cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-xl border border-[#d4af37]/30 text-[#f0d27a]/80 hover:text-[#f0d27a] text-xs font-semibold cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingReview || !reviewComment.trim()}
-                    className="px-4 py-2 rounded-xl flame-gradient-btn active:scale-95 text-white text-xs font-black shadow-md shadow-[#FF5A26]/30 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-xl fdm-gold-btn active:scale-95 text-xs font-black shadow-md shadow-[#d4af37]/30 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>{isSubmittingReview ? 'Publishing...' : 'Publish Review'}</span>
@@ -1341,7 +1341,7 @@ export default function FoodDetailModal({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#FF5A26] to-[#FF7A45] flex items-center justify-center text-white font-black text-xs shadow-xs uppercase">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#d4af37] to-[#f0d27a] flex items-center justify-center text-white font-black text-xs shadow-xs uppercase">
                         {(rev.author || 'D').charAt(0)}
                       </div>
                       <div>
@@ -1382,26 +1382,26 @@ export default function FoodDetailModal({
         {/* ------------------------------------------------------------------
             7. Prominent Sticky Bottom Bar
            ------------------------------------------------------------------ */}
-        <div className="fdm-footer p-3.5 sm:p-4 bg-stone-900/95 backdrop-blur-xl border-t border-white/10 flex items-center gap-3 z-30 shadow-2xl fdm-d6">
+        <div className="fdm-footer p-3.5 sm:p-4 bg-[#06140e]/95 backdrop-blur-xl border-t border-[#d4af37]/35 flex items-center gap-3 z-30 shadow-2xl fdm-d6">
           {/* Stepper */}
-          <div className="flex items-center bg-stone-800/90 border border-stone-700/80 rounded-xl p-1 shrink-0">
+          <div className="flex items-center bg-[#0f3d2a] border border-[#d4af37]/30 rounded-xl p-1 shrink-0">
             <button
               type="button"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-white hover:bg-stone-700/70 transition-all active:scale-90 cursor-pointer"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-[#f0d27a] hover:text-[#f5efe0] hover:bg-[#1f6b4a]/60 transition-all active:scale-90 cursor-pointer"
               aria-label="Decrease quantity"
             >
               <Minus className="w-3.5 h-3.5" />
             </button>
 
-            <span className="w-8 text-center font-black text-white text-sm sm:text-base">
+            <span className="w-8 text-center font-black text-[#f5efe0] text-sm sm:text-base">
               {quantity}
             </span>
 
             <button
               type="button"
               onClick={() => setQuantity(quantity + 1)}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-white hover:bg-stone-700/70 transition-all active:scale-90 cursor-pointer"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-[#f0d27a] hover:text-[#f5efe0] hover:bg-[#1f6b4a]/60 transition-all active:scale-90 cursor-pointer"
               aria-label="Increase quantity"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -1412,10 +1412,10 @@ export default function FoodDetailModal({
           <button
             type="button"
             onClick={handleConfirmAdd}
-            className={`fdm-cta flex-1 flex items-center justify-center gap-2 py-3 px-4 font-black text-white rounded-xl shadow-xl transition-all cursor-pointer text-sm sm:text-base ${
+            className={`fdm-cta flex-1 flex items-center justify-center gap-2 py-3 px-4 font-black rounded-xl shadow-xl transition-all cursor-pointer text-sm sm:text-base ${
               isAddedAnimation
-                ? 'bg-emerald-500 scale-95 shadow-emerald-500/50'
-                : 'flame-gradient-btn shadow-[#FF5A26]/40 active:scale-[0.98]'
+                ? 'bg-[#1f6b4a] text-[#f5efe0] scale-95 shadow-emerald-900/50'
+                : 'fdm-gold-btn active:scale-[0.98]'
             }`}
           >
             <ShoppingBag className={`w-4 h-4 ${isAddedAnimation ? 'animate-bounce' : ''}`} />

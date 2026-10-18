@@ -104,6 +104,21 @@ function AppRouter() {
   });
 
   const [isDockOpen, setIsDockOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Hide the role dock while any overlay (food detail, cart drawer, table/success modal)
+  // is open. Those overlays are rendered by pages, so we detect them from the DOM.
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    const OVERLAY_SELECTOR = '[role="dialog"][aria-modal="true"], .fixed.inset-0.z-50';
+    const check = () => {
+      setIsModalOpen(!!document.querySelector(OVERLAY_SELECTOR));
+    };
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
 
   // Synchronize on browser history popstate (Back/Forward buttons)
   useEffect(() => {
@@ -197,20 +212,20 @@ function AppRouter() {
           QUICK ROLE-SWITCHING FLOATING DOCK (Hidden during print)
           Enables instant jump across Customer, KDS, Waiter, Admin, and QR codes
           ========================================================================= */}
-      <div className="no-print fixed bottom-4 right-4 z-50 flex flex-col items-end pointer-events-none">
-        
+      <div className={`no-print fixed bottom-4 left-4 z-50 ${isModalOpen ? 'hidden' : 'flex'} flex-col items-start pointer-events-none`}>
+
         {/* Expanded Navigation Drawer */}
         {isDockOpen && (
-          <div className="mb-2 bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-2xl border border-neutral-200/90 w-64 pointer-events-auto transform transition-all animate-scaleUp">
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-100">
-              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-neutral-500">
-                <Compass className="w-3.5 h-3.5 text-amber-500" />
+          <div className="mb-2 bg-[#06140e]/95 backdrop-blur-md rounded-2xl p-3 shadow-2xl border border-[#d4af37]/60 w-64 pointer-events-auto transform transition-all animate-scaleUp">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#d4af37]/20">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#f0d27a]">
+                <Compass className="w-3.5 h-3.5 text-[#d4af37]" />
                 <span>Role Switcher</span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsDockOpen(false)}
-                className="text-neutral-400 hover:text-neutral-700 p-1 rounded-lg"
+                className="text-[#f5efe0]/60 hover:text-[#f0d27a] p-1 rounded-lg"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -229,18 +244,18 @@ function AppRouter() {
                       navigate(item.path);
                       setIsDockOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer border ${
                       isActive
-                        ? 'bg-neutral-900 text-white shadow-xs'
-                        : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border border-neutral-200/50'
+                        ? 'bg-[#0f3d2a] text-[#f5efe0] border-[#d4af37]/70'
+                        : 'bg-[#0f3d2a]/30 hover:bg-[#1f6b4a]/40 text-[#f5efe0]/85 border-[#1f6b4a]/50'
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-400' : 'text-neutral-500'}`} />
+                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#f0d27a]' : 'text-[#d4af37]/80'}`} />
                       <span>{item.label}</span>
                     </div>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-neutral-200/70 text-neutral-600'
+                      isActive ? 'bg-[#d4af37]/20 text-[#f0d27a]' : 'bg-[#06140e] text-[#f5efe0]/60'
                     }`}>
                       {item.badge}
                     </span>
@@ -255,15 +270,15 @@ function AppRouter() {
         <button
           type="button"
           onClick={() => setIsDockOpen(prev => !prev)}
-          className="pointer-events-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-neutral-900/90 hover:bg-neutral-900 text-white shadow-xl backdrop-blur-md border border-neutral-700 text-xs font-bold transition-all active:scale-95 cursor-pointer hover:shadow-neutral-900/30"
+          className="pointer-events-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#06140e]/90 hover:bg-[#0f3d2a]/90 text-[#f5efe0] shadow-xl shadow-black/40 backdrop-blur-md border border-[#d4af37] text-xs font-semibold tracking-wide transition-all active:scale-95 cursor-pointer"
           title="Quick switch between Customer, Kitchen, Waiter, and Admin views"
         >
-          <Compass className="w-4 h-4 text-amber-400 animate-spin-slow" />
-          <span className="hidden sm:inline">Switch Role</span>
+          <Compass className="w-4 h-4 text-[#d4af37] animate-spin-slow" />
+          <span className="hidden sm:inline text-[#f0d27a]">Switch Role</span>
           {isDockOpen ? (
-            <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
+            <ChevronDown className="w-3.5 h-3.5 text-[#d4af37]" />
           ) : (
-            <ChevronUp className="w-3.5 h-3.5 text-neutral-400" />
+            <ChevronUp className="w-3.5 h-3.5 text-[#d4af37]" />
           )}
         </button>
 

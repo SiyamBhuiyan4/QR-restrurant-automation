@@ -715,65 +715,43 @@ export default function MenuItemCard({
         onClick={() => onSelectDish && onSelectDish(item)}
         style={{ '--card-i': Math.min(Math.max(Number(index) || 0, 0), 10) }}
         className={`group menu-card relative flex flex-col justify-between overflow-hidden cursor-pointer ${
-          !isAvailable ? 'opacity-65 menu-card--unavailable' : ''
+          !isAvailable ? 'menu-card--unavailable' : ''
         }`}
       >
         <div>
-          {/* Image frame: fixed 16/10 so cards never jump */}
-          <div className="menu-card__media">
-            {item.image && !imageError ? (
-              <img
-                src={item.image}
-                alt={dishTitle}
-                onError={() => setImageError(true)}
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-zinc-400 p-2 select-none">
-                <UtensilsCrossed className="w-5 h-5 stroke-[1.8] text-[#FF5A26] mb-1" />
-                <span className="text-[11px] font-bold text-zinc-300 text-center line-clamp-1">
-                  {dishTitle}
-                </span>
-              </div>
-            )}
-
-            {/* Subtle Gradient Vignette */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/25 pointer-events-none" />
-
-            {/* Top-Left Dietary Badges */}
-            <div className="absolute top-1.5 sm:top-2 left-1.5 sm:left-2 flex flex-wrap gap-1 z-10">
+          {/* Top row: dietary tags (left) and media tags (right), kept clear of the circular photo */}
+          <div className="menu-card__top">
+            <div className="flex flex-wrap gap-1 min-w-0">
               {isVeg && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-emerald-950/85 text-emerald-300 border border-emerald-500/40 backdrop-blur-md shadow-2xs">
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-[#06140e]/90 text-[#f0d27a] border border-[#d4af37]/50">
                   <Leaf className="w-2.5 h-2.5 fill-current" />
                   Veg
                 </span>
               )}
               {isSpicy && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-rose-950/85 text-rose-300 border border-rose-500/40 backdrop-blur-md shadow-2xs">
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-[#c8442b]/25 text-[#f5efe0] border border-[#c8442b]/70">
                   <Flame className="w-2.5 h-2.5 fill-current" />
                   Spicy
                 </span>
               )}
               {item.isPopular && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-[#FF5A26]/20 text-[#FF7A45] border border-[#FF5A26]/40 backdrop-blur-md shadow-2xs">
-                  <Sparkles className="w-2.5 h-2.5 text-[#FF5A26]" />
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-[#d4af37] text-[#06140e]">
+                  <Sparkles className="w-2.5 h-2.5" />
                   Popular
                 </span>
               )}
             </div>
-
-            {/* Top-Right Media Badges (📸 {photoCount}, 🎥 Reel) */}
-            <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 flex items-center gap-1 z-10">
-              <span 
-                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-black/75 text-zinc-300 border border-zinc-700/60 backdrop-blur-md shadow-2xs" 
+            <div className="flex items-center gap-1 shrink-0">
+              <span
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-[#06140e]/90 text-[#f5efe0] border border-[#f5efe0]/20"
                 title={`Photo Gallery (${photoCount} Photos)`}
               >
-                <ImageIcon className="w-2.5 h-2.5 text-[#FF7A45]" />
+                <ImageIcon className="w-2.5 h-2.5 text-[#f0d27a]" />
                 <span>{photoCount}</span>
               </span>
               {(hasVideo || item.makingVideoUrl !== undefined) && (
-                <span 
-                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-[#FF5A26] text-white backdrop-blur-md shadow-2xs" 
+                <span
+                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-[#c8442b] text-[#f5efe0]"
                   title="Kitchen Making Video Reel"
                 >
                   <Video className="w-2.5 h-2.5 fill-current" />
@@ -781,72 +759,88 @@ export default function MenuItemCard({
                 </span>
               )}
             </div>
-
-            {/* Bottom-Left: Rating Badge (⭐ 4.9) & Prep Time */}
-            <div className="absolute bottom-1.5 sm:bottom-2 left-1.5 sm:left-2 flex items-center gap-1 z-10">
-              <span className="inline-flex items-center gap-0.5 px-1.5 sm:px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-extrabold bg-black/80 text-amber-300 backdrop-blur-md border border-white/15 shadow-2xs">
-                <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-amber-400 text-amber-400" />
-                <span>{item.rating || '4.9'}</span>
-              </span>
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-medium bg-black/75 text-zinc-300 backdrop-blur-md border border-white/10 shadow-2xs">
-                <Clock className="w-2.5 h-2.5 text-[#FF7A45]" />
-                <span>{item.prepTime || '10 min'}</span>
-              </span>
-            </div>
-
-            {/* Out of Stock Overlay */}
-            {!isAvailable && (
-              <div className="absolute inset-0 bg-neutral-950/75 backdrop-blur-xs flex items-center justify-center z-20">
-                <span className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-extrabold text-[10px] sm:text-[11px] uppercase tracking-wider shadow-md">
-                  Sold Out
-                </span>
-              </div>
-            )}
           </div>
 
-          {/* Compact Dish Details */}
-          <div className="p-2.5 sm:p-3">
-            <h3 className="menu-card__title font-extrabold text-white text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-[#FF7A45] transition-colors tracking-tight mb-0.5">
+          {/* Circular photo frame with a warm gold glow */}
+          <div className="menu-card__media">
+            <div className="menu-card__halo" aria-hidden="true" />
+            <div className="menu-card__photo">
+              {item.image && !imageError ? (
+                <img
+                  src={item.image}
+                  alt={dishTitle}
+                  onError={() => setImageError(true)}
+                  loading="lazy"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-[#0f3d2a] text-[#f5efe0] p-3 select-none">
+                  <UtensilsCrossed className="w-5 h-5 stroke-[1.8] text-[#f0d27a] mb-1" />
+                  <span className="text-[11px] font-semibold text-center line-clamp-1">
+                    {dishTitle}
+                  </span>
+                </div>
+              )}
+              <div className="menu-card__vignette" />
+
+              {!isAvailable && (
+                <div className="absolute inset-0 bg-[#06140e]/80 flex items-center justify-center">
+                  <span className="px-2.5 py-1 rounded-full bg-[#c8442b] text-[#f5efe0] font-extrabold text-[10px] sm:text-[11px] uppercase tracking-wider">
+                    Sold Out
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Dish details */}
+          <div className="menu-card__body">
+            <h3 className="menu-card__title line-clamp-1 mb-0.5">
               {dishTitle}
             </h3>
 
             {dishDesc && (
-              <p className="menu-card__desc text-[10px] sm:text-xs text-zinc-400 line-clamp-1 sm:line-clamp-2 leading-relaxed font-normal mb-1">
+              <p className="menu-card__desc text-[10px] sm:text-xs text-[#f5efe0]/65 line-clamp-1 sm:line-clamp-2 leading-relaxed mb-1">
                 {dishDesc}
               </p>
             )}
+
+            <div className="flex items-center gap-1.5 mt-1 mb-0.5">
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-extrabold bg-[#06140e]/80 text-[#f0d27a] border border-[#d4af37]/35">
+                <Star className="w-2.5 h-2.5 fill-[#d4af37] text-[#d4af37]" />
+                <span>{item.rating || '4.9'}</span>
+              </span>
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium text-[#f5efe0]/75 border border-[#f5efe0]/15">
+                <Clock className="w-2.5 h-2.5 text-[#f0d27a]" />
+                <span>{item.prepTime || '10 min'}</span>
+              </span>
+            </div>
 
             {/* Existing custom note tag */}
             {itemNote && (
               <div
                 onClick={openNoteModal}
-                className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-[#FF7A45] text-[10px] font-medium cursor-pointer transition truncate max-w-full"
+                className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#06140e]/70 border border-[#d4af37]/30 text-[#f0d27a] text-[10px] font-medium cursor-pointer truncate max-w-full"
                 title="Edit note"
               >
-                <MessageSquare className="w-2.5 h-2.5 text-[#FF5A26] shrink-0" />
+                <MessageSquare className="w-2.5 h-2.5 text-[#d4af37] shrink-0" />
                 <span className="truncate">"{itemNote}"</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Footer: crisp price badge, note, and Order / quantity controls */}
-        <div className="px-2.5 sm:px-3 pb-2.5 sm:pb-3 pt-2 flex items-center justify-between gap-1.5 border-t border-white/5 mt-auto">
-          <span className="menu-card__price text-xs sm:text-sm md:text-base font-black">
+        {/* Footer: gold price, chef note and Order / quantity controls */}
+        <div className="menu-card__foot">
+          <span className="menu-card__price">
             {formattedPrice}
           </span>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {/* Note Button */}
             {isAvailable && (
               <button
                 type="button"
                 onClick={openNoteModal}
-                className={`menu-tap inline-flex items-center justify-center p-1.5 rounded-lg border text-xs transition cursor-pointer ${
-                  itemNote
-                    ? 'bg-[#FF5A26]/20 border-[#FF5A26] text-[#FF7A45]'
-                    : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-700/60 text-zinc-300 hover:text-white'
-                }`}
+                className={`menu-tap menu-note-btn ${itemNote ? 'menu-note-btn--active' : ''}`}
                 title="Add chef note"
                 aria-label="Add chef note"
               >
@@ -854,9 +848,8 @@ export default function MenuItemCard({
               </button>
             )}
 
-            {/* Order button OR quantity stepper */}
             {!isAvailable ? (
-              <span className="text-[10px] font-bold text-zinc-500 uppercase">
+              <span className="text-[10px] font-bold text-[#e0715a] uppercase">
                 Unavailable
               </span>
             ) : cartQuantity > 0 ? (
@@ -864,18 +857,18 @@ export default function MenuItemCard({
                 <button
                   type="button"
                   onClick={handleDecrement}
-                  className="menu-tap w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer font-bold"
+                  className="menu-tap w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
                   aria-label="Decrease quantity"
                 >
                   <Minus className="w-3 h-3 stroke-[2.5]" />
                 </button>
-                <span className="min-w-[1.5rem] text-center font-black text-xs select-none tabular-nums">
+                <span className="min-w-[1.5rem] text-center font-black text-xs select-none tabular-nums text-[#f5efe0]">
                   {cartQuantity}
                 </span>
                 <button
                   type="button"
                   onClick={handleIncrement}
-                  className="menu-tap w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer font-bold"
+                  className="menu-tap w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
                   aria-label="Increase quantity"
                 >
                   <Plus className="w-3 h-3 stroke-[2.5]" />

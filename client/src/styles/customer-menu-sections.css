@@ -1,0 +1,82 @@
+/* Customer menu sections (below the hero): emerald & gold theme.
+   Palette: bg #06140e, emerald #0f3d2a, emerald-light #1f6b4a, gold #d4af37,
+   gold-soft #f0d27a, cream #f5efe0, ember #c8442b. */
+
+/* ---------- Showcase rows: alternating image / text ----------------------- */
+.cm-showcase > div {
+  gap: clamp(1.75rem, 4vw, 3.5rem);
+  padding-top: 2.25rem;
+  padding-bottom: 2.25rem;
+  border-color: rgba(31, 107, 74, 0.35);
+}
+
+/* Plate column: a larger, framed photo instead of a small floating disc */
+.cm-showcase > div > div:nth-child(2) {
+  width: min(100%, 22rem);
+  height: auto;
+  aspect-ratio: 4 / 5;
+  margin-inline: auto;
+}
+
+.cm-showcase .menu-orbit-frame {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 1.5rem;
+  border-color: rgba(212, 175, 55, 0.35);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+/* Text column: takes the remaining width so the row no longer has a dead middle */
+.cm-showcase > div > div:nth-child(3) {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+}
+
+.cm-showcase h3 {
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #f5efe0;
+}
+
+@media (min-width: 768px) {
+  .cm-showcase > div {
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .cm-showcase > div > div:nth-child(2) {
+    width: 46%;
+    max-width: 30rem;
+  }
+}
+
+/* ---------- Section reveal on entry (CSS only) ---------------------------- */
+/* Content is never hidden: the animation only exists where scroll-driven
+   animations are supported, and is skipped for reduced-motion users. */
+@keyframes cm-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 32px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .cm-reveal {
+      animation: cm-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cm-reveal {
+    animation: none !important;
+  }
+}

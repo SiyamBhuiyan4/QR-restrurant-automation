@@ -160,14 +160,37 @@
   animation: fdmRise 0.55s var(--fdm-ease-out) 1.36s both;
 }
 
+/* ---- Warm radial glow behind the photo area (emerald + gold) ----------- */
+.fdm-glow {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(212, 175, 55, 0.22) 0%, rgba(212, 175, 55, 0) 60%),
+    radial-gradient(ellipse at 50% 30%, rgba(31, 107, 74, 0.35) 0%, rgba(31, 107, 74, 0) 70%);
+  filter: blur(6px);
+}
+
+/* ---- Gold CTA: gold-to-soft-gold fill, dark label, gold glow ----------- */
+.fdm-gold-btn {
+  color: #06140e;
+  font-weight: 800;
+  background-image: linear-gradient(135deg, #d4af37 0%, #f0d27a 100%);
+  box-shadow: 0 6px 20px -6px rgba(212, 175, 55, 0.55);
+}
+
+.fdm-gold-btn:hover {
+  filter: brightness(1.05);
+}
+
 /* ---- Sticky footer: clears the iOS home indicator ---------------------- */
+/* Footer is an in-flow flex row at the bottom of the sheet (never overlaid),
+   so the CTA sits above the home indicator via the safe-area inset. The
+   1rem floor keeps it clear when env() is 0 (no viewport-fit=cover). */
 .fdm-footer {
-  padding-bottom: calc(0.875rem + var(--fdm-safe-bottom));
+  padding-bottom: max(0.875rem, calc(0.5rem + var(--fdm-safe-bottom))) !important;
 }
 
 @media (min-width: 640px) {
   .fdm-footer {
-    padding-bottom: 1rem;
+    padding-bottom: 1rem !important;
   }
 }
 

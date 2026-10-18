@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   Emerald & Gold design tokens (customer site)
+   Mirrored as Tailwind colors in tailwind.config.js (emerald-deep, emerald-mid,
+   emerald-light, gold, gold-soft, cream, ember) and fonts (font-display, font-sans).
+   ========================================================================== */
+:root {
+  --color-bg: #06140e;
+  --color-emerald-deep: #06140e;
+  --color-emerald-mid: #0f3d2a;
+  --color-emerald-light: #1f6b4a;
+  --color-gold: #d4af37;
+  --color-gold-soft: #f0d27a;
+  --color-cream: #f5efe0;
+  --color-ember: #c8442b;
+
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-body: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -13,15 +32,21 @@
   html {
     @apply antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background-color: #0a0a0c !important;
-    color: #f4f4f5 !important;
+    background-color: var(--color-bg) !important;
+    color: var(--color-cream) !important;
   }
 
   body {
-    @apply text-stone-100 antialiased min-h-screen;
+    @apply antialiased min-h-screen;
+    font-family: var(--font-body);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     background-color: transparent !important;
-    color: #f4f4f5 !important;
+    color: var(--color-cream) !important;
+  }
+
+  /* Serif display face for headings */
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
   }
 
   /* Optimize touch target responsiveness on mobile */
@@ -63,21 +88,21 @@
   /* Keyboard focus: outline kept for forced-colors mode, with a soft eased halo.
      Transition only runs when focus-visible is entered or left. */
   :focus-visible {
-    outline: 2px solid rgba(255, 122, 69, 0.9);
+    outline: 2px solid rgba(212, 175, 55, 0.9);
     outline-offset: 2px;
     border-radius: 6px;
-    box-shadow: 0 0 0 4px rgba(255, 90, 38, 0.18);
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.18);
     transition: outline-offset 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease-out;
   }
 
   ::selection {
-    background: rgba(255, 90, 38, 0.45);
-    color: #ffffff;
+    background: rgba(212, 175, 55, 0.4);
+    color: var(--color-cream);
   }
 
   ::-moz-selection {
-    background: rgba(255, 90, 38, 0.45);
-    color: #ffffff;
+    background: rgba(212, 175, 55, 0.4);
+    color: var(--color-cream);
   }
 
   button:disabled,
@@ -566,7 +591,7 @@
 
 /* ==========================================================================
    Global Ambient Background (CSS-only, fixed, behind content)
-   Warm flame-orange blobs drifting slowly over the near-black base.
+   Emerald and gold blobs drifting slowly over the deep emerald-black base.
    Transform/opacity only; never intercepts pointer events.
    ========================================================================== */
 .app-ambient {
@@ -575,7 +600,7 @@
   z-index: -10;
   overflow: hidden;
   pointer-events: none;
-  background: #0a0a0c;
+  background: #06140e;
   contain: strict;
 }
 
@@ -592,7 +617,7 @@
   height: 60vmax;
   top: -22vmax;
   left: -18vmax;
-  background: radial-gradient(circle, rgba(255, 90, 38, 0.3) 0%, rgba(255, 90, 38, 0) 65%);
+  background: radial-gradient(circle, rgba(31, 107, 74, 0.5) 0%, rgba(31, 107, 74, 0) 65%);
   animation: ambientDrift1 34s ease-in-out infinite;
 }
 
@@ -601,7 +626,7 @@
   height: 55vmax;
   bottom: -20vmax;
   right: -16vmax;
-  background: radial-gradient(circle, rgba(255, 122, 69, 0.24) 0%, rgba(255, 122, 69, 0) 65%);
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.18) 0%, rgba(212, 175, 55, 0) 65%);
   animation: ambientDrift2 40s ease-in-out infinite;
 }
 
@@ -610,7 +635,7 @@
   height: 38vmax;
   top: 40%;
   left: 45%;
-  background: radial-gradient(circle, rgba(255, 60, 20, 0.08) 0%, rgba(255, 60, 20, 0) 70%);
+  background: radial-gradient(circle, rgba(240, 210, 122, 0.07) 0%, rgba(240, 210, 122, 0) 70%);
   animation: ambientPulseSlow 26s ease-in-out infinite;
 }
 
@@ -620,9 +645,9 @@
   position: absolute;
   inset: -10% 0 -10% 0;
   background-image:
-    radial-gradient(circle, rgba(255, 140, 90, 0.9) 0 1.5px, transparent 2.5px),
-    radial-gradient(circle, rgba(255, 90, 38, 0.8) 0 1px, transparent 2px),
-    radial-gradient(circle, rgba(255, 180, 130, 0.7) 0 1px, transparent 2px);
+    radial-gradient(circle, rgba(240, 210, 122, 0.9) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle, rgba(212, 175, 55, 0.8) 0 1px, transparent 2px),
+    radial-gradient(circle, rgba(245, 239, 224, 0.6) 0 1px, transparent 2px);
   background-size: 140px 180px, 230px 260px, 310px 220px;
   background-position: 0 0, 60px 100px, 150px 40px;
   opacity: 0.55;
@@ -639,7 +664,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, rgba(10, 10, 12, 0) 45%, rgba(10, 10, 12, 0.55) 100%);
+  background: radial-gradient(ellipse at center, rgba(6, 20, 14, 0) 45%, rgba(6, 20, 14, 0.6) 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {
