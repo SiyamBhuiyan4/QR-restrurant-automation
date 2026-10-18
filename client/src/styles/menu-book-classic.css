@@ -1,0 +1,166 @@
+/*
+ * Classic printed-menu look for the book pages:
+ * textured dark paper, a decorative gold frame, centred category headings and
+ * dotted leaders running from each dish name to its price.
+ */
+
+.mb-root {
+  --mbc-paper: #0f2f22;
+  --mbc-ink: #f5efe0;
+  --mbc-gold: #d4af37;
+  --mbc-gold-soft: #f0d27a;
+}
+
+/* ---------- Paper texture and decorative frame ---------- */
+.mb-root .mb-page {
+  background-color: var(--mbc-paper);
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(212, 175, 55, 0.07) 0%, transparent 55%),
+    radial-gradient(circle at 85% 85%, rgba(212, 175, 55, 0.05) 0%, transparent 55%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.05) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px 3px);
+}
+
+/* Double keyline border framing the whole page, the way a printed menu is set.
+   ::after on the page is used by the fold shading, so the frame lives on ::before. */
+.mb-root .mb-page {
+  position: relative;
+}
+
+.mb-root .mb-page::before {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  pointer-events: none;
+  z-index: 1;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  box-shadow: inset 0 0 0 5px transparent, inset 0 0 0 6px rgba(212, 175, 55, 0.2);
+}
+
+.mb-root .mb-sheet {
+  position: relative;
+  z-index: 2;
+  padding: 12px 10px;
+}
+
+/* ---------- Category heading ---------- */
+.mb-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mb-heading__rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.75), transparent);
+}
+
+.mb-heading__title {
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: clamp(1rem, 2.2vw, 1.35rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mbc-gold);
+  white-space: nowrap;
+  margin: 0;
+}
+
+/* ---------- Dish entry with a dotted leader ---------- */
+.mb-entry {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--mbc-ink);
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.mb-entry:hover,
+.mb-entry:focus-visible {
+  background-color: rgba(212, 175, 55, 0.1);
+}
+
+.mb-entry:hover .mb-entry__name {
+  color: var(--mbc-gold-soft);
+}
+
+.mb-entry__thumb {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: rgba(212, 175, 55, 0.12);
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.35);
+}
+
+.mb-entry__count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--mbc-gold);
+  color: #06140e;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mb-entry__name {
+  flex: none;
+  max-width: 62%;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The leader fills the gap, so the price always sits flush right */
+.mb-entry__leader {
+  flex: 1 1 auto;
+  min-width: 14px;
+  height: 1em;
+  margin: 0 2px;
+  background-image: radial-gradient(circle, rgba(245, 239, 224, 0.45) 1px, transparent 1px);
+  background-size: 6px 6px;
+  background-position: 0 bottom 0.35em;
+  background-repeat: repeat-x;
+}
+
+.mb-entry__price {
+  flex: none;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 1rem;
+  color: var(--mbc-gold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Light theme: cream paper with dark ink ---------- */
+html[data-theme="light"] .mb-root {
+  --mbc-paper: #f3ead6;
+  --mbc-ink: #2a2015;
+  --mbc-gold: #7a5f10;
+  --mbc-gold-soft: #5d4708;
+}
+
+html[data-theme="light"] .mb-root .mb-entry__leader {
+  background-image: radial-gradient(circle, rgba(42, 32, 21, 0.45) 1px, transparent 1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mb-entry { transition: none; }
+}

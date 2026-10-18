@@ -7,6 +7,7 @@ import '../../styles/menu-book-flip.css';
 import '../../styles/menu-book-depth.css';
 import '../../styles/menu-book-responsive.css';
 import '../../styles/menu-book-a11y.css';
+import '../../styles/menu-book-classic.css';
 
 const PAPER = 'bg-[#0f2f22] text-[#f5efe0]';
 
@@ -87,11 +88,15 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
       );
     } else if (page.type === 'items') {
       content = (
-        <div className="flex flex-col gap-2">
-          <h2 className="font-serif text-xl text-[#d4af37] border-b border-[#d4af37]/50 pb-1">
-            {page.sectionTitle}
-          </h2>
-          <ul className="flex flex-col gap-2">
+        <div className="mb-sheet flex flex-col gap-5">
+          {/* Classic menu heading with decorative rules on either side */}
+          <header className="mb-heading">
+            <span className="mb-heading__rule" aria-hidden="true" />
+            <h2 className="mb-heading__title">{page.sectionTitle}</h2>
+            <span className="mb-heading__rule" aria-hidden="true" />
+          </header>
+
+          <ul className="flex flex-col gap-1">
             {page.items.map((item) => {
               const inCart = cart?.[item.id]?.quantity ?? 0;
               const img = dishImage(item);
@@ -100,24 +105,18 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
                   <button
                     type="button"
                     onClick={() => handleSelectItem(item)}
-                    className="w-full min-h-[44px] flex items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-[#f1e7cf] active:bg-[#ead9b0] transition-colors"
+                    className="mb-entry"
                   >
-                    <span className="relative shrink-0 w-12 h-12 rounded-md overflow-hidden bg-[#e6dcc4]">
+                    <span className="mb-entry__thumb">
                       {img ? (
                         <img src={img} alt="" loading="lazy" className="w-full h-full object-cover" />
                       ) : null}
-                      {inCart > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[#d4af37] text-[#064e3b] text-xs font-bold flex items-center justify-center">
-                          {inCart}
-                        </span>
-                      )}
+                      {inCart > 0 && <span className="mb-entry__count">{inCart}</span>}
                     </span>
-                    <span className="flex-1 min-w-0">
-                      <span className="block font-medium truncate">{item.name}</span>
-                    </span>
-                    <span className="shrink-0 font-semibold text-[#8a6d1d]">
-                      {formatPrice(item.price)}
-                    </span>
+                    <span className="mb-entry__name">{item.name}</span>
+                    {/* Dotted leader linking the dish to its price, as on a printed menu */}
+                    <span className="mb-entry__leader" aria-hidden="true" />
+                    <span className="mb-entry__price">{formatPrice(item.price)}</span>
                   </button>
                 </li>
               );
