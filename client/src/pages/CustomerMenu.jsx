@@ -1232,7 +1232,7 @@ export default function CustomerMenu({
   };
 
   return (
-    <div className="min-h-screen bg-[#021424] text-slate-100 pb-32 selection:bg-[#0284c7] selection:text-white relative">
+    <div className="min-h-screen bg-transparent text-slate-100 pb-32 selection:bg-[#0284c7] selection:text-white relative">
       {/* =====================================================================
           Serene River Mirror & Sky Reflection Water Background (Interactive Ripple Waves)
          ===================================================================== */}
