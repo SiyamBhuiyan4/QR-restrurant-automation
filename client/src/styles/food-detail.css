@@ -15,10 +15,17 @@
 
 /* ---- Sheet height: use dynamic viewport on phones so browser chrome
         never pushes the footer off-screen ------------------------------- */
+/* The backdrop keeps a 5rem gap at the bottom on phones so the sheet
+   (and its Add to Order footer) sits above the floating status bar. */
+@media (max-width: 639px) {
+  .fdm-frame.fdm-sheet {
+    max-height: calc(100vh - 6rem);
+  }
+}
 @supports (height: 100dvh) {
   @media (max-width: 639px) {
     .fdm-frame.fdm-sheet {
-      max-height: 92dvh;
+      max-height: calc(100dvh - 6rem);
     }
   }
 }
@@ -232,4 +239,53 @@
     transition: none !important;
     transform: none !important;
   }
+}
+
+/* ---- Light theme: lift low-contrast accents on the cream sheet ---------- */
+html[data-theme="light"] .fdm-sheet [class*="text-emerald-"] {
+  color: #0b6b47 !important;
+}
+
+html[data-theme="light"] .fdm-sheet [class*="text-rose-"] {
+  color: #a3293f !important;
+}
+
+html[data-theme="light"] .fdm-sheet [class*="text-[#f0d27a]"],
+html[data-theme="light"] .fdm-sheet [class*="text-[#d4af37]"] {
+  color: #7a5a10 !important;
+}
+
+html[data-theme="light"] .fdm-sheet .fdm-chef-badge {
+  background-color: rgba(11, 107, 71, 0.12) !important;
+  border-color: rgba(11, 107, 71, 0.35) !important;
+}
+
+html[data-theme="light"] .fdm-sheet .fdm-live-badge {
+  background-color: rgba(163, 41, 63, 0.12) !important;
+  border-color: rgba(163, 41, 63, 0.35) !important;
+}
+
+html[data-theme="light"] .fdm-sheet .fdm-stepper-btn:disabled {
+  color: #9a8a5a !important;
+}
+
+/* ---- Call Waiter modal: keep the green header legible in light theme ---- */
+html[data-theme="light"] .cw-header,
+html[data-theme="light"] .cw-header h2,
+html[data-theme="light"] .cw-header span {
+  color: #f5efe0 !important;
+}
+
+html[data-theme="light"] .cw-header [class*="text-[#f0d27a]"],
+html[data-theme="light"] .cw-header svg {
+  color: #f0d27a !important;
+}
+
+html[data-theme="light"] .cw-modal [class*="text-[#f0d27a]"] {
+  color: #7a5a10 !important;
+}
+
+html[data-theme="light"] .cw-header button[aria-label="Close"] {
+  background-color: #0f3d2a !important;
+  border-color: rgba(212, 175, 55, 0.6) !important;
 }

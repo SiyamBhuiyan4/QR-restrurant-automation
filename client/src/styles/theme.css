@@ -113,7 +113,35 @@ html[data-theme="light"] [class*="text-emerald-deep"] {
 html[data-theme="light"] [class*="text-[#f0d27a"],
 html[data-theme="light"] [class*="text-[#d4af37"],
 html[data-theme="light"] [class*="text-gold"] {
-  color: #8a6d16;
+  color: #7a5f10;
+}
+/* Warm ember text (offline icon) darkened for cream background */
+html[data-theme="light"] [class*="text-[#c8442b"] {
+  color: #a8371f;
+}
+
+/* Hero "Taste" and "World" use gradient-clipped gold text (a light gold gradient
+   that is invisible-ish on cream). Use solid deep gold in light mode. */
+html[data-theme="light"] .wp-hero .wp-gold-text {
+  background-image: none;
+  color: #7a5f10;
+}
+
+/* Category pills: the selected pill's sliding indicator is a dark emerald gradient
+   behind emerald label text (invisible in light mode). Make it a light gold fill. */
+html[data-theme="light"] [class*="bg-gradient-to-r"][class*="from-[#1f6b4a"][class*="to-[#0f3d2a"] {
+  background-image: linear-gradient(90deg, #f0d27a, #d4af37);
+}
+
+/* Desktop nav links: pale cream/75 text is remapped to full deep emerald above.
+   Their hover class (hover:text-[#f0d27a]) must not trigger the Call Waiter rule
+   below, so the hover state is handled explicitly here. */
+html[data-theme="light"] nav a[class*="text-[#f5efe0"] {
+  color: #0f3d2a;
+}
+html[data-theme="light"] nav a[class*="hover:text-[#f0d27a"]:hover {
+  color: #0f3d2a;
+  background-color: rgba(212, 175, 55, 0.22);
 }
 html[data-theme="light"] [class*="text-white/"],
 html[data-theme="light"] [class*="text-zinc-"],
@@ -143,10 +171,10 @@ html[data-theme="light"] [class*="ring-white"] {
 }
 
 /* Call Waiter "called" state: mid-emerald fill keeps a light label */
-html[data-theme="light"] [class*="bg-[#1f6b4a"][class*="text-[#f5efe0"] {
+html[data-theme="light"] [class*="bg-[#1f6b4a"]:not([class*="hover:bg-[#1f6b4a"])[class*="text-[#f5efe0"] {
   color: #ffffff;
 }
-html[data-theme="light"] [class*="bg-[#1f6b4a"][class*="text-[#f0d27a"] {
+html[data-theme="light"] [class*="bg-[#1f6b4a"]:not([class*="hover:bg-[#1f6b4a"])[class*="text-[#f0d27a"] {
   color: #f0d27a;
 }
 

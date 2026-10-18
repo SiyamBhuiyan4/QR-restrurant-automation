@@ -276,15 +276,15 @@ export default function CallWaiterModal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#06140e]/80 backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none ${entered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 pb-20 sm:p-4 bg-[#06140e]/80 backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none ${entered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className={`w-full max-w-md max-h-[92dvh] overflow-y-auto overflow-x-hidden overscroll-contain bg-[#0f3d2a] rounded-t-[28px] sm:rounded-3xl shadow-2xl shadow-black/70 border border-[#d4af37]/30 sm:border-[#d4af37]/40 text-[#f5efe0] transform transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:transform-none ${entered ? 'translate-y-0 sm:scale-100 opacity-100' : 'translate-y-8 sm:translate-y-0 sm:scale-95 opacity-0'}`}
+        className={`cw-modal w-full max-w-md max-h-[calc(92dvh-5rem)] sm:max-h-[92dvh] overflow-y-auto overflow-x-hidden overscroll-contain bg-[#0f3d2a] rounded-t-[28px] sm:rounded-3xl shadow-2xl shadow-black/70 border border-[#d4af37]/30 sm:border-[#d4af37]/40 text-[#f5efe0] transform transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:transform-none ${entered ? 'translate-y-0 sm:scale-100 opacity-100' : 'translate-y-8 sm:translate-y-0 sm:scale-95 opacity-0'}`}
       >
         {/* Header Bar */}
-        <div className="bg-[linear-gradient(135deg,#1f6b4a,#0f3d2a)] border-b border-[#d4af37]/40 p-5 text-[#f5efe0] relative shadow-lg shadow-black/40">
+        <div className="cw-header bg-[linear-gradient(135deg,#1f6b4a,#0f3d2a)] border-b border-[#d4af37]/40 p-5 text-[#f5efe0] relative shadow-lg shadow-black/40">
           <button
             type="button"
             onClick={handleDismiss}

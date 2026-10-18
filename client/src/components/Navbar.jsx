@@ -234,7 +234,7 @@ export default function Navbar({
                   <>
                     <BellRing className="w-4 h-4 text-[#06140e]" />
                     <span className="hidden sm:inline">Call Waiter</span>
-                    <span className="sm:hidden">Waiter</span>
+                    <span className="hidden min-[400px]:inline sm:hidden">Waiter</span>
                   </>
                 )}
               </button>

@@ -27,15 +27,16 @@ export default function MenuBookOverview({ page = 1, sections = [], onGoToSectio
   };
 
   const pageStyle = {
-    backgroundColor: PAPER,
+    backgroundColor: 'transparent',
     color: INK,
-    padding: '24px',
+    padding: 0,
+    width: '100%',
     boxSizing: 'border-box',
   };
 
   const hairline = { height: '1px', backgroundColor: GOLD, opacity: 0.6 };
 
-  const shell = 'relative flex flex-col w-full h-full min-h-[560px] md:w-[360px] md:h-[560px] md:min-h-0 md:mx-auto overflow-hidden rounded-lg shadow-2xl';
+  const shell = 'relative flex flex-col w-full h-full min-h-[460px] md:min-h-[560px] overflow-hidden';
 
   if (page === 2) {
     const picks = safeSections

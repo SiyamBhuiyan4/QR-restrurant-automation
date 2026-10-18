@@ -698,7 +698,7 @@ export default function FoodDetailModal({
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#06140e]/90 backdrop-blur-xl fdm-backdrop ${isClosing ? 'fdm-backdrop-out' : ''}`}
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 pb-20 sm:p-4 bg-[#06140e]/90 backdrop-blur-xl fdm-backdrop ${isClosing ? 'fdm-backdrop-out' : ''}`}
       onClick={handleClose}
     >
       {/* Modal Container: Modern Dark Glassmorphic Bistro Card */}
@@ -735,7 +735,7 @@ export default function FoodDetailModal({
             <button
               type="button"
               onClick={() => setIsLiked(!isLiked)}
-              className={`p-2 rounded-full transition-all border border-[#d4af37]/20 active:scale-90 ${
+              className={`w-11 h-11 flex items-center justify-center rounded-full transition-all border border-[#d4af37]/20 active:scale-90 ${
                 isLiked 
                   ? 'text-rose-500 bg-rose-500/20 border-rose-500/30 shadow-lg shadow-rose-500/20 scale-105' 
                   : 'text-[#f0d27a]/80 hover:text-[#f0d27a] bg-[#06140e]/70 hover:bg-[#1f6b4a]/60'
@@ -749,7 +749,7 @@ export default function FoodDetailModal({
             <button
               type="button"
               onClick={handleClose}
-              className="p-2 text-[#f0d27a]/80 hover:text-[#f0d27a] bg-[#06140e]/70 hover:bg-[#1f6b4a]/60 rounded-full transition-all border border-[#d4af37]/20 active:scale-95"
+              className="w-11 h-11 flex items-center justify-center text-[#f0d27a]/80 hover:text-[#f0d27a] bg-[#06140e]/70 hover:bg-[#1f6b4a]/60 rounded-full transition-all border border-[#d4af37]/20 active:scale-95"
               aria-label="Close food detail modal"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
@@ -770,7 +770,7 @@ export default function FoodDetailModal({
              ---------------------------------------------------------------- */}
           <div className="relative bg-[#06140e] select-none fdm-hero">
             <div
-              className="relative mx-3 mt-3 sm:mx-4 sm:mt-4 aspect-[16/10] sm:aspect-[16/9] max-h-[34vh] sm:max-h-[300px] overflow-hidden rounded-2xl ring-1 ring-[#d4af37]/30 shadow-lg shadow-black/50 bg-[#06140e] flex items-center justify-center touch-pan-y"
+              className="relative mx-3 mt-3 sm:mx-4 sm:mt-4 aspect-[16/10] sm:aspect-auto sm:h-[300px] max-h-[34vh] sm:max-h-[300px] overflow-hidden rounded-2xl ring-1 ring-[#d4af37]/30 shadow-lg shadow-black/50 bg-[#06140e] flex items-center justify-center touch-pan-y"
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -943,7 +943,7 @@ export default function FoodDetailModal({
           <div className="p-4 sm:p-5 space-y-2.5 bg-[#0a2a1c] border-t border-[#d4af37]/20 fdm-d4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-stone-300 flex items-center justify-between">
               <span>Fresh Ingredients Profile</span>
-              <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <span className="fdm-chef-badge text-[11px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 normal-case tracking-normal whitespace-nowrap">
                 100% Chef Selected
               </span>
             </h3>
@@ -973,7 +973,7 @@ export default function FoodDetailModal({
                 <div>
                   <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white flex items-center gap-2">
                     <span>Chef&apos;s Kitchen Reel &amp; Cooking Secrets</span>
-                    <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.2 rounded-full border border-rose-500/30 uppercase font-bold">
+                    <span className="fdm-live-badge text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/30 uppercase font-bold whitespace-nowrap">
                       Live Reel
                     </span>
                   </h3>
@@ -983,7 +983,7 @@ export default function FoodDetailModal({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#d4af37]/15 text-[#f0d27a] border border-[#d4af37]/30 text-xs font-bold shadow-xs">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#d4af37]/15 text-[#f0d27a] border border-[#d4af37]/30 text-xs font-bold shadow-xs whitespace-nowrap shrink-0">
                 <Video className="w-3.5 h-3.5 text-[#d4af37]" />
                 <span>Kitchen Reel</span>
               </div>
@@ -1028,7 +1028,7 @@ export default function FoodDetailModal({
                 <button
                   type="button"
                   onClick={toggleBodyVideoPlay}
-                  className="p-1.5 rounded-lg bg-[#06140e]/80 hover:bg-[#1f6b4a]/60 text-[#f5efe0] border border-[#d4af37]/25 cursor-pointer active:scale-90"
+                  className="min-w-11 min-h-11 flex items-center justify-center p-1.5 rounded-lg bg-[#06140e]/80 hover:bg-[#1f6b4a]/60 text-[#f5efe0] border border-[#d4af37]/25 cursor-pointer active:scale-90"
                   aria-label={isBodyVideoPlaying ? 'Pause video' : 'Play video'}
                 >
                   {isBodyVideoPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
@@ -1052,7 +1052,7 @@ export default function FoodDetailModal({
                 <button
                   type="button"
                   onClick={toggleBodyVideoMute}
-                  className="p-1.5 rounded-lg bg-[#06140e]/80 hover:bg-[#1f6b4a]/60 text-[#f5efe0] border border-[#d4af37]/25 cursor-pointer active:scale-90"
+                  className="min-w-11 min-h-11 flex items-center justify-center p-1.5 rounded-lg bg-[#06140e]/80 hover:bg-[#1f6b4a]/60 text-[#f5efe0] border border-[#d4af37]/25 cursor-pointer active:scale-90"
                   aria-label={isBodyVideoMuted ? 'Unmute' : 'Mute'}
                 >
                   {isBodyVideoMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
@@ -1061,7 +1061,7 @@ export default function FoodDetailModal({
                 <button
                   type="button"
                   onClick={toggleBodyFullscreen}
-                  className="p-1.5 rounded-lg bg-[#06140e]/80 hover:bg-[#1f6b4a]/60 text-[#f5efe0] border border-[#d4af37]/25 cursor-pointer active:scale-90"
+                  className="min-w-11 min-h-11 flex items-center justify-center p-1.5 rounded-lg bg-[#06140e]/80 hover:bg-[#1f6b4a]/60 text-[#f5efe0] border border-[#d4af37]/25 cursor-pointer active:scale-90"
                   aria-label="Fullscreen"
                   title="Fullscreen"
                 >
@@ -1112,7 +1112,7 @@ export default function FoodDetailModal({
               <button
                 type="button"
                 onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all border shadow-xs cursor-pointer ${
+                className={`min-h-11 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all border shadow-xs cursor-pointer ${
                   showVoiceRecorder
                     ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
                     : 'bg-[#d4af37]/15 text-[#f0d27a] border-[#d4af37]/30 hover:bg-[#d4af37]/25'
@@ -1144,7 +1144,7 @@ export default function FoodDetailModal({
                         setCustomNote((prev) => `${prev}${separator}${chip}`);
                       }
                     }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all active:scale-95 cursor-pointer ${
+                    className={`min-h-11 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all active:scale-95 cursor-pointer ${
                       isSelected
                         ? 'bg-[#d4af37]/20 text-[#f0d27a] border-[#d4af37]/40 shadow-xs'
                         : 'bg-[#06140e]/70 hover:bg-[#1f6b4a]/60 text-stone-300 border-stone-700/60'
@@ -1204,7 +1204,7 @@ export default function FoodDetailModal({
               <button
                 type="button"
                 onClick={() => setIsReviewFormOpen(!isReviewFormOpen)}
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl fdm-gold-btn active:scale-95 text-xs font-black shadow-md shadow-[#d4af37]/30 transition-all cursor-pointer"
+                className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl fdm-gold-btn active:scale-95 text-xs font-black shadow-md shadow-[#d4af37]/30 transition-all cursor-pointer"
               >
                 <span>{isReviewFormOpen ? '✖ Close Form' : '✍️ Write Review / Leave a Comment'}</span>
               </button>
@@ -1288,7 +1288,7 @@ export default function FoodDetailModal({
                           const separator = reviewComment.trim() ? ' ' : '';
                           setReviewComment((prev) => `${prev}${separator}${chip}`);
                         }}
-                        className="px-2.5 py-1 rounded-lg text-xs bg-stone-700/80 hover:bg-stone-600 text-stone-200 border border-stone-600/70 cursor-pointer active:scale-95 transition-all font-medium"
+                        className="min-h-11 px-2.5 py-1 rounded-lg text-xs bg-stone-700/80 hover:bg-stone-600 text-stone-200 border border-stone-600/70 cursor-pointer active:scale-95 transition-all font-medium"
                       >
                         + {chip}
                       </button>
@@ -1388,7 +1388,7 @@ export default function FoodDetailModal({
             <button
               type="button"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-[#f0d27a] hover:text-[#f5efe0] hover:bg-[#1f6b4a]/60 transition-all active:scale-90 cursor-pointer"
+              className="w-11 h-11 rounded-lg flex items-center justify-center text-[#f0d27a] hover:text-[#f5efe0] hover:bg-[#1f6b4a]/60 transition-all active:scale-90 cursor-pointer"
               aria-label="Decrease quantity"
             >
               <Minus className="w-3.5 h-3.5" />
@@ -1401,7 +1401,7 @@ export default function FoodDetailModal({
             <button
               type="button"
               onClick={() => setQuantity(quantity + 1)}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-[#f0d27a] hover:text-[#f5efe0] hover:bg-[#1f6b4a]/60 transition-all active:scale-90 cursor-pointer"
+              className="w-11 h-11 rounded-lg flex items-center justify-center text-[#f0d27a] hover:text-[#f5efe0] hover:bg-[#1f6b4a]/60 transition-all active:scale-90 cursor-pointer"
               aria-label="Increase quantity"
             >
               <Plus className="w-3.5 h-3.5" />

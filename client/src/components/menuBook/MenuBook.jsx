@@ -8,7 +8,7 @@ import '../../styles/menu-book-depth.css';
 import '../../styles/menu-book-responsive.css';
 import '../../styles/menu-book-a11y.css';
 
-const PAPER = 'bg-[#fbf7ee] text-[#1f2d25]';
+const PAPER = 'bg-[#0f2f22] text-[#f5efe0]';
 
 function dishImage(dish) {
   return dish?.image || dish?.imageUrl || dish?.img || null;
@@ -83,12 +83,12 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
       );
     } else if (page.type === 'overview') {
       content = (
-        <MenuBookOverview page={page} sections={sections} onGoToSection={goToSection} />
+        <MenuBookOverview page={page.index} sections={sections} onGoToSection={goToSection} />
       );
     } else if (page.type === 'items') {
       content = (
         <div className="flex flex-col gap-2">
-          <h2 className="font-serif text-xl text-[#0b4f3c] border-b border-[#d4af37] pb-1">
+          <h2 className="font-serif text-xl text-[#d4af37] border-b border-[#d4af37]/50 pb-1">
             {page.sectionTitle}
           </h2>
           <ul className="flex flex-col gap-2">
@@ -129,7 +129,7 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
 
     return (
       <section
-        className={`mb-page mb-page-${side} ${PAPER} relative flex flex-col min-h-[70vh] p-5 sm:p-6 rounded-md shadow-inner ${turning}`}
+        className={`mb-page mb-page-${side} ${PAPER} relative flex flex-col p-5 sm:p-6 shadow-inner ${turning}`}
         onAnimationEnd={turning ? (e) => { if (e.target === e.currentTarget) onFlipEnd?.(); } : undefined}
       >
         <div className="flex-1 overflow-y-auto">{content}</div>
@@ -146,13 +146,14 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
     <div className="mb-root w-full flex flex-col items-center gap-4 py-4 select-none">
       <div className="mb-book relative w-full max-w-5xl bg-[#064e3b] rounded-2xl p-2 sm:p-4 shadow-2xl border border-[#d4af37]/60">
         {/* Desktop: two pages. Phone: one page (CSS hides the other). */}
-        <div className="mb-stage relative grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 perspective-[2000px]">
+        <div className="mb-stage relative">
           <div className={`mb-spread mb-spread-left ${leftVisibility} md:block`}>
             {renderPage(spread.left, 'left')}
           </div>
           <div className={`mb-spread mb-spread-right ${rightVisibility} md:block`}>
             {renderPage(spread.right, 'right')}
           </div>
+          <div className="mb-spine" aria-hidden="true" />
 
           {/* Tap zones on page edges */}
           <button

@@ -1415,8 +1415,8 @@ export default function CustomerMenu({
               <span className="hidden sm:inline-block text-[11px] font-semibold">List</span>
             </button>
 
-            {/* Book view is hidden from customers until its layout is fixed (code kept) */}
-            {false && <button
+            {/* Book view: open-menu-book spread with page turns */}
+            <button
               type="button"
               onClick={() => setLayoutMode('book')}
               className={`min-h-11 min-w-11 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 ${
@@ -1425,10 +1425,11 @@ export default function CustomerMenu({
                   : 'text-[#f5efe0]/70 hover:text-[#f0d27a]'
               }`}
               title="Open menu book"
+              aria-label="Book view"
             >
               <BookOpen className="w-3.5 h-3.5" />
               <span className="hidden sm:inline-block text-[11px] font-semibold">Book</span>
-            </button>}
+            </button>
           </div>
         </div>
 

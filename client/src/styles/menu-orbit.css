@@ -600,7 +600,136 @@
 }
 
 .menu-card__desc {
-  min-height: 2.6em;
+  margin-bottom: 0.25rem;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: rgba(245, 239, 224, 0.72);
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .menu-card__desc {
+    font-size: 0.8125rem;
+  }
+}
+
+.menu-card__fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  background: #0f3d2a;
+  color: #f5efe0;
+}
+
+.menu-card__fallback-name {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Small pills: colours live here (not in utility classes) so the light theme does not remap them */
+.menu-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.125rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+@media (min-width: 640px) {
+  .menu-chip {
+    font-size: 0.6875rem;
+  }
+}
+
+.menu-chip--gold {
+  background: #06140e;
+  color: #f0d27a;
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
+.menu-chip--spicy {
+  background: rgba(200, 68, 43, 0.28);
+  color: #f5efe0;
+  border-color: rgba(200, 68, 43, 0.75);
+}
+
+.menu-chip--popular {
+  background: #d4af37;
+  color: #06140e;
+}
+
+.menu-chip--count {
+  background: #06140e;
+  color: #f5efe0;
+  border-color: rgba(245, 239, 224, 0.25);
+}
+
+.menu-chip--reel {
+  background: #c8442b;
+  color: #f5efe0;
+}
+
+.menu-chip--rating {
+  background: #06140e;
+  color: #f0d27a;
+  border-color: rgba(212, 175, 55, 0.4);
+  font-weight: 800;
+}
+
+.menu-chip--time {
+  color: rgba(245, 239, 224, 0.82);
+  border-color: rgba(245, 239, 224, 0.2);
+  font-weight: 500;
+}
+
+.menu-card__note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  max-width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  background: #06140e;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  color: #f0d27a;
+  font-size: 0.625rem;
+  font-weight: 500;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-card__unavailable {
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #e89a86;
+}
+
+.menu-card__count {
+  min-width: 1.25rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #f5efe0;
 }
 
 /* Footer: thin gold divider, gold price, actions */
@@ -608,9 +737,11 @@
   position: relative;
   z-index: 2;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.375rem;
+  row-gap: 0.375rem;
+  column-gap: 0.25rem;
   margin: 0.5rem 0.75rem 0;
   padding: 0.5rem 0 0.625rem;
   border-top: 1px solid rgba(212, 175, 55, 0.22);
@@ -628,8 +759,7 @@
   display: inline-flex;
   align-items: center;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex: 0 1 auto;
   white-space: nowrap;
   font-family: ui-serif, Georgia, 'Times New Roman', serif;
   font-size: 0.9375rem;
@@ -646,29 +776,15 @@
 }
 
 /* Tap-target helper: visual size stays compact, hit area is at least 44px */
-.menu-tap {
-  position: relative;
-  min-width: 2rem;
-  min-height: 2rem;
-}
-
-.menu-tap::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: max(100%, 44px);
-  height: max(100%, 44px);
-  transform: translate(-50%, -50%);
-}
 
 /* Chef note: gold outline circle */
 .menu-note-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
   border-radius: 9999px;
   border: 1px solid rgba(212, 175, 55, 0.55);
   background: transparent;
@@ -690,7 +806,7 @@
 .menu-order-btn {
   min-height: 44px;
   min-width: 44px;
-  padding: 0 0.9rem;
+  padding: 0 0.75rem;
   border-radius: 9999px;
   display: inline-flex;
   align-items: center;
@@ -730,16 +846,26 @@
   color: #f0d27a;
 }
 
-.menu-stepper button {
+.menu-stepper button,
+.menu-stepper__btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
   color: #f0d27a;
   transition: transform 140ms ease, background-color 160ms ease;
 }
 
 .menu-stepper button:active {
   transform: scale(0.86);
+}
+
+.menu-stepper__btn {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
 }
 
 .menu-stepper button:hover {

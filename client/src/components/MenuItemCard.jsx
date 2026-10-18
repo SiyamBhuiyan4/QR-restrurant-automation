@@ -649,19 +649,19 @@ export default function MenuItemCard({
           <div className="menu-card__top">
             <div className="flex flex-wrap gap-1 min-w-0">
               {isVeg && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-[#06140e]/90 text-[#f0d27a] border border-[#d4af37]/50">
+                <span className="menu-chip menu-chip--gold">
                   <Leaf className="w-2.5 h-2.5 fill-current" />
                   Veg
                 </span>
               )}
               {isSpicy && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-[#c8442b]/25 text-[#f5efe0] border border-[#c8442b]/70">
+                <span className="menu-chip menu-chip--spicy">
                   <Flame className="w-2.5 h-2.5 fill-current" />
                   Spicy
                 </span>
               )}
               {item.isPopular && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-[#d4af37] text-[#06140e]">
+                <span className="menu-chip menu-chip--popular">
                   <Sparkles className="w-2.5 h-2.5" />
                   Popular
                 </span>
@@ -669,7 +669,7 @@ export default function MenuItemCard({
             </div>
             <div className="flex items-center gap-1 shrink-0">
               <span
-                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-[#06140e]/90 text-[#f5efe0] border border-[#f5efe0]/20"
+                className="menu-chip menu-chip--count"
                 title={`Photo Gallery (${photoCount} Photos)`}
               >
                 <ImageIcon className="w-2.5 h-2.5 text-[#f0d27a]" />
@@ -677,7 +677,7 @@ export default function MenuItemCard({
               </span>
               {(hasVideo || item.makingVideoUrl !== undefined) && (
                 <span
-                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-[#c8442b] text-[#f5efe0]"
+                  className="menu-chip menu-chip--reel"
                   title="Kitchen Making Video Reel"
                 >
                   <Video className="w-2.5 h-2.5 fill-current" />
@@ -699,9 +699,9 @@ export default function MenuItemCard({
                   loading="lazy"
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-[#0f3d2a] text-[#f5efe0] p-3 select-none">
+                <div className="menu-card__fallback select-none">
                   <UtensilsCrossed className="w-5 h-5 stroke-[1.8] text-[#f0d27a] mb-1" />
-                  <span className="text-[11px] font-semibold text-center line-clamp-1">
+                  <span className="menu-card__fallback-name">
                     {dishTitle}
                   </span>
                 </div>
@@ -725,17 +725,17 @@ export default function MenuItemCard({
             </h3>
 
             {dishDesc && (
-              <p className="menu-card__desc text-[10px] sm:text-xs text-[#f5efe0]/65 line-clamp-1 sm:line-clamp-2 leading-relaxed mb-1">
+              <p className="menu-card__desc line-clamp-2">
                 {dishDesc}
               </p>
             )}
 
             <div className="flex items-center gap-1.5 mt-1 mb-0.5">
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-extrabold bg-[#06140e]/80 text-[#f0d27a] border border-[#d4af37]/35">
+              <span className="menu-chip menu-chip--rating">
                 <Star className="w-2.5 h-2.5 fill-[#d4af37] text-[#d4af37]" />
                 <span>{item.rating || '4.9'}</span>
               </span>
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium text-[#f5efe0]/75 border border-[#f5efe0]/15">
+              <span className="menu-chip menu-chip--time">
                 <Clock className="w-2.5 h-2.5 text-[#f0d27a]" />
                 <span>{item.prepTime || '10 min'}</span>
               </span>
@@ -745,7 +745,7 @@ export default function MenuItemCard({
             {itemNote && (
               <div
                 onClick={openNoteModal}
-                className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#06140e]/70 border border-[#d4af37]/30 text-[#f0d27a] text-[10px] font-medium cursor-pointer truncate max-w-full"
+                className="menu-card__note"
                 title="Edit note"
               >
                 <MessageSquare className="w-2.5 h-2.5 text-[#d4af37] shrink-0" />
@@ -766,7 +766,7 @@ export default function MenuItemCard({
               <button
                 type="button"
                 onClick={openNoteModal}
-                className={`menu-tap menu-note-btn ${itemNote ? 'menu-note-btn--active' : ''}`}
+                className={`menu-note-btn ${itemNote ? 'menu-note-btn--active' : ''}`}
                 title="Add chef note"
                 aria-label="Add chef note"
               >
@@ -775,7 +775,7 @@ export default function MenuItemCard({
             )}
 
             {!isAvailable ? (
-              <span className="text-[10px] font-bold text-[#e0715a] uppercase">
+              <span className="menu-card__unavailable">
                 Unavailable
               </span>
             ) : cartQuantity > 0 ? (
@@ -783,18 +783,18 @@ export default function MenuItemCard({
                 <button
                   type="button"
                   onClick={handleDecrement}
-                  className="menu-tap w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
+                  className="menu-stepper__btn"
                   aria-label="Decrease quantity"
                 >
                   <Minus className="w-3 h-3 stroke-[2.5]" />
                 </button>
-                <span className="min-w-[1.5rem] text-center font-black text-xs select-none tabular-nums text-[#f5efe0]">
+                <span className="menu-card__count">
                   {cartQuantity}
                 </span>
                 <button
                   type="button"
                   onClick={handleIncrement}
-                  className="menu-tap w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
+                  className="menu-stepper__btn"
                   aria-label="Increase quantity"
                 >
                   <Plus className="w-3 h-3 stroke-[2.5]" />

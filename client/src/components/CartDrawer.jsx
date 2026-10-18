@@ -463,7 +463,7 @@ export default function CartDrawer({
 
       {/* Mobile: bottom sheet. Desktop: right-side panel. */}
       <div
-        className={`fixed inset-x-0 bottom-0 h-[92dvh] sm:inset-x-auto sm:inset-y-0 sm:h-auto sm:right-0 max-w-full flex sm:pl-10 ${entered ? '' : 'pointer-events-none'}`}
+        className={`fixed inset-x-0 bottom-20 h-[calc(92dvh-5rem)] sm:inset-x-auto sm:inset-y-0 sm:bottom-0 sm:h-auto sm:right-0 max-w-full flex sm:pl-10 ${entered ? '' : 'pointer-events-none'}`}
       >
         <div
           className={`w-screen max-w-md h-full bg-[#0f3d2a]/95 backdrop-blur-xl text-[#f5efe0] shadow-2xl shadow-black/70 flex flex-col border-t sm:border-t-0 sm:border-l border-[#d4af37]/40 sm:border-[#d4af37]/40 rounded-t-[28px] sm:rounded-t-none sm:rounded-l-3xl overflow-hidden transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none will-change-transform ${entered ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:translate-y-0 sm:translate-x-full'} ${className}`}
