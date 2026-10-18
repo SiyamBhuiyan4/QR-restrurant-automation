@@ -488,14 +488,8 @@ export default function WaterBackground() {
   const localCanvasRef = useRef(null);
 
   useEffect(() => {
-    // 1. Get or attach to the canvas element
-    let canvas = document.getElementById('cinematic-river');
-    if (!canvas) {
-      canvas = document.getElementById('village-river-canvas');
-    }
-    if (!canvas) {
-      canvas = localCanvasRef.current;
-    }
+    // 1. Acquire canvas element from ref
+    const canvas = localCanvasRef.current || document.getElementById('cinematic-river');
     if (!canvas) return;
 
     // Apply exact integration styles
@@ -504,7 +498,7 @@ export default function WaterBackground() {
     canvas.style.left = '0';
     canvas.style.width = '100vw';
     canvas.style.height = '100vh';
-    canvas.style.zIndex = '-1';
+    canvas.style.zIndex = '0';
     canvas.style.pointerEvents = 'none';
 
     const ctx = canvas.getContext('2d', { alpha: false });
@@ -1084,14 +1078,6 @@ export default function WaterBackground() {
     };
   }, []);
 
-  const hasDirectCanvas =
-    typeof document !== 'undefined' &&
-    (!!document.getElementById('cinematic-river') || !!document.getElementById('village-river-canvas'));
-
-  if (hasDirectCanvas) {
-    return null;
-  }
-
   return (
     <canvas
       id="cinematic-river"
@@ -1102,7 +1088,7 @@ export default function WaterBackground() {
         left: 0,
         width: '100vw',
         height: '100vh',
-        zIndex: -1,
+        zIndex: 0,
         pointerEvents: 'none'
       }}
       aria-hidden="true"
