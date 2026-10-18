@@ -176,9 +176,8 @@
 /* Centered Circular Plate / Bowl */
 .plate-card__media {
   position: relative;
-  width: 76%;
-  max-width: 190px;
-  aspect-ratio: 1 / 1;
+  width: 100%;
+  aspect-ratio: 4 / 3;
   margin: 0.6rem auto 1rem;
 }
 
@@ -186,7 +185,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-  border-radius: 9999px;
+  border-radius: 1rem;
   overflow: hidden;
   background: #ffffff;
   border: 3px solid rgba(255, 255, 255, 0.85);
