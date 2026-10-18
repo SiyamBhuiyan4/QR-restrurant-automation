@@ -9,6 +9,7 @@ import KitchenDisplay from './pages/KitchenDisplay';
 import WaiterPanel from './pages/WaiterPanel';
 import AdminDashboard from './pages/AdminDashboard';
 import QRBatchGenerator from './pages/QRBatchGenerator';
+import WaterBackground from './components/WaterBackground';
 
 // Icons
 import { 
@@ -196,14 +197,8 @@ function AppRouter() {
   return (
     <div className="relative min-h-screen flex flex-col">
 
-      {/* Global ambient background: fixed, CSS-only, behind non-customer views */}
-      {activeView !== 'customer' && (
-        <div className="app-ambient" aria-hidden="true">
-          <div className="app-ambient__blob app-ambient__blob--a" />
-          <div className="app-ambient__blob app-ambient__blob--b" />
-          <div className="app-ambient__blob app-ambient__blob--c" />
-        </div>
-      )}
+      {/* Global river background: one canvas behind every view, kept mounted across view switches */}
+      <WaterBackground />
 
       {/* Active Screen View */}
       <div className="flex-1">
