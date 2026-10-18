@@ -7,7 +7,7 @@
 
   // ===== Settings (ichchhe moto bodlate paro) =====
   const CONFIG = {
-    QUALITY: 1.25,          // 1 = fast (mobile), 1.5 = beshi sharp
+    QUALITY: 1,             // 1 = fast (mobile), 1.5 = beshi sharp
     FISH_COUNT: 12,         // boro screen e eto ta, mobile e ektu kom
     CRAB_COUNT: 4,          // nodir tolay kakra
     STONE_DENSITY: 1,       // 0.5 = kom pathor, 1.5 = beshi
@@ -1202,6 +1202,8 @@ void main(){
 
   let nextAuto = 1.5, last = performance.now();
   function frame(now) {
+    // 30fps cap: phone/low-end laptop e bhari kaj kome, UI smooth thake
+    if (now - last < 1000 / 30 - 1) { requestAnimationFrame(frame); return; }
     const dt = Math.min(0.05, (now - last) / 1000) * MOTION;
     last = now;
     T += dt;

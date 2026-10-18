@@ -698,7 +698,7 @@ export default function FoodDetailModal({
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 pb-20 sm:p-4 bg-[#021424]/90 backdrop-blur-xl fdm-backdrop ${isClosing ? 'fdm-backdrop-out' : ''}`}
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 pb-20 sm:p-4 bg-[#021424]/35 fdm-backdrop ${isClosing ? 'fdm-backdrop-out' : ''}`}
       onClick={handleClose}
     >
       {/* Modal Container: Modern Dark Glassmorphic Bistro Card */}
