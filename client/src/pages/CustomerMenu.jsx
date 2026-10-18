@@ -6,7 +6,7 @@ import CategoryBar from '../components/CategoryBar';
 import CartDrawer from '../components/CartDrawer';
 import FoodDetailModal from '../components/FoodDetailModal';
 import MenuItemCard from '../components/MenuItemCard';
-import WaterBackground from '../components/WaterBackground';
+import RiverBackground from '../components/RiverBackground';
 import '../styles/customer-hero.css';
 import '../styles/customer-menu-sections.css';
 import { 
@@ -1236,7 +1236,7 @@ export default function CustomerMenu({
       {/* =====================================================================
           Serene River Mirror & Sky Reflection Water Background (Interactive Ripple Waves)
          ===================================================================== */}
-      <WaterBackground />
+      <RiverBackground />
       
       {/* 1. Header Navigation */}
       <Navbar
