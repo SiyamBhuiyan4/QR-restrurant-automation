@@ -8,10 +8,19 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  html, body {
-    @apply bg-[#0a0a0c] text-stone-100 antialiased min-h-screen;
+  /* Explicit base colour lives on <html> (paints the canvas). <body> stays transparent
+     so the fixed .app-ambient layer (z-index -10) is not hidden behind an opaque body. */
+  html {
+    @apply antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     background-color: #0a0a0c !important;
+    color: #f4f4f5 !important;
+  }
+
+  body {
+    @apply text-stone-100 antialiased min-h-screen;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-color: transparent !important;
     color: #f4f4f5 !important;
   }
 
@@ -21,8 +30,11 @@
   }
 
   /* Phone-width safety: no horizontal page scroll, 16px side gutter baseline */
+  /* No horizontal page scroll at phone width. "clip" (where supported) does not
+     break position: sticky the way "hidden" does; "hidden" is the fallback. */
   html, body {
     overflow-x: hidden;
+    overflow-x: clip;
     max-width: 100%;
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
@@ -48,13 +60,22 @@
     outline: none;
   }
 
+  /* Keyboard focus: outline kept for forced-colors mode, with a soft eased halo.
+     Transition only runs when focus-visible is entered or left. */
   :focus-visible {
     outline: 2px solid rgba(255, 122, 69, 0.9);
     outline-offset: 2px;
     border-radius: 6px;
+    box-shadow: 0 0 0 4px rgba(255, 90, 38, 0.18);
+    transition: outline-offset 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease-out;
   }
 
   ::selection {
+    background: rgba(255, 90, 38, 0.45);
+    color: #ffffff;
+  }
+
+  ::-moz-selection {
     background: rgba(255, 90, 38, 0.45);
     color: #ffffff;
   }
@@ -459,24 +480,22 @@
   animation: modalBackdropFade 0.35s ease-out forwards;
 }
 
+/* Transform/opacity only: animating filter blur on a large modal surface is costly on phones. */
 @keyframes modalContainerBuild {
   0% {
     opacity: 0;
     transform: scale(0.85) translateY(45px);
     border-radius: 44px;
-    filter: blur(8px);
   }
   45% {
     opacity: 0.98;
     transform: scale(1.018) translateY(-4px);
     border-radius: 28px;
-    filter: blur(0px);
   }
   100% {
     opacity: 1;
     transform: scale(1) translateY(0);
     border-radius: 24px;
-    filter: blur(0px);
   }
 }
 
@@ -512,7 +531,7 @@
 
 .animate-modal-build {
   animation: modalContainerBuild 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform, opacity, filter;
+  will-change: transform, opacity;
 }
 
 .animate-stagger-1 {
@@ -557,6 +576,7 @@
   overflow: hidden;
   pointer-events: none;
   background: #0a0a0c;
+  contain: strict;
 }
 
 .app-ambient__blob {

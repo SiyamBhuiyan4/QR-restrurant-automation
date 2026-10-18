@@ -703,7 +703,7 @@ export default function FoodDetailModal({
     >
       {/* Modal Container: Modern Dark Glassmorphic Bistro Card */}
       <div
-        className={`w-full sm:max-w-xl md:max-w-2xl max-h-[92vh] sm:max-h-[90vh] bg-stone-900/95 backdrop-blur-2xl border border-white/10 sm:rounded-3xl rounded-t-3xl shadow-2xl shadow-black/80 flex flex-col overflow-hidden text-stone-100 relative fdm-frame ${isClosing ? 'fdm-frame-out' : ''}`}
+        className={`fdm-sheet w-full sm:max-w-xl md:max-w-2xl max-h-[92vh] sm:max-h-[90vh] bg-stone-900/95 backdrop-blur-2xl border border-white/10 sm:rounded-3xl rounded-t-3xl shadow-2xl shadow-black/80 flex flex-col overflow-hidden text-stone-100 relative fdm-frame ${isClosing ? 'fdm-frame-out' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Ambient Top Glow */}
@@ -1382,7 +1382,7 @@ export default function FoodDetailModal({
         {/* ------------------------------------------------------------------
             7. Prominent Sticky Bottom Bar
            ------------------------------------------------------------------ */}
-        <div className="p-3.5 sm:p-4 bg-stone-900/95 backdrop-blur-xl border-t border-white/10 flex items-center gap-3 z-30 shadow-2xl fdm-d6">
+        <div className="fdm-footer p-3.5 sm:p-4 bg-stone-900/95 backdrop-blur-xl border-t border-white/10 flex items-center gap-3 z-30 shadow-2xl fdm-d6">
           {/* Stepper */}
           <div className="flex items-center bg-stone-800/90 border border-stone-700/80 rounded-xl p-1 shrink-0">
             <button
@@ -1412,7 +1412,7 @@ export default function FoodDetailModal({
           <button
             type="button"
             onClick={handleConfirmAdd}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-black text-white rounded-xl shadow-xl transition-all cursor-pointer text-sm sm:text-base ${
+            className={`fdm-cta flex-1 flex items-center justify-center gap-2 py-3 px-4 font-black text-white rounded-xl shadow-xl transition-all cursor-pointer text-sm sm:text-base ${
               isAddedAnimation
                 ? 'bg-emerald-500 scale-95 shadow-emerald-500/50'
                 : 'flame-gradient-btn shadow-[#FF5A26]/40 active:scale-[0.98]'

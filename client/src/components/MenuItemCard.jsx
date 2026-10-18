@@ -713,20 +713,20 @@ export default function MenuItemCard({
     <>
       <div
         onClick={() => onSelectDish && onSelectDish(item)}
-        className={`group relative flex flex-col justify-between bg-[#141418]/90 hover:bg-[#18181f] backdrop-blur-xl rounded-2xl border border-zinc-800 hover:border-[#FF5A26]/40 overflow-hidden shadow-md hover:shadow-xl hover:shadow-black/50 transition-all duration-300 cursor-pointer ${
-          !isAvailable ? 'opacity-65' : 'hover:-translate-y-0.5'
+        style={{ '--card-i': Math.min(Math.max(Number(index) || 0, 0), 10) }}
+        className={`group menu-card relative flex flex-col justify-between overflow-hidden cursor-pointer ${
+          !isAvailable ? 'opacity-65 menu-card--unavailable' : ''
         }`}
       >
         <div>
-          {/* Compact Image Container with 16/10 Aspect Ratio */}
-          <div className="relative aspect-[16/10] w-full bg-zinc-900 overflow-hidden">
+          {/* Image frame: fixed 16/10 so cards never jump */}
+          <div className="menu-card__media">
             {item.image && !imageError ? (
               <img
                 src={item.image}
                 alt={dishTitle}
                 onError={() => setImageError(true)}
                 loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-zinc-400 p-2 select-none">
@@ -806,12 +806,12 @@ export default function MenuItemCard({
 
           {/* Compact Dish Details */}
           <div className="p-2.5 sm:p-3">
-            <h3 className="font-extrabold text-white text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-[#FF7A45] transition-colors tracking-tight mb-0.5">
+            <h3 className="menu-card__title font-extrabold text-white text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-[#FF7A45] transition-colors tracking-tight mb-0.5">
               {dishTitle}
             </h3>
 
             {dishDesc && (
-              <p className="text-[10px] sm:text-xs text-zinc-400 line-clamp-1 sm:line-clamp-2 leading-relaxed font-normal mb-1">
+              <p className="menu-card__desc text-[10px] sm:text-xs text-zinc-400 line-clamp-1 sm:line-clamp-2 leading-relaxed font-normal mb-1">
                 {dishDesc}
               </p>
             )}
@@ -830,63 +830,64 @@ export default function MenuItemCard({
           </div>
         </div>
 
-        {/* Compact Footer: High-Contrast Price & Tactile ADD Action */}
-        <div className="px-2.5 sm:px-3 pb-2.5 sm:pb-3 pt-1.5 flex items-center justify-between gap-1 border-t border-zinc-800 mt-auto">
-          <span className="text-xs sm:text-sm md:text-base font-black text-white tracking-tight font-sans">
+        {/* Footer: crisp price badge, note, and Order / quantity controls */}
+        <div className="px-2.5 sm:px-3 pb-2.5 sm:pb-3 pt-2 flex items-center justify-between gap-1.5 border-t border-white/5 mt-auto">
+          <span className="menu-card__price text-xs sm:text-sm md:text-base font-black">
             {formattedPrice}
           </span>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 shrink-0">
             {/* Note Button */}
             {isAvailable && (
               <button
                 type="button"
                 onClick={openNoteModal}
-                className={`p-1 sm:p-1.5 rounded-lg border text-xs transition cursor-pointer ${
+                className={`menu-tap inline-flex items-center justify-center p-1.5 rounded-lg border text-xs transition cursor-pointer ${
                   itemNote
                     ? 'bg-[#FF5A26]/20 border-[#FF5A26] text-[#FF7A45]'
-                    : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300 hover:text-white'
+                    : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-700/60 text-zinc-300 hover:text-white'
                 }`}
                 title="Add chef note"
+                aria-label="Add chef note"
               >
-                <MessageSquare className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <MessageSquare className="w-3.5 h-3.5" />
               </button>
             )}
 
-            {/* Tactile ADD Button OR Quantity Stepper */}
+            {/* Order button OR quantity stepper */}
             {!isAvailable ? (
               <span className="text-[10px] font-bold text-zinc-500 uppercase">
                 Unavailable
               </span>
             ) : cartQuantity > 0 ? (
-              <div className="inline-flex items-center flame-gradient-btn text-white rounded-xl shadow-xs p-0.5 ring-1 ring-[#FF7A45]/40">
+              <div className="menu-stepper">
                 <button
                   type="button"
                   onClick={handleDecrement}
-                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center hover:bg-black/15 active:scale-90 transition cursor-pointer font-bold"
+                  className="menu-tap w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer font-bold"
                   aria-label="Decrease quantity"
                 >
-                  <Minus className="w-2.5 h-2.5 sm:w-3 sm:h-3 stroke-[2.5]" />
+                  <Minus className="w-3 h-3 stroke-[2.5]" />
                 </button>
-                <span className="w-4 sm:w-5 text-center font-black text-[11px] sm:text-xs select-none">
+                <span className="min-w-[1.5rem] text-center font-black text-xs select-none tabular-nums">
                   {cartQuantity}
                 </span>
                 <button
                   type="button"
                   onClick={handleIncrement}
-                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center hover:bg-black/15 active:scale-90 transition cursor-pointer font-bold"
+                  className="menu-tap w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer font-bold"
                   aria-label="Increase quantity"
                 >
-                  <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3 stroke-[2.5]" />
+                  <Plus className="w-3 h-3 stroke-[2.5]" />
                 </button>
               </div>
             ) : (
               <button
                 type="button"
                 onClick={handleAdd}
-                className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl flame-gradient-btn text-white font-black text-[10px] sm:text-xs shadow-md shadow-[#FF5A26]/30 active:scale-95 transition-all cursor-pointer"
+                className="menu-order-btn"
               >
-                <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5]" />
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>ADD</span>
               </button>
             )}

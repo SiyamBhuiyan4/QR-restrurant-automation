@@ -5,6 +5,7 @@ import { convex } from './convexClient.js';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App.jsx';
 import './index.css';
+import './styles/motion.css';
 
 // Force fresh cache busting for UI update
 const LATEST_BUILD_TAG = 'v2026.10.17.2355';

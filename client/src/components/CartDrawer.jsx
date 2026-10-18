@@ -81,7 +81,7 @@ function ItemAudioPlayer({ url, onRemove }) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-50 border border-amber-200/80 text-neutral-800 transition-all">
+    <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-amber-50 border border-amber-200/80 text-neutral-800 transition-colors duration-200">
       <audio
         ref={audioRef}
         src={url}
@@ -93,7 +93,7 @@ function ItemAudioPlayer({ url, onRemove }) {
       <button
         type="button"
         onClick={togglePlay}
-        className="w-7 h-7 rounded-lg bg-amber-500 hover:bg-amber-600 active:scale-95 text-white flex items-center justify-center shrink-0 transition shadow-2xs cursor-pointer"
+        className="w-11 h-11 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white flex items-center justify-center shrink-0 transition-transform duration-150 shadow-sm cursor-pointer motion-reduce:transform-none"
         title={isPlaying ? 'Pause' : 'Play dish voice note'}
       >
         {isPlaying ? (
@@ -125,7 +125,7 @@ function ItemAudioPlayer({ url, onRemove }) {
         <button
           type="button"
           onClick={onRemove}
-          className="p-1 rounded-md text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+          className="w-11 h-11 -mr-1 rounded-xl flex items-center justify-center text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
           title="Remove voice note"
         >
           <X className="w-3.5 h-3.5" />
@@ -435,7 +435,18 @@ export default function CartDrawer({
     return () => cancelAnimationFrame(id);
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  // Keep the panel mounted long enough for the slide-out transition to play
+  const [mounted, setMounted] = useState(isOpen);
+  useEffect(() => {
+    if (isOpen) {
+      setMounted(true);
+      return;
+    }
+    const id = setTimeout(() => setMounted(false), 380);
+    return () => clearTimeout(id);
+  }, [isOpen]);
+
+  if (!isOpen && !mounted) return null;
 
   return (
     <div
@@ -447,13 +458,15 @@ export default function CartDrawer({
       {/* Backdrop overlay */}
       <div
         onClick={handleClose}
-        className={`fixed inset-0 bg-neutral-950/65 backdrop-blur-xs transition-opacity duration-300 ease-out ${entered ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed inset-0 bg-neutral-950/70 backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none ${entered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       />
 
       {/* Mobile: bottom sheet. Desktop: right-side panel. */}
-      <div className="fixed inset-x-0 bottom-0 h-[92dvh] sm:inset-x-auto sm:inset-y-0 sm:h-auto sm:right-0 max-w-full flex sm:pl-10">
+      <div
+        className={`fixed inset-x-0 bottom-0 h-[92dvh] sm:inset-x-auto sm:inset-y-0 sm:h-auto sm:right-0 max-w-full flex sm:pl-10 ${entered ? '' : 'pointer-events-none'}`}
+      >
         <div
-          className={`w-screen max-w-md h-full bg-[#121215]/95 backdrop-blur-xl text-stone-100 shadow-2xl shadow-black/60 flex flex-col border-t sm:border-t-0 sm:border-l border-zinc-800 rounded-t-3xl sm:rounded-t-none sm:rounded-l-3xl overflow-hidden transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${entered ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:translate-y-0 sm:translate-x-full'} ${className}`}
+          className={`w-screen max-w-md h-full bg-[#121215]/95 backdrop-blur-xl text-stone-100 shadow-2xl shadow-black/70 flex flex-col border-t sm:border-t-0 sm:border-l border-white/[0.06] sm:border-zinc-800 rounded-t-[28px] sm:rounded-t-none sm:rounded-l-3xl overflow-hidden transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none will-change-transform ${entered ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:translate-y-0 sm:translate-x-full'} ${className}`}
         >
           
           {/* ========================================================
@@ -529,7 +542,7 @@ export default function CartDrawer({
                   setOrderConfirmation(null);
                   handleClose();
                 }}
-                className="w-full py-3.5 px-4 rounded-xl flame-gradient-btn text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-[#FF5A26]/30 cursor-pointer active:scale-95"
+                className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl flame-gradient-btn text-white font-bold text-sm shadow-lg shadow-[#FF5A26]/30 cursor-pointer transition-transform duration-150 active:scale-[0.98] motion-reduce:transform-none"
               >
                 Back to Menu &bull; Order More
               </button>
@@ -563,7 +576,7 @@ export default function CartDrawer({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="w-9 h-9 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 active:scale-95 flex items-center justify-center text-zinc-400 hover:text-white transition cursor-pointer"
+                  className="w-11 h-11 rounded-2xl bg-zinc-800/80 hover:bg-zinc-700 active:scale-95 flex items-center justify-center text-zinc-400 hover:text-white transition-[transform,background-color,color] duration-150 cursor-pointer motion-reduce:transform-none shrink-0"
                   aria-label="Close cart drawer"
                 >
                   <X className="w-4 h-4 stroke-[2.5]" />
@@ -571,7 +584,7 @@ export default function CartDrawer({
               </div>
 
               {/* Scrollable Content Container */}
-              <div className="flex-1 overflow-y-auto divide-y divide-zinc-800/80 scrollbar-thin scrollbar-thumb-zinc-700">
+              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain divide-y divide-zinc-800/80">
                 
                 {/* 1. Empty Cart State */}
                 {items.length === 0 ? (
@@ -588,7 +601,7 @@ export default function CartDrawer({
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="px-6 py-3 rounded-xl flame-gradient-btn text-white font-bold text-xs sm:text-sm transition shadow-lg shadow-[#FF5A26]/30 cursor-pointer active:scale-95"
+                      className="min-h-[48px] px-6 py-3 rounded-2xl flame-gradient-btn text-white font-bold text-sm shadow-lg shadow-[#FF5A26]/30 cursor-pointer transition-transform duration-150 active:scale-[0.98] motion-reduce:transform-none"
                     >
                       Browse Menu
                     </button>
@@ -605,7 +618,7 @@ export default function CartDrawer({
                           <button
                             type="button"
                             onClick={() => cartCtx.clearCart()}
-                            className="text-[11px] text-rose-400 hover:text-rose-300 font-semibold cursor-pointer transition active:scale-95"
+                            className="min-h-11 px-2 -mr-2 inline-flex items-center text-xs text-rose-400 hover:text-rose-300 font-semibold cursor-pointer transition-transform duration-150 active:scale-95 motion-reduce:transform-none"
                           >
                             Clear All
                           </button>
@@ -627,29 +640,29 @@ export default function CartDrawer({
                           return (
                             <div
                               key={dishId}
-                              className="bg-[#18181d] border border-zinc-800/90 rounded-2xl p-3.5 transition-all hover:border-zinc-700 shadow-md"
+                              className="bg-[#18181d] border border-zinc-800/90 rounded-2xl p-4 transition-colors duration-200 hover:border-zinc-700 shadow-md shadow-black/30"
                             >
                               <div className="flex items-start justify-between gap-3">
-                                <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0 pt-1">
                                   <h4 className="font-bold text-white text-sm leading-snug truncate">
                                     {dishName}
                                   </h4>
-                                  <p className="text-xs text-zinc-400 font-semibold mt-0.5">
+                                  <p className="text-xs text-zinc-400 font-semibold mt-1">
                                     ${dishPrice.toFixed(2)} each
                                   </p>
                                 </div>
 
-                                {/* Stepper + Item Price */}
-                                <div className="flex items-center gap-2.5 shrink-0">
-                                  <span className="font-extrabold text-sm text-white">
+                                {/* Item Total + Stepper */}
+                                <div className="flex flex-col items-end gap-2 shrink-0">
+                                  <span className="font-extrabold text-sm text-white tabular-nums">
                                     ${itemTotal}
                                   </span>
 
-                                  <div className="inline-flex items-center bg-zinc-900 rounded-xl p-0.5 border border-zinc-700/80 shadow-2xs">
+                                  <div className="inline-flex items-center bg-zinc-900 rounded-2xl p-0.5 border border-zinc-700/80 shadow-sm">
                                     <button
                                       type="button"
                                       onClick={() => handleQuantityDelta(dishId, -1)}
-                                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-zinc-800 text-zinc-300 transition active:scale-90 cursor-pointer"
+                                      className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-zinc-800 text-zinc-300 transition-transform duration-150 active:scale-90 cursor-pointer motion-reduce:transform-none"
                                       title={quantity === 1 ? 'Remove item' : 'Decrease quantity'}
                                       aria-label="Decrease quantity"
                                     >
@@ -660,14 +673,14 @@ export default function CartDrawer({
                                       )}
                                     </button>
 
-                                    <span className="w-7 text-center text-xs font-black text-white">
+                                    <span className="w-8 text-center text-sm font-black text-white tabular-nums">
                                       {quantity}
                                     </span>
 
                                     <button
                                       type="button"
                                       onClick={() => handleQuantityDelta(dishId, 1)}
-                                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-zinc-800 text-zinc-300 transition active:scale-90 cursor-pointer"
+                                      className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-zinc-800 text-zinc-300 transition-transform duration-150 active:scale-90 cursor-pointer motion-reduce:transform-none"
                                       title="Increase quantity"
                                       aria-label="Increase quantity"
                                     >
@@ -690,7 +703,7 @@ export default function CartDrawer({
                                   <button
                                     type="button"
                                     onClick={() => toggleNoteExpand(dishId)}
-                                    className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-[#FF7A45] font-medium transition cursor-pointer"
+                                    className="min-h-11 -ml-1 px-1 inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-[#FF7A45] font-medium transition-colors cursor-pointer"
                                   >
                                     <MessageSquare className="w-3.5 h-3.5 text-[#FF5A26]" />
                                     <span>Add note for chef (e.g. &ldquo;less spicy&rdquo;)</span>
@@ -706,7 +719,7 @@ export default function CartDrawer({
                                         <button
                                           type="button"
                                           onClick={() => toggleNoteExpand(dishId)}
-                                          className="text-[10px] text-zinc-500 hover:text-zinc-300 font-semibold cursor-pointer"
+                                          className="min-h-11 px-2 -mr-2 inline-flex items-center text-xs text-zinc-500 hover:text-zinc-300 font-semibold cursor-pointer"
                                         >
                                           Collapse
                                         </button>
@@ -714,7 +727,7 @@ export default function CartDrawer({
                                     </div>
 
                                     {/* Quick Preset Tags */}
-                                    <div className="flex flex-wrap gap-1 text-[11px]">
+                                    <div className="flex flex-wrap gap-1.5 text-xs">
                                       {['Less spicy', 'Extra sauce', 'No onions', 'Crispy', 'Gluten conscious'].map((preset) => (
                                         <button
                                           key={preset}
@@ -725,7 +738,7 @@ export default function CartDrawer({
                                               handleItemNoteChange(dishId, `${note}${separator}${preset}`);
                                             }
                                           }}
-                                          className="px-2 py-0.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:border-[#FF5A26]/50 hover:text-[#FF7A45] transition active:scale-95 cursor-pointer"
+                                          className="min-h-11 px-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:border-[#FF5A26]/50 hover:text-[#FF7A45] transition-[transform,border-color,color] duration-150 active:scale-95 cursor-pointer motion-reduce:transform-none"
                                         >
                                           + {preset}
                                         </button>
@@ -737,7 +750,7 @@ export default function CartDrawer({
                                       value={note}
                                       onChange={(e) => handleItemNoteChange(dishId, e.target.value)}
                                       placeholder="e.g. Extra sauce, no onions, well-done"
-                                      className="w-full px-3 py-1.5 text-xs bg-zinc-900 rounded-xl border border-zinc-700/80 focus:outline-none focus:ring-1.5 focus:ring-[#FF5A26] focus:border-[#FF5A26] placeholder:text-zinc-500 text-white transition"
+                                      className="w-full min-h-11 px-3.5 py-2 text-base sm:text-xs bg-zinc-900 rounded-xl border border-zinc-700/80 focus:outline-none focus:ring-[1.5px] focus:ring-[#FF5A26] focus:border-[#FF5A26] placeholder:text-zinc-500 text-white transition"
                                     />
                                   </div>
                                 )}
@@ -758,7 +771,7 @@ export default function CartDrawer({
                         value={generalNote}
                         onChange={(e) => setGeneralNote(e.target.value)}
                         placeholder="Any general requests? (e.g. bring appetizers together, extra napkins, allergic to nuts...)"
-                        className="w-full p-3 text-xs bg-zinc-900 rounded-2xl border border-zinc-800 focus:outline-none focus:ring-1 focus:ring-[#FF5A26] focus:border-[#FF5A26] placeholder:text-zinc-500 text-white resize-none transition"
+                        className="w-full p-3.5 text-base sm:text-xs bg-zinc-900 rounded-2xl border border-zinc-800 focus:outline-none focus:ring-1 focus:ring-[#FF5A26] focus:border-[#FF5A26] placeholder:text-zinc-500 text-white resize-none transition"
                       />
                     </div>
 
@@ -781,7 +794,7 @@ export default function CartDrawer({
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="space-y-2.5">
                         <input
                           type="text"
                           value={tableInput}
@@ -793,7 +806,7 @@ export default function CartDrawer({
                             }
                           }}
                           placeholder="Enter Table # (e.g. 4, Bar 2)"
-                          className={`flex-1 px-3.5 py-2 text-xs sm:text-sm bg-zinc-900 rounded-xl border font-bold transition ${
+                          className={`w-full min-h-11 px-3.5 py-2.5 text-base sm:text-sm bg-zinc-900 rounded-xl border font-bold transition ${
                             tableError
                               ? 'border-rose-500 ring-2 ring-rose-500/30 text-rose-200'
                               : 'border-zinc-700/80 focus:ring-1 focus:ring-[#FF5A26] focus:border-[#FF5A26] text-white placeholder-zinc-500'
@@ -801,7 +814,7 @@ export default function CartDrawer({
                         />
 
                         {/* Quick 1-6 picker chips */}
-                        <div className="flex items-center gap-1">
+                        <div className="grid grid-cols-6 gap-1.5">
                           {[1, 2, 3, 4, 5, 6].map((num) => (
                             <button
                               key={num}
@@ -813,10 +826,10 @@ export default function CartDrawer({
                                   cartCtx.setTableNumber(String(num));
                                 }
                               }}
-                              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl text-xs font-black transition active:scale-95 cursor-pointer ${
+                              className={`min-h-11 w-full rounded-xl text-sm font-black transition-[transform,background-color] duration-150 active:scale-95 cursor-pointer motion-reduce:transform-none ${
                                 String(tableInput) === String(num)
-                                  ? 'flame-gradient-btn text-white shadow-xs'
-                                  : 'bg-zinc-900 text-zinc-300 border border-zinc-750 hover:bg-zinc-800'
+                                  ? 'flame-gradient-btn text-white shadow-sm'
+                                  : 'bg-zinc-900 text-zinc-300 border border-zinc-700/80 hover:bg-zinc-800'
                               }`}
                             >
                               {num}
@@ -838,10 +851,10 @@ export default function CartDrawer({
 
               {/* Drawer Footer: Bill Breakdown & Submit Button */}
               {items.length > 0 && (
-                <div className="p-4 sm:p-5 bg-[#161619] border-t border-zinc-800 shrink-0 space-y-3 shadow-xl">
-                  
+                <div className="relative z-10 shrink-0 px-4 sm:px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-5 bg-[#161619]/95 backdrop-blur-md border-t border-zinc-800/80 space-y-3.5 shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.7)]">
+
                   {/* Bill Breakdown */}
-                  <div className="space-y-1.5 text-xs text-zinc-400 font-medium">
+                  <div className="space-y-2 text-xs text-zinc-400 font-medium">
                     <div className="flex justify-between">
                       <span>Items Subtotal</span>
                       <span className="font-semibold text-zinc-200">${subtotal.toFixed(2)}</span>
@@ -866,7 +879,7 @@ export default function CartDrawer({
                     type="button"
                     onClick={handleConfirmOrder}
                     disabled={isSubmitting || items.length === 0}
-                    className={`w-full py-4 px-5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg transition-all active:scale-98 cursor-pointer ${
+                    className={`w-full min-h-[52px] py-4 px-5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg transition-[transform,box-shadow] duration-150 active:scale-[0.98] cursor-pointer motion-reduce:transform-none ${
                       isSubmitting
                         ? 'bg-[#FF5A26]/80 text-white cursor-wait'
                         : 'flame-gradient-btn shadow-[#FF5A26]/30'

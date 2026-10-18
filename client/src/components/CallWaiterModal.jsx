@@ -146,7 +146,18 @@ export default function CallWaiterModal({
     return () => cancelAnimationFrame(id);
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  // Keep mounted long enough for the fade/slide-out transition to play
+  const [mounted, setMounted] = useState(isOpen);
+  useEffect(() => {
+    if (isOpen) {
+      setMounted(true);
+      return;
+    }
+    const id = setTimeout(() => setMounted(false), 380);
+    return () => clearTimeout(id);
+  }, [isOpen]);
+
+  if (!isOpen && !mounted) return null;
 
   const handleDismiss = () => {
     setIsConfirmed(false);
@@ -265,12 +276,12 @@ export default function CallWaiterModal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md transition-opacity duration-300 ease-out ${entered ? 'opacity-100' : 'opacity-0'}`}
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none ${entered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className={`w-full max-w-md bg-[#161619] rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/60 border border-zinc-800 overflow-hidden transform transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] text-white ${entered ? 'translate-y-0 sm:scale-100 opacity-100' : 'translate-y-8 sm:translate-y-0 sm:scale-95 opacity-0'}`}
+        className={`w-full max-w-md max-h-[92dvh] overflow-y-auto overflow-x-hidden overscroll-contain bg-[#161619] rounded-t-[28px] sm:rounded-3xl shadow-2xl shadow-black/70 border border-white/[0.06] sm:border-zinc-800 text-white transform transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${entered ? 'translate-y-0 sm:scale-100 opacity-100' : 'translate-y-8 sm:translate-y-0 sm:scale-95 opacity-0'}`}
       >
         {/* Header Bar */}
         <div className="flame-gradient-btn p-5 text-white relative shadow-lg shadow-[#FF5A26]/30">
@@ -278,7 +289,7 @@ export default function CallWaiterModal({
             type="button"
             onClick={handleDismiss}
             disabled={isSubmitting}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/25 hover:bg-black/40 flex items-center justify-center text-white transition active:scale-95 cursor-pointer disabled:opacity-50"
+            className="absolute top-3 right-3 w-11 h-11 rounded-full bg-black/25 hover:bg-black/40 flex items-center justify-center text-white transition-transform duration-150 active:scale-95 cursor-pointer disabled:opacity-50 motion-reduce:transform-none"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -301,7 +312,7 @@ export default function CallWaiterModal({
         </div>
 
         {/* Content Body */}
-        <div className="p-6">
+        <div className="px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6">
           {/* CONFIRMED STATE */}
           {isConfirmed ? (
             <div className="text-center py-4 space-y-4 animate-scaleUp">
@@ -345,7 +356,7 @@ export default function CallWaiterModal({
               <button
                 type="button"
                 onClick={handleDismiss}
-                className="w-full py-3 px-4 rounded-2xl flame-gradient-btn text-white font-bold text-sm transition active:scale-98 shadow-md shadow-[#FF5A26]/30 cursor-pointer"
+                className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl flame-gradient-btn text-white font-bold text-sm transition-transform duration-150 active:scale-[0.98] shadow-md shadow-[#FF5A26]/30 cursor-pointer motion-reduce:transform-none"
               >
                 Done
               </button>
@@ -366,7 +377,7 @@ export default function CallWaiterModal({
                     max="99"
                     value={tableNumber}
                     onChange={(e) => setTableNumber(e.target.value)}
-                    className="w-14 text-center font-bold text-base py-1 px-2 border border-zinc-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#FF5A26] bg-zinc-900 text-white"
+                    className="w-20 min-h-11 text-center font-bold text-base py-2 px-2 border border-zinc-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#FF5A26] bg-zinc-900 text-white"
                   />
                 </div>
               </div>
@@ -384,9 +395,9 @@ export default function CallWaiterModal({
                         key={preset.id}
                         type="button"
                         onClick={() => setSelectedReason(preset)}
-                        className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all text-left cursor-pointer active:scale-98 ${
+                        className={`w-full min-h-[56px] flex items-center justify-between p-3 rounded-2xl border transition-[transform,background-color,box-shadow] duration-200 text-left cursor-pointer active:scale-[0.98] motion-reduce:transform-none ${
                           isSelected
-                            ? 'flame-gradient-btn text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50'
+                            ? 'flame-gradient-btn text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50 border-transparent'
                             : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border-zinc-800'
                         }`}
                       >
@@ -433,7 +444,7 @@ export default function CallWaiterModal({
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
                   placeholder="e.g., Warm water, extra spice, split bill..."
-                  className="w-full py-2.5 px-3.5 text-xs sm:text-sm border border-zinc-700/80 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#FF5A26] bg-zinc-900 text-white placeholder-zinc-500 transition"
+                  className="w-full min-h-11 py-2.5 px-3.5 text-base sm:text-sm border border-zinc-700/80 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#FF5A26] bg-zinc-900 text-white placeholder-zinc-500 transition"
                 />
               </div>
 
@@ -451,7 +462,7 @@ export default function CallWaiterModal({
                   type="button"
                   onClick={handleDismiss}
                   disabled={isSubmitting}
-                  className="flex-1 py-3 px-4 rounded-2xl border border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-xs sm:text-sm font-bold transition cursor-pointer disabled:opacity-50"
+                  className="flex-1 min-h-12 py-3 px-4 rounded-2xl border border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-sm font-bold transition-colors duration-150 cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -460,7 +471,7 @@ export default function CallWaiterModal({
                   type="button"
                   onClick={() => handleSubmit()}
                   disabled={isSubmitting || !tableNumber}
-                  className="flex-2 py-3 px-5 rounded-2xl flame-gradient-btn text-white font-bold text-xs sm:text-sm transition active:scale-98 shadow-lg shadow-[#FF5A26]/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-[2] min-h-12 py-3 px-5 rounded-2xl flame-gradient-btn text-white font-bold text-sm transition-transform duration-150 active:scale-[0.98] shadow-lg shadow-[#FF5A26]/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed motion-reduce:transform-none"
                 >
                   {isSubmitting ? (
                     <>

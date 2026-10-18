@@ -6,6 +6,7 @@ import CategoryBar from '../components/CategoryBar';
 import MenuItemCard from '../components/MenuItemCard';
 import CartDrawer from '../components/CartDrawer';
 import FoodDetailModal from '../components/FoodDetailModal';
+import '../styles/customer-hero.css';
 import { 
   Search, 
   X, 
@@ -818,6 +819,28 @@ export default function CustomerMenu({
     return Array.from(map.values()).filter((section) => section.items.length > 0);
   }, [filteredItems]);
 
+  // Reveal menu sections as they scroll into view (CSS handles the motion;
+  // reduced-motion users get everything visible immediately via CSS)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
+    const pending = Array.from(document.querySelectorAll('[data-ch-reveal]:not(.is-visible)'));
+    if (pending.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -6% 0px' }
+    );
+    pending.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [categorizedSections, selectedCategory, filteredItems.length]);
+
   // Scroll spy to highlight active CategoryBar pill when in 'All' mode
   useEffect(() => {
     if (selectedCategory !== 'All') return;
@@ -1003,6 +1026,11 @@ export default function CustomerMenu({
 
         {/* 1. WorldPlate Hero Banner & Fixed Table QR Badge (Screenshots 1 & 2) */}
         <div id="menu-hero" className="relative mb-8 rounded-3xl overflow-hidden bg-gradient-to-br from-[#121216] via-[#16161c] to-[#0a0a0c] text-white p-6 sm:p-10 shadow-2xl border border-zinc-800/90 animate-fadeIn">
+          {/* Animated backdrop: slow gradient drift, film grain, light sweep (CSS only) */}
+          <div className="ch-hero-drift" aria-hidden="true" />
+          <div className="ch-hero-grain" aria-hidden="true" />
+          <div className="ch-hero-sweep" aria-hidden="true" />
+
           {/* Subtle Ambient Flame Glow Orbs */}
           <div className="absolute top-0 right-10 w-96 h-96 bg-[#FF5A26]/15 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-10 -left-10 w-72 h-72 bg-[#FF7A45]/10 rounded-full blur-2xl pointer-events-none" />
@@ -1010,13 +1038,13 @@ export default function CustomerMenu({
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10">
             {/* Left Column: Big Headline & Action Buttons (Screenshot 1) */}
             <div className="max-w-xl text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] text-xs font-bold mb-4 shadow-sm">
+              <div style={{ '--ch-d': '60ms' }} className="ch-enter inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] text-xs font-bold mb-4 shadow-sm">
                 <Sparkles className="w-3.5 h-3.5 text-[#FF5A26]" />
                 <span className="tracking-wide uppercase text-[10px] font-extrabold">Taste the Tradition, Served Fresh Daily</span>
               </div>
 
               {/* Exact Display Typography from Screenshot 1 */}
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12]">
+              <h1 style={{ '--ch-d': '160ms' }} className="ch-enter text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12]">
                 Experience the <br />
                 <span className="inline-flex flex-wrap items-center gap-2.5 sm:gap-3.5 my-1.5">
                   <span className="text-[#FF5A26] underline decoration-[#FF5A26]/60 underline-offset-8 flame-text-glow">Taste</span>
@@ -1030,15 +1058,15 @@ export default function CustomerMenu({
                 World
               </h1>
 
-              <p className="text-xs sm:text-sm md:text-base text-zinc-400 mt-4 leading-relaxed font-normal">
+              <p style={{ '--ch-d': '260ms' }} className="ch-enter text-xs sm:text-sm md:text-base text-zinc-400 mt-4 leading-relaxed font-normal">
                 From classic favorites to exotic delights, explore a diverse menu inspired by cuisines from across the globe and freshly prepared by master chefs.
               </p>
 
               {/* CTA Buttons */}
-              <div className="flex flex-wrap items-center gap-3.5 mt-6">
+              <div style={{ '--ch-d': '360ms' }} className="ch-enter flex flex-wrap items-center gap-3.5 mt-6">
                 <a
                   href="#menu-content-root"
-                  className="px-6 py-3 rounded-full flame-gradient-btn text-white text-xs sm:text-sm font-black shadow-lg shadow-[#FF5A26]/40 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                  className="ch-shine ch-btn px-6 py-3 min-h-11 rounded-full flame-gradient-btn text-white text-xs sm:text-sm font-black shadow-lg shadow-[#FF5A26]/40 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <span>Explore Menu</span>
                   <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -1047,7 +1075,7 @@ export default function CustomerMenu({
                 <button
                   type="button"
                   onClick={() => setIsTableModalOpen(true)}
-                  className="px-5 py-3 rounded-full bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 hover:text-white border border-zinc-700/80 hover:border-[#FF5A26]/50 text-xs sm:text-sm font-bold transition-all shadow-md active:scale-95 cursor-pointer flex items-center gap-2"
+                  className="ch-btn px-5 py-3 min-h-11 rounded-full bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 hover:text-white border border-zinc-700/80 hover:border-[#FF5A26]/50 text-xs sm:text-sm font-bold transition-all shadow-md active:scale-95 cursor-pointer flex items-center gap-2"
                 >
                   <UtensilsCrossed className="w-3.5 h-3.5 text-[#FF5A26]" />
                   <span>{tableNumber ? `Table ${tableNumber}` : 'Set Dining Table'}</span>
@@ -1057,12 +1085,12 @@ export default function CustomerMenu({
             </div>
 
             {/* Right Column: Floating Ceramic Artisanal Ramen Bowl (Screenshot 1) */}
-            <div className="relative shrink-0 flex items-center justify-center select-none py-2 lg:py-6">
+            <div style={{ '--ch-d': '220ms' }} className="ch-enter relative shrink-0 flex items-center justify-center select-none py-2 lg:py-6">
               {/* Radiant Orange Glow Behind Bowl */}
               <div className="absolute w-72 h-72 sm:w-80 sm:h-80 bg-[#FF5A26]/20 rounded-full blur-3xl pointer-events-none animate-pulse" />
               
               {/* Floating Ceramic Dish */}
-              <div className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-92 md:h-92 rounded-full p-2.5 bg-gradient-to-tr from-[#FF5A26]/50 via-transparent to-[#FF7A45]/30 shadow-2xl">
+              <div className="ch-float relative w-64 h-64 sm:w-80 sm:h-80 md:w-92 md:h-92 rounded-full p-2.5 bg-gradient-to-tr from-[#FF5A26]/50 via-transparent to-[#FF7A45]/30 shadow-2xl">
                 <div className="w-full h-full rounded-full overflow-hidden shadow-2xl ring-4 ring-white/10 hover:scale-104 transition-transform duration-700 bg-zinc-900">
                   <img
                     src="https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=900&auto=format&fit=crop&q=80"
@@ -1224,7 +1252,7 @@ export default function CustomerMenu({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search delicious dishes, ingredients, drinks..."
-                className="w-full pl-10 pr-9 py-2.5 sm:py-3 text-xs sm:text-sm bg-[#161619]/90 rounded-2xl border border-zinc-800 shadow-md focus:outline-none focus:ring-2 focus:ring-[#FF5A26]/40 focus:border-[#FF5A26] placeholder:text-zinc-500 text-white transition-all"
+                className="w-full min-h-11 pl-10 pr-9 py-2.5 sm:py-3 text-xs sm:text-sm bg-[#161619]/90 rounded-2xl border border-zinc-800 shadow-md focus:outline-none focus:ring-2 focus:ring-[#FF5A26]/40 focus:border-[#FF5A26] placeholder:text-zinc-500 text-white transition-all"
               />
               {searchQuery && (
                 <button
@@ -1242,7 +1270,7 @@ export default function CustomerMenu({
               <button
                 type="button"
                 onClick={() => setVegOnlyFilter((v) => !v)}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
+                className={`inline-flex items-center gap-1.5 min-h-11 ch-btn px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
                   vegOnlyFilter
                     ? 'bg-emerald-700 text-white border-emerald-600 shadow-md shadow-emerald-700/30 ring-1 ring-emerald-400/40'
                     : 'bg-[#161619] hover:bg-zinc-800 text-stone-300 border-zinc-800'
@@ -1255,7 +1283,7 @@ export default function CustomerMenu({
               <button
                 type="button"
                 onClick={() => setSpicyFilter((s) => !s)}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
+                className={`inline-flex items-center gap-1.5 min-h-11 ch-btn px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
                   spicyFilter
                     ? 'bg-rose-700 text-white border-rose-600 shadow-md shadow-rose-700/30 ring-1 ring-rose-400/40'
                     : 'bg-[#161619] hover:bg-zinc-800 text-stone-300 border-zinc-800'
@@ -1270,7 +1298,7 @@ export default function CustomerMenu({
         </section>
 
         {/* Category Horizontal Sticky Pill Bar */}
-        <section className="sticky top-16 z-30 -mx-3 sm:mx-0 mb-4 bg-[#0a0a0c]/95 backdrop-blur-md pt-1 pb-1.5 border-b border-zinc-800/80 shadow-md">
+        <section className="ch-sticky-bar sticky top-16 z-30 -mx-3 sm:mx-0 mb-4 pt-1 pb-1.5 border-b border-zinc-800/80 shadow-md">
           <CategoryBar
             categories={categoriesList}
             selectedCategory={selectedCategory === 'All' ? activeScrollCategory : selectedCategory}
@@ -1308,7 +1336,7 @@ export default function CustomerMenu({
             <button
               type="button"
               onClick={() => setLayoutMode('showcase')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`min-h-11 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                 layoutMode === 'showcase'
                   ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50'
                   : 'text-zinc-400 hover:text-white'
@@ -1322,7 +1350,7 @@ export default function CustomerMenu({
             <button
               type="button"
               onClick={() => setLayoutMode('grid')}
-              className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+              className={`min-h-11 min-w-11 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 ${
                 layoutMode === 'grid'
                   ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50'
                   : 'text-zinc-400 hover:text-white'
@@ -1336,7 +1364,7 @@ export default function CustomerMenu({
             <button
               type="button"
               onClick={() => setLayoutMode('list')}
-              className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+              className={`min-h-11 min-w-11 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 ${
                 layoutMode === 'list'
                   ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/50'
                   : 'text-zinc-400 hover:text-white'
@@ -1357,6 +1385,7 @@ export default function CustomerMenu({
               categorizedSections.map((section) => (
                 <section
                   key={section.categoryKey}
+                  data-ch-reveal
                   id={`cat-section-${section.categoryKey}`}
                   className="space-y-6 scroll-mt-32 pt-2"
                 >
@@ -1387,7 +1416,7 @@ export default function CustomerMenu({
                         setSelectedCategory(section.canonicalId);
                         window.scrollTo({ top: 160, behavior: 'smooth' });
                       }}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 hover:border-[#FF5A26]/40 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
+                      className="ch-btn inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 hover:border-[#FF5A26]/40 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
                     >
                       <span>Filter</span>
                       <ArrowRight className="w-3.5 h-3.5 text-[#FF7A45]" />
@@ -1428,7 +1457,7 @@ export default function CustomerMenu({
               (() => {
                 const activeMeta = getCategoryMetadata(selectedCategory);
                 return (
-                  <section className="space-y-6">
+                  <section className="space-y-6" data-ch-reveal>
                     <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
                       <div className="flex items-center gap-2.5 sm:gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-white flex items-center justify-center text-lg sm:text-xl shadow-sm shrink-0">
@@ -1455,7 +1484,7 @@ export default function CustomerMenu({
                           setSelectedCategory('All');
                           window.scrollTo({ top: 160, behavior: 'smooth' });
                         }}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl flame-gradient-btn text-white text-xs font-bold transition shadow-md cursor-pointer shrink-0"
+                        className="ch-shine ch-btn inline-flex items-center gap-1.5 px-4 py-2 min-h-11 rounded-xl flame-gradient-btn text-white text-xs font-bold transition shadow-md cursor-pointer shrink-0"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>View All Categories</span>
@@ -1521,7 +1550,7 @@ export default function CustomerMenu({
           </div>
         )}
         {/* 3. REVIEWS TESTIMONIALS SECTION [ What They Say? ] (Screenshot 1) */}
-        <section id="reviews-section" className="my-16 sm:my-24 scroll-mt-24">
+        <section id="reviews-section" data-ch-reveal className="my-16 sm:my-24 scroll-mt-24">
           <div className="flex items-center justify-center mb-8 sm:mb-12">
             <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#141418]/90 border border-zinc-800 shadow-xl">
               <span className="text-[#FF5A26] font-mono text-2xl sm:text-3xl font-black">[</span>
@@ -1597,7 +1626,7 @@ export default function CustomerMenu({
         </section>
 
         {/* 4. MASTER CHEF FEATURE SECTION [ Meet Our Chefs ] (Screenshot 1) */}
-        <section id="chefs-section" className="my-16 sm:my-24 scroll-mt-24">
+        <section id="chefs-section" data-ch-reveal className="my-16 sm:my-24 scroll-mt-24">
           <div className="flex items-center justify-center mb-8 sm:mb-12">
             <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#141418]/90 border border-zinc-800 shadow-xl">
               <span className="text-[#FF5A26] font-mono text-2xl sm:text-3xl font-black">[</span>

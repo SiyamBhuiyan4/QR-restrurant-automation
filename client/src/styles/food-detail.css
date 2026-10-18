@@ -1,15 +1,26 @@
 /* Food detail modal: staged open sequence and quick reverse close.
    Timeline (open):
      0.00s  backdrop fades in
-     0.00s  frame rises in, glowing border traces around it
+     0.00s  sheet rises in, a thin ember border traces around it
      0.35s  top bar
-     0.65s  hero / photo area (the "chibi" stage)
+     0.65s  hero / photo area
      1.00s+ text blocks, staggered 0.12s apart
    All animations use fill-mode "both" so the hidden start state holds during delays. */
 
 :root {
-  --fdm-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --fdm-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --fdm-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --fdm-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ---- Sheet height: use dynamic viewport on phones so browser chrome
+        never pushes the footer off-screen ------------------------------- */
+@supports (height: 100dvh) {
+  @media (max-width: 639px) {
+    .fdm-frame.fdm-sheet {
+      max-height: 92dvh;
+    }
+  }
 }
 
 /* ---- Backdrop ---------------------------------------------------------- */
@@ -24,18 +35,18 @@
 }
 
 .fdm-backdrop {
-  animation: fdmBackdropIn 0.3s ease-out both;
+  animation: fdmBackdropIn 0.35s ease-out both;
 }
 
 .fdm-backdrop-out {
   animation: fdmBackdropOut 0.2s var(--fdm-ease-in) forwards;
 }
 
-/* ---- Frame: rises in, then a glowing border traces around it ------------ */
+/* ---- Frame: rises in, then a thin ember border traces around it -------- */
 @keyframes fdmFrameIn {
   from {
     opacity: 0;
-    transform: translateY(28px) scale(0.96);
+    transform: translateY(32px) scale(0.97);
   }
   to {
     opacity: 1;
@@ -50,7 +61,7 @@
   }
   to {
     opacity: 0;
-    transform: translateY(14px) scale(0.97);
+    transform: translateY(16px) scale(0.98);
   }
 }
 
@@ -59,7 +70,7 @@
     opacity: 0;
     clip-path: inset(0 100% 100% 0 round 24px);
   }
-  45% {
+  40% {
     opacity: 1;
     clip-path: inset(0 0 0 0 round 24px);
   }
@@ -79,8 +90,8 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  border: 1.5px solid rgba(255, 90, 38, 0.85);
-  box-shadow: 0 0 22px rgba(255, 90, 38, 0.45), inset 0 0 18px rgba(255, 90, 38, 0.18);
+  border: 1px solid rgba(255, 122, 69, 0.8);
+  box-shadow: 0 0 18px rgba(255, 90, 38, 0.35), inset 0 0 14px rgba(255, 90, 38, 0.12);
   pointer-events: none;
   z-index: 50;
   opacity: 0;
@@ -101,7 +112,7 @@
 @keyframes fdmRise {
   0% {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(16px);
   }
   100% {
     opacity: 1;
@@ -112,7 +123,7 @@
 @keyframes fdmHeroIn {
   0% {
     opacity: 0;
-    transform: scale(0.94);
+    transform: scale(0.96);
     filter: blur(6px);
   }
   100% {
@@ -129,24 +140,45 @@
 
 /* Hero / photo area */
 .fdm-hero {
-  animation: fdmHeroIn 0.6s var(--fdm-ease-out) 0.65s both;
+  animation: fdmHeroIn 0.7s var(--fdm-ease-out) 0.65s both;
 }
 
 /* Text blocks, staggered */
 .fdm-d3 {
-  animation: fdmRise 0.5s var(--fdm-ease-out) 1s both;
+  animation: fdmRise 0.55s var(--fdm-ease-out) 1s both;
 }
 
 .fdm-d4 {
-  animation: fdmRise 0.5s var(--fdm-ease-out) 1.12s both;
+  animation: fdmRise 0.55s var(--fdm-ease-out) 1.12s both;
 }
 
 .fdm-d5 {
-  animation: fdmRise 0.5s var(--fdm-ease-out) 1.24s both;
+  animation: fdmRise 0.55s var(--fdm-ease-out) 1.24s both;
 }
 
 .fdm-d6 {
-  animation: fdmRise 0.5s var(--fdm-ease-out) 1.36s both;
+  animation: fdmRise 0.55s var(--fdm-ease-out) 1.36s both;
+}
+
+/* ---- Sticky footer: clears the iOS home indicator ---------------------- */
+.fdm-footer {
+  padding-bottom: calc(0.875rem + var(--fdm-safe-bottom));
+}
+
+@media (min-width: 640px) {
+  .fdm-footer {
+    padding-bottom: 1rem;
+  }
+}
+
+/* ---- Primary CTA: gentle press feedback --------------------------------- */
+.fdm-cta {
+  transition: transform 0.15s var(--fdm-ease-out), box-shadow 0.25s ease, background-color 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fdm-cta:active {
+  transform: scale(0.98);
 }
 
 /* ---- Reduced motion: show everything instantly ------------------------- */
@@ -170,5 +202,11 @@
 
   .fdm-frame::after {
     opacity: 0 !important;
+  }
+
+  .fdm-cta,
+  .fdm-cta:active {
+    transition: none !important;
+    transform: none !important;
   }
 }
