@@ -9,7 +9,13 @@ import {
   Leaf,
   Flame,
   Star,
-  Utensils
+  Utensils,
+  Play,
+  Pause,
+  Video,
+  Image as ImageIcon,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import '../../styles/menu-book-detail.css';
 
@@ -17,6 +23,7 @@ import '../../styles/menu-book-detail.css';
  * MenuBookDetail
  * Renders a luxurious, high-end illustrated feature dish page inside the 3D book:
  * - Large appetizing food photography with vintage gold border and glowing vignette
+ * - Kitchen video reel player showing authentic culinary preparation
  * - Elegant typography: dish name in Playfair Display serif, vintage price tag badge in gold
  * - Full description, artisanal ingredient pills with gold borders, dietary badges (Veg, Spicy, Chef Special)
  * - Prominent "Order Now / Add to Cart" button with quantity stepper (+ / -), instant feedback animation ("Added to Table Order!"),
@@ -96,6 +103,13 @@ export default function MenuBookDetail({ dish, cartQuantity = 0, onAddToCart, on
   const [imageError, setImageError] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [justAdded, setJustAdded] = useState(false);
+
+  // Video Reel Support
+  const rawVideo = item.makingVideoUrl || item.videoUrl || (item.category !== 'Drinks' ? '/videos/reel-chef.mp4' : null);
+  const [activeMedia, setActiveMedia] = useState('photo'); // 'photo' | 'video'
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
+  const videoRef = useRef(null);
   
   const addedTimer = useRef(null);
   const exitTimer = useRef(null);
@@ -113,6 +127,9 @@ export default function MenuBookDetail({ dish, cartQuantity = 0, onAddToCart, on
     setJustAdded(false);
     setQuantity(1);
     setIsExiting(false);
+    setActiveMedia('photo');
+    setIsVideoPlaying(true);
+    setIsVideoMuted(true);
   }, [item.id, image]);
 
   useEffect(() => {
@@ -223,7 +240,37 @@ export default function MenuBookDetail({ dish, cartQuantity = 0, onAddToCart, on
         </div>
       </header>
 
-      {/* Large Appetizing Food Photography with Vintage Gold Border & Glowing Vignette */}
+      {/* Media Type Switcher: Photo vs Kitchen Video Reel */}
+      {rawVideo && (
+        <div className="flex items-center justify-center gap-2 mb-2.5 z-10 relative">
+          <button
+            type="button"
+            onClick={() => setActiveMedia('photo')}
+            className={`px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              activeMedia === 'photo'
+                ? 'bg-[#d4af37] text-[#06140e] shadow-md shadow-[#d4af37]/30 scale-105'
+                : 'bg-[#0f2f22]/80 hover:bg-[#0f2f22] text-[#f0d27a] border border-[#d4af37]/35'
+            }`}
+          >
+            <ImageIcon className="w-3.5 h-3.5" />
+            <span>Food Photo</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveMedia('video')}
+            className={`px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              activeMedia === 'video'
+                ? 'bg-[#d4af37] text-[#06140e] shadow-md shadow-[#d4af37]/30 scale-105'
+                : 'bg-[#0f2f22]/80 hover:bg-[#0f2f22] text-[#f0d27a] border border-[#d4af37]/35'
+            }`}
+          >
+            <Video className="w-3.5 h-3.5 text-current animate-pulse" />
+            <span>Kitchen Video Reel</span>
+          </button>
+        </div>
+      )}
+
+      {/* Large Appetizing Food Photography or Kitchen Video Reel */}
       <div className="mbd__figure-wrap">
         <figure className="mbd__figure">
           {/* Vintage Ornamental Corner Accents */}
@@ -232,8 +279,62 @@ export default function MenuBookDetail({ dish, cartQuantity = 0, onAddToCart, on
           <span className="mbd__corner mbd__corner--bl" aria-hidden="true" />
           <span className="mbd__corner mbd__corner--br" aria-hidden="true" />
 
-          {showImage ? (
-            <div className="mbd__photo-container">
+          {activeMedia === 'video' && rawVideo ? (
+            <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-black flex items-center justify-center shadow-2xl">
+              <video
+                ref={videoRef}
+                src={rawVideo}
+                autoPlay
+                loop
+                muted={isVideoMuted}
+                playsInline
+                className="w-full h-full object-cover rounded-xl"
+              />
+              {/* Reel Badge */}
+              <div className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-[#f0d27a] border border-[#d4af37]/40 flex items-center gap-1.5 shadow-md">
+                <Video className="w-3 h-3 text-[#d4af37]" />
+                <span>Kitchen Making Reel</span>
+              </div>
+
+              {/* Video Controls Overlay */}
+              <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 z-10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (videoRef.current) {
+                      if (isVideoPlaying) {
+                        videoRef.current.pause();
+                        setIsVideoPlaying(false);
+                      } else {
+                        videoRef.current.play();
+                        setIsVideoPlaying(true);
+                      }
+                    }
+                  }}
+                  className="p-1.5 rounded-full bg-black/75 hover:bg-black text-[#f0d27a] border border-[#d4af37]/40 shadow-md transition cursor-pointer"
+                  title={isVideoPlaying ? "Pause video" : "Play video"}
+                  aria-label={isVideoPlaying ? "Pause video" : "Play video"}
+                >
+                  {isVideoPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (videoRef.current) {
+                      videoRef.current.muted = !isVideoMuted;
+                      setIsVideoMuted(!isVideoMuted);
+                    }
+                  }}
+                  className="p-1.5 rounded-full bg-black/75 hover:bg-black text-[#f0d27a] border border-[#d4af37]/40 shadow-md transition cursor-pointer"
+                  title={isVideoMuted ? "Unmute reel" : "Mute reel"}
+                  aria-label={isVideoMuted ? "Unmute reel" : "Mute reel"}
+                >
+                  {isVideoMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+          ) : showImage ? (
+            <div className="mbd__photo-container relative">
               <img
                 src={image}
                 alt={name}
@@ -243,6 +344,19 @@ export default function MenuBookDetail({ dish, cartQuantity = 0, onAddToCart, on
               />
               {/* Glowing Vignette Overlay */}
               <div className="mbd__vignette" aria-hidden="true" />
+
+              {/* Quick Watch Reel Button */}
+              {rawVideo && (
+                <button
+                  type="button"
+                  onClick={() => setActiveMedia('video')}
+                  className="absolute bottom-2.5 right-2.5 z-10 px-2.5 py-1 rounded-full bg-black/80 hover:bg-black text-[#f0d27a] border border-[#d4af37]/60 text-[10px] font-bold flex items-center gap-1.5 shadow-xl backdrop-blur-md cursor-pointer transition hover:scale-105"
+                  title="Watch kitchen video reel"
+                >
+                  <Play className="w-3 h-3 fill-[#d4af37] text-[#d4af37]" />
+                  <span>Watch Reel</span>
+                </button>
+              )}
             </div>
           ) : (
             <div className="mbd__placeholder">

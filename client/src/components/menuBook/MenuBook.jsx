@@ -10,7 +10,7 @@ import useBookParallax from './useBookParallax.js';
 import useBookSwipe from './useBookSwipe.js';
 import MenuBookDogEar from './MenuBookDogEar.jsx';
 import useBookSound from './useBookSound.js';
-import { Box, BookOpen, Sparkles, Volume2, VolumeX } from 'lucide-react';
+import { Box, BookOpen, Sparkles, Volume2, VolumeX, ChevronLeft, ChevronRight } from 'lucide-react';
 import '../../styles/menu-book-flip.css';
 import '../../styles/menu-book-3d-flip.css';
 import '../../styles/menu-book-depth.css';
@@ -352,30 +352,14 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
                         </span>
                       )}
                       {inCart > 0 && <span className="mb-entry__count">{inCart}</span>}
-                      {isVeg && !isSpicy && (
-                        <span className="mb-entry__thumb-badge mb-entry__thumb-badge--veg" title="Vegetarian">V</span>
-                      )}
-                      {isSpicy && (
-                        <span className="mb-entry__thumb-badge mb-entry__thumb-badge--spicy" title="Spicy">🌶</span>
-                      )}
                     </span>
                     <span className="mb-entry__content">
                       <span className="mb-entry__header">
                         <span className="mb-entry__name">{item.name}</span>
-                        {(isVeg || isSpicy || isPopular) && (
-                          <span className="mb-entry__badges">
-                            {isVeg && <span className="mb-badge mb-badge--veg" title="Vegetarian">Veg</span>}
-                            {isSpicy && <span className="mb-badge mb-badge--spicy" title="Spicy">Spicy</span>}
-                            {isPopular && <span className="mb-badge mb-badge--popular" title="Chef's Pick">Chef&apos;s Pick</span>}
-                          </span>
-                        )}
-                        {/* Dotted leader linking the dish to its price, as on a printed menu */}
+                        {/* Dotted leader linking the dish to its price, as on a classic printed menu */}
                         <span className="mb-entry__leader" aria-hidden="true" />
                         <span className="mb-entry__price">{formatPrice(item.price)}</span>
                       </span>
-                      {item.description ? (
-                        <span className="mb-entry__desc">{item.description}</span>
-                      ) : null}
                     </span>
                   </button>
                 </li>
@@ -475,9 +459,22 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
 
   return (
     <div className="mb-root w-full flex flex-col items-center gap-4 py-4 select-none">
-      {/* 3D Perspective View Toggle Toolbar */}
-      <div className="mb-toolbar">
-        <div className="flex items-center gap-2">
+      {/* Top Navigation & 3D Perspective Controls */}
+      <div className="mb-toolbar flex items-center justify-between w-full max-w-5xl px-2 sm:px-4">
+        {/* Previous page button with icon sign (no text) */}
+        <button
+          type="button"
+          onClick={turnPrev}
+          disabled={!canPrevPage}
+          aria-label="Previous page"
+          title="Previous page"
+          className="mb-top-arrow-btn mb-top-arrow--prev min-h-[44px] min-w-[44px] w-11 h-11 rounded-full bg-[#d4af37] text-[#064e3b] flex items-center justify-center shadow-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none"
+        >
+          <ChevronLeft className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
+        </button>
+
+        {/* Center controls: 3D View Toggle, Sound Toggle, and Page Counter */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
           <div
             className="mb-view-toggle"
             role="radiogroup"
@@ -525,12 +522,24 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
               <span className="hidden sm:inline">{isMuted ? 'Muted' : 'Sound'}</span>
             </button>
           </div>
+
+          {/* Page Counter Badge */}
+          <div className="hidden sm:flex items-center px-3 py-1.5 rounded-full bg-[#03231a]/85 border border-[#d4af37]/35 text-[#d4af37] text-xs font-semibold tracking-wider uppercase">
+            <span>{isPhone ? `Page ${activeDot + 1} of ${dotCount}` : `Spread ${activeDot + 1} of ${dotCount}`}</span>
+          </div>
         </div>
 
-        <div className="mb-toolbar__hint hidden sm:flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-[#d4af37]" aria-hidden="true" />
-          <span>Click dog-ears or swipe to turn</span>
-        </div>
+        {/* Next page button with icon sign (no text) */}
+        <button
+          type="button"
+          onClick={turnNext}
+          disabled={!canNextPage}
+          aria-label="Next page"
+          title="Next page"
+          className="mb-top-arrow-btn mb-top-arrow--next min-h-[44px] min-w-[44px] w-11 h-11 rounded-full bg-[#d4af37] text-[#064e3b] flex items-center justify-center shadow-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none"
+        >
+          <ChevronRight className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
+        </button>
       </div>
 
       <div className="mb-3d-stage-wrapper w-full flex justify-center">
@@ -595,9 +604,6 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
               <span className="mb-spine-tailband" />
             </div>
 
-            {/* Silk ribbon bookmark hanging from the spine gutter */}
-            <div className="mb-ribbon-bookmark" aria-hidden="true" />
-
             {/* Non-obtrusive mobile edge tap zones */}
             <button
               type="button"
@@ -615,16 +621,7 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
             />
           </div>
 
-          <div className="mb-controls mt-4 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={turnPrev}
-              disabled={!canPrevPage}
-              className="mb-btn-turn min-h-[44px] min-w-[80px] px-4 rounded-full bg-[#d4af37] text-[#064e3b] font-semibold disabled:opacity-40 shadow-md hover:brightness-105 active:scale-95 transition-all"
-            >
-              Previous
-            </button>
-
+          <div className="mb-controls mt-4 flex items-center justify-center gap-3">
             <div className="mb-dots flex items-center gap-2 flex-wrap justify-center">
               {/* One dot per spread on desktop, one per page on phone. */}
               {Array.from({ length: dotCount }).map((_, i) => (
@@ -644,15 +641,6 @@ export default function MenuBook({ sections = [], cart = {}, onAddToCart, onSele
                 </button>
               ))}
             </div>
-
-            <button
-              type="button"
-              onClick={turnNext}
-              disabled={!canNextPage}
-              className="mb-btn-turn min-h-[44px] min-w-[80px] px-4 rounded-full bg-[#d4af37] text-[#064e3b] font-semibold disabled:opacity-40 shadow-md hover:brightness-105 active:scale-95 transition-all"
-            >
-              Next
-            </button>
           </div>
         </div>
       </div>
