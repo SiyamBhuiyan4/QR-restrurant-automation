@@ -6,6 +6,7 @@ import CategoryBar from '../components/CategoryBar';
 import CartDrawer from '../components/CartDrawer';
 import FoodDetailModal from '../components/FoodDetailModal';
 import MenuBook from '../components/menuBook/MenuBook';
+import MenuItemCard from '../components/MenuItemCard';
 import '../styles/customer-hero.css';
 import '../styles/customer-menu-sections.css';
 import '../styles/menu-book-flip.css';
@@ -1388,6 +1389,209 @@ export default function CustomerMenu({
             onSelectDish={(selected) => setSelectedDishModal(selected)}
           />
         </div>
+
+        {/* =====================================================================
+            A La Carte Dishes Grid (Matching Screenshot Plate Aesthetic)
+            ===================================================================== */}
+        <section id="menu-food-grid" className="w-full max-w-7xl pt-10 pb-12 scroll-mt-24">
+          {/* Section Divider & Heading */}
+          <div className="text-center mb-7">
+            <div className="inline-flex items-center gap-3 text-[#d4af37] text-xs font-bold tracking-[0.22em] uppercase mb-2">
+              <span className="opacity-60">✦ ─────</span>
+              <span>À LA CARTE SELECTION</span>
+              <span className="opacity-60">───── ✦</span>
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-normal text-[#f5efe0] tracking-tight [font-family:Playfair_Display,Georgia,serif]">
+              Chef's Culinary Creations
+            </h2>
+            <p className="text-xs sm:text-sm text-[#f5efe0]/70 max-w-md mx-auto mt-2 font-normal">
+              Freshly prepared to order. Tap any dish for 360° views and culinary details, or add directly to your dining order.
+            </p>
+          </div>
+
+          {/* Category Bar for quick navigation */}
+          <div className="mb-6">
+            <CategoryBar
+              categories={categoriesList}
+              selectedCategory={selectedCategory}
+              onSelectCategory={(catId) => handleSelectCategory(catId)}
+              categoryCounts={categoryCounts}
+            />
+          </div>
+
+          {/* Search & Dietary Filters Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-8 px-1">
+            <div className="relative flex-1 min-w-[220px] max-w-md">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search dishes, ingredients..."
+                className="w-full pl-9 pr-9 py-2 text-xs sm:text-sm rounded-full bg-[#0f3d2a]/60 border border-[#d4af37]/35 text-[#f5efe0] placeholder-[#f5efe0]/45 focus:outline-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/40 transition shadow-inner"
+              />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#d4af37]" />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#f5efe0]/60 hover:text-[#f5efe0] cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setVegOnlyFilter((v) => !v)}
+                className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                  vegOnlyFilter
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'bg-[#0f3d2a]/50 text-[#f5efe0]/80 border border-[#d4af37]/30 hover:border-[#d4af37]'
+                }`}
+              >
+                <Leaf className="w-3.5 h-3.5" />
+                <span>Veg Only</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSpicyFilter((s) => !s)}
+                className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                  spicyFilter
+                    ? 'bg-rose-600 text-white shadow-md'
+                    : 'bg-[#0f3d2a]/50 text-[#f5efe0]/80 border border-[#d4af37]/30 hover:border-[#d4af37]'
+                }`}
+              >
+                <Flame className="w-3.5 h-3.5" />
+                <span>Spicy</span>
+              </button>
+
+              {(searchQuery || vegOnlyFilter || spicyFilter) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setVegOnlyFilter(false);
+                    setSpicyFilter(false);
+                  }}
+                  className="text-xs text-[#f0d27a] hover:text-[#d4af37] font-semibold underline underline-offset-2 ml-1 cursor-pointer"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Dishes Presentation (Grid matching screenshot style) */}
+          {filteredItems.length > 0 ? (
+            selectedCategory === 'All' && !searchQuery && !vegOnlyFilter && !spicyFilter ? (
+              // Grouped by Category with Section Titles
+              <div className="space-y-12">
+                {categorizedSections.map((section) => (
+                  <div key={section.categoryKey} id={`cat-section-${section.categoryKey}`} className="space-y-4 scroll-mt-28">
+                    {/* Category Title Banner */}
+                    <div className="flex items-center justify-between pb-3 border-b border-[#d4af37]/30">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl sm:text-2xl">{section.icon}</span>
+                        <div>
+                          <h3 className="text-lg sm:text-2xl font-normal text-[#f0d27a] tracking-tight [font-family:Playfair_Display,Georgia,serif]">
+                            {section.title}
+                          </h3>
+                          <p className="text-xs text-[#f5efe0]/60">{section.subtitle}</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-[#d4af37] bg-[#0f3d2a] border border-[#d4af37]/40 px-2.5 py-0.5 rounded-full">
+                        {section.items.length} {section.items.length === 1 ? 'dish' : 'dishes'}
+                      </span>
+                    </div>
+
+                    {/* 4-column Grid matching screenshot */}
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-5">
+                      {section.items.map((dish, idx) => {
+                        const inCart = cart[dish.id];
+                        return (
+                          <MenuItemCard
+                            key={dish.id}
+                            item={dish}
+                            index={idx}
+                            layout="plate"
+                            cartQuantity={inCart ? inCart.quantity : 0}
+                            itemNote={inCart ? inCart.note : ''}
+                            onAddToCart={handleAddToCart}
+                            onUpdateQuantity={handleUpdateQuantity}
+                            onRemoveFromCart={handleRemoveFromCart}
+                            onUpdateNote={handleUpdateNote}
+                            onSelectDish={(selected) => setSelectedDishModal(selected)}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              // Filtered / Searched Single Grid
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-[#d4af37]/30">
+                  <h3 className="text-lg sm:text-2xl font-normal text-[#f0d27a] tracking-tight [font-family:Playfair_Display,Georgia,serif]">
+                    {selectedCategory === 'All' ? 'Search Results' : (getCategoryMetadata(selectedCategory).title || selectedCategory)}
+                  </h3>
+                  <span className="text-xs font-bold text-[#d4af37] bg-[#0f3d2a] border border-[#d4af37]/40 px-2.5 py-0.5 rounded-full">
+                    {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-5">
+                  {filteredItems.map((dish, idx) => {
+                    const inCart = cart[dish.id];
+                    return (
+                      <MenuItemCard
+                        key={dish.id}
+                        item={dish}
+                        index={idx}
+                        layout="plate"
+                        cartQuantity={inCart ? inCart.quantity : 0}
+                        itemNote={inCart ? inCart.note : ''}
+                        onAddToCart={handleAddToCart}
+                        onUpdateQuantity={handleUpdateQuantity}
+                        onRemoveFromCart={handleRemoveFromCart}
+                        onUpdateNote={handleUpdateNote}
+                        onSelectDish={(selected) => setSelectedDishModal(selected)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )
+          ) : (
+            /* Empty State */
+            <div className="bg-[#0f3d2a]/60 rounded-3xl border border-[#1f6b4a] p-8 sm:p-12 text-center max-w-md mx-auto my-10 shadow-lg">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-[#d4af37] mx-auto flex items-center justify-center mb-3.5 border border-[#d4af37]/30">
+                <UtensilsCrossed className="w-8 h-8 stroke-[1.8]" />
+              </div>
+              <h3 className="font-normal text-[#f0d27a] text-xl mb-1 [font-family:Playfair_Display,Georgia,serif]">
+                No matching dishes found
+              </h3>
+              <p className="text-xs sm:text-sm text-[#f5efe0]/70 mb-5 leading-relaxed">
+                Try adjusting your search query or reset dietary filters to view all chef-crafted menu choices.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setVegOnlyFilter(false);
+                  setSpicyFilter(false);
+                  setSelectedCategory('All');
+                }}
+                className="min-h-11 px-5 py-2.5 bg-[#d4af37] hover:bg-[#f0d27a] text-[#06140e] rounded-full text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer"
+              >
+                Reset All Filters
+              </button>
+            </div>
+          )}
+        </section>
       </main>
 
       {/* Floating Bottom Cart Summary Bar */}

@@ -80,3 +80,354 @@
     animation: none !important;
   }
 }
+
+/* ==========================================================================
+   Plate Card Component (Fine Dining Dish Grid below Menu Book)
+   Matches screenshot aesthetic:
+   - Green price at top (e.g. 14.00 $)
+   - Centered circular overhead food plate/bowl
+   - Refined typography and elegant spacing
+   - Responsive 4-column layout on desktop, 2-column on mobile
+   ========================================================================== */
+
+.plate-card {
+  --card-i: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(180deg, #0e3725 0%, #0a271a 55%, #061810 100%);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 1.25rem;
+  padding: 1.15rem 1rem 1rem;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(240, 210, 122, 0.1);
+  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 320ms ease,
+              border-color 320ms ease;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.plate-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(212, 175, 55, 0.85);
+  box-shadow: 0 20px 40px -12px rgba(212, 175, 55, 0.22), 0 12px 30px -10px rgba(0, 0, 0, 0.8);
+}
+
+.plate-card--unavailable {
+  opacity: 0.65;
+}
+
+.plate-card--unavailable:hover {
+  transform: none;
+}
+
+/* Top bar: Green Price & Badges */
+.plate-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.plate-card__price {
+  font-size: 1.125rem;
+  font-weight: 800;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color: #34d399; /* Green price from screenshot */
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+/* Dietary & Rating Chips */
+.plate-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.plate-chip--veg {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.plate-chip--spicy {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.plate-chip--rating {
+  background: rgba(0, 0, 0, 0.4);
+  color: #f0d27a;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+}
+
+/* Centered Circular Plate / Bowl */
+.plate-card__media {
+  position: relative;
+  width: 76%;
+  max-width: 190px;
+  aspect-ratio: 1 / 1;
+  margin: 0.6rem auto 1rem;
+}
+
+.plate-card__dish-circle {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 14px 28px -8px rgba(0, 0, 0, 0.55),
+              0 0 0 1px rgba(212, 175, 55, 0.35);
+}
+
+.plate-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1);
+  transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.plate-card:hover .plate-card__img {
+  transform: scale(1.08);
+}
+
+.plate-card__fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #0f3d2a;
+  color: #f5efe0;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+/* Body: Title, Description */
+.plate-card__body {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 0.75rem;
+}
+
+.plate-card__title {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f5efe0;
+  line-height: 1.3;
+  margin-bottom: 0.35rem;
+  transition: color 240ms ease;
+}
+
+.plate-card:hover .plate-card__title {
+  color: #f0d27a;
+}
+
+.plate-card__desc {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: rgba(245, 239, 224, 0.68);
+  min-height: 2.2rem;
+}
+
+.plate-card__note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  background: rgba(15, 61, 42, 0.6);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #f0d27a;
+  font-size: 0.65rem;
+  font-weight: 500;
+  max-width: 100%;
+}
+
+/* Footer: Prep Time & Actions */
+.plate-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  margin-top: auto;
+  position: relative;
+  z-index: 2;
+}
+
+.plate-note-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: rgba(15, 61, 42, 0.4);
+  color: #f0d27a;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.plate-note-btn:hover {
+  background: rgba(212, 175, 55, 0.25);
+  border-color: #f0d27a;
+  color: #ffffff;
+}
+
+.plate-note-btn--active {
+  background: rgba(212, 175, 55, 0.3);
+  border-color: #f0d27a;
+  color: #ffffff;
+}
+
+.plate-order-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.45rem 1rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #f0d27a 0%, #d4af37 60%, #b8902a 100%);
+  color: #06140e;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 14px -3px rgba(212, 175, 55, 0.5);
+  cursor: pointer;
+  border: none;
+  transition: all 180ms ease;
+}
+
+.plate-order-btn:hover {
+  filter: brightness(1.1);
+  transform: scale(1.03);
+}
+
+.plate-order-btn:active {
+  transform: scale(0.96);
+}
+
+/* Stepper for quantity */
+.plate-stepper {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(15, 61, 42, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.6);
+  border-radius: 9999px;
+  padding: 0.15rem;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+}
+
+.plate-stepper__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: #f0d27a;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.plate-stepper__btn:hover {
+  background: rgba(212, 175, 55, 0.25);
+  color: #ffffff;
+}
+
+.plate-stepper__count {
+  min-width: 1.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #f5efe0;
+}
+
+/* Light Theme Overrides */
+html[data-theme="light"] .plate-card {
+  background: #ffffff;
+  border: 1px solid #e5e0d3;
+  box-shadow: 0 6px 20px -6px rgba(15, 61, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+html[data-theme="light"] .plate-card:hover {
+  border-color: rgba(138, 109, 22, 0.55);
+  box-shadow: 0 16px 32px -8px rgba(15, 61, 42, 0.14);
+}
+
+html[data-theme="light"] .plate-card__price {
+  color: #15803d; /* Vibrant bold green in light theme like screenshot */
+}
+
+html[data-theme="light"] .plate-card__title {
+  color: #0f3d2a;
+}
+
+html[data-theme="light"] .plate-card:hover .plate-card__title {
+  color: #7a5f10;
+}
+
+html[data-theme="light"] .plate-card__desc {
+  color: rgba(15, 61, 42, 0.72);
+}
+
+html[data-theme="light"] .plate-card__foot {
+  border-top-color: rgba(15, 61, 42, 0.12);
+}
+
+html[data-theme="light"] .plate-card__dish-circle {
+  border-color: #f7f3e8;
+  box-shadow: 0 10px 24px -8px rgba(15, 61, 42, 0.16);
+}
+
+html[data-theme="light"] .plate-chip--rating {
+  background: #f7f3e8;
+  color: #7a5f10;
+  border-color: rgba(138, 109, 22, 0.3);
+}
+
+html[data-theme="light"] .plate-stepper {
+  background: #f7f3e8;
+  border-color: rgba(138, 109, 22, 0.45);
+}
+
+html[data-theme="light"] .plate-stepper__count {
+  color: #0f3d2a;
+}
+
+html[data-theme="light"] .plate-stepper__btn {
+  color: #7a5f10;
+}
+
+html[data-theme="light"] .plate-stepper__btn:hover {
+  background: rgba(212, 175, 55, 0.2);
+}
+
+html[data-theme="light"] .plate-note-btn {
+  background: #f7f3e8;
+  border-color: rgba(138, 109, 22, 0.35);
+  color: #7a5f10;
+}

@@ -634,7 +634,165 @@ export default function MenuItemCard({
     );
   }
 
-  // 3. COMPACT 2-COLUMN GRID VIEW
+  // 3. PLATE CARD VIEW (Matches screenshot: prominent green price at top, centered circular bowl, elegant fine dining borders)
+  if (layout === 'plate') {
+    const platePrice = `${priceNum.toFixed(2)} ${currency}`;
+
+    return (
+      <>
+        <div
+          onClick={() => onSelectDish && onSelectDish(item)}
+          style={{ '--card-i': Math.min(Math.max(Number(index) || 0, 0), 10) }}
+          className={`group plate-card relative flex flex-col justify-between overflow-hidden cursor-pointer ${
+            !isAvailable ? 'plate-card--unavailable' : ''
+          }`}
+        >
+          {/* Top row: Green Price on Left ($14.00 / 14.00 $) & Dietary/Rating Badges on Right */}
+          <div className="plate-card__top">
+            <span className="plate-card__price">
+              {platePrice}
+            </span>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isVeg && (
+                <span className="plate-chip plate-chip--veg" title="Vegetarian">
+                  <Leaf className="w-2.5 h-2.5 fill-current" />
+                  <span>Veg</span>
+                </span>
+              )}
+              {isSpicy && (
+                <span className="plate-chip plate-chip--spicy" title="Spicy">
+                  <Flame className="w-2.5 h-2.5 fill-current" />
+                </span>
+              )}
+              <span className="plate-chip plate-chip--rating" title={`Rating: ${item.rating || '4.9'}`}>
+                <Star className="w-2.5 h-2.5 fill-current text-amber-400" />
+                <span>{item.rating || '4.9'}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Centered Circular Plate / Bowl Image */}
+          <div className="plate-card__media">
+            <div className="plate-card__dish-circle">
+              {safeDishImage && !imageError ? (
+                <img
+                  src={safeDishImage}
+                  alt={dishTitle}
+                  onError={() => setImageError(true)}
+                  loading="lazy"
+                  className="plate-card__img"
+                />
+              ) : (
+                <div className="plate-card__fallback">
+                  <UtensilsCrossed className="w-6 h-6 stroke-[1.8] text-[#16a34a] mb-1" />
+                  <span className="text-[10px] font-bold line-clamp-1">{dishTitle}</span>
+                </div>
+              )}
+
+              {!isAvailable && (
+                <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10">
+                  <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[9px] uppercase tracking-wider">
+                    Sold Out
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Details: Title and Short Description */}
+          <div className="plate-card__body">
+            <h3 className="plate-card__title line-clamp-1">
+              {dishTitle}
+            </h3>
+
+            {dishDesc && (
+              <p className="plate-card__desc line-clamp-2">
+                {dishDesc}
+              </p>
+            )}
+
+            {itemNote && (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openNoteModal(e);
+                }}
+                className="plate-card__note"
+                title="Edit chef note"
+              >
+                <MessageSquare className="w-2.5 h-2.5 text-[#16a34a] shrink-0" />
+                <span className="truncate">Chef Note: "{itemNote}"</span>
+              </div>
+            )}
+          </div>
+
+          {/* Footer: Prep Time & Ordering Controls */}
+          <div className="plate-card__foot">
+            <div className="flex items-center gap-1 text-[11px] text-[#f5efe0]/65 font-medium">
+              <Clock className="w-3 h-3 text-[#d4af37]" />
+              <span>{item.prepTime || '10 min'}</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isAvailable && (
+                <button
+                  type="button"
+                  onClick={openNoteModal}
+                  className={`plate-note-btn ${itemNote ? 'plate-note-btn--active' : ''}`}
+                  title="Special instructions for kitchen"
+                  aria-label="Chef note"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              {!isAvailable ? (
+                <span className="text-[10px] font-bold text-rose-400 uppercase">
+                  Sold Out
+                </span>
+              ) : cartQuantity > 0 ? (
+                <div className="plate-stepper">
+                  <button
+                    type="button"
+                    onClick={handleDecrement}
+                    className="plate-stepper__btn"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus className="w-3 h-3 stroke-[2.5]" />
+                  </button>
+                  <span className="plate-stepper__count">
+                    {cartQuantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleIncrement}
+                    className="plate-stepper__btn"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus className="w-3 h-3 stroke-[2.5]" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  className="plate-order-btn"
+                >
+                  <Plus className="w-3 h-3 stroke-[2.5]" />
+                  <span>ADD</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {renderNoteModal()}
+      </>
+    );
+  }
+
+  // 4. COMPACT 2-COLUMN GRID VIEW
   return (
     <>
       <div
