@@ -1270,7 +1270,7 @@ export default function CustomerMenu({
 
         {/* Live Customer Order Status Tracker (only if active order) */}
         {activeOrder && activeOrder.status !== 'served' && (
-          <div className="w-full max-w-5xl mb-4 bg-[#161619]/95 border border-zinc-800 rounded-3xl p-5 sm:p-6 shadow-xl animate-fadeIn">
+          <div className="w-full max-w-5xl mb-4 bg-[#0b0b0e]/45 border border-[#FF5A26]/35 ring-1 ring-[#FF5A26]/20 rounded-3xl p-5 sm:p-6 shadow-lg animate-fadeIn">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/80">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] flex items-center justify-center font-black text-xs shadow-2xs">
