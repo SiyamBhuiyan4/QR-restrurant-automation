@@ -6,7 +6,7 @@
     <title>SmartDine | Smart Table Ordering</title>
     
     <!-- PWA & Mobile Web App Meta Tags -->
-    <meta name="theme-color" content="#06140e" />
+    <meta name="theme-color" content="#021424" />
 
     <!-- Theme boot: set data-theme before first paint (saved choice, else OS preference). Inline, no request. -->
     <script>
@@ -22,7 +22,7 @@
         } catch (e) {}
         document.documentElement.setAttribute("data-theme", theme);
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute("content", theme === "light" ? "#f7f3e8" : "#06140e");
+        if (meta) meta.setAttribute("content", theme === "light" ? "#f7f3e8" : "#021424");
       })();
     </script>
     <meta name="description" content="Offline-First Smart Restaurant Ordering & Table Management System" />
@@ -42,7 +42,7 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
   </head>
-  <body class="font-sans text-cream selection:bg-gold selection:text-emerald-deep">
+  <body class="font-sans text-cream selection:bg-sky-500 selection:text-white bg-[#021424]">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
