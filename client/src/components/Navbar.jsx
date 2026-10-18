@@ -166,7 +166,7 @@ export default function Navbar({
               <div
                 role="status"
                 aria-label={isOnline ? 'Online' : 'Offline Mode'}
-                className={`inline-flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-full text-xs font-semibold border transition-colors duration-300 ${
+                className={`max-[399px]:hidden inline-flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-full text-xs font-semibold border transition-colors duration-300 ${
                   isOnline
                     ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
                     : 'bg-amber-950/80 text-amber-300 border-amber-500/40 animate-pulse motion-reduce:animate-none'

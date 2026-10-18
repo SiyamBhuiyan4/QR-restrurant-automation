@@ -592,7 +592,7 @@
   height: 60vmax;
   top: -22vmax;
   left: -18vmax;
-  background: radial-gradient(circle, rgba(255, 90, 38, 0.16) 0%, rgba(255, 90, 38, 0) 65%);
+  background: radial-gradient(circle, rgba(255, 90, 38, 0.3) 0%, rgba(255, 90, 38, 0) 65%);
   animation: ambientDrift1 34s ease-in-out infinite;
 }
 
@@ -601,7 +601,7 @@
   height: 55vmax;
   bottom: -20vmax;
   right: -16vmax;
-  background: radial-gradient(circle, rgba(255, 122, 69, 0.12) 0%, rgba(255, 122, 69, 0) 65%);
+  background: radial-gradient(circle, rgba(255, 122, 69, 0.24) 0%, rgba(255, 122, 69, 0) 65%);
   animation: ambientDrift2 40s ease-in-out infinite;
 }
 
@@ -614,17 +614,38 @@
   animation: ambientPulseSlow 26s ease-in-out infinite;
 }
 
+/* Floating embers: CSS-only dots drifting upward over the background */
+.app-ambient::before {
+  content: "";
+  position: absolute;
+  inset: -10% 0 -10% 0;
+  background-image:
+    radial-gradient(circle, rgba(255, 140, 90, 0.9) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle, rgba(255, 90, 38, 0.8) 0 1px, transparent 2px),
+    radial-gradient(circle, rgba(255, 180, 130, 0.7) 0 1px, transparent 2px);
+  background-size: 140px 180px, 230px 260px, 310px 220px;
+  background-position: 0 0, 60px 100px, 150px 40px;
+  opacity: 0.55;
+  animation: emberRise 38s linear infinite;
+}
+
+@keyframes emberRise {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
 /* Faint vignette so content stays readable at the edges */
 .app-ambient::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, rgba(10, 10, 12, 0) 40%, rgba(10, 10, 12, 0.7) 100%);
+  background: radial-gradient(ellipse at center, rgba(10, 10, 12, 0) 45%, rgba(10, 10, 12, 0.55) 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .app-ambient__blob,
-  .app-ambient__blob * {
+  .app-ambient__blob *,
+  .app-ambient::before {
     animation: none !important;
   }
 
