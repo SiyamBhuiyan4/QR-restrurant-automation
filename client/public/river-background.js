@@ -8,10 +8,10 @@
   // ===== Settings (ichchhe moto bodlate paro) =====
   const CONFIG = {
     QUALITY: 1,             // 1 = fast (mobile), 1.5 = beshi sharp
-    FISH_COUNT: 12,         // boro screen e eto ta, mobile e ektu kom
-    CRAB_COUNT: 4,          // nodir tolay kakra
+    FISH_COUNT: 8,         // boro screen e eto ta, mobile e ektu kom
+    CRAB_COUNT: 2,          // nodir tolay kakra
     STONE_DENSITY: 1,       // 0.5 = kom pathor, 1.5 = beshi
-    GRASS_DENSITY: 1.9,      // ghash koto beshi (1 = kom, 2.5 = khub ghono)
+    GRASS_DENSITY: 1,      // ghash koto beshi (1 = kom, 2.5 = khub ghono)
     FLOW_ANGLE: -2.3,       // srot er dik (radian). -2.3 = upore-bame
     FLOW_SPEED: 14,         // srot er gati (px / sec)
     CAUSTIC_STRENGTH: 1,    // alor jal koto ujjol
@@ -1202,8 +1202,8 @@ void main(){
 
   let nextAuto = 1.5, last = performance.now();
   function frame(now) {
-    // 30fps cap: phone/low-end laptop e bhari kaj kome, UI smooth thake
-    if (now - last < 1000 / 30 - 1) { requestAnimationFrame(frame); return; }
+    // 24fps cap: phone/low-end laptop e bhari kaj kome, UI smooth thake
+    if (now - last < 1000 / 24 - 1) { requestAnimationFrame(frame); return; }
     const dt = Math.min(0.05, (now - last) / 1000) * MOTION;
     last = now;
     T += dt;
