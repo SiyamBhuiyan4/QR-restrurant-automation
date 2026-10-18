@@ -6,8 +6,12 @@ import CategoryBar from '../components/CategoryBar';
 import MenuItemCard from '../components/MenuItemCard';
 import CartDrawer from '../components/CartDrawer';
 import FoodDetailModal from '../components/FoodDetailModal';
+import MenuBook from '../components/menuBook/MenuBook';
 import '../styles/customer-hero.css';
 import '../styles/customer-menu-sections.css';
+import '../styles/menu-book-flip.css';
+import '../styles/menu-book-depth.css';
+import '../styles/menu-book-responsive.css';
 import { 
   Search, 
   X, 
@@ -28,7 +32,8 @@ import {
   BellRing,
   LayoutGrid,
   Rows3,
-  Star
+  Star,
+  BookOpen
 } from 'lucide-react';
 
 // Default initial menu items for full offline or standalone browsing
@@ -1409,13 +1414,41 @@ export default function CustomerMenu({
               <Rows3 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline-block text-[11px] font-semibold">List</span>
             </button>
+
+            {/* Book view is hidden from customers until its layout is fixed (code kept) */}
+            {false && <button
+              type="button"
+              onClick={() => setLayoutMode('book')}
+              className={`min-h-11 min-w-11 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 ${
+                layoutMode === 'book'
+                  ? 'bg-gradient-to-r from-[#d4af37] to-[#f0d27a] text-[#06140e] shadow-md shadow-[#d4af37]/30 ring-1 ring-[#f0d27a]/50'
+                  : 'text-[#f5efe0]/70 hover:text-[#f0d27a]'
+              }`}
+              title="Open menu book"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline-block text-[11px] font-semibold">Book</span>
+            </button>}
           </div>
         </div>
 
         {/* Categorized Dishes Sections / Filtered Grid */}
         {filteredItems.length > 0 ? (
           <div className="space-y-12 sm:space-y-16">
-            {selectedCategory === 'All' ? (
+            {layoutMode === 'book' ? (
+              // 3D Open Menu Book (All = every section, single category = just that section)
+              <MenuBook
+                sections={selectedCategory === 'All'
+                  ? categorizedSections
+                  : categorizedSections.filter((s) => s.canonicalId === selectedCategory)}
+                cart={cart}
+                onAddToCart={(item, qty = 1) => {
+                  // handleAddToCart takes only (item), so repeat it for the requested quantity
+                  for (let i = 0; i < qty; i++) handleAddToCart(item);
+                }}
+                onSelectDish={(selected) => setSelectedDishModal(selected)}
+              />
+            ) : selectedCategory === 'All' ? (
               // Categorized Grouped View
               categorizedSections.map((section) => (
                 <section

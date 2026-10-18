@@ -1,40 +1,437 @@
 /*
- * Menu showcase: calm 360-style "camera orbit" around a fixed dish.
- * Only transform/opacity are animated, so it stays cheap on phones.
+ * Menu showcase: alternating dish block.
+ * Straight, rounded photo inside a gold hairline frame. No 3D tilt, no sway,
+ * so nothing rotates or clips. Colours go through --show-* tokens so a
+ * light theme can override them later.
  */
-
-/* Rounded, clean frame; perspective lives on the frame so the sway reads as depth */
-.menu-orbit-frame {
-  perspective: 900px;
+.menu-show {
+  --show-text: var(--color-cream, #f5efe0);
+  --show-gold: #d4af37;
+  --show-gold-soft: #f0d27a;
+  --show-ink: #06140e;
+  --show-emerald: #0f3d2a;
+  --show-muted: rgba(245, 239, 224, 0.68);
+  position: relative;
+  overflow: hidden;
+  /* Own dark surface and gutter, so the palette holds whatever the page theme is */
+  background: #06140e;
+  padding-inline: 1.25rem;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.16);
+  color: var(--show-text);
+  font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif);
 }
 
-/* Slow continuous walk-around sway: the dish stays put, the camera drifts around it */
-.menu-orbit-sway {
-  animation: menu-orbit-sway 14s ease-in-out infinite;
-  transform-origin: 50% 50%;
-  will-change: transform;
-}
-
-/* Pause the orbit while the user is looking closely at the dish */
-.group:hover .menu-orbit-sway {
-  animation-play-state: paused;
-}
-
-@keyframes menu-orbit-sway {
-  0%,
-  100% {
-    transform: rotateY(-16deg) rotateX(3deg);
-  }
-  50% {
-    transform: rotateY(16deg) rotateX(-2deg);
+@media (min-width: 768px) {
+  .menu-show {
+    padding-inline: 2.5rem;
   }
 }
 
-/* Respect users who asked for less motion: hold a still, flattering angle */
+.menu-show:last-child {
+  border-bottom: 0;
+}
+
+.menu-show__glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(120vw, 520px);
+  height: min(120vw, 520px);
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, rgba(212, 175, 55, 0.14), rgba(15, 61, 42, 0.18) 60%, rgba(6, 20, 14, 0) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.menu-show > * {
+  position: relative;
+  z-index: 1;
+}
+
+.menu-show > .menu-show__glow {
+  position: absolute;
+}
+
+/* Photo block */
+.menu-show__media {
+  margin-inline: auto;
+  padding-bottom: 1.25rem;
+}
+
+/* Outer gold hairline + emerald mat */
+.menu-show__frame {
+  padding: 6px;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(212, 175, 55, 0.7);
+  background: linear-gradient(160deg, #0f3d2a 0%, #0b2e20 60%, #06140e 100%);
+  box-shadow: 0 22px 40px -22px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(240, 210, 122, 0.12);
+}
+
+/* Inner photo: inner radius keeps the outer curve, so all four corners stay visible */
+.menu-show__photo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: calc(1.5rem - 7px);
+  background: #0b2e20;
+  isolation: isolate;
+}
+
+.menu-show__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 900ms ease-in-out;
+}
+
+.menu-show__img.is-active {
+  opacity: 1;
+}
+
+.menu-show__fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  color: var(--show-gold-soft);
+  text-align: center;
+}
+
+.menu-show__soldout {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 20, 14, 0.7);
+  z-index: 2;
+}
+
+.menu-show__soldout-tag {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--show-gold);
+  color: var(--show-gold-soft);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* 360 orbit HUD: sits below the frame, fully inside the block */
+.menu-show__hud {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  white-space: nowrap;
+  border-radius: 9999px;
+  border: 1px solid rgba(212, 175, 55, 0.6);
+  background: rgba(6, 20, 14, 0.94);
+  color: var(--show-gold-soft);
+  z-index: 3;
+}
+
+.menu-show__hud-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.menu-show__hud-sep {
+  width: 1px;
+  height: 0.875rem;
+  background: rgba(212, 175, 55, 0.35);
+}
+
+.menu-show__dot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 36px;
+  margin: 0 -6px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.menu-show__dot > span {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(245, 239, 224, 0.35);
+  transition: width 200ms ease, background-color 200ms ease;
+}
+
+.menu-show__dot.is-active > span {
+  width: 18px;
+  background: var(--show-gold);
+}
+
+/* Rating and reel badges sit on the frame corners */
+.menu-show__rating,
+.menu-show__reel {
+  position: absolute;
+  top: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: rgba(6, 20, 14, 0.9);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  color: var(--show-gold-soft);
+  z-index: 3;
+}
+
+.menu-show__rating {
+  right: 1rem;
+}
+
+.menu-show__reel {
+  left: 1rem;
+  background: linear-gradient(135deg, #d4af37 0%, #f0d27a 100%);
+  border-color: #f0d27a;
+  color: var(--show-ink);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.menu-show__muted {
+  color: var(--show-muted);
+  font-weight: 500;
+}
+
+/* Details panel */
+.menu-show__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--show-gold-soft);
+}
+
+.menu-show__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: var(--show-gold-soft);
+  background: rgba(15, 61, 42, 0.5);
+}
+
+.menu-show__chip--spicy {
+  border-color: rgba(200, 68, 43, 0.6);
+  color: #f4b3a6;
+  background: rgba(200, 68, 43, 0.12);
+}
+
+.menu-show__title {
+  font-family: var(--font-display, "Playfair Display", Georgia, "Times New Roman", serif);
+  font-size: clamp(1.875rem, 4.5vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.005em;
+  color: var(--show-text);
+  transition: color 300ms ease;
+}
+
+.menu-show:hover .menu-show__title {
+  color: var(--show-gold-soft);
+}
+
+.menu-show__desc {
+  margin-top: 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--show-muted);
+}
+
+.menu-show__ingredient {
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.6875rem;
+  color: var(--show-text);
+  background: rgba(15, 61, 42, 0.6);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+}
+
+.menu-show__chefnote {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.75rem;
+  border: 1px dashed rgba(212, 175, 55, 0.5);
+  color: var(--show-gold-soft);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.menu-show__price {
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 1.625rem;
+  font-weight: 700;
+  color: var(--show-gold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Order Now: gold-filled, dark text, 44px+ */
+.menu-show__order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.25rem;
+  border-radius: 9999px;
+  border: 1px solid var(--show-gold-soft);
+  background: linear-gradient(135deg, #d4af37 0%, #f0d27a 100%);
+  color: var(--show-ink);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 20px -10px rgba(212, 175, 55, 0.7);
+  cursor: pointer;
+  transition: transform 160ms ease, filter 200ms ease;
+}
+
+.menu-show__order:hover {
+  filter: brightness(1.06);
+}
+
+.menu-show__order:active {
+  transform: scale(0.97);
+}
+
+/* View Details: gold outline, 44px+ */
+.menu-show__details {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 44px;
+  padding: 0 1.125rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(212, 175, 55, 0.7);
+  background: transparent;
+  color: var(--show-gold-soft);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+
+.menu-show__details:hover {
+  background-color: rgba(212, 175, 55, 0.12);
+  border-color: var(--show-gold-soft);
+}
+
+/* Chef note: 44px gold outline circle */
+.menu-show__note {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  border: 1px solid rgba(212, 175, 55, 0.7);
+  background: transparent;
+  color: var(--show-gold-soft);
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.menu-show__note:hover {
+  background-color: rgba(212, 175, 55, 0.12);
+}
+
+.menu-show__note.is-active {
+  background-color: rgba(212, 175, 55, 0.25);
+  border-color: var(--show-gold);
+}
+
+/* Quantity stepper (already in cart): gold outline pill, 44px buttons */
+.menu-show__stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.125rem;
+  border-radius: 9999px;
+  border: 1px solid var(--show-gold);
+  background: rgba(6, 20, 14, 0.6);
+  color: var(--show-gold-soft);
+}
+
+.menu-show__stepper button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  color: var(--show-gold-soft);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.menu-show__stepper button:hover {
+  background-color: rgba(212, 175, 55, 0.18);
+}
+
+.menu-show__count {
+  min-width: 2rem;
+  text-align: center;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.menu-show--unavailable {
+  opacity: 0.6;
+}
+
+/* Pulse dot is decoration only: no animation at all when motion is reduced */
 @media (prefers-reduced-motion: reduce) {
-  .menu-orbit-sway {
-    animation: none;
-    transform: none;
+  .menu-show__img,
+  .menu-show__title,
+  .menu-show__dot > span,
+  .menu-show__order,
+  .menu-show__details,
+  .menu-show__note {
+    transition: none;
   }
 }
 

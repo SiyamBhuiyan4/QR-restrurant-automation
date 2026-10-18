@@ -1,0 +1,157 @@
+/* 3D open menu book: page flip styles. All classes prefixed "mb-". */
+
+:root {
+  --mb-paper: #0f2f22;
+  --mb-ink: #f5efe0;
+  --mb-accent: #d4af37;
+  --mb-turn-duration: 650ms;
+  --mb-turn-easing: cubic-bezier(.45, .05, .2, 1);
+  --mb-grain-opacity: 0.07;
+}
+
+/* Stage: perspective container for the book */
+.mb-stage {
+  position: relative;
+  width: 100%;
+  perspective: 2200px;
+  perspective-origin: 50% 40%;
+  transform-style: preserve-3d;
+}
+
+/* A single page face */
+.mb-page {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: var(--mb-ink);
+  background-color: var(--mb-paper);
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0) 14%),
+    linear-gradient(270deg, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0) 10%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0) 55%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.18) 100%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, var(--mb-grain-opacity)) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, calc(var(--mb-grain-opacity) * 0.8)) 0 1px, transparent 1px 4px);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.mb-page--right {
+  left: 50%;
+  transform-origin: left center;
+  border-radius: 0 6px 6px 0;
+}
+
+.mb-page--left {
+  left: 0;
+  transform-origin: right center;
+  border-radius: 6px 0 0 6px;
+}
+
+/* Back face of a turning page: shows reverse paper texture */
+.mb-flip-face--back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+  background-color: var(--mb-paper);
+  background-image:
+    linear-gradient(270deg, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0) 14%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, calc(var(--mb-grain-opacity) * 0.6)) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(135deg, rgba(0, 0, 0, calc(var(--mb-grain-opacity) * 0.7)) 0 1px, transparent 1px 4px);
+}
+
+/* Page turning forward (right page, hinged on spine) */
+.mb-turn-next {
+  animation: mbTurnNext var(--mb-turn-duration) var(--mb-turn-easing) forwards;
+  will-change: transform;
+}
+
+/* Page turning backward (left page, hinged on spine) */
+.mb-turn-prev {
+  animation: mbTurnPrev var(--mb-turn-duration) var(--mb-turn-easing) forwards;
+  will-change: transform;
+}
+
+/* Page revealed beneath the turning page */
+.mb-turn-under {
+  animation: mbUnderReveal var(--mb-turn-duration) var(--mb-turn-easing) forwards;
+  will-change: transform, filter;
+}
+
+/* Shadow ramp is applied to the turning page via a pseudo overlay */
+.mb-turn-next::after,
+.mb-turn-prev::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0));
+  animation: mbTurnShade var(--mb-turn-duration) var(--mb-turn-easing) forwards;
+}
+
+@keyframes mbTurnNext {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(-90deg) skewY(-1.5deg) translateZ(4px);
+  }
+  100% {
+    transform: rotateY(-180deg);
+  }
+}
+
+@keyframes mbTurnPrev {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(90deg) skewY(1.5deg) translateZ(4px);
+  }
+  100% {
+    transform: rotateY(180deg);
+  }
+}
+
+@keyframes mbUnderReveal {
+  0% {
+    transform: scale(0.985);
+    filter: brightness(0.8);
+  }
+  50% {
+    transform: scale(0.995);
+    filter: brightness(0.92);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes mbTurnShade {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mb-turn-next,
+  .mb-turn-prev,
+  .mb-turn-under,
+  .mb-turn-next::after,
+  .mb-turn-prev::after {
+    animation: none;
+  }
+}

@@ -1,0 +1,205 @@
+/*
+ * menu-book-depth.css
+ * 3D open-menu-book shell. Apply the classes to the same element where noted.
+ *
+ * Usage:
+ *   <div class="mb-book mb-book-cover">        <- tilted, leather-framed spread
+ *     <div class="mb-page">                    <- page (position: relative)
+ *       <span class="mb-page-edge"></span>     <- stacked-paper bottom edge
+ *       <span class="mb-page-edge mb-page-edge--outer"></span>
+ *     </div>
+ *     <div class="mb-spine"></div>             <- crease down the middle
+ *   </div>
+ */
+
+:root {
+  --mb-leather: #06140e;
+  --mb-gold: #d4af37;
+  --mb-paper: #0f2f22;
+  --mb-ink: #f5efe0;
+
+  --mb-tilt-x: 8deg;
+  --mb-tilt-z: -1deg;
+  --mb-spine-w: 28px;
+  --mb-spine-shadow: 18px;
+  --mb-board-pad: 14px;
+  --mb-radius: 18px;
+  --mb-perspective: 1600px;
+}
+
+/* ---------- Book shell: tilted spread lying on a table ---------- */
+.mb-book {
+  position: relative;
+  width: min(100%, 1100px);
+  margin: 0 auto;
+  color: var(--mb-ink);
+  transform-origin: 50% 80%;
+  transform: perspective(var(--mb-perspective))
+    rotateX(var(--mb-tilt-x))
+    rotateZ(var(--mb-tilt-z));
+  transform-style: preserve-3d;
+  border-radius: var(--mb-radius);
+  box-shadow:
+    0 1px 0 #0b2619,
+    0 2px 0 #081d13,
+    0 3px 0 #061a10,
+    0 4px 0 #04120b,
+    0 5px 0 #03100a,
+    0 22px 28px -8px rgba(0, 0, 0, 0.55),
+    0 46px 70px -18px rgba(0, 0, 0, 0.7);
+}
+
+/* Ground shadow ellipse under the book, sitting on the table */
+.mb-book::after {
+  content: "";
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: -30px;
+  height: 44px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0) 70%);
+  filter: blur(6px);
+}
+
+/* Spread curvature: darker at outer edges (page fold), lighter at the centre
+   where the pages curve down into the spine. Overlay never blocks input. */
+.mb-book::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.45) 0%,
+      rgba(0, 0, 0, 0.12) 12%,
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(0, 0, 0, 0.12) 88%,
+      rgba(0, 0, 0, 0.45) 100%
+    );
+}
+
+/* ---------- Leather board around the spread ---------- */
+.mb-book-cover {
+  background: var(--mb-leather);
+  padding: var(--mb-board-pad);
+  border: 1px solid color-mix(in srgb, var(--mb-gold) 60%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--mb-gold) 18%, transparent),
+    0 1px 0 #0b2619,
+    0 2px 0 #081d13,
+    0 3px 0 #061a10,
+    0 4px 0 #04120b,
+    0 5px 0 #03100a,
+    0 22px 28px -8px rgba(0, 0, 0, 0.55),
+    0 46px 70px -18px rgba(0, 0, 0, 0.7);
+}
+
+/* ---------- Pages ---------- */
+.mb-page {
+  position: relative;
+  background: var(--mb-paper);
+  color: var(--mb-ink);
+}
+
+/* Stacked-paper thickness: thin repeating lines along the bottom edge */
+.mb-page-edge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 5px;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    #e9e0c8 0px,
+    #e9e0c8 1px,
+    #b8ad90 1px,
+    #b8ad90 2px
+  );
+  opacity: 0.85;
+}
+
+/* Outer-side variant: thin vertical stacked lines on the page's outer edge */
+.mb-page-edge--outer {
+  top: 0;
+  bottom: 0;
+  left: auto;
+  right: -5px;
+  width: 5px;
+  height: auto;
+  background: repeating-linear-gradient(
+    to right,
+    #e9e0c8 0px,
+    #e9e0c8 1px,
+    #b8ad90 1px,
+    #b8ad90 2px
+  );
+}
+
+/* ---------- Spine: crease down the centre ---------- */
+.mb-spine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: var(--mb-spine-w);
+  transform: translateX(-50%);
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.35) 35%,
+    #000 50%,
+    rgba(0, 0, 0, 0.35) 65%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  /* soft shadow falling onto both pages */
+  box-shadow: 0 0 var(--mb-spine-shadow) 4px rgba(0, 0, 0, 0.45);
+}
+
+/* Inner highlight line along the crease */
+.mb-spine::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-0.5px);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ---------- Mobile: full width, gentler tilt, slimmer spine ---------- */
+@media (max-width: 767.98px) {
+  :root {
+    --mb-spine-w: 18px;
+    --mb-spine-shadow: 12px;
+    --mb-board-pad: 8px;
+  }
+
+  .mb-book {
+    width: 100%;
+    transform: perspective(var(--mb-perspective))
+      rotateX(3deg)
+      rotateZ(var(--mb-tilt-z));
+  }
+}
+
+/* ---------- Reduced motion: keep transforms static, no animation ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .mb-book,
+  .mb-book *,
+  .mb-book::before,
+  .mb-book::after,
+  .mb-spine,
+  .mb-spine::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}

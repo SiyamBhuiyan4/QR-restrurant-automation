@@ -1,3 +1,4 @@
+@import "./styles/theme.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -32,16 +33,16 @@
   html {
     @apply antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background-color: var(--color-bg) !important;
-    color: var(--color-cream) !important;
+    background-color: var(--app-bg);
+    color: var(--app-text);
   }
 
   body {
     @apply antialiased min-h-screen;
     font-family: var(--font-body);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background-color: transparent !important;
-    color: var(--color-cream) !important;
+    background-color: transparent;
+    color: var(--app-text);
   }
 
   /* Serif display face for headings */
@@ -88,21 +89,21 @@
   /* Keyboard focus: outline kept for forced-colors mode, with a soft eased halo.
      Transition only runs when focus-visible is entered or left. */
   :focus-visible {
-    outline: 2px solid rgba(212, 175, 55, 0.9);
+    outline: 2px solid var(--app-focus);
     outline-offset: 2px;
     border-radius: 6px;
-    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.18);
+    box-shadow: 0 0 0 4px var(--app-focus-halo);
     transition: outline-offset 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease-out;
   }
 
   ::selection {
-    background: rgba(212, 175, 55, 0.4);
-    color: var(--color-cream);
+    background: var(--app-selection);
+    color: var(--app-text);
   }
 
   ::-moz-selection {
-    background: rgba(212, 175, 55, 0.4);
-    color: var(--color-cream);
+    background: var(--app-selection);
+    color: var(--app-text);
   }
 
   button:disabled,
@@ -330,10 +331,10 @@
    ========================================================================== */
 
 .noir-card {
-  background: rgba(22, 22, 26, 0.88);
+  background: var(--app-surface);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--app-border-card);
 }
 
 .noir-card-hover:hover {
@@ -600,7 +601,7 @@
   z-index: -10;
   overflow: hidden;
   pointer-events: none;
-  background: #06140e;
+  background: var(--ambient-base);
   contain: strict;
 }
 
@@ -617,7 +618,7 @@
   height: 60vmax;
   top: -22vmax;
   left: -18vmax;
-  background: radial-gradient(circle, rgba(31, 107, 74, 0.5) 0%, rgba(31, 107, 74, 0) 65%);
+  background: radial-gradient(circle, var(--ambient-blob-a) 0%, transparent 65%);
   animation: ambientDrift1 34s ease-in-out infinite;
 }
 
@@ -626,7 +627,7 @@
   height: 55vmax;
   bottom: -20vmax;
   right: -16vmax;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.18) 0%, rgba(212, 175, 55, 0) 65%);
+  background: radial-gradient(circle, var(--ambient-blob-b) 0%, transparent 65%);
   animation: ambientDrift2 40s ease-in-out infinite;
 }
 
@@ -635,7 +636,7 @@
   height: 38vmax;
   top: 40%;
   left: 45%;
-  background: radial-gradient(circle, rgba(240, 210, 122, 0.07) 0%, rgba(240, 210, 122, 0) 70%);
+  background: radial-gradient(circle, var(--ambient-blob-c) 0%, transparent 70%);
   animation: ambientPulseSlow 26s ease-in-out infinite;
 }
 
@@ -645,12 +646,12 @@
   position: absolute;
   inset: -10% 0 -10% 0;
   background-image:
-    radial-gradient(circle, rgba(240, 210, 122, 0.9) 0 1.5px, transparent 2.5px),
-    radial-gradient(circle, rgba(212, 175, 55, 0.8) 0 1px, transparent 2px),
-    radial-gradient(circle, rgba(245, 239, 224, 0.6) 0 1px, transparent 2px);
+    radial-gradient(circle, var(--ambient-ember-1) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle, var(--ambient-ember-2) 0 1px, transparent 2px),
+    radial-gradient(circle, var(--ambient-ember-3) 0 1px, transparent 2px);
   background-size: 140px 180px, 230px 260px, 310px 220px;
   background-position: 0 0, 60px 100px, 150px 40px;
-  opacity: 0.55;
+  opacity: var(--ambient-ember-opacity);
   animation: emberRise 38s linear infinite;
 }
 
@@ -664,7 +665,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, rgba(6, 20, 14, 0) 45%, rgba(6, 20, 14, 0.6) 100%);
+  background: radial-gradient(ellipse at center, transparent 45%, var(--ambient-vignette) 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,0 +1,156 @@
+/* Menu book responsive layout.
+   Phone (<768px): single-page mode, one page at a time.
+   Desktop (>=768px): two-page spread, max 1100px, centered. */
+
+/* ---------- Root container ---------- */
+.mb-root {
+  overflow-x: clip;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* ---------- Visibility toggles ---------- */
+.mb-single {
+  display: block;
+}
+
+.mb-spread {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mb-single {
+    display: none;
+  }
+
+  .mb-spread {
+    display: flex;
+  }
+}
+
+/* ---------- Phone: single page ---------- */
+@media (max-width: 767.98px) {
+  .mb-single {
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 16px;
+  }
+
+  .mb-single .mb-page {
+    width: calc(100% - 32px);
+    min-height: 70vh;
+    margin: 0 auto;
+    box-sizing: border-box;
+    font-size: calc(1em + 1px);
+    line-height: 1.55;
+  }
+}
+
+/* ---------- Desktop: two-page spread ---------- */
+@media (min-width: 768px) {
+  .mb-spread {
+    position: relative;
+    justify-content: center;
+    align-items: stretch;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+
+  .mb-spread .mb-page {
+    width: 46%;
+    aspect-ratio: 4 / 5;
+    box-sizing: border-box;
+  }
+}
+
+/* ---------- Tap zones (phone page-turn areas) ---------- */
+.mb-tap-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  min-width: 44px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 2;
+}
+
+.mb-tap-zone--prev {
+  left: 0;
+}
+
+.mb-tap-zone--next {
+  right: 0;
+}
+
+/* Tap zones are a phone-only affordance. */
+@media (min-width: 768px) {
+  .mb-tap-zone {
+    display: none;
+  }
+}
+
+/* ---------- Page dots indicator ---------- */
+.mb-dots {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 0;
+  margin: 0 auto;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.mb-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  border-radius: 50%;
+  background: rgba(128, 128, 128, 0.35);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.mb-dot--active,
+.mb-dot[aria-current="true"] {
+  background: #d4a017;
+  transform: scale(1.15);
+}
+
+/* Larger touch target without changing the visible 10px dot. */
+@media (max-width: 767.98px) {
+  .mb-dots {
+    gap: 6px;
+    padding: 18px 0;
+  }
+
+  .mb-dot {
+    position: relative;
+  }
+
+  .mb-dot::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .mb-dot {
+    transition: none;
+  }
+}

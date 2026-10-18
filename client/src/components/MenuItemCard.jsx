@@ -85,7 +85,6 @@ export default function MenuItemCard({
   const ANGLE_LABELS = ['Front (0°)', 'Right (90°)', 'Top/Back (180°)', 'Left Profile (270°)'];
   const [currentAngleIndex, setCurrentAngleIndex] = useState(0);
   const [isOrbitalHovered, setIsOrbitalHovered] = useState(false);
-  const [tiltStyle, setTiltStyle] = useState({ rotateX: 0, rotateY: 0, sheenX: 50, sheenY: 50 });
 
   // Camera orbits smoothly around stationary dish (Front, Right, Back, Left)
   useEffect(() => {
@@ -95,26 +94,6 @@ export default function MenuItemCard({
     }, 3200);
     return () => clearInterval(interval);
   }, [layout, angleImages.length, isOrbitalHovered]);
-
-  const handleOrbitalMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    // Interactive 3D orbital camera tilt (product stays stationary, camera orbits around)
-    const rotateY = (x - 0.5) * 22; // left/right yaw
-    const rotateX = -(y - 0.5) * 18; // up/down pitch
-    setTiltStyle({
-      rotateX,
-      rotateY,
-      sheenX: x * 100,
-      sheenY: y * 100,
-    });
-  };
-
-  const handleOrbitalMouseLeave = () => {
-    setIsOrbitalHovered(false);
-    setTiltStyle({ rotateX: 0, rotateY: 0, sheenX: 50, sheenY: 50 });
-  };
 
   const handleAdd = (e) => {
     e.stopPropagation();
@@ -275,259 +254,206 @@ export default function MenuItemCard({
     return createPortal(modalContent, document.body);
   };
 
-  // 1. UNBOXED FLOATING CIRCULAR DISH ZIG-ZAG LAYOUT (User Requested Signature UI)
+  // 1. SIGNATURE SHOWCASE: alternating dish block (straight gold-framed photo, emerald/gold palette)
   if (layout === 'showcase') {
-    // Alternating zig-zag: Even index has Text Left / Plate Right (like in screenshot 2), Odd has Plate Left / Text Right!
+    // Even index: photo left / text right. Odd index: text left / photo right.
     const isEven = index % 2 === 0;
 
     return (
       <>
         <div
           onClick={() => onSelectDish && onSelectDish(item)}
-          className={`group relative flex flex-col md:flex-row items-center justify-between gap-8 md:gap-14 py-10 md:py-20 transition-all duration-500 border-b border-white/5 last:border-b-0 cursor-pointer ${
-            isEven ? 'md:flex-row' : 'md:flex-row-reverse'
-          } overflow-hidden ${!isAvailable ? 'opacity-60' : ''}`}
+          className={`menu-show group relative flex flex-col ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'} items-center gap-8 md:gap-14 py-10 md:py-16 cursor-pointer ${!isAvailable ? 'menu-show--unavailable' : ''}`}
         >
-          {/* Subtle Ambient Culinary Glow Behind Floating Dish */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-[#FF5A26]/8 rounded-full blur-3xl pointer-events-none group-hover:bg-[#FF5A26]/15 transition-all duration-700" />
+          {/* Soft emerald/gold ambient glow behind the photo (decorative, clipped by the section) */}
+          <div className="menu-show__glow" aria-hidden="true" />
 
-          {/* Unboxed Floating Circular Plate (360° Orbital Camera & ~40% Page Width Occupation on Zoom) */}
-          <div 
-            className="relative w-56 h-56 sm:w-64 sm:h-64 md:w-72 md:h-72 lg:w-80 lg:h-80 shrink-0 flex items-center justify-center select-none group-hover:scale-105 transition-all duration-700 ease-out"
-            onMouseMove={handleOrbitalMouseMove}
+          {/* Photo block: straight, rounded, gold hairline frame. Nothing rotates or clips. */}
+          <div
+            className="menu-show__media relative w-full max-w-[20rem] sm:max-w-[22rem] md:max-w-[24rem] lg:max-w-[26rem] shrink-0 select-none"
             onMouseEnter={() => setIsOrbitalHovered(true)}
-            onMouseLeave={handleOrbitalMouseLeave}
+            onMouseLeave={() => setIsOrbitalHovered(false)}
           >
-            {/* Soft Ambient Depth Shadow */}
-            <div className="absolute inset-6 rounded-full bg-black/75 blur-2xl pointer-events-none group-hover:bg-[#FF5A26]/15 transition-all duration-700" />
-
-            {/* Circular Plate with 3D Orbital Perspective & Specular Sheen (Product stays upright & constant) */}
-            <div 
-              className="menu-orbit-frame relative w-44 h-44 sm:w-52 sm:h-52 md:w-60 md:h-60 lg:w-64 lg:h-64 rounded-[1.75rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.85)] border border-white/10 bg-zinc-950 transition-transform duration-300 ease-out"
-              style={{
-                transform: `rotateX(${tiltStyle.rotateX}deg) rotateY(${tiltStyle.rotateY}deg)`,
-                transformStyle: 'preserve-3d',
-              }}
-            >
-              {/* Multi-Angle Photography Showcase: Camera walks around the stationary product */}
-              {safeDishImage && !imageError ? (
-                <div className="menu-orbit-sway w-full h-full relative">
-                  {angleImages.map((imgUrl, idx) => (
+            <div className="menu-show__frame">
+              <div className="menu-show__photo">
+                {safeDishImage && !imageError ? (
+                  angleImages.map((imgUrl, idx) => (
                     <img
                       key={idx}
                       src={imgUrl}
                       alt={`${dishTitle} - Angle ${idx + 1}`}
                       onError={() => setImageError(true)}
                       loading="lazy"
-                      className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-1000 ease-in-out ${
-                        idx === currentAngleIndex 
-                          ? 'opacity-100 scale-100' 
-                          : 'opacity-0 scale-[1.04]'
-                      }`}
+                      draggable={false}
+                      className={`menu-show__img ${idx === currentAngleIndex ? 'is-active' : ''}`}
                     />
-                  ))}
-                </div>
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-stone-300 p-4">
-                  <UtensilsCrossed className="w-10 h-10 text-[#FF5A26] mb-1" />
-                  <span className="text-xs font-bold text-center">{dishTitle}</span>
-                </div>
-              )}
+                  ))
+                ) : (
+                  <div className="menu-show__fallback">
+                    <UtensilsCrossed className="w-10 h-10 mb-2" aria-hidden="true" />
+                    <span className="text-xs font-bold text-center">{dishTitle}</span>
+                  </div>
+                )}
 
-              {/* Sold Out Badge Overlay */}
-              {!isAvailable && (
-                <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center z-20">
-                  <span className="px-3.5 py-1.5 rounded-xl bg-rose-600 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg">
-                    Sold Out
-                  </span>
-                </div>
-              )}
+                {/* Sold out overlay */}
+                {!isAvailable && (
+                  <div className="menu-show__soldout">
+                    <span className="menu-show__soldout-tag">Sold Out</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Floating 360° Orbital Camera HUD Pill (only when real multi-angle photos exist) */}
+            {/* 360° Orbit HUD: only when real multi-angle photos exist */}
             {angleImages.length > 1 && (
-            <div className="absolute -bottom-3 sm:-bottom-4 left-1/2 -translate-x-1/2 bg-[#121216]/95 backdrop-blur-md border border-zinc-700/80 px-3 sm:px-4 py-1.5 rounded-2xl shadow-2xl flex items-center gap-2 sm:gap-2.5 z-20">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#FF5A26] animate-ping" />
-                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-[#FF7A45] flex items-center gap-1">
-                  <Compass className="w-3 h-3 text-[#FF5A26]" />
+              <div className="menu-show__hud">
+                <span className="menu-show__hud-label">
+                  <Compass className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>360° Orbit</span>
                 </span>
+                <span className="menu-show__hud-sep" aria-hidden="true" />
+                <div className="flex items-center">
+                  {angleImages.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentAngleIndex(idx);
+                      }}
+                      className={`menu-show__dot ${idx === currentAngleIndex ? 'is-active' : ''}`}
+                      title={`Angle ${idx + 1}: ${ANGLE_LABELS[idx] || `Perspective ${idx + 1}`}`}
+                      aria-label={`Show angle ${idx + 1}`}
+                    >
+                      <span aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
               </div>
-              <span className="text-zinc-600">|</span>
-              {/* Angle selector dots */}
-              <div className="flex items-center gap-1">
-                {angleImages.map((_, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentAngleIndex(idx);
-                    }}
-                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                      idx === currentAngleIndex 
-                        ? 'w-5 bg-[#FF5A26] shadow-xs shadow-[#FF5A26]/80' 
-                        : 'w-1.5 bg-zinc-600 hover:bg-zinc-400'
-                    }`}
-                    title={`Angle ${idx + 1}: ${ANGLE_LABELS[idx] || `Perspective ${idx + 1}`}`}
-                  />
-                ))}
-              </div>
-              <span className="text-[9px] sm:text-[10px] text-zinc-400 font-medium hidden sm:inline">
-                {ANGLE_LABELS[currentAngleIndex] || 'Perspective'}
-              </span>
-            </div>
             )}
 
-            {/* Floating Review & Time Pill */}
-            <div className="absolute top-2 right-4 sm:right-6 bg-[#161619]/95 backdrop-blur-md border border-zinc-800/80 px-3 py-1.5 rounded-2xl shadow-xl flex items-center gap-2 z-10">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="text-[11px] font-bold text-white flex items-center gap-1">
-                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                {item.rating || '4.9'}
-              </span>
-              <span className="text-[10px] text-zinc-400">&bull; {item.prepTime || '12 min'}</span>
+            {/* Rating + prep time */}
+            <div className="menu-show__rating">
+              <Star className="w-3 h-3 fill-current" aria-hidden="true" />
+              <span>{item.rating || '4.9'}</span>
+              <span className="menu-show__muted">&bull; {item.prepTime || '12 min'}</span>
             </div>
 
-            {/* Reel Badge if video available */}
+            {/* Video reel badge */}
             {(hasVideo || item.makingVideoUrl !== undefined) && (
-              <div className="absolute top-2 left-4 sm:left-6 bg-[#FF5A26] text-white px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg shadow-[#FF5A26]/40 flex items-center gap-1 z-10 animate-flame-pulse">
-                <Video className="w-3 h-3 fill-current" />
+              <div className="menu-show__reel">
+                <Video className="w-3 h-3 fill-current" aria-hidden="true" />
                 <span>Video Reel</span>
               </div>
             )}
           </div>
 
-          {/* Details Panel (Beside the Plate, No Card Box!) */}
-          <div className="flex-1 w-full md:w-[56%] lg:w-[54%] max-w-xl text-left select-none">
-            {/* Category tag */}
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs uppercase tracking-wider font-extrabold text-[#FF7A45] flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#FF5A26]" />
+          {/* Details panel */}
+          <div className="menu-show__body w-full md:flex-1 max-w-xl text-left select-none">
+            {/* Category + dietary tags */}
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <span className="menu-show__eyebrow">
+                <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
                 {item.category || 'Specialty'}
               </span>
               {isVeg && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
-                  <Leaf className="w-2.5 h-2.5 fill-current" /> Veg
+                <span className="menu-show__chip menu-show__chip--veg">
+                  <Leaf className="w-2.5 h-2.5 fill-current" aria-hidden="true" /> Veg
                 </span>
               )}
               {isSpicy && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-950/80 text-rose-300 border border-rose-500/30">
-                  <Flame className="w-2.5 h-2.5 fill-current" /> Spicy
+                <span className="menu-show__chip menu-show__chip--spicy">
+                  <Flame className="w-2.5 h-2.5 fill-current" aria-hidden="true" /> Spicy
                 </span>
               )}
             </div>
 
-            {/* Food Name (Bold Headline like in screenshot 2) */}
-            <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-white group-hover:text-[#FF7A45] transition-colors tracking-tight leading-snug">
-              {dishTitle}
-            </h3>
+            {/* Dish title: serif, cream, gold on hover */}
+            <h3 className="menu-show__title">{dishTitle}</h3>
 
-            {/* Slight 1-2 line details */}
-            {dishDesc && (
-              <p className="text-sm sm:text-base text-zinc-400 font-normal mt-2.5 leading-relaxed line-clamp-2">
-                {dishDesc}
-              </p>
-            )}
+            {dishDesc && <p className="menu-show__desc line-clamp-2">{dishDesc}</p>}
 
-            {/* Ingredients pills hint */}
             {Array.isArray(item.ingredients) && item.ingredients.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-1">
-                <span className="text-[11px] text-zinc-500 font-semibold mr-1">Ingredients:</span>
+              <div className="flex flex-wrap items-center gap-1.5 mt-4">
+                <span className="menu-show__muted text-[11px] font-semibold mr-1">Ingredients:</span>
                 {item.ingredients.slice(0, 4).map((ing, i) => (
-                  <span
-                    key={i}
-                    className="text-[11px] px-2 py-0.5 rounded-md bg-zinc-900/90 border border-zinc-800 text-zinc-300"
-                  >
+                  <span key={i} className="menu-show__ingredient">
                     {ing}
                   </span>
                 ))}
                 {item.ingredients.length > 4 && (
-                  <span className="text-[10px] text-[#FF7A45] font-semibold">
+                  <span className="menu-show__eyebrow text-[11px]">
                     +{item.ingredients.length - 4} more
                   </span>
                 )}
               </div>
             )}
 
-            {/* Chef Custom Note Pill (if attached) */}
+            {/* Chef note (if attached) */}
             {itemNote && (
               <div
-                onClick={openNoteModal}
-                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-zinc-900 border border-zinc-800 text-[#FF7A45] text-xs font-medium cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openNoteModal(e);
+                }}
+                className="menu-show__chefnote mt-4"
               >
-                <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+                <MessageSquare className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 <span className="truncate">Chef Note: "{itemNote}"</span>
               </div>
             )}
 
-            {/* Price & Action Buttons (Screenshot 2: "Order Now" + "Book A Menu" style) */}
-            <div className="flex flex-wrap items-center gap-4 mt-6 pt-2">
-              <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                {formattedPrice}
-              </span>
+            {/* Price + actions */}
+            <div className="flex flex-wrap items-center gap-3 mt-6">
+              <span className="menu-show__price">{formattedPrice}</span>
 
               {isAvailable && (
                 <>
                   {cartQuantity > 0 ? (
-                    <div className="inline-flex items-center bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white rounded-2xl shadow-lg p-1 ring-2 ring-[#FF7A45]/40">
+                    <div className="menu-show__stepper">
                       <button
                         type="button"
                         onClick={handleDecrement}
-                        className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/15 active:scale-90 transition cursor-pointer font-bold"
                         aria-label="Decrease quantity"
                       >
-                        <Minus className="w-4 h-4 stroke-[2.5]" />
+                        <Minus className="w-4 h-4" aria-hidden="true" />
                       </button>
-                      <span className="w-7 text-center font-black text-sm select-none">
-                        {cartQuantity}
-                      </span>
+                      <span className="menu-show__count">{cartQuantity}</span>
                       <button
                         type="button"
                         onClick={handleIncrement}
-                        className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/15 active:scale-90 transition cursor-pointer font-bold"
                         aria-label="Increase quantity"
                       >
-                        <Plus className="w-4 h-4 stroke-[2.5]" />
+                        <Plus className="w-4 h-4" aria-hidden="true" />
                       </button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={handleAdd}
-                      className="px-6 py-2.5 rounded-2xl flame-gradient-btn text-white text-xs sm:text-sm font-black shadow-lg shadow-[#FF5A26]/30 flex items-center gap-2 cursor-pointer active:scale-95"
-                    >
-                      <ShoppingBag className="w-4 h-4" />
+                    <button type="button" onClick={handleAdd} className="menu-show__order">
+                      <ShoppingBag className="w-4 h-4" aria-hidden="true" />
                       <span>Order Now</span>
                     </button>
                   )}
                 </>
               )}
 
-              {/* View Full Details Button */}
               <button
                 type="button"
                 onClick={() => onSelectDish && onSelectDish(item)}
-                className="px-5 py-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700/60 text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                className="menu-show__details"
               >
                 <span>View Details</span>
-                <ArrowRight className="w-3.5 h-3.5 text-[#FF7A45]" />
+                <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
 
-              {/* Chef note button */}
               {isAvailable && (
                 <button
                   type="button"
                   onClick={openNoteModal}
-                  className={`p-2.5 rounded-2xl border text-xs transition cursor-pointer ${
-                    itemNote
-                      ? 'bg-[#FF5A26]/20 border-[#FF5A26] text-[#FF7A45]'
-                      : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-400 hover:text-white'
-                  }`}
+                  className={`menu-show__note ${itemNote ? 'is-active' : ''}`}
                   title="Add special instructions for chef"
+                  aria-label="Add special instructions for chef"
                 >
-                  <MessageSquare className="w-4 h-4" />
+                  <MessageSquare className="w-4 h-4" aria-hidden="true" />
                 </button>
               )}
             </div>

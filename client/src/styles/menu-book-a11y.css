@@ -1,0 +1,91 @@
+/*
+ * Menu book: accessibility and focus styles.
+ * Every selector is scoped under .mb-root so nothing leaks into the rest of the site.
+ */
+
+/* ---------- Tokens (fallbacks only; the book's own CSS may define these) ---------- */
+.mb-root {
+  --mb-gold: #d4af37;
+  --mb-ink: #1a1a1a;
+  --mb-focus-width: 2px;
+  --mb-focus-offset: 3px;
+}
+
+/* ---------- Focus ---------- */
+.mb-root :focus-visible {
+  outline: var(--mb-focus-width) solid var(--mb-gold);
+  outline-offset: var(--mb-focus-offset);
+}
+
+/* ---------- Touch targets (44px minimum) ---------- */
+.mb-root .mb-page button,
+.mb-root .mb-page a,
+.mb-root .mb-tap-zone {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Dots are visual-only: the drawn dot stays 10px, the hit area is 44px via ::before. */
+.mb-root .mb-dots button {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  width: 10px;
+  height: 10px;
+  padding: 0;
+}
+
+.mb-root .mb-dots button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  /* Transparent; only enlarges the clickable/tappable area. */
+  background: transparent;
+}
+
+/* ---------- Visually hidden utility ---------- */
+.mb-root .mb-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- High contrast ---------- */
+@media (prefers-contrast: more) {
+  .mb-root {
+    --mb-ink: #ffffff;
+  }
+
+  .mb-root .mb-gold-border {
+    border-style: solid;
+    border-color: var(--mb-gold);
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .mb-root *,
+  .mb-root *::before,
+  .mb-root *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- Forced colors (Windows High Contrast) ---------- */
+@media (forced-colors: active) {
+  .mb-root {
+    forced-color-adjust: auto;
+  }
+}
