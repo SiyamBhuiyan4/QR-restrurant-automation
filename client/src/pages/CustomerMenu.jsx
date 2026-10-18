@@ -3,7 +3,6 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import Navbar from '../components/Navbar';
 import CategoryBar from '../components/CategoryBar';
-import MenuItemCard from '../components/MenuItemCard';
 import CartDrawer from '../components/CartDrawer';
 import FoodDetailModal from '../components/FoodDetailModal';
 import MenuBook from '../components/menuBook/MenuBook';
@@ -30,10 +29,7 @@ import {
   ChefHat,
   Clock,
   BellRing,
-  LayoutGrid,
-  Rows3,
-  Star,
-  BookOpen
+  Star
 } from 'lucide-react';
 
 // Default initial menu items for full offline or standalone browsing
@@ -401,7 +397,6 @@ export default function CustomerMenu({
   tableFromProp
 }) {
   // 0. Layout View Mode ('showcase' for 1-by-1 alternating editorial, 'grid' for 2-column compact modern, 'list' for horizontal rows)
-  const [layoutMode, setLayoutMode] = useState('showcase');
   const [activeScrollCategory, setActiveScrollCategory] = useState('All');
 
   // 1. Fixed Table Detection & Locking (No automatic table selection modal)
@@ -1371,73 +1366,11 @@ export default function CustomerMenu({
             )}
           </div>
 
-          {/* View Mode Switcher: Showcase (Unboxed 1-by-1 floating) / Grid / List */}
-          <div className="flex items-center bg-[#0f3d2a] p-1 rounded-2xl border border-[#1f6b4a] shadow-md">
-            <button
-              type="button"
-              onClick={() => setLayoutMode('showcase')}
-              className={`min-h-11 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                layoutMode === 'showcase'
-                  ? 'bg-gradient-to-r from-[#d4af37] to-[#f0d27a] text-[#06140e] shadow-md shadow-[#d4af37]/30 ring-1 ring-[#f0d27a]/50'
-                  : 'text-[#f5efe0]/70 hover:text-[#f0d27a]'
-              }`}
-              title="Showcase View: Unboxed 1-by-1 Alternating Layout"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span className="text-[11px] font-bold">Showcase</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setLayoutMode('grid')}
-              className={`min-h-11 min-w-11 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 ${
-                layoutMode === 'grid'
-                  ? 'bg-gradient-to-r from-[#d4af37] to-[#f0d27a] text-[#06140e] shadow-md shadow-[#d4af37]/30 ring-1 ring-[#f0d27a]/50'
-                  : 'text-[#f5efe0]/70 hover:text-[#f0d27a]'
-              }`}
-              title="2-Column Compact Grid"
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline-block text-[11px] font-semibold">Grid</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setLayoutMode('list')}
-              className={`min-h-11 min-w-11 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 ${
-                layoutMode === 'list'
-                  ? 'bg-gradient-to-r from-[#d4af37] to-[#f0d27a] text-[#06140e] shadow-md shadow-[#d4af37]/30 ring-1 ring-[#f0d27a]/50'
-                  : 'text-[#f5efe0]/70 hover:text-[#f0d27a]'
-              }`}
-              title="Compact List View"
-            >
-              <Rows3 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline-block text-[11px] font-semibold">List</span>
-            </button>
-
-            {/* Book view: open-menu-book spread with page turns */}
-            <button
-              type="button"
-              onClick={() => setLayoutMode('book')}
-              className={`min-h-11 min-w-11 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 ${
-                layoutMode === 'book'
-                  ? 'bg-gradient-to-r from-[#d4af37] to-[#f0d27a] text-[#06140e] shadow-md shadow-[#d4af37]/30 ring-1 ring-[#f0d27a]/50'
-                  : 'text-[#f5efe0]/70 hover:text-[#f0d27a]'
-              }`}
-              title="Open menu book"
-              aria-label="Book view"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline-block text-[11px] font-semibold">Book</span>
-            </button>
-          </div>
         </div>
 
         {/* Categorized Dishes Sections / Filtered Grid */}
         {filteredItems.length > 0 ? (
           <div className="space-y-12 sm:space-y-16">
-            {layoutMode === 'book' ? (
-              // 3D Open Menu Book (All = every section, single category = just that section)
               <MenuBook
                 sections={selectedCategory === 'All'
                   ? categorizedSections
@@ -1449,143 +1382,6 @@ export default function CustomerMenu({
                 }}
                 onSelectDish={(selected) => setSelectedDishModal(selected)}
               />
-            ) : selectedCategory === 'All' ? (
-              // Categorized Grouped View
-              categorizedSections.map((section) => (
-                <section
-                  key={section.categoryKey}
-                  id={`cat-section-${section.categoryKey}`}
-                  className="cm-reveal space-y-6 scroll-mt-32 pt-2"
-                >
-                  {/* Category Header with WorldPlate Stylized Brackets [ Title ] */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#d4af37]/40">
-                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                      <div className="w-12 h-12 rounded-full bg-[#0f3d2a] border border-[#d4af37]/60 text-[#f0d27a] flex items-center justify-center text-lg sm:text-xl shadow-sm shrink-0">
-                        {section.icon}
-                      </div>
-                      <div>
-                        <h3 className="text-2xl sm:text-3xl lg:text-4xl font-normal text-[#f0d27a] tracking-tight flex flex-wrap items-center gap-x-3 gap-y-1 [font-family:Georgia,'Times_New_Roman',serif]">
-                          <span>{section.title}</span>
-                          <span className="text-[11px] sm:text-xs font-bold font-mono text-[#d4af37] bg-[#0f3d2a] border border-[#d4af37]/40 px-2 sm:px-2.5 py-0.5 rounded-full">
-                            {section.items.length} {section.items.length === 1 ? 'dish' : 'dishes'}
-                          </span>
-                        </h3>
-                        <p className="text-xs sm:text-sm text-[#f5efe0]/70 font-normal line-clamp-2 mt-1">
-                          {section.subtitle}
-                        </p>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedCategory(section.canonicalId);
-                        window.scrollTo({ top: 160, behavior: 'smooth' });
-                      }}
-                      className="ch-btn inline-flex items-center gap-1.5 px-4 py-2 min-h-11 rounded-full bg-transparent hover:bg-[#0f3d2a] text-[#f0d27a] border border-[#d4af37]/60 hover:border-[#f0d27a] text-xs font-bold transition-all cursor-pointer shrink-0"
-                    >
-                      <span>Filter</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-[#d4af37]" />
-                    </button>
-                  </div>
-
-                  {/* Dishes Display: Unboxed Showcase (1-by-1 alternating) | Grid | List */}
-                  <div className={
-                    layoutMode === 'showcase'
-                      ? "cm-showcase flex flex-col"
-                      : layoutMode === 'list'
-                      ? "flex flex-col gap-2.5 sm:gap-3"
-                      : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
-                  }>
-                    {section.items.map((dish, dishIdx) => {
-                      const inCart = cart[dish.id];
-                      return (
-                        <MenuItemCard
-                          key={dish.id}
-                          item={dish}
-                          index={dishIdx}
-                          layout={layoutMode}
-                          cartQuantity={inCart ? inCart.quantity : 0}
-                          itemNote={inCart ? inCart.note : ''}
-                          onAddToCart={handleAddToCart}
-                          onUpdateQuantity={handleUpdateQuantity}
-                          onRemoveFromCart={handleRemoveFromCart}
-                          onUpdateNote={handleUpdateNote}
-                          onSelectDish={(selected) => setSelectedDishModal(selected)}
-                        />
-                      );
-                    })}
-                  </div>
-                </section>
-              ))
-            ) : (
-              // Filtered Single Category View
-              (() => {
-                const activeMeta = getCategoryMetadata(selectedCategory);
-                return (
-                  <section className="cm-reveal space-y-6">
-                    <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#d4af37]/40">
-                      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                        <div className="w-12 h-12 rounded-full bg-[#0f3d2a] border border-[#d4af37]/60 text-[#f0d27a] flex items-center justify-center text-lg sm:text-xl shadow-sm shrink-0">
-                          {activeMeta.icon}
-                        </div>
-                        <div>
-                          <h3 className="text-2xl sm:text-3xl lg:text-4xl font-normal text-[#f0d27a] tracking-tight flex flex-wrap items-center gap-x-3 gap-y-1 [font-family:Georgia,'Times_New_Roman',serif]">
-                            <span>{activeMeta.title}</span>
-                            <span className="text-[11px] sm:text-xs font-bold font-mono text-[#d4af37] bg-[#0f3d2a] border border-[#d4af37]/40 px-2 sm:px-2.5 py-0.5 rounded-full">
-                              {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'}
-                            </span>
-                          </h3>
-                          <p className="text-xs sm:text-sm text-[#f5efe0]/70 font-normal line-clamp-2 mt-1">
-                            {activeMeta.subtitle}
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedCategory('All');
-                          window.scrollTo({ top: 160, behavior: 'smooth' });
-                        }}
-                        className="ch-shine ch-btn inline-flex items-center gap-1.5 px-4 py-2 min-h-11 rounded-full bg-gradient-to-r from-[#d4af37] to-[#f0d27a] text-[#06140e] text-xs font-bold transition shadow-md cursor-pointer shrink-0"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>View All Categories</span>
-                      </button>
-                    </div>
-
-                    {/* Dishes Display: Unboxed Showcase (1-by-1 alternating) | Grid | List */}
-                    <div className={
-                      layoutMode === 'showcase'
-                        ? "cm-showcase flex flex-col"
-                        : layoutMode === 'list'
-                        ? "flex flex-col gap-2.5 sm:gap-3"
-                        : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
-                    }>
-                      {filteredItems.map((dish, dishIdx) => {
-                        const inCart = cart[dish.id];
-                        return (
-                          <MenuItemCard
-                            key={dish.id}
-                            item={dish}
-                            index={dishIdx}
-                            layout={layoutMode}
-                            cartQuantity={inCart ? inCart.quantity : 0}
-                            itemNote={inCart ? inCart.note : ''}
-                            onAddToCart={handleAddToCart}
-                            onUpdateQuantity={handleUpdateQuantity}
-                            onRemoveFromCart={handleRemoveFromCart}
-                            onUpdateNote={handleUpdateNote}
-                            onSelectDish={(selected) => setSelectedDishModal(selected)}
-                          />
-                        );
-                      })}
-                    </div>
-                  </section>
-                );
-              })()
-            )}
           </div>
         ) : (
           /* Empty State */
