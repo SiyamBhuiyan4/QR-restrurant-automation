@@ -1,0 +1,403 @@
+/*
+ * menu-book-detail.css
+ * The single-dish page inside the open menu book: the same classic printed-menu
+ * treatment as the item pages (dark textured paper, gold keylines, serif display
+ * headings, cream text), set as a bill of fare entry rather than a card.
+ *
+ * Owned by the detail page only. Colours come from the --mbc-* tokens defined on
+ * .mb-root in menu-book-classic.css, so the light theme flips with the book.
+ */
+
+.mbd {
+  /* Local fallbacks so the page is still correct if the book tokens are missing */
+  --mbd-paper: var(--mbc-paper, #0f2f22);
+  --mbd-ink: var(--mbc-ink, #f5efe0);
+  --mbd-gold: var(--mbc-gold, #d4af37);
+  --mbd-gold-soft: var(--mbc-gold-soft, #f0d27a);
+  --mbd-contrast: #06140e;
+
+  position: relative;
+  /* Sits above the page keyline (z 1) and the phone page-turn tap zones (z 2) */
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: 2px 2px 4px;
+  color: var(--mbd-ink);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 420ms ease-out, transform 420ms ease-out;
+}
+
+.mbd.is-mounted {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------- Back link above the dish ---------- */
+.mbd__back-top {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 8px 4px 0;
+  margin-bottom: 2px;
+  background: none;
+  border: 0;
+  color: var(--mbd-gold-soft);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.mbd__back-top:hover,
+.mbd__back-top:focus-visible {
+  color: var(--mbd-gold);
+}
+
+.mbd__back-top span[aria-hidden] {
+  font-size: 0.95em;
+  line-height: 1;
+}
+
+/* ---------- Heading block ---------- */
+.mbd__eyebrow {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--mbd-gold-soft);
+  opacity: 0.9;
+}
+
+.mbd__title {
+  margin: 6px 0 0;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: clamp(1.4rem, 4.2vw, 2rem);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--mbd-gold);
+  overflow-wrap: anywhere;
+}
+
+/* Gold keyline with a centre diamond, as on the item pages' headings */
+.mbd__divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+
+.mbd__divider::before,
+.mbd__divider::after {
+  content: "";
+  flex: 1 1 auto;
+  max-width: 5.5rem;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.75), transparent);
+}
+
+.mbd__diamond {
+  font-size: 0.6rem;
+  line-height: 1;
+  color: var(--mbd-gold);
+}
+
+/* ---------- Photo in a gold keyline frame ---------- */
+.mbd__figure {
+  margin: 0 0 14px;
+  padding: 5px;
+  border: 1px solid rgba(212, 175, 55, 0.55);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.18);
+}
+
+.mbd__photo {
+  display: block;
+  width: 100%;
+  height: clamp(130px, 26vh, 220px);
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+/* ---------- Badges ---------- */
+.mbd__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.mbd__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border: 1px solid rgba(212, 175, 55, 0.6);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mbd-gold-soft);
+}
+
+/* ---------- Description ---------- */
+.mbd__desc {
+  margin: 0 0 14px;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 0.95rem;
+  font-style: italic;
+  line-height: 1.65;
+  color: var(--mbd-ink);
+  opacity: 0.9;
+  text-wrap: pretty;
+}
+
+/* ---------- Ingredients ---------- */
+.mbd__section {
+  margin: 0 0 14px;
+}
+
+.mbd__label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 8px;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--mbd-gold);
+}
+
+.mbd__label::before,
+.mbd__label::after {
+  content: "";
+  flex: 1 1 auto;
+  max-width: 3.5rem;
+  height: 1px;
+  background: rgba(212, 175, 55, 0.4);
+}
+
+.mbd__ingredients {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mbd__ingredient {
+  padding: 3px 9px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.08);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--mbd-ink);
+  opacity: 0.92;
+}
+
+/* ---------- Price line with a dotted leader ---------- */
+.mbd__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 2px 0 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(212, 175, 55, 0.28);
+}
+
+.mbd__price-label {
+  flex: none;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mbd-ink);
+  opacity: 0.7;
+}
+
+.mbd__leader {
+  flex: 1 1 auto;
+  min-width: 14px;
+  height: 1em;
+  background-image: radial-gradient(circle, rgba(245, 239, 224, 0.45) 1px, transparent 1px);
+  background-size: 6px 6px;
+  background-position: 0 bottom 0.3em;
+  background-repeat: repeat-x;
+}
+
+.mbd__price {
+  flex: none;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--mbd-gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.mbd__in-order {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--mbd-gold-soft);
+}
+
+/* ---------- Actions ---------- */
+.mbd__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.mbd__order {
+  min-height: 48px;
+  width: 100%;
+  padding: 0 20px;
+  border: 1px solid var(--mbd-gold);
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--mbd-gold-soft), var(--mbd-gold));
+  color: var(--mbd-contrast);
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.7);
+  transition: filter 160ms ease, transform 120ms ease;
+}
+
+.mbd__order:hover {
+  filter: brightness(1.06);
+}
+
+.mbd__order:active {
+  transform: scale(0.99);
+}
+
+/* Confirmation state after Order Now: keeps the keyline, drops the gold fill */
+.mbd__order.is-added {
+  background: rgba(212, 175, 55, 0.16);
+  color: var(--mbd-gold-soft);
+}
+
+.mbd__back {
+  align-self: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(212, 175, 55, 0.55);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--mbd-gold-soft);
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.mbd__back:hover,
+.mbd__back:focus-visible {
+  background-color: rgba(212, 175, 55, 0.12);
+  color: var(--mbd-gold);
+}
+
+/* ---------- Desktop: a touch more room ---------- */
+@media (min-width: 768px) {
+  .mbd__photo {
+    height: clamp(160px, 24vh, 240px);
+  }
+}
+
+/* ---------- Light theme: cream paper, dark ink ---------- */
+html[data-theme="light"] .mbd {
+  --mbd-contrast: #fdfaf2;
+}
+
+html[data-theme="light"] .mbd__figure {
+  background: rgba(122, 95, 16, 0.08);
+  border-color: rgba(122, 95, 16, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(122, 95, 16, 0.15);
+}
+
+html[data-theme="light"] .mbd__divider::before,
+html[data-theme="light"] .mbd__divider::after {
+  background: linear-gradient(to right, transparent, rgba(122, 95, 16, 0.7), transparent);
+}
+
+html[data-theme="light"] .mbd__label::before,
+html[data-theme="light"] .mbd__label::after,
+html[data-theme="light"] .mbd__price-row {
+  background: none;
+  border-color: rgba(122, 95, 16, 0.35);
+}
+
+html[data-theme="light"] .mbd__label::before,
+html[data-theme="light"] .mbd__label::after {
+  background: rgba(122, 95, 16, 0.4);
+}
+
+html[data-theme="light"] .mbd__badge,
+html[data-theme="light"] .mbd__ingredient {
+  border-color: rgba(122, 95, 16, 0.4);
+}
+
+html[data-theme="light"] .mbd__ingredient {
+  background: rgba(122, 95, 16, 0.08);
+}
+
+html[data-theme="light"] .mbd__leader {
+  background-image: radial-gradient(circle, rgba(42, 32, 21, 0.45) 1px, transparent 1px);
+}
+
+html[data-theme="light"] .mbd__order {
+  background: linear-gradient(180deg, #8a6d16, #6b530c);
+  border-color: #6b530c;
+}
+
+html[data-theme="light"] .mbd__order.is-added {
+  background: rgba(122, 95, 16, 0.14);
+  color: #5d4708;
+}
+
+html[data-theme="light"] .mbd__back {
+  border-color: rgba(122, 95, 16, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mbd {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .mbd__order,
+  .mbd__back,
+  .mbd__back-top {
+    transition: none;
+  }
+
+  .mbd__order:active {
+    transform: none;
+  }
+}

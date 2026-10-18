@@ -1,0 +1,375 @@
+/*
+ * Overview pages (page 1 = title page + contents, page 2 = chef's picks).
+ *
+ * These two pages are set like the rest of the printed menu: the paper texture
+ * and the double gold keyline come from .mb-page / .mb-sheet in
+ * menu-book-classic.css, headings reuse .mb-heading and the contents list
+ * reuses the .mb-entry dotted-leader pattern. Everything here only adds the
+ * bits those pages need on top: the title block, the ornamental rule and the
+ * framed pick photos. Colours come from the --mbc-* tokens so the light theme
+ * (cream paper, dark ink) follows automatically.
+ */
+
+.mbo-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  color: var(--mbc-ink);
+}
+
+/* ---------- Page 1: title block ---------- */
+.mbo-title {
+  text-align: center;
+  padding: 4px 0 2px;
+}
+
+.mbo-title__eyebrow {
+  margin: 0;
+  font-size: 0.625rem;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--mbc-gold);
+  opacity: 0.85;
+}
+
+.mbo-title__name {
+  margin: 10px 0 0;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-weight: 600;
+  font-size: clamp(2rem, 6vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mbc-gold);
+}
+
+/* Ornamental rule: a hairline either side of a small gold lozenge */
+.mbo-rule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px auto 0;
+  max-width: 230px;
+}
+
+.mbo-rule::before,
+.mbo-rule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.8), transparent);
+}
+
+.mbo-rule__mark {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  transform: rotate(45deg);
+  background: var(--mbc-gold);
+  opacity: 0.9;
+}
+
+.mbo-title__tagline {
+  margin: 12px 0 0;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-style: italic;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--mbc-ink);
+  opacity: 0.82;
+}
+
+/* ---------- Shared: section heading spacing on these pages ---------- */
+.mbo-heading {
+  margin-top: 22px;
+}
+
+.mbo-note {
+  margin: 10px 0 0;
+  text-align: center;
+  font-style: italic;
+  font-size: 0.78rem;
+  color: var(--mbc-ink);
+  opacity: 0.7;
+}
+
+.mbo-empty {
+  margin: 28px 0;
+  text-align: center;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--mbc-ink);
+  opacity: 0.7;
+}
+
+/* ---------- Page 1: contents list ---------- */
+.mbo-contents {
+  margin-top: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.mbo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Hairline between contents rows, like ruled menu stock */
+.mbo-list > li + li {
+  border-top: 1px solid rgba(212, 175, 55, 0.22);
+}
+
+.mbo-entry__num {
+  flex: none;
+  width: 1.85em;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  color: var(--mbc-gold);
+  opacity: 0.9;
+}
+
+/* The section title takes the "dish name" slot of the leader pattern.
+   Unlike a dish name it may run long, so let it use its natural width and
+   shrink only when the leader needs the room. */
+/* .mb-root prefix so this wins over .mb-entry__name in menu-book-classic.css,
+   which the bundler injects after this file. */
+.mb-root .mbo-entry__title {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: none;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.mb-root .mbo-entry__count {
+  font-size: 0.9rem;
+}
+
+/* ---------- Page 2: chef's picks ---------- */
+.mbo-picks {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0 2px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 16px;
+  align-content: start;
+}
+
+.mbo-picks > li {
+  min-width: 0;
+}
+
+.mbo-pick {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  color: var(--mbc-ink);
+  cursor: pointer;
+}
+
+/* Photo in the same double gold keyline as the page frame */
+.mbo-pick__frame {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  overflow: hidden;
+  background-color: rgba(212, 175, 55, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.55),
+    0 0 0 4px var(--mbc-paper),
+    0 0 0 5px rgba(212, 175, 55, 0.3);
+  transition: box-shadow 180ms ease;
+}
+
+.mbo-pick__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Placeholder when a dish has no photo: a quiet gold monogram */
+.mbo-pick__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 1.5rem;
+  letter-spacing: 0.1em;
+  color: var(--mbc-gold);
+  opacity: 0.7;
+}
+
+.mbo-pick__kicker {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin-top: 12px;
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--mbc-gold);
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Dish names under a photo run long, so the name gets its own line and the
+   dotted leader below it carries across to the price, as on the dish pages. */
+.mbo-pick__name {
+  display: block;
+  width: 100%;
+  margin-top: 3px;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: 0.9rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mbo-pick__row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 1px;
+  width: 100%;
+}
+
+.mb-root .mbo-pick__leader {
+  flex: 1 1 auto;
+  min-width: 8px;
+}
+
+.mb-root .mbo-pick__price {
+  font-size: 0.9rem;
+}
+
+.mbo-pick:hover .mbo-pick__frame,
+.mbo-pick:focus-visible .mbo-pick__frame {
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.9),
+    0 0 0 4px var(--mbc-paper),
+    0 0 0 6px rgba(212, 175, 55, 0.55);
+}
+
+.mbo-pick:hover .mbo-pick__name {
+  color: var(--mbc-gold-soft);
+}
+
+/* ---------- Footer line at the bottom of both pages ---------- */
+.mbo-foot {
+  margin-top: auto;
+  padding-top: 18px;
+  text-align: center;
+}
+
+.mbo-foot__rule {
+  display: block;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.6), transparent);
+}
+
+.mbo-foot__text {
+  margin: 8px 0 0;
+  font-size: 0.625rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--mbc-gold);
+  opacity: 0.8;
+}
+
+/* ---------- Focus ring, matching the dish entries ---------- */
+.mbo-entry:focus-visible,
+.mbo-pick:focus-visible {
+  outline: 2px solid var(--mbc-gold);
+  outline-offset: 2px;
+}
+
+/* ---------- Light theme: cream paper, dark ink ---------- */
+html[data-theme="light"] .mb-root .mbo-rule::before,
+html[data-theme="light"] .mb-root .mbo-rule::after,
+html[data-theme="light"] .mb-root .mbo-foot__rule {
+  background: linear-gradient(to right, transparent, rgba(122, 95, 16, 0.75), transparent);
+}
+
+html[data-theme="light"] .mb-root .mbo-list > li + li {
+  border-top-color: rgba(122, 95, 16, 0.28);
+}
+
+html[data-theme="light"] .mb-root .mbo-pick__frame {
+  background-color: rgba(122, 95, 16, 0.1);
+  box-shadow:
+    0 0 0 1px rgba(122, 95, 16, 0.55),
+    0 0 0 4px var(--mbc-paper),
+    0 0 0 5px rgba(122, 95, 16, 0.3);
+}
+
+html[data-theme="light"] .mb-root .mbo-pick:hover .mbo-pick__frame,
+html[data-theme="light"] .mb-root .mbo-pick:focus-visible .mbo-pick__frame {
+  box-shadow:
+    0 0 0 1px rgba(122, 95, 16, 0.9),
+    0 0 0 4px var(--mbc-paper),
+    0 0 0 6px rgba(122, 95, 16, 0.55);
+}
+
+/* ---------- Phone ---------- */
+@media (max-width: 480px) {
+  .mbo-picks {
+    gap: 16px 12px;
+  }
+
+  .mbo-title__name {
+    letter-spacing: 0.06em;
+  }
+
+  /* Section titles are long; tighten them so they fit on one printed line */
+  .mb-root .mbo-entry__title {
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+  }
+
+  .mbo-entry__num {
+    width: 1.6em;
+    font-size: 0.72rem;
+  }
+
+  .mb-root .mbo-entry__count {
+    font-size: 0.82rem;
+  }
+
+  .mbo-pick__kicker {
+    font-size: 0.55rem;
+    letter-spacing: 0.18em;
+  }
+
+  .mb-root .mbo-pick__name,
+  .mb-root .mbo-pick__price {
+    font-size: 0.82rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mbo-pick__frame {
+    transition: none;
+  }
+}

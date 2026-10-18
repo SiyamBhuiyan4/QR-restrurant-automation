@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-// Page-turn duration in milliseconds. Matches the CSS flip animation.
-export const FLIP_DURATION_MS = 650;
+// Page-turn duration in milliseconds.
+// Must match --mb-turn-duration in styles/menu-book-flip.css.
+export const FLIP_DURATION_MS = 700;
+
+// The CSS animationend event is the primary way a flip finishes; this timer is
+// only a fallback for when the event never fires (animation interrupted, tab
+// backgrounded, the turning page unmounted). The buffer keeps it from firing
+// first and yanking the class off a page that is still mid-sweep.
+const FLIP_TIMEOUT_BUFFER_MS = 160;
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
@@ -76,7 +83,7 @@ export function useBookFlip(spreadCount, { initial = 0 } = {}) {
     setDirection(dir);
     setIsFlipping(true);
     clearTimer();
-    timerRef.current = setTimeout(onFlipEnd, duration);
+    timerRef.current = setTimeout(onFlipEnd, duration + FLIP_TIMEOUT_BUFFER_MS);
   }, [clearTimer, onFlipEnd]);
 
   const next = useCallback(() => {

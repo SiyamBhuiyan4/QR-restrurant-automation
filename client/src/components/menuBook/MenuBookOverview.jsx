@@ -1,23 +1,52 @@
 import React from 'react';
+import '../../styles/menu-book-overview.css';
 
-const PAPER = '#0f2f22';
-const INK = '#f5efe0';
-const GOLD = '#d4af37';
+const RESTAURANT_NAME = 'WorldPlate';
+const TAGLINE = 'Taste the tradition, served fresh daily';
 
+// Same currency and precision as the dish pages and the dish detail page.
 const formatPrice = (value, currency = '$') => {
   const num = typeof value === 'number' ? value : parseFloat(value);
-  return `${currency}${Number.isFinite(num) ? num.toFixed(2) : '0.00'}`;
+  return Number.isFinite(num) ? `${currency}${num.toFixed(2)}` : '';
 };
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
+const dishImage = (dish) => dish?.image || dish?.imageUrl || dish?.img || null;
+
+const dishName = (dish) => dish?.title || dish?.name || 'Dish';
+
+// Sections come from the menu page as { categoryKey, ... }; older callers pass
+// { key, ... }. Accept both so the page-jump keeps working either way.
+const sectionKeyOf = (section) => section?.key ?? section?.categoryKey;
+
+/** Ornamental rule: hairline, gold lozenge, hairline. */
+const Rule = () => (
+  <div className="mbo-rule" aria-hidden="true">
+    <span className="mbo-rule__mark" />
+  </div>
+);
+
+/** Centred, uppercase serif heading flanked by decorative rules. */
+const Heading = ({ children, className = '' }) => (
+  <header className={`mb-heading ${className}`.trim()}>
+    <span className="mb-heading__rule" aria-hidden="true" />
+    <h2 className="mb-heading__title">{children}</h2>
+    <span className="mb-heading__rule" aria-hidden="true" />
+  </header>
+);
+
 /**
- * Open-menu-book overview. Page 1 = cover + table of contents,
- * Page 2 = "Chef's picks". Purely presentational.
+ * Open-menu-book overview, set like the printed dish pages: textured paper and
+ * the double gold keyline come from .mb-page / .mb-sheet, headings from
+ * .mb-heading, and the contents list reuses the .mb-entry dotted leader.
+ *
+ * Page 1 = title page + table of contents, page 2 = "Chef's picks".
+ * Purely presentational.
  *
  * Props:
  *  - page: 1 | 2
- *  - sections: [{ key, title, items: [{ title|name, price, image }] }]
+ *  - sections: [{ key|categoryKey, title, items: [{ title|name, price, image }] }]
  *  - onGoToSection(sectionKey)
  */
 export default function MenuBookOverview({ page = 1, sections = [], onGoToSection }) {
@@ -26,18 +55,6 @@ export default function MenuBookOverview({ page = 1, sections = [], onGoToSectio
     if (typeof onGoToSection === 'function') onGoToSection(key);
   };
 
-  const pageStyle = {
-    backgroundColor: 'transparent',
-    color: INK,
-    padding: 0,
-    width: '100%',
-    boxSizing: 'border-box',
-  };
-
-  const hairline = { height: '1px', backgroundColor: GOLD, opacity: 0.6 };
-
-  const shell = 'relative flex flex-col w-full h-full min-h-[460px] md:min-h-[560px] overflow-hidden';
-
   if (page === 2) {
     const picks = safeSections
       .filter((s) => Array.isArray(s.items) && s.items.length > 0)
@@ -45,45 +62,39 @@ export default function MenuBookOverview({ page = 1, sections = [], onGoToSectio
       .map((s) => ({ section: s, item: s.items[0] }));
 
     return (
-      <div className={shell} style={pageStyle}>
-        <header className="text-center">
-          <p className="font-display text-xs tracking-[0.3em] uppercase" style={{ color: GOLD }}>
-            Chef's picks
-          </p>
-          <div className="mx-auto mt-3" style={{ ...hairline, width: '48px' }} />
-        </header>
+      <div className="mb-sheet mbo-page">
+        <Heading>Chef&apos;s Picks</Heading>
+        <p className="mbo-note">Dishes our kitchen is proudest of</p>
 
         {picks.length === 0 ? (
-          <p className="mt-10 text-center text-sm opacity-70">No featured dishes yet.</p>
+          <p className="mbo-empty">No featured dishes yet.</p>
         ) : (
-          <ul className="mt-6 grid grid-cols-2 gap-3 flex-1 content-start">
+          <ul className="mbo-picks">
             {picks.map(({ section, item }, i) => {
-              const name = item.title || item.name || 'Dish';
+              const name = dishName(item);
+              const img = dishImage(item);
+              const price = formatPrice(item?.price);
               return (
-                <li key={section.key ?? i}>
+                <li key={sectionKeyOf(section) ?? i}>
                   <button
                     type="button"
-                    onClick={() => go(section.key)}
-                    className="flex w-full min-h-[44px] flex-col items-stretch text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                    className="mbo-pick"
+                    onClick={() => go(sectionKeyOf(section))}
                   >
-                    {item.image ? (
-                      <img
-                        src={item.image}
-                        alt={name}
-                        className="aspect-square w-full rounded object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div
-                        className="aspect-square w-full rounded"
-                        style={{ backgroundColor: '#17402f', border: `1px solid ${GOLD}` }}
-                      />
-                    )}
-                    <span className="mt-2 block truncate text-sm font-medium" style={{ color: INK }}>
-                      {name}
+                    <span className="mbo-pick__frame">
+                      {img ? (
+                        <img src={img} alt="" loading="lazy" className="mbo-pick__img" />
+                      ) : (
+                        <span className="mbo-pick__placeholder" aria-hidden="true">
+                          {name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
                     </span>
-                    <span className="block text-xs" style={{ color: GOLD }}>
-                      {formatPrice(item.price)}
+                    <span className="mbo-pick__kicker">{section.title || 'Menu'}</span>
+                    <span className="mbo-pick__name">{name}</span>
+                    <span className="mbo-pick__row">
+                      <span className="mb-entry__leader mbo-pick__leader" aria-hidden="true" />
+                      <span className="mb-entry__price mbo-pick__price">{price}</span>
                     </span>
                   </button>
                 </li>
@@ -92,47 +103,48 @@ export default function MenuBookOverview({ page = 1, sections = [], onGoToSectio
           </ul>
         )}
 
-        <div className="mt-auto pt-4">
-          <div style={hairline} />
-          <p className="mt-3 text-center text-[11px] italic opacity-70">Tap a dish to see details</p>
+        <div className="mbo-foot">
+          <span className="mbo-foot__rule" aria-hidden="true" />
+          <p className="mbo-foot__text">Tap a dish to see details</p>
         </div>
       </div>
     );
   }
 
-  // Page 1: cover + table of contents
+  // Page 1: title page + table of contents
   return (
-    <div className={shell} style={pageStyle}>
-      <header className="text-center">
-        <h1 className="font-display text-3xl font-semibold tracking-wide" style={{ color: GOLD }}>
-          WorldPlate
-        </h1>
-        <p className="mt-2 text-sm italic opacity-80">Taste the tradition, served fresh daily</p>
-        <div className="mx-auto mt-4" style={{ ...hairline, width: '64px' }} />
+    <div className="mb-sheet mbo-page">
+      <header className="mbo-title">
+        <p className="mbo-title__eyebrow">Bill of fare</p>
+        <h1 className="mbo-title__name">{RESTAURANT_NAME}</h1>
+        <Rule />
+        <p className="mbo-title__tagline">{TAGLINE}</p>
       </header>
 
-      <nav className="mt-6 flex-1 overflow-y-auto" aria-label="Table of contents">
+      <Heading className="mbo-heading">Contents</Heading>
+
+      <nav className="mbo-contents" aria-label="Table of contents">
         {safeSections.length === 0 ? (
-          <p className="text-center text-sm opacity-70">Menu coming soon.</p>
+          <p className="mbo-empty">Menu coming soon.</p>
         ) : (
-          <ol className="divide-y" style={{ borderColor: GOLD }}>
+          <ol className="mbo-list">
             {safeSections.map((section, i) => {
               const count = Array.isArray(section.items) ? section.items.length : 0;
               return (
-                <li key={section.key ?? i} style={{ borderColor: 'rgba(212,175,55,0.35)' }}>
+                <li key={sectionKeyOf(section) ?? i}>
                   <button
                     type="button"
-                    onClick={() => go(section.key)}
-                    className="flex w-full min-h-[44px] items-center gap-3 py-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                    className="mb-entry mbo-entry"
+                    onClick={() => go(sectionKeyOf(section))}
                   >
-                    <span className="font-display text-sm tabular-nums" style={{ color: GOLD }}>
-                      {pad2(i + 1)}
-                    </span>
-                    <span className="flex-1 text-base" style={{ color: INK }}>
+                    <span className="mbo-entry__num" aria-hidden="true">{pad2(i + 1)}</span>
+                    <span className="mb-entry__name mbo-entry__title">
                       {section.title || 'Untitled'}
                     </span>
-                    <span className="text-xs opacity-70">
-                      {count} {count === 1 ? 'dish' : 'dishes'}
+                    <span className="mb-entry__leader" aria-hidden="true" />
+                    <span className="mb-entry__price mbo-entry__count">
+                      {count}
+                      <span className="sr-only"> {count === 1 ? 'dish' : 'dishes'}</span>
                     </span>
                   </button>
                 </li>
@@ -140,11 +152,12 @@ export default function MenuBookOverview({ page = 1, sections = [], onGoToSectio
             })}
           </ol>
         )}
+        {safeSections.length > 0 && <Rule />}
       </nav>
 
-      <div className="mt-auto pt-4 text-center text-[11px] opacity-60">
-        <div style={hairline} />
-        <p className="mt-3">Contents</p>
+      <div className="mbo-foot">
+        <span className="mbo-foot__rule" aria-hidden="true" />
+        <p className="mbo-foot__text">Please turn the page</p>
       </div>
     </div>
   );
