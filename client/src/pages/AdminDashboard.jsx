@@ -1,20 +1,26 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
-import MenuManager from '../components/MenuManager';
-import QRBatchGenerator from './QRBatchGenerator';
 import { resolveServerUrl, useSocket } from '../context/SocketContext';
 import { getPendingOrders, getPendingWaiterCalls } from '../db/indexedDb';
 
-// High-End Modern SaaS Admin Components
+// Admin Architecture Components
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminHeader from '../components/admin/AdminHeader';
 import OverviewModule from '../components/admin/OverviewModule';
 import LiveTablesModule from '../components/admin/LiveTablesModule';
+import LiveOrdersModule from '../components/admin/LiveOrdersModule';
+import CustomerSimulatorModule from '../components/admin/CustomerSimulatorModule';
 import EmployeesModule from '../components/admin/EmployeesModule';
 import CustomerReportsModule from '../components/admin/CustomerReportsModule';
 
-// Central State & Mock Data Architecture
+// System Standalone Consoles (Directly Embedded into Master Admin)
+import KitchenDisplay from './KitchenDisplay';
+import WaiterPanel from './WaiterPanel';
+import MenuManager from '../components/MenuManager';
+import QRBatchGenerator from './QRBatchGenerator';
+
+// State Architecture & Realistic Mock Datasets
 import {
   getInitialAdminState,
   calculateMetricsForDateRange,
@@ -30,41 +36,54 @@ import {
 import '../styles/admin.css';
 
 /**
- * Redesigned Restaurant Admin Dashboard
+ * Unified Master Restaurant Admin Dashboard
  * 
- * Clean SaaS Architecture:
- * - Fixed Left Sidebar Navigation (AdminSidebar)
- * - Top Header Bar with Live Pulse, Search, and Urgent Alerts (AdminHeader)
- * - Dynamic Main Area with 4 Core Operational Modules:
- *   1. Overview & Revenue Analytics (Module A: Side Calendar, KPIs, Chart, Active Running Orders)
- *   2. Live Tables & Kitchen Orders (Module B: 12-Table Grid, 4-Stage Kitchen Flow, Card Actions)
- *   3. Employees Management (Module C: Strictly "Employees", Table Assignment, Live Activity, Call Routing)
- *   4. Customer Reports & Notes (Module D: Direct-to-Admin Notes, Dispatch Staff, Reassign, Resolve)
- *   Plus Secondary Views: 'menu' (MenuManager) and 'qr' (QRBatchGenerator)
+ * SaaS Architecture:
+ * - High-performance Flexbox Shell: Fixed Left Sidebar + Scrollable Viewport
+ * - Top Header: Section Breadcrumbs, ⌘K Global Search, Live Pulse, Urgent Alert Drawer
+ * - Complete Access to Every Platform Component:
+ *   1. Overview & Revenue Analytics (Module A: Side Calendar, KPIs, Revenue Chart)
+ *   2. Live Tables & Floor Grid (Module B: 12-Table layout, 4-Stage Kitchen Flow)
+ *   3. Live Orders Pipeline (Live Tickets, Customer Audio Notes, Status Advancement)
+ *   4. Kitchen KDS Console (Direct Embedded Cook Station)
+ *   5. Floor Staff Console (Direct Embedded Assistance Panel)
+ *   6. Customer Menu Simulator (Live Embedded Diner View & River Background)
+ *   7. Menu Management (Dishes, Prices, Categories & 86 Toggles)
+ *   8. Table QR Code Generator (Batch Generator & Printing)
+ *   9. Employees Management Hub (Table Allocation, Shift Activity & Responsiveness)
+ *   10. Customer Reports & Notes (Direct-to-Admin Notes, Staff Dispatching & Audit Log)
  */
 export default function AdminDashboard({ className = '' }) {
-  // Navigation tabs: 'overview' | 'tables' | 'employees' | 'reports' | 'menu' | 'qr'
+  // Navigation tab state (supports URL search param '?tab=...')
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (['overview', 'tables', 'employees', 'reports', 'menu', 'qr'].includes(tabParam)) {
-        return tabParam;
-      }
-      if (tabParam === 'stats') {
-        return 'overview';
-      }
+      const validTabs = [
+        'overview',
+        'tables',
+        'orders',
+        'kds',
+        'floor',
+        'customer',
+        'menu',
+        'qr',
+        'employees',
+        'reports'
+      ];
+      if (validTabs.includes(tabParam)) return tabParam;
+      if (tabParam === 'stats') return 'overview';
     }
     return 'overview';
   });
 
-  // Dark/Light Mode Theme Toggle (Default dark mode true for SaaS elegance, false for Soft Slate #f8fafc)
+  // Dark/Light Theme state
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('smartdine_admin_theme');
       if (saved) return saved === 'dark';
     }
-    return false; // Soft Slate #f8fafc as requested by default
+    return false; // Soft Slate #f8fafc as default
   });
 
   const handleToggleDarkMode = () => {
@@ -77,27 +96,25 @@ export default function AdminDashboard({ className = '' }) {
     });
   };
 
-  // Sidebar Layout State
+  // Sidebar Layout States
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // ---------------------------------------------------------------------------
-  // CENTRAL OPERATIONAL STATE (Pre-populated rich data + working interactive handlers)
-  // ---------------------------------------------------------------------------
+  // Central Operational State
   const [tables, setTables] = useState(() => defaultTables);
   const [employees, setEmployees] = useState(() => defaultEmployees);
   const [liveOrders, setLiveOrders] = useState(() => defaultLiveOrders);
   const [customerNotes, setCustomerNotes] = useState(() => defaultCustomerNotes);
 
-  // Live Server Stats & Connectivity
+  // Live Server Telemetry State
   const [serverStats, setServerStats] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   const socketContext = useSocket ? useSocket() : null;
 
-  // Sync tab with URL search parameter
+  // Sync tab selection with browser history
   const handleSelectTab = (tabId) => {
     const normalizedTab = tabId === 'stats' ? 'overview' : tabId;
     setActiveTab(normalizedTab);
@@ -109,7 +126,7 @@ export default function AdminDashboard({ className = '' }) {
     }
   };
 
-  // Convex real-time mutations (if connected to Convex)
+  // Real-time Convex mutations
   let updateConvexStatus = null;
   let resolveConvexCall = null;
   try {
@@ -117,7 +134,7 @@ export default function AdminDashboard({ className = '' }) {
     resolveConvexCall = useMutation(api.waiter.resolveCall);
   } catch (_) {}
 
-  // Fetch live stats and sync from server if available
+  // Fetch live stats from server/DB
   const fetchDashboardData = useCallback(async (isSilent = false) => {
     if (!isSilent) setIsRefreshing(true);
     const serverUrl = resolveServerUrl();
@@ -149,25 +166,18 @@ export default function AdminDashboard({ className = '' }) {
   }, [fetchDashboardData]);
 
   // ---------------------------------------------------------------------------
-  // INTERACTIVE STATE HANDLERS (Cross-Module Operations)
+  // INTERACTIVE ACTION HANDLERS
   // ---------------------------------------------------------------------------
 
   // Advance Kitchen Order Flow (Placed -> Preparing -> Ready Pickup -> Served)
   const handleAdvanceOrderStage = useCallback((orderId, nextStage) => {
     setLiveOrders(prev => {
-      const updated = prev.map(o => {
-        if (o.id === orderId) {
-          return { ...o, kitchenFlowStage: nextStage };
-        }
-        return o;
-      });
-      return updated;
+      return prev.map(o => (o.id === orderId ? { ...o, kitchenFlowStage: nextStage } : o));
     });
 
-    // Automatically update the table's visual status
-    const targetOrder = liveOrders.find(o => o.id === orderId);
-    if (targetOrder) {
-      const tableNum = targetOrder.tableNumber;
+    const target = liveOrders.find(o => o.id === orderId);
+    if (target) {
+      const tableNum = target.tableNumber;
       setTables(prev => prev.map(t => {
         if (t.tableNumber === tableNum) {
           if (nextStage === KITCHEN_STAGE.READY_PICKUP) {
@@ -184,7 +194,6 @@ export default function AdminDashboard({ className = '' }) {
       }));
     }
 
-    // Attempt backend sync
     if (updateConvexStatus) {
       try {
         updateConvexStatus({ orderId: String(orderId), status: nextStage });
@@ -192,38 +201,12 @@ export default function AdminDashboard({ className = '' }) {
     }
   }, [liveOrders, updateConvexStatus]);
 
-  // Update Table Status directly
+  // Update Table Status
   const handleUpdateTableStatus = useCallback((tableId, newStatus) => {
     setTables(prev => prev.map(t => (t.id === tableId || t.tableNumber === tableId ? { ...t, status: newStatus } : t)));
   }, []);
 
-  // Reassign Table to a specific Employee
-  const handleReassignTable = useCallback((tableId, employeeId) => {
-    const numTableId = Number(tableId);
-    const numEmpId = Number(employeeId);
-
-    setTables(prev => prev.map(t => {
-      if (t.id === numTableId || t.tableNumber === numTableId) {
-        return { ...t, assignedEmployeeId: numEmpId };
-      }
-      return t;
-    }));
-
-    setEmployees(prev => prev.map(emp => {
-      if (emp.id === numEmpId) {
-        const assigned = new Set(emp.assignedTableIds || []);
-        assigned.add(numTableId);
-        return { ...emp, assignedTableIds: Array.from(assigned) };
-      } else {
-        return {
-          ...emp,
-          assignedTableIds: (emp.assignedTableIds || []).filter(id => id !== numTableId)
-        };
-      }
-    }));
-  }, []);
-
-  // Resolve Customer Report / Table Issue
+  // Resolve Customer Report
   const handleResolveIssue = useCallback((noteId, resolutionNote) => {
     setCustomerNotes(prev => prev.map(n => {
       if (n.id === noteId) {
@@ -236,7 +219,6 @@ export default function AdminDashboard({ className = '' }) {
       return n;
     }));
 
-    // Find table and clear assistance badge if resolved
     const note = customerNotes.find(n => n.id === noteId);
     if (note) {
       setTables(prev => prev.map(t => {
@@ -248,16 +230,13 @@ export default function AdminDashboard({ className = '' }) {
     }
   }, [customerNotes]);
 
-  // 1-Click jump from Active Order strip or widgets to Live Tables
+  // Jump to table from any widget
   const handleNavigateToTables = useCallback((tableNumber) => {
     setActiveTab('tables');
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
   }, []);
 
   // ---------------------------------------------------------------------------
-  // DERIVED COUNTS & NOTIFICATIONS
+  // DERIVED COUNTS
   // ---------------------------------------------------------------------------
   const activeOrdersCount = useMemo(() => {
     return liveOrders.filter(o => o.kitchenFlowStage !== KITCHEN_STAGE.SERVED).length;
@@ -279,15 +258,13 @@ export default function AdminDashboard({ className = '' }) {
     return employees.filter(e => e.status === 'busy').length;
   }, [employees]);
 
-  // Urgent alerts list for notification bell dropdown
+  // Urgent alerts for bell drawer
   const urgentAlerts = useMemo(() => {
-    const alerts = [];
-    
-    // Critical customer notes
+    const list = [];
     customerNotes.filter(n => n.status === ISSUE_STATUS.NEW && n.severity === 'critical').forEach(n => {
-      alerts.push({
+      list.push({
         id: `note-${n.id}`,
-        title: `Table #${n.tableNumber} Critical Note`,
+        title: `Table #${n.tableNumber} Critical Issue`,
         type: 'report',
         table: n.tableNumber,
         time: 'Just now',
@@ -295,30 +272,28 @@ export default function AdminDashboard({ className = '' }) {
       });
     });
 
-    // Kitchen ready orders waiting for pickup
     liveOrders.filter(o => o.kitchenFlowStage === KITCHEN_STAGE.READY_PICKUP).forEach(o => {
-      alerts.push({
+      list.push({
         id: `ready-${o.id}`,
         title: `Table #${o.tableNumber} Food Ready`,
         type: 'kitchen',
         table: o.tableNumber,
-        time: `${o.timeElapsedMinutes || 2}m elapsed`,
-        detail: `Plated in kitchen • Server dispatch pending`
+        time: `${o.timeElapsedMinutes || 3}m elapsed`,
+        detail: 'Plated at kitchen pass • Server alert pending'
       });
     });
-
-    return alerts;
+    return list;
   }, [customerNotes, liveOrders]);
 
   return (
     <div
-      className={`admin-root min-h-screen flex transition-colors duration-200 ${
-        isDarkMode ? 'bg-[#0f172a] text-slate-100' : 'bg-[#f8fafc] text-slate-800'
+      className={`admin-root h-screen flex overflow-hidden ${
+        isDarkMode ? 'dark bg-[#090d16] text-slate-100' : 'bg-slate-50 text-slate-800'
       } ${className}`}
       style={{ fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" }}
     >
       {/* =======================================================================
-          1. LEFT FIXED SIDEBAR NAVIGATION
+          1. MASTER SAAS SIDEBAR
           ======================================================================= */}
       <AdminSidebar
         activeTab={activeTab}
@@ -332,6 +307,7 @@ export default function AdminDashboard({ className = '' }) {
         }}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
+        isDarkMode={isDarkMode}
       />
 
       {/* Mobile Drawer Backdrop */}
@@ -343,14 +319,10 @@ export default function AdminDashboard({ className = '' }) {
       )}
 
       {/* =======================================================================
-          2. MAIN CONTENT AREA & TOP HEADER
+          2. MASTER CONTENT VIEWPORT (Header + Scrollable Main)
           ======================================================================= */}
-      <div
-        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
-          isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'
-        }`}
-      >
-        {/* Sticky Top Header Bar */}
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+        {/* Sticky Header Bar */}
         <AdminHeader
           activeTab={activeTab}
           onSelectTab={handleSelectTab}
@@ -365,9 +337,9 @@ export default function AdminDashboard({ className = '' }) {
           onToggleSidebar={() => setIsMobileSidebarOpen(prev => !prev)}
         />
 
-        {/* Dynamic Main Workspace View */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto">
-          {/* TAB 1: MODULE A - OVERVIEW & REVENUE ANALYTICS */}
+        {/* Scrollable Dynamic Workspace */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto">
+          {/* TAB 1: OVERVIEW & REVENUE ANALYTICS */}
           {activeTab === 'overview' && (
             <div className="animate-fadeIn">
               <OverviewModule
@@ -379,7 +351,7 @@ export default function AdminDashboard({ className = '' }) {
             </div>
           )}
 
-          {/* TAB 2: MODULE B - LIVE TABLES & KITCHEN ORDERS */}
+          {/* TAB 2: LIVE TABLES & FLOOR */}
           {activeTab === 'tables' && (
             <div className="animate-fadeIn">
               <LiveTablesModule
@@ -397,31 +369,62 @@ export default function AdminDashboard({ className = '' }) {
             </div>
           )}
 
-          {/* TAB 3: MODULE C - EMPLOYEES MANAGEMENT (Strictly "Employees") */}
+          {/* TAB 3: LIVE ORDERS PIPELINE */}
+          {activeTab === 'orders' && (
+            <div className="animate-fadeIn">
+              <LiveOrdersModule
+                orders={liveOrders}
+                onAdvanceStage={handleAdvanceOrderStage}
+              />
+            </div>
+          )}
+
+          {/* TAB 4: KITCHEN DISPLAY SYSTEM (DIRECT EMBEDDED CONSOLE) */}
+          {activeTab === 'kds' && (
+            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md bg-black">
+              <KitchenDisplay />
+            </div>
+          )}
+
+          {/* TAB 5: FLOOR STAFF ASSISTANCE (DIRECT EMBEDDED CONSOLE) */}
+          {activeTab === 'floor' && (
+            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+              <WaiterPanel />
+            </div>
+          )}
+
+          {/* TAB 6: CUSTOMER MENU SIMULATOR */}
+          {activeTab === 'customer' && (
+            <div className="animate-fadeIn">
+              <CustomerSimulatorModule />
+            </div>
+          )}
+
+          {/* TAB 7: MENU MANAGEMENT */}
+          {activeTab === 'menu' && (
+            <div className="animate-fadeIn bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs">
+              <MenuManager />
+            </div>
+          )}
+
+          {/* TAB 8: TABLE QR GENERATOR */}
+          {activeTab === 'qr' && (
+            <div className="animate-fadeIn bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs">
+              <QRBatchGenerator />
+            </div>
+          )}
+
+          {/* TAB 9: EMPLOYEES MANAGEMENT */}
           {activeTab === 'employees' && (
             <div className="animate-fadeIn">
               <EmployeesModule />
             </div>
           )}
 
-          {/* TAB 4: MODULE D - CUSTOMER REPORTS & ADMIN NOTES */}
+          {/* TAB 10: CUSTOMER REPORTS & NOTES */}
           {activeTab === 'reports' && (
             <div className="animate-fadeIn">
               <CustomerReportsModule />
-            </div>
-          )}
-
-          {/* TAB 5: SECONDARY - MENU MANAGEMENT */}
-          {activeTab === 'menu' && (
-            <div className="animate-fadeIn bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs">
-              <MenuManager />
-            </div>
-          )}
-
-          {/* TAB 6: SECONDARY - QR BATCH GENERATOR */}
-          {activeTab === 'qr' && (
-            <div className="animate-fadeIn bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs">
-              <QRBatchGenerator />
             </div>
           )}
         </main>
