@@ -11,26 +11,17 @@ import {
   RotateCcw,
   Sparkles,
   Search,
-  Filter,
   Check,
   X,
   Phone,
   Mail,
   Zap,
-  ArrowRight,
-  TrendingUp,
-  Shield,
-  Layers,
-  MoreVertical,
-  Activity,
   Edit2,
   Trash2,
-  Send,
   Coffee,
   CheckCheck,
-  RefreshCw,
-  SlidersHorizontal,
-  Table
+  Table,
+  ArrowRight
 } from 'lucide-react';
 
 // Total floor tables in the venue
@@ -138,7 +129,7 @@ const INITIAL_ALERTS = [
     type: 'customer_call', // 'customer_call' | 'kitchen_ready'
     tableNumber: 4,
     description: 'Table 4 called for assistance: Water Refill & Extra Cutlery',
-    assignedEmployeeId: 'emp-1', // Routed to Employee Hasan
+    assignedEmployeeId: 'emp-1',
     assignedEmployeeName: 'Hasan',
     status: 'Pending', // 'Pending' | 'In Progress' | 'In Transit' | 'Completed' | 'Acknowledged'
     responseDetails: 'Responded in 45s / Pending',
@@ -151,7 +142,7 @@ const INITIAL_ALERTS = [
     type: 'kitchen_ready',
     tableNumber: 7,
     description: 'Table 7 Food Ready in Kitchen: 2x Smoked Wagyu Ribs, 1x Truffle Fries',
-    assignedEmployeeId: 'emp-2', // Routed to Employee Rakib
+    assignedEmployeeId: 'emp-2',
     assignedEmployeeName: 'Rakib',
     status: 'In Transit',
     responseDetails: 'Status: In Transit',
@@ -221,12 +212,12 @@ export default function EmployeesModule({ className = '' }) {
   const [alerts, setAlerts] = useState(INITIAL_ALERTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'Active' | 'Busy' | 'On Break'
-  const [activeViewMode, setActiveViewMode] = useState('split'); // 'split' | 'matrix' | 'telemetry'
+  const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'tables' | 'dispatch'
+  const [alertFilter, setAlertFilter] = useState('all'); // 'all' | 'active' | 'resolved'
 
   // Modal States
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null); // null for new employee
-  const [tableAssignModalEmployeeId, setTableAssignModalEmployeeId] = useState(null);
   const [reassignAlertTarget, setReassignAlertTarget] = useState(null); // alert being reassigned
 
   // Employee Form State (for Add/Edit Modal)
@@ -253,11 +244,10 @@ export default function EmployeesModule({ className = '' }) {
   // Summary Metrics
   const summaryMetrics = useMemo(() => {
     const total = employees.length;
-    // Active On-Duty: staff currently clocked in on floor shift (Active + Busy = 4)
     const onDutyStaff = employees.filter(e => e.status !== 'On Break');
     const activeOnDuty = onDutyStaff.length;
     const currentlyBusy = employees.filter(e => e.status === 'Busy').length;
-    
+
     // Count unique tables covered
     const coveredTables = new Set();
     employees.forEach(emp => {
@@ -266,14 +256,22 @@ export default function EmployeesModule({ className = '' }) {
       }
     });
 
+    // Dynamic average response time calculation
+    const avgResponseSecs = Math.round(
+      employees.reduce((acc, emp) => {
+        const val = parseInt(emp.avgResponseTime, 10);
+        return acc + (isNaN(val) ? 41 : val);
+      }, 0) / (employees.length || 1)
+    );
+
     return {
       totalEmployees: total,
       activeOnDuty,
       currentlyBusy,
-      totalOnShift: activeOnDuty,
       tablesCovered: coveredTables.size,
       totalTables: TOTAL_TABLES_COUNT,
-      coveragePercentage: Math.round((coveredTables.size / TOTAL_TABLES_COUNT) * 100)
+      coveragePercentage: Math.round((coveredTables.size / TOTAL_TABLES_COUNT) * 100),
+      avgResponseTime: `${avgResponseSecs}s`
     };
   }, [employees]);
 
@@ -301,12 +299,27 @@ export default function EmployeesModule({ className = '' }) {
         const matchesName = emp.name.toLowerCase().includes(q);
         const matchesRole = emp.role.toLowerCase().includes(q);
         const matchesShift = emp.shift.toLowerCase().includes(q);
-        const matchesTable = emp.assignedTables.some(t => `t${t}`.includes(q) || `table ${t}`.includes(q) || String(t) === q);
+        const matchesTable = emp.assignedTables.some(
+          t => `t${t}`.includes(q) || `table ${t}`.includes(q) || String(t) === q
+        );
         return matchesName || matchesRole || matchesShift || matchesTable;
       }
       return true;
     });
   }, [employees, statusFilter, searchQuery]);
+
+  // Filtered alerts for Tab C
+  const filteredAlerts = useMemo(() => {
+    return alerts.filter(a => {
+      if (alertFilter === 'active') {
+        return a.status !== 'Completed' && a.status !== 'Acknowledged';
+      }
+      if (alertFilter === 'resolved') {
+        return a.status === 'Completed' || a.status === 'Acknowledged';
+      }
+      return true;
+    });
+  }, [alerts, alertFilter]);
 
   // ---------------------------------------------------------------------------
   // TABLE ASSIGNMENT LOGIC
@@ -322,7 +335,6 @@ export default function EmployeesModule({ className = '' }) {
 
       return prev.map(emp => {
         if (emp.id === employeeId) {
-          // If already assigned, remove it; otherwise add it
           const nextTables = isAlreadyAssignedToTarget
             ? emp.assignedTables.filter(t => t !== tableNumber)
             : [...emp.assignedTables, tableNumber].sort((a, b) => a - b);
@@ -411,7 +423,6 @@ export default function EmployeesModule({ className = '' }) {
   // STATUS & NUDGE CONTROLS
   // ---------------------------------------------------------------------------
 
-  // Change employee status on the fly
   const handleChangeEmployeeStatus = useCallback((employeeId, newStatus) => {
     setEmployees(prev =>
       prev.map(emp => {
@@ -425,7 +436,6 @@ export default function EmployeesModule({ className = '' }) {
     showToast(`${emp?.name || 'Employee'} status updated to "${newStatus}"`, 'info');
   }, [employees, showToast]);
 
-  // Nudge an employee from card or call routing
   const handleNudgeEmployee = useCallback((employeeId, alertId = null) => {
     setEmployees(prev =>
       prev.map(emp => {
@@ -455,7 +465,6 @@ export default function EmployeesModule({ className = '' }) {
   // CALL ROUTING CONTROLS
   // ---------------------------------------------------------------------------
 
-  // Reassign alert to another employee
   const handleReassignAlert = useCallback((alertId, newEmployeeId) => {
     setAlerts(prev =>
       prev.map(a => {
@@ -476,7 +485,6 @@ export default function EmployeesModule({ className = '' }) {
     showToast(`Alert reassigned to Employee ${targetEmp?.name || 'selected'}!`, 'success');
   }, [employees, showToast]);
 
-  // Acknowledge alert as Admin
   const handleAcknowledgeAlert = useCallback((alertId) => {
     setAlerts(prev =>
       prev.map(a => {
@@ -493,10 +501,8 @@ export default function EmployeesModule({ className = '' }) {
     showToast('Alert acknowledged & resolved by Admin!', 'success');
   }, [showToast]);
 
-  // Simulate a new live alert
   const handleSimulateNewAlert = useCallback(() => {
     const randomScenario = SIMULATED_SCENARIOS[Math.floor(Math.random() * SIMULATED_SCENARIOS.length)];
-    // Find assigned employee for this table
     const assignedEmp = tableToEmployeeMap[randomScenario.tableNumber] || employees[0];
 
     const newAlert = {
@@ -556,7 +562,6 @@ export default function EmployeesModule({ className = '' }) {
     }
 
     if (editingEmployee) {
-      // Update existing
       setEmployees(prev =>
         prev.map(emp => {
           if (emp.id === editingEmployee.id) {
@@ -571,7 +576,6 @@ export default function EmployeesModule({ className = '' }) {
               assignedTables: formData.assignedTables.sort((a, b) => a - b)
             };
           }
-          // Remove tables assigned to edited employee from other employees
           if (formData.assignedTables.some(t => emp.assignedTables.includes(t))) {
             return {
               ...emp,
@@ -583,7 +587,6 @@ export default function EmployeesModule({ className = '' }) {
       );
       showToast(`Employee "${formData.name.trim()}" profile updated!`, 'success');
     } else {
-      // Add new
       const initials = formData.name
         .trim()
         .split(' ')
@@ -613,7 +616,6 @@ export default function EmployeesModule({ className = '' }) {
       };
 
       setEmployees(prev => {
-        // Strip tables assigned to this new employee from others
         const cleaned = prev.map(emp => ({
           ...emp,
           assignedTables: emp.assignedTables.filter(t => !formData.assignedTables.includes(t))
@@ -639,27 +641,27 @@ export default function EmployeesModule({ className = '' }) {
 
   return (
     <div
-      className={`w-full bg-[#0f172a] text-[#f8fafc] rounded-3xl border border-[#334155] p-6 sm:p-7 space-y-6 shadow-2xl relative overflow-hidden ${className}`}
+      className={`w-full bg-[#0f172a] text-[#f8fafc] rounded-3xl border border-[#334155] p-5 sm:p-6 space-y-5 shadow-xl relative ${className}`}
       style={{ width: '100%', backgroundColor: '#0f172a' }}
     >
       {/* Toast Notification Container */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 animate-bounce-subtle">
+        <div className="fixed bottom-6 right-6 z-50 animate-fadeIn">
           <div
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-2xl backdrop-blur-xl text-xs font-bold text-white ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-xl backdrop-blur-md text-xs font-semibold text-white ${
               toastMessage.type === 'success'
-                ? 'bg-emerald-950/90 border-emerald-500/50 shadow-emerald-950/50'
+                ? 'bg-emerald-950/95 border-emerald-500/50'
                 : toastMessage.type === 'warning'
-                ? 'bg-amber-950/90 border-amber-500/50 shadow-amber-950/50'
+                ? 'bg-amber-950/95 border-amber-500/50'
                 : toastMessage.type === 'error'
-                ? 'bg-rose-950/90 border-rose-500/50 shadow-rose-950/50'
-                : 'bg-[#1e293b] border-[#334155] shadow-black/50 text-[#f8fafc]'
+                ? 'bg-rose-950/95 border-rose-500/50'
+                : 'bg-[#1e293b] border-[#334155] text-[#f8fafc]'
             }`}
           >
-            {toastMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-            {toastMessage.type === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-400" />}
-            {toastMessage.type === 'error' && <X className="w-4 h-4 text-rose-400" />}
-            {toastMessage.type === 'info' && <Zap className="w-4 h-4 text-cyan-400" />}
+            {toastMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+            {toastMessage.type === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
+            {toastMessage.type === 'error' && <X className="w-4 h-4 text-rose-400 shrink-0" />}
+            {toastMessage.type === 'info' && <Zap className="w-4 h-4 text-cyan-400 shrink-0" />}
             <span>{toastMessage.text}</span>
             <button
               type="button"
@@ -675,35 +677,29 @@ export default function EmployeesModule({ className = '' }) {
       {/* =========================================================================
           1. HEADER & EXECUTIVE SUMMARY STATS
           ========================================================================= */}
-      <section className="bg-[#111827] rounded-3xl border border-[#334155] p-5 sm:p-6 shadow-xl relative overflow-hidden">
-        {/* Glow ambient background accent */}
-        <div className="absolute -top-16 -right-16 w-64 h-64 bg-[#FF5A26]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-slate-700/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-[#334155]">
-          {/* Title & Hub Identity */}
-          <div>
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#FF5A26] to-[#FF7A45] flex items-center justify-center text-white shadow-lg shadow-[#FF5A26]/30">
-                <Users className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-[#f8fafc] tracking-tight">
-                  Employee Directory &amp; Table Assignment Hub
-                </h2>
-                <p className="text-xs text-slate-300 font-medium mt-0.5">
-                  Floor allocation matrix, responsive kitchen dispatching, and service telemetry
-                </p>
-              </div>
+      <section className="bg-[#111827] rounded-2xl border border-[#334155] p-4 sm:p-5 shadow-sm space-y-4">
+        {/* Title and Top Level Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#334155]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#1e293b] border border-[#334155] flex items-center justify-center text-[#FF5A26] shadow-sm shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-[#f8fafc] tracking-tight">
+                Employee Hub
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Staff roster, dining room table assignments, and real-time dispatch routing
+              </p>
             </div>
           </div>
 
           {/* Quick Header Actions */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={handleAutoBalanceTables}
-              className="px-3.5 py-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-200 border border-[#334155] text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-md shadow-slate-950/50"
+              className="px-3.5 py-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-slate-200 border border-[#334155] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
               title="Evenly distribute tables 1-12 among active employees"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
@@ -713,7 +709,7 @@ export default function EmployeesModule({ className = '' }) {
             <button
               type="button"
               onClick={handleSimulateNewAlert}
-              className="px-3.5 py-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-200 border border-[#334155] text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
+              className="px-3.5 py-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-slate-200 border border-[#334155] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
               title="Simulate incoming guest assistance or kitchen pickup"
             >
               <Zap className="w-3.5 h-3.5 text-[#FF7A45]" />
@@ -723,7 +719,7 @@ export default function EmployeesModule({ className = '' }) {
             <button
               type="button"
               onClick={handleOpenAddModal}
-              className="px-4 py-2 rounded-xl flame-gradient-btn text-white text-xs font-black shadow-lg shadow-[#FF5A26]/30 transition active:scale-95 cursor-pointer flex items-center gap-2"
+              className="px-4 py-2 rounded-xl bg-[#FF5A26] hover:bg-[#e04f20] text-white text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
             >
               <UserPlus className="w-4 h-4" />
               <span>Add Employee</span>
@@ -731,173 +727,198 @@ export default function EmployeesModule({ className = '' }) {
           </div>
         </div>
 
-        {/* 4 Core Summary Metric KPI Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-5">
-          {/* Metric 1: Total Employees */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1e293b] border border-[#334155] relative overflow-hidden group hover:border-[#FF5A26]/40 transition">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                Total Employees
-              </span>
-              <div className="w-7 h-7 rounded-xl bg-[#0f172a] text-slate-300 border border-[#334155] flex items-center justify-center">
-                <Users className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-[#f8fafc] tracking-tight">
-                {summaryMetrics.totalEmployees}
-              </span>
-              <span className="text-[11px] font-semibold text-slate-400">
-                Registered
-              </span>
-            </div>
-            <div className="mt-1 text-[10px] text-slate-400 flex items-center gap-1">
-              <span className="text-emerald-400 font-bold">+1</span> scheduled upcoming
-            </div>
-          </div>
-
-          {/* Metric 2: Active On-Duty */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1e293b] border border-emerald-500/30 relative overflow-hidden group hover:border-emerald-500/50 transition">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider">
-                Active On-Duty
-              </span>
-              <div className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
-                <CheckCircle2 className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight">
-                {summaryMetrics.activeOnDuty}
-              </span>
-              <span className="text-[11px] font-semibold text-emerald-300/80">
-                Floor Ready
-              </span>
-            </div>
-            <div className="mt-1 text-[10px] text-emerald-300/80 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Available for table calls</span>
-            </div>
-          </div>
-
-          {/* Metric 3: Currently Busy */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1e293b] border border-amber-500/30 relative overflow-hidden group hover:border-amber-500/50 transition">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider">
-                Currently Busy
-              </span>
-              <div className="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center">
-                <Flame className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight">
-                {summaryMetrics.currentlyBusy}
-              </span>
-              <span className="text-[11px] font-semibold text-amber-300/80">
-                In Service
-              </span>
-            </div>
-            <div className="mt-1 text-[10px] text-amber-300/80 flex items-center gap-1">
-              <span>Handling orders &amp; pickups</span>
-            </div>
-          </div>
-
-          {/* Metric 4: Tables Covered */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1e293b] border border-[#334155] relative overflow-hidden group hover:border-emerald-500/40 transition">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                Tables Covered
-              </span>
-              <div className="w-7 h-7 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center">
-                <Table className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-[#f8fafc] tracking-tight">
-                {summaryMetrics.tablesCovered}/{summaryMetrics.totalTables}
-              </span>
-              <span className="text-[11px] font-bold text-emerald-400">
-                ({summaryMetrics.coveragePercentage}%)
-              </span>
-            </div>
-            <div className="mt-1 text-[10px] text-slate-400 flex items-center gap-1">
-              {summaryMetrics.tablesCovered === summaryMetrics.totalTables ? (
-                <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                  <Check className="w-3 h-3" /> Full dining room covered
+        {/* 4 Sleek, Elegant Summary Chips */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {/* Chip 1: Total Employees */}
+          <div className="p-3.5 rounded-xl bg-[#1e293b] border border-[#334155] flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-medium text-slate-400 block">Total Employees</span>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-xl sm:text-2xl font-bold text-[#f8fafc]">
+                  {summaryMetrics.totalEmployees}
                 </span>
-              ) : (
-                <span className="text-amber-400 font-semibold">
-                  {summaryMetrics.totalTables - summaryMetrics.tablesCovered} tables need assignment
+                <span className="text-[10px] text-slate-400">Registered</span>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#334155] text-slate-300 flex items-center justify-center shrink-0">
+              <Users className="w-4 h-4" />
+            </div>
+          </div>
+
+          {/* Chip 2: Active On-Duty */}
+          <div className="p-3.5 rounded-xl bg-[#1e293b] border border-[#334155] flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-medium text-slate-400 block">Active On-Duty</span>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-xl sm:text-2xl font-bold text-emerald-400">
+                  {summaryMetrics.activeOnDuty}
                 </span>
-              )}
+                <span className="text-[10px] text-emerald-300/80">Floor Ready</span>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </div>
+
+          {/* Chip 3: Tables Covered */}
+          <div className="p-3.5 rounded-xl bg-[#1e293b] border border-[#334155] flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-medium text-slate-400 block">Tables Covered</span>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-xl sm:text-2xl font-bold text-[#f8fafc]">
+                  {summaryMetrics.tablesCovered}/{summaryMetrics.totalTables}
+                </span>
+                <span className="text-[10px] text-blue-400 font-semibold">
+                  ({summaryMetrics.coveragePercentage}%)
+                </span>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0">
+              <Table className="w-4 h-4" />
+            </div>
+          </div>
+
+          {/* Chip 4: Avg Response */}
+          <div className="p-3.5 rounded-xl bg-[#1e293b] border border-[#334155] flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-medium text-slate-400 block">Avg Response</span>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-xl sm:text-2xl font-bold text-amber-400">
+                  {summaryMetrics.avgResponseTime}
+                </span>
+                <span className="text-[10px] text-slate-400">Telemetry</span>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4" />
             </div>
           </div>
         </div>
 
-        {/* Search, Filter Tabs & View Switcher */}
-        <div className="mt-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-5 border-t border-[#334155]">
-          {/* Status Tabs */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#1e293b] border border-[#334155] overflow-x-auto text-xs">
+        {/* Clean Sub-Tabs / Segmented View Switcher */}
+        <div className="pt-3 border-t border-[#334155]">
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-[#0f172a] border border-[#334155] rounded-xl">
             <button
               type="button"
-              onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1.5 rounded-xl font-black transition cursor-pointer shrink-0 ${
-                statusFilter === 'all'
-                  ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5'
+              onClick={() => setActiveTab('roster')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+                activeTab === 'roster'
+                  ? 'bg-[#1e293b] text-[#f8fafc] border border-slate-600 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#1e293b]/40'
               }`}
             >
-              All Employees ({employees.length})
+              <Users className="w-3.5 h-3.5 text-[#FF7A45]" />
+              <span>Employee Directory &amp; Roster</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#111827] text-slate-300 font-medium border border-[#334155]">
+                {employees.length}
+              </span>
             </button>
+
             <button
               type="button"
-              onClick={() => setStatusFilter('Active')}
-              className={`px-3 py-1.5 rounded-xl font-black transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                statusFilter === 'Active'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/40'
-                  : 'text-slate-300 hover:text-emerald-300 hover:bg-white/5'
+              onClick={() => setActiveTab('tables')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+                activeTab === 'tables'
+                  ? 'bg-[#1e293b] text-[#f8fafc] border border-slate-600 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#1e293b]/40'
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>Active ({summaryMetrics.activeOnDuty})</span>
+              <Table className="w-3.5 h-3.5 text-blue-400" />
+              <span>Dining Room Table Coverage (Tables 1–12)</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#111827] text-slate-300 font-medium border border-[#334155]">
+                {summaryMetrics.tablesCovered}/12
+              </span>
             </button>
+
             <button
               type="button"
-              onClick={() => setStatusFilter('Busy')}
-              className={`px-3 py-1.5 rounded-xl font-black transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                statusFilter === 'Busy'
-                  ? 'bg-amber-600 text-white shadow-md shadow-amber-900/40'
-                  : 'text-slate-300 hover:text-amber-300 hover:bg-white/5'
+              onClick={() => setActiveTab('dispatch')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+                activeTab === 'dispatch'
+                  ? 'bg-[#1e293b] text-[#f8fafc] border border-slate-600 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#1e293b]/40'
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
-              <span>Busy ({summaryMetrics.currentlyBusy})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('On Break')}
-              className={`px-3 py-1.5 rounded-xl font-black transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                statusFilter === 'On Break'
-                  ? 'bg-slate-700 text-white shadow-md shadow-black/40'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Coffee className="w-3 h-3 text-slate-400" />
-              <span>On Break ({employees.filter(e => e.status === 'On Break').length})</span>
+              <BellRing className="w-3.5 h-3.5 text-amber-400" />
+              <span>Live Call Routing &amp; Kitchen Dispatch</span>
+              {alerts.length > 0 && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">
+                  {alerts.length}
+                </span>
+              )}
             </button>
           </div>
+        </div>
+      </section>
 
-          {/* Search & View Switcher */}
-          <div className="flex items-center gap-2.5">
-            <div className="relative flex-1 md:w-64">
+      {/* =========================================================================
+          TAB A: EMPLOYEE DIRECTORY & ROSTER (DEFAULT)
+          ========================================================================= */}
+      {activeTab === 'roster' && (
+        <section className="space-y-4 animate-fadeIn">
+          {/* Search & Status Filter Bar */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-[#111827] border border-[#334155] p-3 rounded-2xl">
+            {/* Status Filter Buttons */}
+            <div className="flex items-center gap-1 overflow-x-auto text-xs">
+              <button
+                type="button"
+                onClick={() => setStatusFilter('all')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer shrink-0 ${
+                  statusFilter === 'all'
+                    ? 'bg-[#FF5A26] text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white hover:bg-[#1e293b]'
+                }`}
+              >
+                All Employees ({employees.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('Active')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                  statusFilter === 'Active'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-emerald-300 hover:bg-[#1e293b]'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span>Active ({summaryMetrics.activeOnDuty})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('Busy')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                  statusFilter === 'Busy'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-amber-300 hover:bg-[#1e293b]'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span>Busy ({summaryMetrics.currentlyBusy})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('On Break')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                  statusFilter === 'On Break'
+                    ? 'bg-slate-700 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white hover:bg-[#1e293b]'
+                }`}
+              >
+                <Coffee className="w-3 h-3 text-slate-400" />
+                <span>On Break ({employees.filter(e => e.status === 'On Break').length})</span>
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative md:w-72">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search Employee, role, table..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] pl-9 pr-3 py-2 rounded-xl placeholder:text-slate-400 focus:outline-none focus:border-[#FF5A26] transition"
+                className="w-full bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] pl-9 pr-8 py-2 rounded-xl placeholder:text-slate-400 focus:outline-none focus:border-[#FF5A26] transition"
               />
               {searchQuery && (
                 <button
@@ -909,500 +930,214 @@ export default function EmployeesModule({ className = '' }) {
                 </button>
               )}
             </div>
-
-            {/* View Mode Buttons */}
-            <div className="flex items-center bg-[#1e293b] p-1 rounded-xl border border-[#334155] text-xs">
-              <button
-                type="button"
-                onClick={() => setActiveViewMode('split')}
-                title="Split View (Employees + Live Routing)"
-                className={`px-2.5 py-1.5 rounded-lg font-bold transition cursor-pointer ${
-                  activeViewMode === 'split' ? 'bg-[#FF5A26] text-white shadow-xs' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Split
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveViewMode('matrix')}
-                title="12-Table Visual Matrix Layout"
-                className={`px-2.5 py-1.5 rounded-lg font-bold transition cursor-pointer ${
-                  activeViewMode === 'matrix' ? 'bg-[#FF5A26] text-white shadow-xs' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Table Matrix
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveViewMode('telemetry')}
-                title="Response Time Telemetry Insights"
-                className={`px-2.5 py-1.5 rounded-lg font-bold transition cursor-pointer ${
-                  activeViewMode === 'telemetry' ? 'bg-[#FF5A26] text-white shadow-xs' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Telemetry
-              </button>
-            </div>
           </div>
-        </div>
-      </section>
 
-
-
-      {/* =========================================================================
-          2. MAIN WORKSPACE (SPLIT OR FULL VIEW)
-          ========================================================================= */}
-      {activeViewMode !== 'matrix' && (
-        <div className={`grid gap-6 ${activeViewMode === 'split' ? 'lg:grid-cols-12' : 'grid-cols-1'}`}>
-          {/* Left Column (or Full): Employee Directory & Interactive Cards */}
-          <div className={activeViewMode === 'split' ? 'lg:col-span-7 space-y-4' : 'space-y-4'}>
-            <div className="flex items-center justify-between pb-1">
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-[#FF7A45]" />
-                <h3 className="font-black text-[#f8fafc] text-base">
-                  Floor Service Employees ({filteredEmployees.length})
-                </h3>
-              </div>
-              <span className="text-[11px] text-slate-400 font-medium">
-                Click table pills to toggle assignment
-              </span>
+          {/* Employee Cards Grid */}
+          {filteredEmployees.length === 0 ? (
+            <div className="bg-[#111827] rounded-2xl border border-[#334155] p-12 text-center text-slate-400">
+              <Users className="w-10 h-10 text-slate-500 mx-auto mb-3" />
+              <p className="text-sm font-bold text-[#f8fafc]">No Employees matched your criteria</p>
+              <p className="text-xs text-slate-400 mt-1">Try clearing your search query or switching filters</p>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredEmployees.map(emp => {
+                const isActive = emp.status === 'Active';
+                const isBusy = emp.status === 'Busy';
 
-            {filteredEmployees.length === 0 ? (
-              <div className="bg-[#111827] rounded-3xl border border-[#334155] p-12 text-center text-slate-400">
-                <Users className="w-10 h-10 text-slate-500 mx-auto mb-3" />
-                <p className="text-sm font-bold text-[#f8fafc]">No Employees matched criteria</p>
-                <p className="text-xs text-slate-400 mt-1">Try clearing search or changing status filter</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredEmployees.map(emp => {
-                  const isActive = emp.status === 'Active';
-                  const isBusy = emp.status === 'Busy';
-                  const isOnBreak = emp.status === 'On Break';
-
-                  return (
-                    <div
-                      key={emp.id}
-                      className="bg-[#111827] rounded-3xl border border-[#334155] p-5 shadow-xl hover:border-slate-600 transition duration-200 relative overflow-hidden group"
-                    >
-                      {/* Header: Employee Info + Status Pill + Actions */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#334155]">
-                        <div className="flex items-center gap-3.5">
-                          {/* Avatar */}
-                          <div
-                            className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${emp.avatarBg} text-white font-black text-sm flex items-center justify-center shadow-lg ring-2 ring-white/10 shrink-0`}
-                          >
-                            {emp.initials}
-                          </div>
-
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-black text-[#f8fafc] text-base">
-                                {emp.name}
-                              </h4>
-                              {/* Live Status Pill */}
-                              <span
-                                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-xs ${
-                                  isActive
-                                    ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/40 shadow-emerald-900/40'
-                                    : isBusy
-                                    ? 'bg-amber-950/70 text-amber-300 border-amber-500/40 shadow-amber-900/40'
-                                    : 'bg-slate-800 text-slate-300 border-slate-700 shadow-black/40'
-                                }`}
-                              >
-                                <span
-                                  className={`w-1.5 h-1.5 rounded-full ${
-                                    isActive
-                                      ? 'bg-emerald-400 animate-pulse'
-                                      : isBusy
-                                      ? 'bg-amber-400 animate-pulse'
-                                      : 'bg-slate-400'
-                                  }`}
-                                />
-                                <span>{emp.status}</span>
-                              </span>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-400">
-                              <span className="font-semibold text-slate-300">
-                                {emp.role}
-                              </span>
-                              <span>&bull;</span>
-                              <span className="text-slate-300">
-                                {emp.shift}
-                              </span>
-                            </div>
-                          </div>
+                return (
+                  <div
+                    key={emp.id}
+                    className="bg-[#111827] rounded-2xl border border-[#334155] p-5 shadow-sm hover:border-slate-500 transition duration-150 flex flex-col justify-between space-y-4"
+                  >
+                    {/* Header: Avatar, Name, Role, Shift, Live Status Pill & Actions */}
+                    <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#334155]">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-11 h-11 rounded-xl bg-gradient-to-tr ${emp.avatarBg} text-white font-bold text-sm flex items-center justify-center shadow-sm shrink-0`}
+                        >
+                          {emp.initials}
                         </div>
-
-                        {/* Right: Quick Status Toggle & Actions */}
-                        <div className="flex items-center gap-2 self-end sm:self-center">
-                          {/* Status Switcher Select */}
-                          <select
-                            value={emp.status}
-                            onChange={e => handleChangeEmployeeStatus(emp.id, e.target.value)}
-                            className="bg-[#1e293b] border border-[#334155] text-[#f8fafc] text-xs font-bold rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-[#FF5A26] cursor-pointer"
-                          >
-                            <option value="Active">Active</option>
-                            <option value="Busy">Busy</option>
-                            <option value="On Break">On Break</option>
-                          </select>
-
-                          {/* Nudge button */}
-                          <button
-                            type="button"
-                            onClick={() => handleNudgeEmployee(emp.id)}
-                            className="p-2 rounded-xl bg-[#1e293b] hover:bg-amber-950/50 text-amber-300 border border-[#334155] hover:border-amber-500/40 transition active:scale-95 cursor-pointer shadow-xs"
-                            title="Send instant floor nudge to this Employee"
-                          >
-                            <Zap className="w-3.5 h-3.5" />
-                          </button>
-
-                          {/* Edit Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditModal(emp)}
-                            className="p-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-300 hover:text-white border border-[#334155] transition active:scale-95 cursor-pointer shadow-xs"
-                            title="Edit Employee Profile"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-
-                          {/* Delete Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteEmployee(emp.id)}
-                            className="p-2 rounded-xl bg-[#1e293b] hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 border border-[#334155] transition active:scale-95 cursor-pointer shadow-xs"
-                            title="Remove Employee"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-[#f8fafc] text-sm sm:text-base">
+                              {emp.name}
+                            </h4>
+                          </div>
+                          <p className="text-xs text-slate-300 font-medium">
+                            {emp.role}
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            {emp.shift}
+                          </p>
                         </div>
                       </div>
 
-                      {/* Interactive Table Assignment System (Pill Selector) */}
-                      <div className="py-4 border-b border-[#334155]">
-                        <div className="flex items-center justify-between mb-2.5">
-                          <span className="text-xs font-black text-slate-300 flex items-center gap-1.5">
-                            <Table className="w-3.5 h-3.5 text-[#FF7A45]" />
-                            Assigned Tables ({emp.assignedTables.length})
-                          </span>
-                          <span className="text-[10px] text-slate-400">
-                            Click pill to toggle assignment
-                          </span>
-                        </div>
+                      {/* Status Selector & Action Controls */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {/* 1-Click Status Selector */}
+                        <select
+                          value={emp.status}
+                          onChange={e => handleChangeEmployeeStatus(emp.id, e.target.value)}
+                          className={`text-xs font-bold rounded-xl px-2 py-1.5 border focus:outline-none cursor-pointer transition ${
+                            isActive
+                              ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/40'
+                              : isBusy
+                              ? 'bg-amber-950/70 text-amber-300 border-amber-500/40'
+                              : 'bg-slate-800 text-slate-300 border-slate-700'
+                          }`}
+                        >
+                          <option value="Active" className="bg-[#111827] text-emerald-300">Active</option>
+                          <option value="Busy" className="bg-[#111827] text-amber-300">Busy</option>
+                          <option value="On Break" className="bg-[#111827] text-slate-300">On Break</option>
+                        </select>
 
-                        {/* Interactive 12-Table Multi-Select Pill Selector */}
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {ALL_TABLE_NUMBERS.map(tblNum => {
-                            const isAssignedToThis = emp.assignedTables.includes(tblNum);
-                            const assignedOther = !isAssignedToThis && tableToEmployeeMap[tblNum];
+                        {/* Nudge Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleNudgeEmployee(emp.id)}
+                          className="p-1.5 rounded-lg bg-[#1e293b] hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 border border-[#334155] transition cursor-pointer"
+                          title="Send instant floor nudge"
+                        >
+                          <Zap className="w-3.5 h-3.5" />
+                        </button>
 
-                            return (
-                              <button
-                                key={tblNum}
-                                type="button"
-                                onClick={() => handleToggleTableAssignment(emp.id, tblNum)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-150 cursor-pointer flex items-center gap-1.5 ${
-                                  isAssignedToThis
-                                    ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/40 ring-1 ring-[#FF7A45]/80 scale-102'
-                                    : assignedOther
-                                    ? 'bg-[#1e293b] text-slate-400 border border-[#334155] hover:border-slate-500 hover:text-slate-200'
-                                    : 'bg-[#0f172a] text-slate-400 border border-[#334155] hover:border-slate-500 hover:text-slate-200'
-                                }`}
-                                title={
-                                  isAssignedToThis
-                                    ? `Table ${tblNum} is currently assigned to ${emp.name}. Click to remove.`
-                                    : assignedOther
-                                    ? `Table ${tblNum} is currently assigned to ${assignedOther.name}. Click to transfer here.`
-                                    : `Table ${tblNum} is unassigned. Click to assign to ${emp.name}.`
-                                }
-                              >
-                                <span>T{tblNum}</span>
-                                {isAssignedToThis && <Check className="w-3 h-3 text-white" />}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
+                        {/* Edit Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditModal(emp)}
+                          className="p-1.5 rounded-lg bg-[#1e293b] hover:bg-slate-700 text-slate-300 hover:text-white border border-[#334155] transition cursor-pointer"
+                          title="Edit Employee profile"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
 
-                      {/* Bottom: Live Responsiveness Telemetry & Activity Metrics */}
-                      <div className="pt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                        {/* Active Kitchen Pickups */}
-                        <div className="p-2.5 rounded-xl bg-[#1e293b] border border-[#334155] flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-orange-500/20 text-[#FF7A45] flex items-center justify-center shrink-0">
-                            <ChefHat className="w-3.5 h-3.5" />
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-slate-400 block">Kitchen Pickups</span>
-                            <span className="font-black text-[#f8fafc]">{emp.activePickups} Active</span>
-                          </div>
-                        </div>
-
-                        {/* Live Customer Requests */}
-                        <div className="p-2.5 rounded-xl bg-[#1e293b] border border-[#334155] flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0">
-                            <BellRing className="w-3.5 h-3.5" />
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-slate-400 block">Guest Requests</span>
-                            <span className="font-black text-[#f8fafc]">{emp.activeRequests} Live</span>
-                          </div>
-                        </div>
-
-                        {/* Average Response Time */}
-                        <div className="p-2.5 rounded-xl bg-[#1e293b] border border-[#334155] flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                            <Clock className="w-3.5 h-3.5" />
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-slate-400 block">Avg Response</span>
-                            <span className="font-black text-emerald-400">{emp.avgResponseTime}</span>
-                          </div>
-                        </div>
-
-                        {/* Last Call Telemetry Benchmark */}
-                        <div className="p-2.5 rounded-xl bg-[#1e293b] border border-[#334155] flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-300 flex items-center justify-center shrink-0">
-                            <Activity className="w-3.5 h-3.5" />
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-slate-400 block">Last Call Telemetry</span>
-                            <span className="font-bold text-slate-200 text-[11px] truncate block max-w-[120px]" title={emp.lastCallResponse}>
-                              {emp.lastCallResponse}
-                            </span>
-                          </div>
-                        </div>
+                        {/* Delete Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEmployee(emp.id)}
+                          className="p-1.5 rounded-lg bg-[#1e293b] hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 border border-[#334155] transition cursor-pointer"
+                          title="Remove Employee"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
 
-          {/* =========================================================================
-              DIRECT KITCHEN & CUSTOMER CALL ROUTING MONITOR (Right Column)
-              ========================================================================= */}
-          <div className={activeViewMode === 'split' ? 'lg:col-span-5 space-y-4' : 'space-y-4 mt-6'}>
-            <div className="flex items-center justify-between pb-1">
-              <div className="flex items-center gap-2">
-                <BellRing className="w-4 h-4 text-amber-400" />
-                <h3 className="font-black text-[#f8fafc] text-base">
-                  Direct Kitchen &amp; Customer Call Routing Monitor
-                </h3>
-              </div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-400/20 text-amber-300 font-bold border border-amber-500/30">
-                {alerts.length} Active Events
-              </span>
-            </div>
-
-            <div className="bg-[#111827] rounded-3xl border border-[#334155] p-5 shadow-xl space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-[#334155]">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-xs font-bold text-slate-300">
-                    Live Dispatch Stream (Convex Synced)
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSimulateNewAlert}
-                  className="text-[11px] text-[#FF7A45] hover:text-[#FF5A26] font-bold flex items-center gap-1 cursor-pointer"
-                >
-                  <Zap className="w-3 h-3" />
-                  Simulate Call
-                </button>
-              </div>
-
-              {alerts.length === 0 ? (
-                <div className="p-8 text-center text-slate-400">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-                  <p className="text-xs font-bold text-[#f8fafc]">All call routes are resolved</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">No outstanding kitchen or guest summons</p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
-                  {alerts.map(alert => {
-                    const assignedEmp = employees.find(e => e.id === alert.assignedEmployeeId);
-                    const isKitchen = alert.type === 'kitchen_ready';
-
-                    return (
-                      <div
-                        key={alert.id}
-                        className={`p-4 rounded-2xl border transition-all duration-200 relative bg-[#1e293b] ${
-                          alert.status === 'Acknowledged' || alert.status === 'Completed'
-                            ? 'border-[#334155] opacity-70'
-                            : alert.urgency === 'high'
-                            ? 'border-rose-500/50 shadow-xs ring-1 ring-rose-500/20'
-                            : isKitchen
-                            ? 'border-amber-500/50 shadow-xs ring-1 ring-amber-500/20'
-                            : 'border-[#334155] shadow-xs'
-                        }`}
-                      >
-                        {/* Top: Type Badge & Table & Time */}
-                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#334155]/60">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${
-                                isKitchen
-                                  ? 'bg-orange-500/20 text-[#FF7A45] border border-orange-500/30'
-                                  : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                              }`}
-                            >
-                              {isKitchen ? <ChefHat className="w-3 h-3" /> : <BellRing className="w-3 h-3" />}
-                              <span>{isKitchen ? 'Kitchen Food Ready' : 'Customer Assistance'}</span>
-                            </span>
-
-                            <span className="text-xs font-black text-amber-300">
-                              Table {alert.tableNumber}
-                            </span>
-                          </div>
-
-                          <span className="text-[10px] text-slate-400 font-medium">
-                            {Math.max(1, Math.round((Date.now() - alert.timestamp) / 1000))}s ago
-                          </span>
-                        </div>
-
-                        {/* Middle: Live Routing Banner & Telemetry */}
-                        <div className="my-2.5 space-y-2">
-                          {/* Requirement Specification Routing Banner */}
-                          <div className="p-2.5 rounded-xl bg-[#0f172a] border border-[#334155] text-xs font-bold text-slate-200 flex items-center gap-1.5 flex-wrap">
-                            <span className="text-amber-300">
-                              Table {alert.tableNumber} {isKitchen ? 'Food Ready in Kitchen' : 'called for assistance'}
-                            </span>
-                            <span className="text-slate-400 font-black">&rarr;</span>
-                            <span className="text-slate-200">
-                              Routed to Employee {assignedEmp ? assignedEmp.name.split(' ')[0] : (alert.assignedEmployeeName || 'Staff')}
-                            </span>
-                            <span className="text-slate-400 font-black">&rarr;</span>
-                            <span className="text-emerald-400">
-                              Status: {alert.responseDetails}
-                            </span>
-                          </div>
-
-                          <p className="text-xs text-slate-300 leading-snug">
-                            {alert.description}
-                          </p>
-
-                          <div className="flex items-center justify-between gap-2 text-xs">
-                            <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
-                              <span>Assigned Staff:</span>
-                              <span className="font-bold text-[#f8fafc] flex items-center gap-1">
-                                <span
-                                  className={`w-4 h-4 rounded-full bg-gradient-to-tr ${
-                                    assignedEmp?.avatarBg || 'from-zinc-500 to-zinc-700'
-                                  } text-[9px] text-white flex items-center justify-center font-black`}
-                                >
-                                  {assignedEmp?.initials || 'EM'}
-                                </span>
-                                {assignedEmp ? assignedEmp.name : 'Unassigned'}
-                              </span>
-                            </div>
-
-                            <span
-                              className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
-                                alert.status === 'Completed' || alert.status === 'Acknowledged'
-                                  ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40'
-                                  : alert.status === 'In Transit'
-                                  ? 'bg-blue-950/80 text-blue-300 border border-blue-500/40'
-                                  : 'bg-amber-950/80 text-amber-300 border border-amber-500/40'
-                              }`}
-                            >
-                              {alert.status}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Bottom 1-Click Admin Controls */}
-                        <div className="pt-2 border-t border-[#334155]/60 flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            {/* 1-Click Nudge Button */}
-                            <button
-                              type="button"
-                              onClick={() => handleNudgeEmployee(alert.assignedEmployeeId, alert.id)}
-                              className="px-2.5 py-1.5 rounded-lg bg-[#0f172a] hover:bg-amber-500/20 text-amber-300 text-[11px] font-black transition active:scale-95 cursor-pointer border border-amber-500/40 flex items-center gap-1 shadow-xs"
-                              title="Send instant priority nudge to Employee"
-                            >
-                              <Zap className="w-3 h-3 text-amber-400" />
-                              <span>
-                                Nudge Employee {alert.nudgedCount ? `(${alert.nudgedCount})` : ''}
-                              </span>
-                            </button>
-
-                            {/* 1-Click Reassign to another Employee */}
-                            <button
-                              type="button"
-                              onClick={() => setReassignAlertTarget(alert)}
-                              className="px-2.5 py-1.5 rounded-lg bg-[#0f172a] hover:bg-slate-800 text-slate-200 text-[11px] font-black transition active:scale-95 cursor-pointer border border-[#334155] flex items-center gap-1 shadow-xs"
-                              title="Reassign to another Employee"
-                            >
-                              <RotateCcw className="w-3 h-3 text-slate-400" />
-                              <span>Reassign to another Employee</span>
-                            </button>
-                          </div>
-
-                          {/* 1-Click Acknowledge as Admin */}
-                          {alert.status !== 'Acknowledged' && alert.status !== 'Completed' && (
-                            <button
-                              type="button"
-                              onClick={() => handleAcknowledgeAlert(alert.id)}
-                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black transition active:scale-95 cursor-pointer flex items-center gap-1 shadow-xs shrink-0"
-                              title="Acknowledge as Admin"
-                            >
-                              <CheckCheck className="w-3 h-3" />
-                              <span>Acknowledge as Admin</span>
-                            </button>
-                          )}
-                        </div>
+                    {/* Assigned Tables: Neat Clickable Badges */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                          <Table className="w-3.5 h-3.5 text-[#FF7A45]" />
+                          Assigned Tables ({emp.assignedTables.length})
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          Click pill to toggle assignment
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {ALL_TABLE_NUMBERS.map(tblNum => {
+                          const isAssignedToThis = emp.assignedTables.includes(tblNum);
+                          const assignedOther = !isAssignedToThis && tableToEmployeeMap[tblNum];
+
+                          return (
+                            <button
+                              key={tblNum}
+                              type="button"
+                              onClick={() => handleToggleTableAssignment(emp.id, tblNum)}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                                isAssignedToThis
+                                  ? 'bg-[#FF5A26] text-white shadow-xs border border-[#FF7A45]'
+                                  : assignedOther
+                                  ? 'bg-[#1e293b] text-slate-400 border border-[#334155] hover:border-slate-500 hover:text-slate-200'
+                                  : 'bg-[#0f172a] text-slate-500 border border-[#334155] hover:border-slate-500 hover:text-slate-300'
+                              }`}
+                              title={
+                                isAssignedToThis
+                                  ? `Table ${tblNum} is currently assigned to ${emp.name}. Click to unassign.`
+                                  : assignedOther
+                                  ? `Table ${tblNum} is assigned to ${assignedOther.name}. Click to reassign here.`
+                                  : `Table ${tblNum} is unassigned. Click to assign to ${emp.name}.`
+                              }
+                            >
+                              <span>T{tblNum}</span>
+                              {isAssignedToThis && <Check className="w-3 h-3 text-white" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Telemetry Footer */}
+                    <div className="pt-3 border-t border-[#334155] grid grid-cols-4 gap-2 text-center text-xs">
+                      <div className="p-2 rounded-lg bg-[#1e293b] border border-[#334155]">
+                        <span className="text-[10px] text-slate-400 block">Pickups</span>
+                        <span className="font-bold text-[#f8fafc]">{emp.activePickups} Active</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-[#1e293b] border border-[#334155]">
+                        <span className="text-[10px] text-slate-400 block">Requests</span>
+                        <span className="font-bold text-[#f8fafc]">{emp.activeRequests} Live</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-[#1e293b] border border-[#334155]">
+                        <span className="text-[10px] text-slate-400 block">Avg Resp</span>
+                        <span className="font-bold text-emerald-400">{emp.avgResponseTime}</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-[#1e293b] border border-[#334155]">
+                        <span className="text-[10px] text-slate-400 block">On-Time</span>
+                        <span className="font-bold text-cyan-300">{emp.onTimeRate}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
-        </div>
+          )}
+        </section>
       )}
 
       {/* =========================================================================
-          3. DINING ROOM TABLE ASSIGNMENT MATRIX (Tables 1 – 12) - AT THE BOTTOM
+          TAB B: DINING ROOM TABLE COVERAGE (TABLES 1–12)
           ========================================================================= */}
-      {(activeViewMode === 'matrix' || activeViewMode === 'split') && (
-        <section className="bg-[#111827] rounded-3xl border border-[#334155] p-5 sm:p-6 shadow-xl space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#334155]">
+      {activeTab === 'tables' && (
+        <section className="bg-[#111827] rounded-2xl border border-[#334155] p-5 shadow-sm space-y-4 animate-fadeIn">
+          {/* Subheader with Auto-Balance Button & Coverage Info */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#334155]">
             <div className="flex items-center gap-2.5">
-              <Table className="w-4 h-4 text-amber-400" />
+              <Table className="w-4 h-4 text-blue-400" />
               <div>
-                <h3 className="font-black text-[#f8fafc] text-sm sm:text-base">
-                  Dining Room Table Assignment Matrix (Tables 1 – 12)
+                <h3 className="font-bold text-[#f8fafc] text-base">
+                  Dining Room Table Coverage (Tables 1–12)
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Click any table to quickly change primary Employee assignment
+                  Floor allocation matrix with inline Employee reassignment and 1-click balance
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5 text-slate-300">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Assigned
-              </span>
-              <span className="flex items-center gap-1.5 text-slate-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#1e293b] border border-[#334155]" /> Unassigned
-              </span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleAutoBalanceTables}
+                className="px-3.5 py-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-slate-200 border border-[#334155] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Auto-Balance Tables</span>
+              </button>
+
+              <div className="flex items-center gap-2 text-xs">
+                <span className="flex items-center gap-1.5 text-slate-300">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" /> Assigned
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#1e293b] border border-[#334155]" /> Unassigned
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* 12 Tables Grid: 3 clean rows of 4 tables each */}
-          <div
-            className="grid gap-4"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-              gap: '16px'
-            }}
-          >
+          {/* 12 Tables Grid: Dedicated, Spacious Layout */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
             {ALL_TABLE_NUMBERS.map(tableNum => {
               const assignedEmp = tableToEmployeeMap[tableNum];
               const isAssigned = !!assignedEmp;
@@ -1410,19 +1145,19 @@ export default function EmployeesModule({ className = '' }) {
               return (
                 <div
                   key={tableNum}
-                  className={`p-4 rounded-2xl border transition-all duration-200 relative group flex flex-col justify-between min-h-[125px] ${
+                  className={`p-4 rounded-xl border transition-all duration-150 flex flex-col justify-between space-y-3 ${
                     isAssigned
-                      ? 'bg-[#1e293b] border-[#334155] hover:border-[#FF5A26]/50 shadow-md'
-                      : 'bg-[#1e293b]/60 border-dashed border-[#334155] hover:border-slate-500'
+                      ? 'bg-[#1e293b] border-[#334155] hover:border-slate-500'
+                      : 'bg-[#1e293b]/50 border-dashed border-[#334155] hover:border-slate-500'
                   }`}
                 >
-                  {/* Top: Table Number & Status Pill */}
+                  {/* Top: Table Number & Status Badge */}
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-black text-[#f8fafc] tracking-wide">
+                    <span className="text-sm font-bold text-[#f8fafc]">
                       Table {tableNum}
                     </span>
                     {isAssigned ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/70 text-emerald-300 border border-emerald-500/40">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                         Assigned
                       </span>
@@ -1433,21 +1168,21 @@ export default function EmployeesModule({ className = '' }) {
                     )}
                   </div>
 
-                  {/* Middle: Assigned Employee Info */}
-                  <div className="my-2.5">
+                  {/* Middle: Assigned Employee Details */}
+                  <div className="py-1">
                     {isAssigned ? (
                       <div className="flex items-center gap-2.5">
                         <div
-                          className={`w-7 h-7 rounded-xl bg-gradient-to-tr ${assignedEmp.avatarBg} text-white text-xs font-black flex items-center justify-center shrink-0 shadow-xs`}
+                          className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${assignedEmp.avatarBg} text-white text-xs font-bold flex items-center justify-center shrink-0 shadow-xs`}
                         >
                           {assignedEmp.initials}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-black text-[#f8fafc] truncate">
+                          <p className="text-xs font-bold text-[#f8fafc] truncate">
                             {assignedEmp.name}
                           </p>
                           <span
-                            className={`text-[10px] font-semibold ${
+                            className={`text-[10px] font-medium block truncate ${
                               assignedEmp.status === 'Active'
                                 ? 'text-emerald-400'
                                 : assignedEmp.status === 'Busy'
@@ -1464,8 +1199,11 @@ export default function EmployeesModule({ className = '' }) {
                     )}
                   </div>
 
-                  {/* Bottom: Quick Reassign Dropdown */}
+                  {/* Bottom: Inline Reassignment Dropdown */}
                   <div className="pt-2 border-t border-[#334155]">
+                    <label className="text-[10px] text-slate-400 font-medium block mb-1">
+                      Assigned Employee:
+                    </label>
                     <select
                       value={assignedEmp ? assignedEmp.id : ''}
                       onChange={e => {
@@ -1494,19 +1232,227 @@ export default function EmployeesModule({ className = '' }) {
       )}
 
       {/* =========================================================================
-          4. MODAL 1: ADD / EDIT EMPLOYEE MODAL
+          TAB C: LIVE CALL ROUTING & KITCHEN DISPATCH
+          ========================================================================= */}
+      {activeTab === 'dispatch' && (
+        <section className="bg-[#111827] rounded-2xl border border-[#334155] p-5 shadow-sm space-y-4 animate-fadeIn">
+          {/* Dispatch Subheader */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#334155]">
+            <div className="flex items-center gap-2.5">
+              <BellRing className="w-4 h-4 text-amber-400" />
+              <div>
+                <h3 className="font-bold text-[#f8fafc] text-base">
+                  Live Call Routing &amp; Kitchen Dispatch
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Focused real-time event log for customer assistance summons and kitchen food ready alerts
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Event Filter Pills */}
+              <div className="flex items-center gap-1 bg-[#1e293b] p-1 rounded-xl border border-[#334155] text-xs">
+                <button
+                  type="button"
+                  onClick={() => setAlertFilter('all')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                    alertFilter === 'all' ? 'bg-[#FF5A26] text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  All ({alerts.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAlertFilter('active')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                    alertFilter === 'active' ? 'bg-[#FF5A26] text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Active ({alerts.filter(a => a.status !== 'Completed' && a.status !== 'Acknowledged').length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAlertFilter('resolved')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                    alertFilter === 'resolved' ? 'bg-[#FF5A26] text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Resolved ({alerts.filter(a => a.status === 'Completed' || a.status === 'Acknowledged').length})
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSimulateNewAlert}
+                className="px-3 py-1.5 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-slate-200 border border-[#334155] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+              >
+                <Zap className="w-3.5 h-3.5 text-[#FF7A45]" />
+                <span>Simulate Call</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Events Stream */}
+          {filteredAlerts.length === 0 ? (
+            <div className="p-12 text-center text-slate-400">
+              <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
+              <p className="text-sm font-bold text-[#f8fafc]">No dispatch events in this view</p>
+              <p className="text-xs text-slate-400 mt-1">All service alerts are currently addressed</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredAlerts.map(alert => {
+                const assignedEmp = employees.find(e => e.id === alert.assignedEmployeeId);
+                const isKitchen = alert.type === 'kitchen_ready';
+                const isResolved = alert.status === 'Acknowledged' || alert.status === 'Completed';
+
+                return (
+                  <div
+                    key={alert.id}
+                    className={`p-4 rounded-xl border transition-all duration-150 bg-[#1e293b] space-y-3 ${
+                      isResolved
+                        ? 'border-[#334155] opacity-75'
+                        : alert.urgency === 'high'
+                        ? 'border-rose-500/40'
+                        : isKitchen
+                        ? 'border-amber-500/40'
+                        : 'border-[#334155]'
+                    }`}
+                  >
+                    {/* Event Header: Type Badge, Table Number, Timestamp */}
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#334155]">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
+                            isKitchen
+                              ? 'bg-orange-500/20 text-[#FF7A45] border border-orange-500/30'
+                              : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                          }`}
+                        >
+                          {isKitchen ? <ChefHat className="w-3 h-3" /> : <BellRing className="w-3 h-3" />}
+                          <span>{isKitchen ? 'Kitchen Food Ready' : 'Customer Assistance'}</span>
+                        </span>
+
+                        <span className="text-xs font-bold text-amber-300">
+                          Table {alert.tableNumber}
+                        </span>
+                      </div>
+
+                      <span className="text-[10px] text-slate-400">
+                        {Math.max(1, Math.round((Date.now() - alert.timestamp) / 1000))}s ago
+                      </span>
+                    </div>
+
+                    {/* Routing Banner & Event Description */}
+                    <div className="space-y-2">
+                      <div className="p-2.5 rounded-lg bg-[#0f172a] border border-[#334155] text-xs font-semibold text-slate-200 flex items-center gap-1.5 flex-wrap">
+                        <span className="text-amber-300">
+                          Table {alert.tableNumber} {isKitchen ? 'Food Ready in Kitchen' : 'called for assistance'}
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-slate-200">
+                          Routed to Employee {assignedEmp ? assignedEmp.name.split(' ')[0] : (alert.assignedEmployeeName || 'Staff')}
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-emerald-400">
+                          Status: {alert.responseDetails}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-300">
+                        {alert.description}
+                      </p>
+
+                      <div className="flex items-center justify-between gap-2 text-xs pt-1">
+                        <div className="flex items-center gap-2 text-slate-400 text-xs">
+                          <span>Assigned Staff:</span>
+                          <span className="font-bold text-[#f8fafc] flex items-center gap-1.5">
+                            <span
+                              className={`w-5 h-5 rounded-md bg-gradient-to-tr ${
+                                assignedEmp?.avatarBg || 'from-zinc-500 to-zinc-700'
+                              } text-[9px] text-white flex items-center justify-center font-bold`}
+                            >
+                              {assignedEmp?.initials || 'EM'}
+                            </span>
+                            {assignedEmp ? assignedEmp.name : 'Unassigned'}
+                          </span>
+                        </div>
+
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                            isResolved
+                              ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-500/40'
+                              : alert.status === 'In Transit'
+                              ? 'bg-blue-950/70 text-blue-300 border border-blue-500/40'
+                              : 'bg-amber-950/70 text-amber-300 border border-amber-500/40'
+                          }`}
+                        >
+                          {alert.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons: 1-Click Nudge, Reassign, Acknowledge */}
+                    <div className="pt-2 border-t border-[#334155] flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleNudgeEmployee(alert.assignedEmployeeId, alert.id)}
+                          className="px-2.5 py-1.5 rounded-lg bg-[#0f172a] hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition active:scale-95 cursor-pointer border border-amber-500/40 flex items-center gap-1"
+                          title="Send instant priority nudge to Employee"
+                        >
+                          <Zap className="w-3 h-3 text-amber-400" />
+                          <span>
+                            Nudge Employee {alert.nudgedCount ? `(${alert.nudgedCount})` : ''}
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setReassignAlertTarget(alert)}
+                          className="px-2.5 py-1.5 rounded-lg bg-[#0f172a] hover:bg-slate-800 text-slate-200 text-xs font-bold transition active:scale-95 cursor-pointer border border-[#334155] flex items-center gap-1"
+                          title="Reassign to another Employee"
+                        >
+                          <RotateCcw className="w-3 h-3 text-slate-400" />
+                          <span>Reassign to another Employee</span>
+                        </button>
+                      </div>
+
+                      {!isResolved && (
+                        <button
+                          type="button"
+                          onClick={() => handleAcknowledgeAlert(alert.id)}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-1 shrink-0"
+                          title="Acknowledge as Admin"
+                        >
+                          <CheckCheck className="w-3.5 h-3.5" />
+                          <span>Acknowledge</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* =========================================================================
+          MODAL 1: ADD / EDIT EMPLOYEE MODAL
           ========================================================================= */}
       {isAddEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
           <div className="bg-[#111827] border border-[#334155] rounded-3xl w-full max-w-lg shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto text-[#f8fafc]">
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-4 border-b border-[#334155]">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FF5A26] to-[#FF7A45] flex items-center justify-center text-white">
+                <div className="w-9 h-9 rounded-xl bg-[#1e293b] border border-[#334155] flex items-center justify-center text-[#FF5A26]">
                   <UserPlus className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-[#f8fafc]">
+                  <h3 className="text-base sm:text-lg font-bold text-[#f8fafc]">
                     {editingEmployee ? 'Edit Employee Profile' : 'Add New Floor Employee'}
                   </h3>
                   <p className="text-[11px] text-slate-400">
@@ -1587,13 +1533,13 @@ export default function EmployeesModule({ className = '' }) {
                       key={statusOption}
                       type="button"
                       onClick={() => setFormData({ ...formData, status: statusOption })}
-                      className={`py-2 px-3 rounded-xl text-xs font-black transition cursor-pointer border ${
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer border ${
                         formData.status === statusOption
                           ? statusOption === 'Active'
-                            ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-900/40'
+                            ? 'bg-emerald-600 text-white border-emerald-500 shadow-xs'
                             : statusOption === 'Busy'
-                            ? 'bg-amber-600 text-white border-amber-500 shadow-md shadow-amber-900/40'
-                            : 'bg-slate-700 text-white border-slate-600 shadow-md shadow-black/40'
+                            ? 'bg-amber-600 text-white border-amber-500 shadow-xs'
+                            : 'bg-slate-700 text-white border-slate-600 shadow-xs'
                           : 'bg-[#1e293b] text-slate-400 border-[#334155] hover:text-white'
                       }`}
                     >
@@ -1631,12 +1577,12 @@ export default function EmployeesModule({ className = '' }) {
                 </div>
               </div>
 
-              {/* Initial Assigned Tables Pill Multi-Select */}
+              {/* Initial Assigned Tables Multi-Select */}
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Assigned Tables (Select all that apply)
+                  Assigned Tables
                 </label>
-                <div className="flex flex-wrap items-center gap-1.5 p-3 rounded-2xl bg-[#1e293b] border border-[#334155]">
+                <div className="flex flex-wrap items-center gap-1.5 p-3 rounded-xl bg-[#1e293b] border border-[#334155]">
                   {ALL_TABLE_NUMBERS.map(tblNum => {
                     const isSelected = formData.assignedTables.includes(tblNum);
                     return (
@@ -1649,9 +1595,9 @@ export default function EmployeesModule({ className = '' }) {
                             : [...formData.assignedTables, tblNum];
                           setFormData({ ...formData, assignedTables: next });
                         }}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1 ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
                           isSelected
-                            ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/40'
+                            ? 'bg-[#FF5A26] text-white shadow-xs'
                             : 'bg-[#0f172a] text-slate-400 border border-[#334155] hover:text-white'
                         }`}
                       >
@@ -1662,7 +1608,7 @@ export default function EmployeesModule({ className = '' }) {
                   })}
                 </div>
                 <p className="text-[10px] text-slate-400 mt-1">
-                  Selected tables will be automatically reassigned to this Employee.
+                  Selected tables will be automatically assigned to this Employee.
                 </p>
               </div>
 
@@ -1677,7 +1623,7 @@ export default function EmployeesModule({ className = '' }) {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl flame-gradient-btn text-white text-xs font-black shadow-lg shadow-[#FF5A26]/30 transition active:scale-95 cursor-pointer flex items-center gap-2"
+                  className="px-5 py-2 rounded-xl bg-[#FF5A26] hover:bg-[#e04f20] text-white text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer flex items-center gap-2"
                 >
                   <Check className="w-4 h-4" />
                   <span>{editingEmployee ? 'Save Changes' : 'Register Employee'}</span>
@@ -1689,15 +1635,15 @@ export default function EmployeesModule({ className = '' }) {
       )}
 
       {/* =========================================================================
-          5. MODAL 2: REASSIGN CALL ALERT MODAL
+          MODAL 2: REASSIGN CALL ALERT MODAL
           ========================================================================= */}
       {reassignAlertTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
           <div className="bg-[#111827] border border-[#334155] rounded-3xl w-full max-w-md shadow-2xl p-6 relative text-[#f8fafc]">
             <div className="flex items-center justify-between pb-3 border-b border-[#334155]">
               <div className="flex items-center gap-2">
                 <RotateCcw className="w-4 h-4 text-[#FF7A45]" />
-                <h3 className="text-base font-black text-[#f8fafc]">
+                <h3 className="text-base font-bold text-[#f8fafc]">
                   Reassign Table {reassignAlertTarget.tableNumber} Alert
                 </h3>
               </div>
@@ -1732,7 +1678,7 @@ export default function EmployeesModule({ className = '' }) {
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${emp.avatarBg} text-white font-black text-xs flex items-center justify-center shrink-0`}
+                      className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${emp.avatarBg} text-white font-bold text-xs flex items-center justify-center shrink-0`}
                     >
                       {emp.initials}
                     </div>
@@ -1743,7 +1689,7 @@ export default function EmployeesModule({ className = '' }) {
                   </div>
 
                   <span
-                    className={`text-[10px] font-black px-2 py-0.5 rounded ${
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                       emp.status === 'Active'
                         ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/30'
                         : emp.status === 'Busy'

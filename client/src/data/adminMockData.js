@@ -1,8 +1,8 @@
 /**
  * @file adminMockData.js
  * @description Comprehensive mock data and state architecture for the SmartDine Admin Dashboard.
- * Includes Tables, Employees (Strictly Employee nomenclature, NOT Waiters), Live Orders,
- * 30-Day Historical Analytics, Customer Issue Reports, and Analytical Helpers.
+ * Includes Tables, Employees (Strictly Employee nomenclature), Live Orders,
+ * 90-Day Historical Analytics & Dynamic Range Telemetry, Customer Issue Reports, and Analytical Helpers.
  */
 
 // ============================================================================
@@ -292,7 +292,7 @@ export const mockTables = [
 ];
 
 // ============================================================================
-// 2. 5 EMPLOYEES MOCK DATA (Strictly named Employees, NOT Waiters)
+// 2. 5 EMPLOYEES MOCK DATA (Strictly Employee nomenclature)
 // ============================================================================
 
 /** @type {Employee[]} */
@@ -560,7 +560,7 @@ export const mockCustomerNotes = [
 export const mockDirectNotes = mockCustomerNotes;
 
 // ============================================================================
-// 5. 30 DAYS HISTORICAL DAILY REVENUE DATA (Deterministic & Dynamic Generator)
+// 5. 90-DAY HISTORICAL DAILY REVENUE DATA & DYNAMIC RANGE GENERATOR
 // ============================================================================
 
 /**
@@ -582,30 +582,134 @@ const HOURLY_WEIGHTS = [
 ];
 
 /**
- * Generates realistic, mathematically sound daily revenue analytics for the last N days.
- * @param {number} [daysCount=30] - Number of days to generate
- * @param {Date|string} [referenceDate=new Date()] - End date of the historical range
+ * Safely parses any date input (Date, string YYYY-MM-DD or ISO, timestamp number)
+ * into a Date object positioned at start-of-day (00:00:00.000) or end-of-day (23:59:59.999).
+ * Preserves local calendar components without UTC displacement.
+ * 
+ * @param {Date|string|number|null|undefined} val - Input date
+ * @param {boolean} [isEndOfDay=false] - If true, set to 23:59:59.999; else 00:00:00.000
+ * @returns {Date|null}
+ */
+export function normalizeDateBoundary(val, isEndOfDay = false) {
+  if (val === null || val === undefined || val === '') return null;
+
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return null;
+    const d = new Date(val.getTime());
+    if (isEndOfDay) {
+      d.setHours(23, 59, 59, 999);
+    } else {
+      d.setHours(0, 0, 0, 0);
+    }
+    return d;
+  }
+
+  if (typeof val === 'number') {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return null;
+    if (isEndOfDay) {
+      d.setHours(23, 59, 59, 999);
+    } else {
+      d.setHours(0, 0, 0, 0);
+    }
+    return d;
+  }
+
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    // Parse YYYY-MM-DD or YYYY/MM/DD calendar date directly to prevent timezone shift
+    const ymdMatch = trimmed.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    if (ymdMatch) {
+      const year = parseInt(ymdMatch[1], 10);
+      const month = parseInt(ymdMatch[2], 10) - 1;
+      const day = parseInt(ymdMatch[3], 10);
+      return isEndOfDay
+        ? new Date(year, month, day, 23, 59, 59, 999)
+        : new Date(year, month, day, 0, 0, 0, 0);
+    }
+
+    const parsed = new Date(trimmed);
+    if (!isNaN(parsed.getTime())) {
+      const d = new Date(parsed.getTime());
+      if (isEndOfDay) {
+        d.setHours(23, 59, 59, 999);
+      } else {
+        d.setHours(0, 0, 0, 0);
+      }
+      return d;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Formats a Date object into 'YYYY-MM-DD' calendar string.
+ * @param {Date} date
+ * @returns {string}
+ */
+export function formatDateToYYYYMMDD(date) {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) return '';
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Generates realistic, mathematically sound daily revenue analytics for the last N days or a date range.
+ * Fully supports arbitrary date ranges with at least 60-90+ days of structured metrics.
+ * 
+ * @param {number|string|Date} [daysOrStartDate=90] - Days count (default 90) or range start date
+ * @param {Date|string} [referenceOrEndDate=new Date()] - Reference end date
  * @returns {DailyRevenueRecord[]}
  */
-export function generateHistoricalDailyData(daysCount = 30, referenceDate = new Date()) {
-  const endDate = referenceDate instanceof Date ? referenceDate : new Date(referenceDate);
+export function generateHistoricalDailyData(daysOrStartDate = 90, referenceOrEndDate = new Date()) {
+  let startDate;
+  let endDate;
+
+  if (typeof daysOrStartDate === 'number') {
+    const days = Math.max(1, Math.round(daysOrStartDate));
+    const refEnd = normalizeDateBoundary(referenceOrEndDate, true) || new Date();
+    endDate = new Date(refEnd.getFullYear(), refEnd.getMonth(), refEnd.getDate(), 23, 59, 59, 999);
+    startDate = new Date(refEnd.getFullYear(), refEnd.getMonth(), refEnd.getDate() - (days - 1), 0, 0, 0, 0);
+  } else {
+    let s = normalizeDateBoundary(daysOrStartDate, false);
+    let e = normalizeDateBoundary(referenceOrEndDate, true);
+    if (!s && !e) {
+      const now = new Date();
+      e = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      s = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 89, 0, 0, 0, 0);
+    } else if (!s) {
+      s = new Date(e.getFullYear(), e.getMonth(), e.getDate() - 89, 0, 0, 0, 0);
+    } else if (!e) {
+      e = new Date(s.getFullYear(), s.getMonth(), s.getDate() + 89, 23, 59, 59, 999);
+    }
+
+    if (s.getTime() > e.getTime()) {
+      const temp = s;
+      s = new Date(e.getFullYear(), e.getMonth(), e.getDate(), 0, 0, 0, 0);
+      e = new Date(temp.getFullYear(), temp.getMonth(), temp.getDate(), 23, 59, 59, 999);
+    }
+    startDate = s;
+    endDate = e;
+  }
+
   const records = [];
+  const cur = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 12, 0, 0, 0);
+  const endLimit = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 12, 0, 0, 0);
 
-  // Seed base curves to generate believable restaurant cyclical variations (weekends vs weekdays)
-  for (let i = daysCount - 1; i >= 0; i--) {
-    const curDate = new Date(endDate);
-    curDate.setDate(curDate.getDate() - i);
-
-    const year = curDate.getFullYear();
-    const month = String(curDate.getMonth() + 1).padStart(2, '0');
-    const day = String(curDate.getDate()).padStart(2, '0');
+  while (cur.getTime() <= endLimit.getTime()) {
+    const year = cur.getFullYear();
+    const month = String(cur.getMonth() + 1).padStart(2, '0');
+    const day = String(cur.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
 
-    const dayOfWeek = curDate.getDay(); // 0 = Sun, 5 = Fri, 6 = Sat
+    const dayOfWeek = cur.getDay(); // 0 = Sun, 5 = Fri, 6 = Sat
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
 
     // Pseudorandom consistent variation based on day index
-    const seed = ((curDate.getDate() * 17) + (curDate.getMonth() * 31) + curDate.getFullYear()) % 100;
+    const seed = ((cur.getDate() * 17) + (cur.getMonth() * 31) + cur.getFullYear()) % 100;
     const variationFactor = 0.88 + (seed / 400); // 0.88 - 1.13
 
     // Weekends generate $2,500 - $3,750; Weekdays generate $1,350 - $2,350
@@ -658,17 +762,21 @@ export function generateHistoricalDailyData(daysCount = 30, referenceDate = new 
       profit,
       avgOrderValue,
       hourlyDistribution,
+      timestamp: new Date(cur.getFullYear(), cur.getMonth(), cur.getDate(), 12, 0, 0).toISOString(),
     });
+
+    cur.setDate(cur.getDate() + 1);
   }
 
   return records;
 }
 
 /**
- * Pre-computed 30-Day Historical Revenue Data ending on current system date.
+ * Pre-computed 90-Day Historical Revenue Data ending on current system date.
+ * Provides comprehensive historical coverage for analytics and date-range queries.
  * @type {DailyRevenueRecord[]}
  */
-export const mockHistoricalRevenueData = generateHistoricalDailyData(30);
+export const mockHistoricalRevenueData = generateHistoricalDailyData(90);
 
 // Alias exports for analytics components
 export const mockDailyRevenue = mockHistoricalRevenueData;
@@ -693,6 +801,29 @@ export const historicalRevenueData = mockHistoricalRevenueData;
  */
 
 /**
+ * @typedef {Object} ComparativePeriodMetrics
+ * @property {string} startDate - Inclusive start date string (YYYY-MM-DD)
+ * @property {string} endDate - Inclusive end date string (YYYY-MM-DD)
+ * @property {number} daysCount - Total days in previous period
+ * @property {number} totalRevenue - Aggregate sales in previous period
+ * @property {number} totalOrders - Total orders in previous period
+ * @property {number} totalProfit - Net profit in previous period
+ * @property {number} profitMarginPct - Profit margin % in previous period
+ * @property {number} avgOrderValue - Average order value in previous period
+ * @property {number} avgDailyRevenue - Average daily sales in previous period
+ * @property {number} avgDailyOrders - Average daily orders in previous period
+ * @property {DailyRevenueRecord[]} dailyBreakdown - Records in previous period
+ */
+
+/**
+ * @typedef {Object} MetricGrowthPercentages
+ * @property {number} revenue - Growth % of revenue vs previous period
+ * @property {number} orders - Growth % of orders count vs previous period
+ * @property {number} profit - Growth % of profit vs previous period
+ * @property {number} avgOrderValue - Growth % of average order value vs previous period
+ */
+
+/**
  * @typedef {Object} DateRangeMetrics
  * @property {string} startDate - Inclusive start date string (YYYY-MM-DD)
  * @property {string} endDate - Inclusive end date string (YYYY-MM-DD)
@@ -708,78 +839,136 @@ export const historicalRevenueData = mockHistoricalRevenueData;
  * @property {PeakLowestDay|null} lowestDay - Day with lowest revenue
  * @property {DailyRevenueRecord[]} dailyBreakdown - Filtered daily records in range
  * @property {AggregatedHourlySlot[]} hourlyAggregate - Cumulative revenue & orders per hour slot
+ * @property {ComparativePeriodMetrics} previousPeriod - Symmetrical prior period metrics
+ * @property {{ totalRevenue: number, totalOrders: number, totalProfit: number, avgOrderValue: number }} previousMetrics - Prior period summary
+ * @property {MetricGrowthPercentages} growth - Growth percentages vs prior period
+ * @property {number} revenueGrowth - Revenue growth %
+ * @property {number} ordersGrowth - Orders growth %
+ * @property {number} profitGrowth - Profit growth %
+ * @property {number} avgOrderValueGrowth - Average order value growth %
+ * @property {number} aovGrowth - Alias for avgOrderValueGrowth
  */
 
 /**
- * Calculates aggregated financial and volume metrics for an arbitrary date range.
+ * Calculates aggregated financial and volume metrics for an arbitrary custom date range.
  * 
- * @param {string|Date} startDate - Start of date range (YYYY-MM-DD or Date)
- * @param {string|Date} endDate - End of date range (YYYY-MM-DD or Date)
+ * Accurately:
+ * 1. Filters records between startDate (00:00:00.000) and endDate (23:59:59.999).
+ * 2. Accurately sums revenue, total orders count, net profit, and average order value.
+ * 3. Dynamically generates coverage for arbitrary historical dates when querying default mock data.
+ * 4. Computes comparative previous period metrics of equal duration for growth % telemetry.
+ * 
+ * @param {string|Date|number} [startDate] - Start of date range (YYYY-MM-DD, Date, or timestamp)
+ * @param {string|Date|number} [endDate] - End of date range (YYYY-MM-DD, Date, or timestamp)
  * @param {DailyRevenueRecord[]} [data=mockHistoricalRevenueData] - Historical records list
  * @returns {DateRangeMetrics} Computed analytical summary
  */
 export function calculateMetricsForDateRange(startDate, endDate, data = mockHistoricalRevenueData) {
-  // Normalize date inputs to YYYY-MM-DD
-  const formatStr = (val) => {
-    if (!val) return '';
-    if (val instanceof Date) {
-      const y = val.getFullYear();
-      const m = String(val.getMonth() + 1).padStart(2, '0');
-      const d = String(val.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
+  // Normalize date inputs to start of day (00:00:00.000) and end of day (23:59:59.999)
+  let startBoundary = normalizeDateBoundary(startDate, false);
+  let endBoundary = normalizeDateBoundary(endDate, true);
+
+  // If no dates provided, use full span from dataset or fallback to last 30 days
+  if (!startBoundary && !endBoundary) {
+    if (Array.isArray(data) && data.length > 0) {
+      startBoundary = normalizeDateBoundary(data[0].date || data[0].timestamp, false);
+      endBoundary = normalizeDateBoundary(data[data.length - 1].date || data[data.length - 1].timestamp, true);
+    } else {
+      const now = new Date();
+      endBoundary = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      startBoundary = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29, 0, 0, 0, 0);
     }
-    return String(val).slice(0, 10);
-  };
-
-  const start = formatStr(startDate);
-  const end = formatStr(endDate);
-
-  // Filter records within inclusive date bounds
-  const filtered = data.filter((record) => {
-    if (start && record.date < start) return false;
-    if (end && record.date > end) return false;
-    return true;
-  });
-
-  if (filtered.length === 0) {
-    return {
-      startDate: start,
-      endDate: end,
-      daysCount: 0,
-      totalRevenue: 0,
-      totalOrders: 0,
-      totalProfit: 0,
-      profitMarginPct: 0,
-      avgOrderValue: 0,
-      avgDailyRevenue: 0,
-      avgDailyOrders: 0,
-      peakDay: null,
-      lowestDay: null,
-      dailyBreakdown: [],
-      hourlyAggregate: HOURLY_WEIGHTS.map(w => ({ hour: w.hour, revenue: 0, orders: 0 })),
-    };
+  } else if (!startBoundary && endBoundary) {
+    startBoundary = new Date(endBoundary.getFullYear(), endBoundary.getMonth(), endBoundary.getDate() - 29, 0, 0, 0, 0);
+  } else if (startBoundary && !endBoundary) {
+    endBoundary = new Date(startBoundary.getFullYear(), startBoundary.getMonth(), startBoundary.getDate() + 29, 23, 59, 59, 999);
   }
 
+  // Ensure startBoundary <= endBoundary (auto-swap if reversed)
+  if (startBoundary.getTime() > endBoundary.getTime()) {
+    const temp = startBoundary;
+    startBoundary = new Date(endBoundary.getFullYear(), endBoundary.getMonth(), endBoundary.getDate(), 0, 0, 0, 0);
+    endBoundary = new Date(temp.getFullYear(), temp.getMonth(), temp.getDate(), 23, 59, 59, 999);
+  }
+
+  const startStr = formatDateToYYYYMMDD(startBoundary);
+  const endStr = formatDateToYYYYMMDD(endBoundary);
+
+  const startMs = startBoundary.getTime();
+  const endMs = endBoundary.getTime();
+
+  // Range checker supporting both timestamp and calendar date strings
+  const isRecordInRange = (record, minMs, maxMs, minStr, maxStr) => {
+    if (record.timestamp) {
+      const t = new Date(record.timestamp).getTime();
+      return t >= minMs && t <= maxMs;
+    }
+    if (record.date) {
+      return record.date >= minStr && record.date <= maxStr;
+    }
+    return false;
+  };
+
+  // 1. Filter records within inclusive date bounds
+  let filtered = Array.isArray(data)
+    ? data.filter((record) => isRecordInRange(record, startMs, endMs, startStr, endStr))
+    : [];
+
+  // If using default mock data dataset and range is outside pre-computed array, generate on-the-fly
+  const isDefaultMockData = data === mockHistoricalRevenueData;
+  if (filtered.length === 0 && isDefaultMockData) {
+    filtered = generateHistoricalDailyData(startBoundary, endBoundary);
+  }
+
+  // Calculate day count
+  const durationMs = endMs - startMs + 1;
+  const calendarDaysCount = Math.max(1, Math.round(durationMs / 86400000));
+  const daysCount = filtered.length > 0 ? filtered.length : calendarDaysCount;
+
+  // 2. Compute comparative previous period boundaries
+  // Previous period spans the same number of days immediately prior to startBoundary
+  const prevEndBoundary = new Date(startBoundary.getTime() - 1);
+  const prevStartBoundary = new Date(prevEndBoundary.getTime() - durationMs + 1);
+  prevStartBoundary.setHours(0, 0, 0, 0);
+  prevEndBoundary.setHours(23, 59, 59, 999);
+
+  const prevStartStr = formatDateToYYYYMMDD(prevStartBoundary);
+  const prevEndStr = formatDateToYYYYMMDD(prevEndBoundary);
+  const prevStartMs = prevStartBoundary.getTime();
+  const prevEndMs = prevEndBoundary.getTime();
+
+  let prevFiltered = Array.isArray(data)
+    ? data.filter((record) => isRecordInRange(record, prevStartMs, prevEndMs, prevStartStr, prevEndStr))
+    : [];
+
+  // If previous period has no records and we are using mock data, generate on-the-fly for accurate comparative telemetry
+  if (prevFiltered.length === 0 && isDefaultMockData) {
+    prevFiltered = generateHistoricalDailyData(prevStartBoundary, prevEndBoundary);
+  }
+
+  const prevDaysCount = prevFiltered.length > 0 ? prevFiltered.length : calendarDaysCount;
+
+  // 3. Aggregate Current Period
   let totalRevenue = 0;
   let totalOrders = 0;
   let totalProfit = 0;
+  let peakRecord = filtered[0] || null;
+  let lowestRecord = filtered[0] || null;
 
-  /** @type {DailyRevenueRecord} */
-  let peakRecord = filtered[0];
-  /** @type {DailyRevenueRecord} */
-  let lowestRecord = filtered[0];
-
-  // Map to accumulate hourly aggregate
   const hourlyMap = new Map();
   HOURLY_WEIGHTS.forEach(w => hourlyMap.set(w.hour, { hour: w.hour, revenue: 0, orders: 0 }));
 
   filtered.forEach((rec) => {
-    totalRevenue += rec.revenue;
-    totalOrders += rec.ordersCount;
-    totalProfit += rec.profit;
+    const rev = Number(rec.revenue || 0);
+    const orders = Number(rec.ordersCount || rec.orders || 0);
+    const profit = Number(rec.profit || 0);
 
-    if (rec.revenue > peakRecord.revenue) peakRecord = rec;
-    if (rec.revenue < lowestRecord.revenue) lowestRecord = rec;
+    totalRevenue += rev;
+    totalOrders += orders;
+    totalProfit += profit;
+
+    if (!peakRecord || rev > peakRecord.revenue) peakRecord = rec;
+    if (!lowestRecord || rev < lowestRecord.revenue) lowestRecord = rec;
 
     if (Array.isArray(rec.hourlyDistribution)) {
       rec.hourlyDistribution.forEach((h) => {
@@ -792,18 +981,47 @@ export function calculateMetricsForDateRange(startDate, endDate, data = mockHist
     }
   });
 
-  const daysCount = filtered.length;
   totalRevenue = Number(totalRevenue.toFixed(2));
   totalProfit = Number(totalProfit.toFixed(2));
-
   const avgOrderValue = totalOrders > 0 ? Number((totalRevenue / totalOrders).toFixed(2)) : 0;
   const avgDailyRevenue = daysCount > 0 ? Number((totalRevenue / daysCount).toFixed(2)) : 0;
   const avgDailyOrders = daysCount > 0 ? Math.round(totalOrders / daysCount) : 0;
   const profitMarginPct = totalRevenue > 0 ? Number(((totalProfit / totalRevenue) * 100).toFixed(1)) : 0;
 
+  // 4. Aggregate Previous Period
+  let prevTotalRevenue = 0;
+  let prevTotalOrders = 0;
+  let prevTotalProfit = 0;
+
+  prevFiltered.forEach((rec) => {
+    prevTotalRevenue += Number(rec.revenue || 0);
+    prevTotalOrders += Number(rec.ordersCount || rec.orders || 0);
+    prevTotalProfit += Number(rec.profit || 0);
+  });
+
+  prevTotalRevenue = Number(prevTotalRevenue.toFixed(2));
+  prevTotalProfit = Number(prevTotalProfit.toFixed(2));
+  const prevAvgOrderValue = prevTotalOrders > 0 ? Number((prevTotalRevenue / prevTotalOrders).toFixed(2)) : 0;
+  const prevAvgDailyRevenue = prevDaysCount > 0 ? Number((prevTotalRevenue / prevDaysCount).toFixed(2)) : 0;
+  const prevAvgDailyOrders = prevDaysCount > 0 ? Math.round(prevTotalOrders / prevDaysCount) : 0;
+  const prevProfitMarginPct = prevTotalRevenue > 0 ? Number(((prevTotalProfit / prevTotalRevenue) * 100).toFixed(1)) : 0;
+
+  // 5. Growth % Calculations (safe against division by zero)
+  const calculateGrowthPct = (curr, prev) => {
+    if (prev === 0) {
+      return curr > 0 ? 100 : 0;
+    }
+    return Number((((curr - prev) / prev) * 100).toFixed(1));
+  };
+
+  const revenueGrowth = calculateGrowthPct(totalRevenue, prevTotalRevenue);
+  const ordersGrowth = calculateGrowthPct(totalOrders, prevTotalOrders);
+  const profitGrowth = calculateGrowthPct(totalProfit, prevTotalProfit);
+  const avgOrderValueGrowth = calculateGrowthPct(avgOrderValue, prevAvgOrderValue);
+
   return {
-    startDate: start || filtered[0].date,
-    endDate: end || filtered[filtered.length - 1].date,
+    startDate: startStr,
+    endDate: endStr,
     daysCount,
     totalRevenue,
     totalOrders,
@@ -812,18 +1030,50 @@ export function calculateMetricsForDateRange(startDate, endDate, data = mockHist
     avgOrderValue,
     avgDailyRevenue,
     avgDailyOrders,
-    peakDay: {
+    peakDay: peakRecord ? {
       date: peakRecord.date,
       revenue: peakRecord.revenue,
       ordersCount: peakRecord.ordersCount,
-    },
-    lowestDay: {
+    } : null,
+    lowestDay: lowestRecord ? {
       date: lowestRecord.date,
       revenue: lowestRecord.revenue,
       ordersCount: lowestRecord.ordersCount,
-    },
+    } : null,
     dailyBreakdown: filtered,
     hourlyAggregate: Array.from(hourlyMap.values()),
+
+    // Comparative Previous Period Metrics & Telemetry
+    previousPeriod: {
+      startDate: prevStartStr,
+      endDate: prevEndStr,
+      daysCount: prevDaysCount,
+      totalRevenue: prevTotalRevenue,
+      totalOrders: prevTotalOrders,
+      totalProfit: prevTotalProfit,
+      profitMarginPct: prevProfitMarginPct,
+      avgOrderValue: prevAvgOrderValue,
+      avgDailyRevenue: prevAvgDailyRevenue,
+      avgDailyOrders: prevAvgDailyOrders,
+      dailyBreakdown: prevFiltered,
+    },
+    previousMetrics: {
+      totalRevenue: prevTotalRevenue,
+      totalOrders: prevTotalOrders,
+      totalProfit: prevTotalProfit,
+      avgOrderValue: prevAvgOrderValue,
+    },
+    growth: {
+      revenue: revenueGrowth,
+      orders: ordersGrowth,
+      profit: profitGrowth,
+      avgOrderValue: avgOrderValueGrowth,
+    },
+    revenueGrowth,
+    ordersGrowth,
+    profitGrowth,
+    avgOrderValueGrowth,
+    aovGrowth: avgOrderValueGrowth,
   };
 }
 
@@ -843,7 +1093,7 @@ export function calculateMetricsForDateRange(startDate, endDate, data = mockHist
  * @property {Employee[]} employees - Dedicated restaurant staff
  * @property {LiveOrder[]} liveOrders - Real-time active orders
  * @property {CustomerIssueNote[]} directNotes - Customer issue tickets
- * @property {DailyRevenueRecord[]} historicalRevenueData - 30-day analytics records
+ * @property {DailyRevenueRecord[]} historicalRevenueData - 90-day analytics records
  * @property {number|null} selectedTableId - Selected table in view
  * @property {number|null} selectedEmployeeId - Selected employee in view
  * @property {string|null} selectedOrderId - Selected live order
@@ -1025,8 +1275,12 @@ export default {
   customerNotes: mockCustomerNotes,
   directNotes: mockCustomerNotes,
   historicalRevenueData: mockHistoricalRevenueData,
+  mockDailyRevenue: mockHistoricalRevenueData,
+  dailyRevenue: mockHistoricalRevenueData,
 
   // Functions
+  normalizeDateBoundary,
+  formatDateToYYYYMMDD,
   generateHistoricalDailyData,
   calculateMetricsForDateRange,
   getInitialAdminState,

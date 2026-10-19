@@ -1111,7 +1111,17 @@ export default function CustomerReportsModule({ className = '' }) {
                       </p>
                       <div className="flex items-center justify-between text-[11px] text-emerald-300/70 pt-1 border-t border-emerald-500/20">
                         <span>Audited by Floor Manager</span>
-                        <span>Closed {formatTimeAgo(report.resolvedAt)}</span>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenResolve(report)}
+                            className="text-emerald-400 hover:text-emerald-300 underline font-semibold cursor-pointer"
+                            title="Edit resolution audit note"
+                          >
+                            Edit Note
+                          </button>
+                          <span>Closed {formatTimeAgo(report.resolvedAt)}</span>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1121,8 +1131,8 @@ export default function CustomerReportsModule({ className = '' }) {
                       Aligned in a clean flex row at the bottom of the card
                       ========================================================================= */}
                   <div className="pt-3 border-t border-[#334155] flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    {/* Left: Assign/Dispatch Employee Dropdown */}
-                    <div className="flex items-center gap-2.5 flex-1 min-w-[260px]">
+                    {/* Left: Assign/Dispatch Employee Dropdown & Modal Triggers */}
+                    <div className="flex items-center gap-2 flex-1 min-w-[260px]">
                       <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0">
                         <UserPlus className="w-3.5 h-3.5 text-[#FF7A45]" />
                         <span>Assign Employee:</span>
@@ -1131,6 +1141,7 @@ export default function CustomerReportsModule({ className = '' }) {
                         value={report.assignedStaffId || ''}
                         onChange={(e) => handleDirectAssignEmployee(report.id, e.target.value)}
                         className="flex-1 bg-[#1e293b] border border-[#334155] text-xs font-semibold text-[#f8fafc] rounded-xl py-2 px-3 focus:outline-none focus:border-[#FF5A26] cursor-pointer"
+                        title="1-click direct dispatch employee"
                       >
                         {STAFF_ROSTER.map((staff) => (
                           <option key={staff.id} value={staff.id} className="bg-[#111827] text-[#f8fafc]">
@@ -1138,10 +1149,28 @@ export default function CustomerReportsModule({ className = '' }) {
                           </option>
                         ))}
                       </select>
+                      {/* Open Dispatch Directives Modal */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDispatch(report)}
+                        className="p-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-300 hover:text-[#f8fafc] border border-[#334155] text-xs font-bold transition shrink-0 cursor-pointer"
+                        title="Open Dispatch Directives Modal with priority notes"
+                      >
+                        <Send className="w-3.5 h-3.5 text-[#FF7A45]" />
+                      </button>
+                      {/* Open Reassign Table Modal */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenReassign(report)}
+                        className="p-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-300 hover:text-[#f8fafc] border border-[#334155] text-xs font-bold transition shrink-0 cursor-pointer"
+                        title="Open Reassign Table Modal"
+                      >
+                        <UserCheck className="w-3.5 h-3.5 text-amber-400" />
+                      </button>
                     </div>
 
-                    {/* Right: Priority Ping Button & Mark Resolved Button */}
-                    <div className="flex items-center gap-2.5 shrink-0">
+                    {/* Right: Priority Ping Button & Mark Resolved Controls */}
+                    <div className="flex items-center gap-2 shrink-0">
                       {/* Priority Ping button */}
                       <button
                         type="button"
@@ -1153,27 +1182,47 @@ export default function CustomerReportsModule({ className = '' }) {
                         <span>Priority Ping</span>
                       </button>
 
-                      {/* Mark Resolved button */}
+                      {/* Mark Resolved controls */}
                       {!isResolved ? (
-                        <button
-                          type="button"
-                          onClick={() => handleDirectMarkResolved(report)}
-                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-md shadow-emerald-950/40 flex items-center gap-1.5 cursor-pointer active:scale-95"
-                          title="Mark as resolved immediately"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                          <span>Mark Resolved</span>
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleDirectMarkResolved(report)}
+                            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-md shadow-emerald-950/40 flex items-center gap-1.5 cursor-pointer active:scale-95"
+                            title="Mark as resolved immediately with automatic resolution note (1-click)"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                            <span>Mark Resolved</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenResolve(report)}
+                            className="p-2 rounded-xl bg-[#1e293b] hover:bg-emerald-950/40 text-emerald-400 hover:text-emerald-300 border border-emerald-500/40 text-xs font-bold transition cursor-pointer"
+                            title="Resolve with custom resolution note & quick presets modal"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleDirectReopen(report)}
-                          className="px-3.5 py-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-emerald-300 hover:text-emerald-200 text-xs font-bold transition flex items-center gap-1.5 border border-[#334155] cursor-pointer"
-                          title="Click to reopen issue"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Resolved ✓ (Reopen)</span>
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenResolve(report)}
+                            className="px-3 py-1.5 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-emerald-300 hover:text-emerald-200 text-xs font-bold transition flex items-center gap-1.5 border border-[#334155] cursor-pointer"
+                            title="Edit resolution audit note"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Resolved ✓ (Edit Note)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDirectReopen(report)}
+                            className="px-2.5 py-1.5 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-400 hover:text-[#f8fafc] text-xs font-bold transition border border-[#334155] cursor-pointer"
+                            title="Click to reopen issue"
+                          >
+                            <span>Reopen</span>
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1260,7 +1309,7 @@ export default function CustomerReportsModule({ className = '' }) {
               <button
                 type="button"
                 onClick={() => setDispatchModalReport(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-[#f8fafc] p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1271,7 +1320,7 @@ export default function CustomerReportsModule({ className = '' }) {
               <span className="font-bold text-[#FF7A45] uppercase tracking-wider block text-[10px]">
                 Issue Description:
               </span>
-              <p className="text-slate-200 font-medium">"{dispatchModalReport.customerNote}"</p>
+              <p className="text-[#f8fafc] font-medium">"{dispatchModalReport.customerNote}"</p>
             </div>
 
             {/* Select Active Employee */}
@@ -1289,7 +1338,7 @@ export default function CustomerReportsModule({ className = '' }) {
                       onClick={() => setSelectedStaffToDispatch(staff.id)}
                       className={`p-3 rounded-2xl border text-left transition flex items-center gap-3 cursor-pointer ${
                         isSelected
-                          ? 'bg-[#FF5A26]/15 border-[#FF5A26] text-white ring-1 ring-[#FF7A45]'
+                          ? 'bg-[#FF5A26]/15 border-[#FF5A26] text-[#f8fafc] ring-1 ring-[#FF7A45]'
                           : 'bg-[#1e293b] border-[#334155] text-slate-300 hover:border-slate-500'
                       }`}
                     >
@@ -1299,7 +1348,7 @@ export default function CustomerReportsModule({ className = '' }) {
                         className="w-9 h-9 rounded-xl object-cover shrink-0"
                       />
                       <div className="min-w-0">
-                        <span className="text-xs font-bold text-white block truncate">{staff.name}</span>
+                        <span className="text-xs font-bold text-[#f8fafc] block truncate">{staff.name}</span>
                         <span className="text-[10px] text-slate-400 block truncate">{staff.role}</span>
                         <span className={`text-[9px] font-black uppercase ${
                           staff.status === 'available' ? 'text-emerald-400' : 'text-amber-400'
@@ -1323,7 +1372,7 @@ export default function CustomerReportsModule({ className = '' }) {
                 value={dispatchPriorityNote}
                 onChange={(e) => setDispatchPriorityNote(e.target.value)}
                 placeholder="e.g. Bring extra napkins and ice water immediately with apology"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#FF5A26]"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] placeholder-slate-400 focus:outline-none focus:border-[#FF5A26]"
               />
             </div>
 
@@ -1332,14 +1381,14 @@ export default function CustomerReportsModule({ className = '' }) {
               <button
                 type="button"
                 onClick={() => setDispatchModalReport(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-[#f8fafc]"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleConfirmDispatch}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:from-[#FF7A45] hover:to-[#FF5A26] text-white text-xs font-black shadow-lg shadow-[#FF5A26]/30 flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:from-[#FF7A45] hover:to-[#FF5A26] text-[#f8fafc] text-xs font-black shadow-lg shadow-[#FF5A26]/30 flex items-center gap-1.5 cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Transmit Urgent Dispatch</span>
@@ -1374,7 +1423,7 @@ export default function CustomerReportsModule({ className = '' }) {
               <button
                 type="button"
                 onClick={() => setReassignModalReport(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-[#f8fafc] p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1384,14 +1433,14 @@ export default function CustomerReportsModule({ className = '' }) {
             <div className="p-3.5 rounded-2xl bg-[#1e293b] border border-[#334155] flex items-center justify-between text-xs">
               <div>
                 <span className="text-[10px] text-slate-400 uppercase font-bold block">Current Employee</span>
-                <span className="text-white font-bold">
+                <span className="text-[#f8fafc] font-bold">
                   {STAFF_ROSTER.find((s) => s.id === reassignModalReport.assignedStaffId)?.name || 'Marcus Vance'}
                 </span>
               </div>
               <ArrowRight className="w-4 h-4 text-amber-400" />
               <div>
                 <span className="text-[10px] text-amber-400 uppercase font-bold block">New Assigned Lead</span>
-                <span className="text-slate-200 font-bold">
+                <span className="text-[#f8fafc] font-bold">
                   {STAFF_ROSTER.find((s) => s.id === selectedStaffToReassign)?.name}
                 </span>
               </div>
@@ -1412,7 +1461,7 @@ export default function CustomerReportsModule({ className = '' }) {
                       onClick={() => setSelectedStaffToReassign(staff.id)}
                       className={`p-3 rounded-2xl border text-left transition flex items-center gap-3 cursor-pointer ${
                         isSelected
-                          ? 'bg-amber-500/20 border-amber-500 text-white ring-1 ring-amber-400'
+                          ? 'bg-amber-500/20 border-amber-500 text-[#f8fafc] ring-1 ring-amber-400'
                           : 'bg-[#1e293b] border-[#334155] text-slate-300 hover:border-slate-500'
                       }`}
                     >
@@ -1422,7 +1471,7 @@ export default function CustomerReportsModule({ className = '' }) {
                         className="w-9 h-9 rounded-xl object-cover shrink-0"
                       />
                       <div className="min-w-0">
-                        <span className="text-xs font-bold text-white block truncate">{staff.name}</span>
+                        <span className="text-xs font-bold text-[#f8fafc] block truncate">{staff.name}</span>
                         <span className="text-[10px] text-slate-400 block truncate">{staff.role}</span>
                         <span className={`text-[9px] font-black uppercase ${
                           staff.status === 'available' ? 'text-emerald-400' : 'text-amber-400'
@@ -1441,14 +1490,14 @@ export default function CustomerReportsModule({ className = '' }) {
               <button
                 type="button"
                 onClick={() => setReassignModalReport(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-[#f8fafc]"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleConfirmReassign}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white text-xs font-black shadow-lg shadow-amber-950/40 flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-[#f8fafc] text-xs font-black shadow-lg shadow-amber-950/40 flex items-center gap-1.5 cursor-pointer"
               >
                 <UserCheck className="w-3.5 h-3.5" />
                 <span>Confirm Reassignment</span>
@@ -1483,7 +1532,7 @@ export default function CustomerReportsModule({ className = '' }) {
               <button
                 type="button"
                 onClick={() => setResolveModalReport(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-[#f8fafc] p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1494,7 +1543,7 @@ export default function CustomerReportsModule({ className = '' }) {
               <span className="font-bold text-slate-400 uppercase tracking-wider block text-[10px]">
                 Original Customer Complaint:
               </span>
-              <p className="text-slate-200 font-medium italic">"{resolveModalReport.customerNote}"</p>
+              <p className="text-[#f8fafc] font-medium italic">"{resolveModalReport.customerNote}"</p>
             </div>
 
             {/* Quick Resolution Preset Chips */}
@@ -1531,7 +1580,7 @@ export default function CustomerReportsModule({ className = '' }) {
                 value={resolutionInput}
                 onChange={(e) => setResolutionInput(e.target.value)}
                 placeholder="Enter actions taken to resolve the complaint..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 leading-relaxed"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] placeholder-slate-400 focus:outline-none focus:border-emerald-500 leading-relaxed"
               />
             </div>
 
@@ -1540,14 +1589,14 @@ export default function CustomerReportsModule({ className = '' }) {
               <button
                 type="button"
                 onClick={() => setResolveModalReport(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-[#f8fafc]"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleConfirmResolve}
-                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-950/40 flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-[#f8fafc] text-xs font-black shadow-lg shadow-emerald-950/40 flex items-center gap-1.5 cursor-pointer"
               >
                 <Check className="w-3.5 h-3.5" />
                 <span>Save Resolution &amp; Close Case</span>

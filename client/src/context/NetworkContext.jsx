@@ -6,6 +6,11 @@ import {
   getPendingWaiterCalls,
   removePendingWaiterCall,
   updatePendingWaiterCall,
+  enqueueTableNote,
+  getTableNotes,
+  getPendingTableNotes,
+  updateTableNote,
+  removeTableNote,
   getPendingCounts,
   enqueueOrder as idbEnqueueOrder,
   enqueueWaiterCall as idbEnqueueWaiterCall,
@@ -66,6 +71,7 @@ export function NetworkProvider({ children }) {
   // Offline queue state
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [pendingWaiterCallsCount, setPendingWaiterCallsCount] = useState(0);
+  const [pendingTableNotesCount, setPendingTableNotesCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(null);
 
@@ -111,10 +117,11 @@ export function NetworkProvider({ children }) {
       const counts = await getPendingCounts();
       setPendingOrdersCount(counts.ordersCount);
       setPendingWaiterCallsCount(counts.waiterCallsCount);
+      setPendingTableNotesCount(counts.tableNotesCount || 0);
       return counts;
     } catch (err) {
       console.error('[NetworkContext] Failed to get pending counts:', err);
-      return { ordersCount: 0, waiterCallsCount: 0, total: 0 };
+      return { ordersCount: 0, waiterCallsCount: 0, tableNotesCount: 0, total: 0 };
     }
   }, []);
 
@@ -271,20 +278,59 @@ export function NetworkProvider({ children }) {
         }
       }
 
+      // 3. Sync Pending Table Notes
+      const pendingNotes = await getPendingTableNotes();
+      let syncedNotesCount = 0;
+
+      for (const note of pendingNotes) {
+        try {
+          const response = await fetch('/api/waiter/call', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json'
+            },
+            body: JSON.stringify({
+              tableNumber: note.tableNumber || 1,
+              reason: note.category || 'Table Note',
+              notes: note.note || note.complaintText || '',
+              queuedAt: note.queuedAt || Date.now()
+            })
+          });
+
+          if (response.ok || response.status === 200 || response.status === 201) {
+            await removeTableNote(note.localId);
+            syncedNotesCount++;
+          } else {
+            note.syncAttempts = (note.syncAttempts || 0) + 1;
+            note.lastError = `Server returned HTTP ${response.status}`;
+            await updateTableNote(note);
+            break;
+          }
+        } catch (noteErr) {
+          console.warn('[NetworkContext] Table note sync network error:', noteErr);
+          setIsOnline(false);
+          setConnectionStatus('offline');
+          break;
+        }
+      }
+
       // Update timestamp and refreshed counts
       setLastSyncTime(Date.now());
       await refreshPendingCounts();
 
       // Trigger user feedback notifications
-      const totalSynced = syncedOrdersCount + syncedWaiterCount;
+      const totalSynced = syncedOrdersCount + syncedWaiterCount + syncedNotesCount;
       if (totalSynced > 0) {
         playChime('success');
+        const parts = [];
+        if (syncedOrdersCount > 0) parts.push(`${syncedOrdersCount} order(s)`);
+        if (syncedWaiterCount > 0) parts.push(`${syncedWaiterCount} waiter call(s)`);
+        if (syncedNotesCount > 0) parts.push(`${syncedNotesCount} note(s)`);
         addToast({
           type: 'success',
           title: 'Sync Complete!',
-          message: `${syncedOrdersCount > 0 ? `${syncedOrdersCount} order(s)` : ''}${
-            syncedOrdersCount > 0 && syncedWaiterCount > 0 ? ' and ' : ''
-          }${syncedWaiterCount > 0 ? `${syncedWaiterCount} waiter call(s)` : ''} successfully sent to kitchen.`
+          message: `${parts.join(', ')} successfully delivered to restaurant server.`
         });
       }
     } catch (err) {
@@ -423,6 +469,59 @@ export function NetworkProvider({ children }) {
   );
 
   /**
+   * Submit a table note: tries HTTP post if online;
+   * otherwise safely queues into IndexedDB table_notes.
+   */
+  const submitTableNote = useCallback(
+    async (notePayload) => {
+      if (isOnline) {
+        try {
+          const res = await fetch('/api/waiter/call', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({
+              tableNumber: notePayload.tableNumber || 1,
+              reason: notePayload.category || 'Table Note',
+              notes: notePayload.note || notePayload.complaintText || '',
+              queuedAt: Date.now()
+            })
+          });
+          if (res.ok) {
+            const data = await res.json().catch(() => ({}));
+            playChime('success');
+            addToast({
+              type: 'success',
+              title: 'Note Submitted',
+              message: `Note for Table ${notePayload.tableNumber || 1} has been received.`
+            });
+            return { success: true, offline: false, data };
+          }
+        } catch (err) {
+          setIsOnline(false);
+          setConnectionStatus('offline');
+        }
+      }
+
+      // Offline fallback: Queue into IndexedDB table_notes
+      try {
+        const queuedRecord = await enqueueTableNote(notePayload);
+        await refreshPendingCounts();
+        playChime('offline');
+        addToast({
+          type: 'warning',
+          title: 'Note Saved Offline',
+          message: 'Saved locally on your device. Will auto-sync once connection is restored.'
+        });
+        return { success: true, offline: true, localId: queuedRecord.localId };
+      } catch (err) {
+        console.error('[NetworkContext] Failed to queue table note:', err);
+        throw err;
+      }
+    },
+    [isOnline, addToast, refreshPendingCounts]
+  );
+
+  /**
    * Safe fetchMenu helper that reads from API and updates IndexedDB cache,
    * or falls back to IndexedDB if offline
    */
@@ -506,21 +605,25 @@ export function NetworkProvider({ children }) {
     return () => clearInterval(interval);
   }, [isOnline, checkConnectivity, syncPendingData]);
 
-  const totalPending = pendingOrdersCount + pendingWaiterCallsCount;
+  const totalPending = pendingOrdersCount + pendingWaiterCallsCount + pendingTableNotesCount;
 
   const value = {
     isOnline,
     connectionStatus,
     pendingOrdersCount,
     pendingWaiterCallsCount,
+    pendingTableNotesCount,
     pendingCount: totalPending,
     isSyncing,
     lastSyncTime,
     syncPendingData,
     submitOrder,
     submitWaiterCall,
+    submitTableNote,
     enqueueOrder: submitOrder, // Friendly alias
     enqueueWaiterCall: submitWaiterCall, // Friendly alias
+    enqueueTableNote: submitTableNote, // Friendly alias
+    getTableNotes,
     fetchMenuWithCache,
     refreshPendingCounts,
     checkConnectivity,

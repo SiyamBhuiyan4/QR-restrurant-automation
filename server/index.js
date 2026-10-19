@@ -195,6 +195,18 @@ io.on('connection', (socket) => {
     io.emit('waiter:resolve', payload);
   });
 
+  // Relay waiter:acknowledge broadcast event
+  socket.on('waiter:acknowledge', (payload) => {
+    console.log('[Socket.IO] Broadcast waiter:acknowledge for call:', payload?.id || '');
+    io.emit('waiter:acknowledge', payload);
+  });
+
+  // Relay waiter:assigned broadcast event
+  socket.on('waiter:assigned', (payload) => {
+    console.log('[Socket.IO] Broadcast waiter:assigned for call/table:', payload?.id || payload?.table || '');
+    io.emit('waiter:assigned', payload);
+  });
+
   socket.on('disconnect', (reason) => {
     // Client disconnected
   });

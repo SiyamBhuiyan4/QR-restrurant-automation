@@ -1,11 +1,31 @@
 /* Admin side polish: scoped to .admin-root so customer-facing pages are untouched. */
 
-/* Ensure dark background on html, body, and outer canvas when admin is loaded */
-html:has(.admin-root),
-body:has(.admin-root),
-html.admin-active,
-body.admin-active {
-  background-color: #0b0f19 !important;
+/* Ensure dark background on html, body, and outer canvas when admin is loaded (screen only) */
+@media screen {
+  html:has(.admin-root),
+  body:has(.admin-root),
+  html.admin-active,
+  body.admin-active {
+    background-color: #0b0f19 !important;
+  }
+}
+
+@media print {
+  html:has(.admin-root),
+  body:has(.admin-root),
+  html.admin-active,
+  body.admin-active,
+  .admin-root,
+  .admin-root > div,
+  .admin-root main {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
 }
 
 .admin-root,

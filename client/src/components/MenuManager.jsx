@@ -22,13 +22,14 @@ import {
   Send,
   Video,
   Play,
-  Upload
+  Upload,
+  FolderPlus
 } from 'lucide-react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { uploadPhotoToTelegram, uploadVideoToTelegram } from '../services/telegramClient';
 import { resolveServerUrl } from '../context/SocketContext';
-import { getCachedMenu, cacheMenu } from '../db/indexedDb';
+import { getCachedMenu, cacheMenu } from '../db/indexedDb.js';
 import '../styles/admin.css';
 
 // Initial fallback sample menu in case server is fresh or offline
@@ -134,6 +135,30 @@ export default function MenuManager({ className = '' }) {
   const [error, setError] = useState(null);
   const [successToast, setSuccessToast] = useState('');
 
+  // Custom categories list with persistence
+  const [customCategories, setCustomCategories] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smartdine_custom_categories');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Category creation modal state
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [newCategoryData, setNewCategoryData] = useState({
+    name: '',
+    icon: '🍽️',
+    description: ''
+  });
+  const [categoryError, setCategoryError] = useState('');
+  const [categorySubmitting, setCategorySubmitting] = useState(false);
+
+  // Inline category creation in Dish Modal
+  const [isCreatingInlineCategory, setIsCreatingInlineCategory] = useState(false);
+  const [inlineCategoryName, setInlineCategoryName] = useState('');
+
   // Filtering and search state
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -171,10 +196,12 @@ export default function MenuManager({ className = '' }) {
 
   // Convex Real-Time Menu & Mutations (Convex = structured text database, Telegram = free media storage CDN)
   const convexMenu = useQuery(api.menu.getMenu);
+  const convexCategories = useQuery(api.menu.getCategories);
   const createConvexItem = useMutation(api.menu.createMenuItem);
   const updateConvexItem = useMutation(api.menu.updateMenuItem);
   const deleteConvexItem = useMutation(api.menu.deleteMenuItem);
   const toggleConvexAvailability = useMutation(api.menu.toggleAvailability);
+  const createConvexCategory = useMutation(api.menu.createCategory);
 
   // Normalizes dish object to handle both snake_case, camelCase and Convex fields
   const normalizeDish = useCallback((item) => {
@@ -256,6 +283,21 @@ export default function MenuManager({ className = '' }) {
       await cacheMenu(loadedDishes);
     }
 
+    // Also fetch categories from server API
+    try {
+      const catRes = await fetch(`${serverUrl}/api/menu/categories`);
+      if (catRes.ok) {
+        const catData = await catRes.json();
+        const cats = Array.isArray(catData) ? catData : (catData.data || []);
+        if (cats.length > 0) {
+          const names = cats.map(c => c.name).filter(Boolean);
+          setCustomCategories(prev => Array.from(new Set([...prev, ...names])));
+        }
+      }
+    } catch (e) {
+      // offline fallback
+    }
+
     setDishes(loadedDishes);
     setLoading(false);
   }, [normalizeDish]);
@@ -264,16 +306,42 @@ export default function MenuManager({ className = '' }) {
     loadMenu();
   }, [loadMenu]);
 
-  // Extract all unique category names
+  // Extract all unique category names (Default + Custom + Convex + Existing Dishes)
   const availableCategories = useMemo(() => {
     const set = new Set(DEFAULT_CATEGORIES);
+    customCategories.forEach(c => {
+      if (c && typeof c === 'string') set.add(c.trim());
+      else if (c && c.name) set.add(c.name.trim());
+    });
+    if (convexCategories && Array.isArray(convexCategories)) {
+      convexCategories.forEach(c => {
+        if (c.name) set.add(c.name.trim());
+      });
+    }
     dishes.forEach(d => {
       if (d.category && typeof d.category === 'string') {
         set.add(d.category.trim());
       }
     });
     return Array.from(set);
-  }, [dishes]);
+  }, [dishes, customCategories, convexCategories]);
+
+  // Sync Convex Categories
+  useEffect(() => {
+    if (convexCategories && Array.isArray(convexCategories)) {
+      const names = convexCategories.map(c => c.name).filter(Boolean);
+      if (names.length > 0) {
+        setCustomCategories(prev => {
+          const set = new Set([...prev, ...names]);
+          const arr = Array.from(set);
+          try {
+            localStorage.setItem('smartdine_custom_categories', JSON.stringify(arr));
+          } catch {}
+          return arr;
+        });
+      }
+    }
+  }, [convexCategories]);
 
   // Filtered dishes calculation
   const filteredDishes = useMemo(() => {
@@ -306,7 +374,9 @@ export default function MenuManager({ className = '' }) {
   useEffect(() => {
     if (convexMenu && Array.isArray(convexMenu) && convexMenu.length > 0) {
       const list = [];
+      const catNames = [];
       convexMenu.forEach((cat) => {
+        if (cat.name) catNames.push(cat.name);
         (cat.items || []).forEach((item) => {
           list.push(normalizeDish({
             ...item,
@@ -318,6 +388,9 @@ export default function MenuManager({ className = '' }) {
           }));
         });
       });
+      if (catNames.length > 0) {
+        setCustomCategories(prev => Array.from(new Set([...prev, ...catNames])));
+      }
       if (list.length > 0) {
         setDishes(list);
         setLoading(false);
@@ -430,13 +503,130 @@ export default function MenuManager({ className = '' }) {
     triggerSuccess(newStatus ? 'Item marked in stock' : 'Item marked out of stock');
   };
 
+  // Create Category Handler (Top banner & Toolbar)
+  const handleCreateCategory = async (e) => {
+    if (e) e.preventDefault();
+    setCategoryError('');
+
+    const trimmedName = newCategoryData.name.trim();
+    if (!trimmedName) {
+      setCategoryError('Please enter a category name.');
+      return;
+    }
+
+    if (availableCategories.some(c => c.toLowerCase() === trimmedName.toLowerCase())) {
+      setCategoryError(`Category "${trimmedName}" already exists.`);
+      return;
+    }
+
+    setCategorySubmitting(true);
+    const chosenIcon = newCategoryData.icon.trim() || '🍽️';
+
+    // 1. Update local custom categories
+    setCustomCategories(prev => {
+      const updated = Array.from(new Set([...prev, trimmedName]));
+      try {
+        localStorage.setItem('smartdine_custom_categories', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    // 2. Persist to Convex Cloud Database
+    if (createConvexCategory) {
+      try {
+        await createConvexCategory({
+          name: trimmedName,
+          icon: chosenIcon,
+          slug: trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+        });
+      } catch (convexErr) {
+        console.warn('[MenuManager] Convex createCategory warning:', convexErr.message);
+      }
+    }
+
+    // 3. Persist to SQLite Server
+    try {
+      const serverUrl = resolveServerUrl();
+      await fetch(`${serverUrl}/api/menu/categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: trimmedName,
+          icon: chosenIcon
+        })
+      });
+    } catch (apiErr) {
+      console.warn('[MenuManager] Server createCategory warning (offline mode):', apiErr.message);
+    }
+
+    setCategorySubmitting(false);
+    setIsCategoryModalOpen(false);
+    setNewCategoryData({ name: '', icon: '🍽️', description: '' });
+
+    // Automatically switch active view to the new category and show success toast
+    setSelectedCategory(trimmedName);
+    triggerSuccess(`Category "${trimmedName}" created! ✨`);
+  };
+
+  // Inline Category in Dish Modal Handlers
+  const handleCategorySelectChange = (e) => {
+    const val = e.target.value;
+    if (val === '__new__') {
+      setIsCreatingInlineCategory(true);
+      setInlineCategoryName('');
+    } else {
+      setIsCreatingInlineCategory(false);
+      setFormData(prev => ({ ...prev, category: val }));
+    }
+  };
+
+  const handleConfirmInlineCategory = async () => {
+    const trimmed = inlineCategoryName.trim();
+    if (!trimmed) {
+      setIsCreatingInlineCategory(false);
+      return;
+    }
+
+    setCustomCategories(prev => {
+      const updated = Array.from(new Set([...prev, trimmed]));
+      try {
+        localStorage.setItem('smartdine_custom_categories', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    if (createConvexCategory) {
+      try {
+        await createConvexCategory({ name: trimmed, icon: '🍽️' });
+      } catch (err) {
+        console.warn('[MenuManager] Inline Convex createCategory warning:', err.message);
+      }
+    }
+
+    try {
+      const serverUrl = resolveServerUrl();
+      await fetch(`${serverUrl}/api/menu/categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed, icon: '🍽️' })
+      });
+    } catch {}
+
+    setFormData(prev => ({ ...prev, category: trimmed }));
+    setIsCreatingInlineCategory(false);
+    setInlineCategoryName('');
+    triggerSuccess(`Category "${trimmed}" ready! ✨`);
+  };
+
   // Open modal for Adding a new dish
   const handleOpenAddModal = () => {
     setModalMode('add');
     setEditingDishId(null);
+    setIsCreatingInlineCategory(false);
+    setInlineCategoryName('');
     setFormData({
       name: '',
-      category: availableCategories[0] || 'Mains',
+      category: selectedCategory !== 'All' ? selectedCategory : (availableCategories[0] || 'Mains'),
       price: '',
       description: '',
       image_url: '',
@@ -454,6 +644,8 @@ export default function MenuManager({ className = '' }) {
   const handleOpenEditModal = (dish) => {
     setModalMode('edit');
     setEditingDishId(dish.id);
+    setIsCreatingInlineCategory(false);
+    setInlineCategoryName('');
     setFormData({
       name: dish.name || '',
       category: dish.category || 'Mains',
@@ -490,7 +682,22 @@ export default function MenuManager({ className = '' }) {
     setSubmitting(true);
     const serverUrl = resolveServerUrl();
 
-    const categoryName = formData.category.trim() || 'Mains';
+    let categoryName = formData.category.trim();
+    if (isCreatingInlineCategory && inlineCategoryName.trim()) {
+      categoryName = inlineCategoryName.trim();
+      setCustomCategories(prev => {
+        const updated = Array.from(new Set([...prev, categoryName]));
+        try {
+          localStorage.setItem('smartdine_custom_categories', JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+      if (createConvexCategory) {
+        createConvexCategory({ name: categoryName, icon: '🍽️' }).catch(() => {});
+      }
+    } else if (!categoryName || categoryName === '__new__') {
+      categoryName = availableCategories[0] || 'Mains';
+    }
     const categorySlug = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'mains';
 
     const payload = {
@@ -711,6 +918,20 @@ export default function MenuManager({ className = '' }) {
 
           <button
             type="button"
+            onClick={() => {
+              setNewCategoryData({ name: '', icon: '🍽️', description: '' });
+              setCategoryError('');
+              setIsCategoryModalOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-amber-500/40 bg-[#1e293b] hover:bg-amber-500/15 hover:border-amber-500 text-amber-300 font-semibold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-xs"
+            title="Create a new menu category"
+          >
+            <FolderPlus className="w-4 h-4 stroke-[2.2]" />
+            <span>+ Add Category</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handleOpenAddModal}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-semibold text-xs sm:text-sm transition shadow-md shadow-amber-500/20 cursor-pointer"
           >
@@ -876,6 +1097,21 @@ export default function MenuManager({ className = '' }) {
               </button>
             );
           })}
+
+          {/* Prominent + Add Category Button right on toolbar */}
+          <button
+            type="button"
+            onClick={() => {
+              setNewCategoryData({ name: '', icon: '🍽️', description: '' });
+              setCategoryError('');
+              setIsCategoryModalOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dashed border-amber-500/60 hover:border-amber-400 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 text-xs font-bold transition whitespace-nowrap cursor-pointer shadow-xs active:scale-95 shrink-0"
+            title="Create a new category"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>Add Category</span>
+          </button>
         </div>
       </div>
 
@@ -1113,29 +1349,102 @@ export default function MenuManager({ className = '' }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Category Selection / Input */}
                 <div>
-                  <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
-                    Category *
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="admin-dark-select w-full"
-                    style={{
-                      backgroundColor: '#0f172a',
-                      color: '#f8fafc',
-                      border: '1px solid #334155',
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontWeight: 500
-                    }}
-                  >
-                    {availableCategories.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
+                      Category *
+                    </label>
+                    {!isCreatingInlineCategory && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCreatingInlineCategory(true);
+                          setInlineCategoryName('');
+                        }}
+                        className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition cursor-pointer flex items-center gap-1"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>New Category</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {!isCreatingInlineCategory ? (
+                    <select
+                      value={formData.category}
+                      onChange={handleCategorySelectChange}
+                      className="admin-dark-select w-full"
+                      style={{
+                        backgroundColor: '#0f172a',
+                        color: '#f8fafc',
+                        border: '1px solid #334155',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: 500
+                      }}
+                    >
+                      {availableCategories.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                      <option value="__new__" className="text-amber-400 font-bold bg-[#1e293b]">
+                        + Create New Category...
                       </option>
-                    ))}
-                  </select>
+                    </select>
+                  ) : (
+                    <div className="space-y-1.5 animate-fadeIn">
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={inlineCategoryName}
+                          onChange={(e) => setInlineCategoryName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleConfirmInlineCategory();
+                            } else if (e.key === 'Escape') {
+                              e.preventDefault();
+                              setIsCreatingInlineCategory(false);
+                            }
+                          }}
+                          placeholder="Type new category..."
+                          autoFocus
+                          className="admin-dark-input flex-1 placeholder-[#64748b]"
+                          style={{
+                            backgroundColor: '#0f172a',
+                            color: '#f8fafc',
+                            border: '1px solid #f59e0b',
+                            padding: '9px 12px',
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            fontWeight: 500
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleConfirmInlineCategory}
+                          disabled={!inlineCategoryName.trim()}
+                          className="px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-semibold transition cursor-pointer shrink-0 shadow-xs"
+                        >
+                          Add
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCreatingInlineCategory(false);
+                            setInlineCategoryName('');
+                          }}
+                          className="px-2.5 py-2 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8] hover:text-[#f8fafc] text-xs font-semibold transition cursor-pointer border border-[#334155] shrink-0"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-[#94a3b8]">
+                        Press Enter or click Add to create and select category.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Price */}
@@ -1506,6 +1815,156 @@ export default function MenuManager({ className = '' }) {
               </div>
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          CREATE CATEGORY MODAL
+          ========================================================================= */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-md bg-[#111827] rounded-2xl shadow-2xl border border-[#334155] overflow-hidden transform transition-all animate-scaleUp text-[#f8fafc]">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-[#334155] flex items-center justify-between bg-[#1e293b]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
+                  <FolderPlus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-[#f8fafc] text-base leading-tight">
+                    Add New Category
+                  </h3>
+                  <p className="text-xs text-[#94a3b8]">
+                    Create a menu section to group your dishes
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="text-[#94a3b8] hover:text-[#f8fafc] p-1 rounded-lg cursor-pointer transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleCreateCategory} className="p-6 space-y-4">
+              {categoryError && (
+                <div className="p-3 bg-rose-950/70 border border-rose-800 rounded-xl text-rose-300 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{categoryError}</span>
+                </div>
+              )}
+
+              {/* Category Name */}
+              <div>
+                <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
+                  Category Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={newCategoryData.name}
+                  onChange={(e) => setNewCategoryData({ ...newCategoryData, name: e.target.value })}
+                  placeholder="e.g. Mocktails, Artisan Pizzas, Chef Specials"
+                  className="admin-dark-input w-full placeholder-[#64748b]"
+                  style={{
+                    backgroundColor: '#0f172a',
+                    color: '#f8fafc',
+                    border: '1px solid #334155',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 500
+                  }}
+                />
+              </div>
+
+              {/* Category Icon / Emoji Quick Selector */}
+              <div>
+                <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
+                  Icon / Emoji <span className="text-[10px] text-[#94a3b8] font-normal">(Optional)</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={newCategoryData.icon}
+                    onChange={(e) => setNewCategoryData({ ...newCategoryData, icon: e.target.value })}
+                    placeholder="🍽️"
+                    className="admin-dark-input w-16 text-center text-lg placeholder-[#64748b]"
+                    style={{
+                      backgroundColor: '#0f172a',
+                      color: '#f8fafc',
+                      border: '1px solid #334155',
+                      padding: '8px',
+                      borderRadius: '8px',
+                      fontWeight: 500
+                    }}
+                  />
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {['🍕', '🍔', '🥗', '🍹', '🍰', '🥩', '🌮', '🍜', '☕', '🍲'].map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => setNewCategoryData({ ...newCategoryData, icon: emoji })}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition border cursor-pointer ${
+                          newCategoryData.icon === emoji
+                            ? 'bg-amber-500/20 border-amber-500 scale-105'
+                            : 'bg-[#1e293b] border-[#334155] hover:bg-[#334155]'
+                        }`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
+                  Description <span className="text-[10px] text-[#94a3b8] font-normal">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryData.description}
+                  onChange={(e) => setNewCategoryData({ ...newCategoryData, description: e.target.value })}
+                  placeholder="e.g. Signature handcrafted mocktails & refreshments"
+                  className="admin-dark-input w-full placeholder-[#64748b]"
+                  style={{
+                    backgroundColor: '#0f172a',
+                    color: '#f8fafc',
+                    border: '1px solid #334155',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 500
+                  }}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-4 border-t border-[#334155] flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-[#334155] bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8] hover:text-[#f8fafc] text-xs sm:text-sm font-semibold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={categorySubmitting || !newCategoryData.name.trim()}
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 active:scale-95 text-white text-xs sm:text-sm font-semibold transition shadow-md shadow-amber-500/20 cursor-pointer flex items-center gap-1.5"
+                >
+                  {categorySubmitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Category</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

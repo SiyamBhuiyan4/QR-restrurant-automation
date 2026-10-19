@@ -146,16 +146,40 @@
   button,
   .no-print,
   .actions-bar,
-  .badge-status {
+  .badge-status,
+  .app-ambient,
+  .ambient-sparkle,
+  .ember-sparkle {
     display: none !important;
   }
 
-  body, html {
+  body,
+  html,
+  html:has(.admin-root),
+  body:has(.admin-root),
+  html.admin-active,
+  body.admin-active {
     background: #ffffff !important;
+    background-color: #ffffff !important;
     color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
+  }
+
+  /* Reset admin dashboard layout offsets, margins, and dark background during print */
+  .admin-root,
+  .admin-root > div,
+  .admin-root main {
+    margin: 0 !important;
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
   }
 
   /* Printable Grid Container for Stickers */
@@ -165,6 +189,12 @@
     gap: 12mm !important;
     padding: 5mm !important;
     page-break-inside: auto;
+  }
+
+  /* Support 3-column compact sticker layout in print */
+  .qr-print-sheet[data-layout="grid-3"] {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8mm !important;
   }
 
   /* Individual Printable Sticker Card */

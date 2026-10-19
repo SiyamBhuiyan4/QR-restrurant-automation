@@ -418,6 +418,7 @@ export default function QRBatchGenerator({ className = '' }) {
 
         {/* Printable Grid Container */}
         <div
+          data-layout={layoutMode}
           className={`qr-print-sheet grid gap-6 ${
             layoutMode === 'grid-3'
               ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'

@@ -26,6 +26,34 @@ export const getCategories = query({
   },
 });
 
+export const createCategory = mutation({
+  args: {
+    name: v.string(),
+    slug: v.optional(v.string()),
+    icon: v.optional(v.string()),
+    sortOrder: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const slug = args.slug || args.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const existing = await ctx.db
+      .query("categories")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .first();
+    if (existing) {
+      return existing._id;
+    }
+    const categories = await ctx.db.query("categories").collect();
+    const sortOrder = args.sortOrder !== undefined ? args.sortOrder : categories.length + 1;
+    const icon = args.icon || "🍽️";
+    return await ctx.db.insert("categories", {
+      name: args.name,
+      slug,
+      icon,
+      sortOrder,
+    });
+  },
+});
+
 export const createMenuItem = mutation({
   args: {
     categorySlug: v.string(),

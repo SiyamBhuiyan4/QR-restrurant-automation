@@ -104,6 +104,33 @@ function getCategoryBySlug(slug) {
   return stmt.get(slug) || null;
 }
 
+function createCategory({ name, slug, icon = '🍽️', sort_order = 0 }) {
+  if (!name) {
+    throw new Error('Category name is required');
+  }
+  const categorySlug = slug || String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const existing = getCategoryBySlug(categorySlug);
+  if (existing) {
+    return existing;
+  }
+  const maxOrderStmt = db.prepare('SELECT MAX(sort_order) as maxOrder FROM categories');
+  const maxOrder = maxOrderStmt.get()?.maxOrder || 0;
+  const finalOrder = sort_order || (maxOrder + 1);
+
+  const stmt = db.prepare(`
+    INSERT INTO categories (name, slug, icon, sort_order)
+    VALUES (?, ?, ?, ?)
+  `);
+  const result = stmt.run(String(name).trim(), categorySlug, icon || '🍽️', finalOrder);
+  return {
+    id: result.lastInsertRowid,
+    name: String(name).trim(),
+    slug: categorySlug,
+    icon: icon || '🍽️',
+    sort_order: finalOrder
+  };
+}
+
 // Menu Items
 function getMenuItems(categoryId) {
   if (categoryId !== undefined && categoryId !== null && categoryId !== '' && categoryId !== 'all') {
@@ -488,6 +515,7 @@ module.exports = {
   db,
   getCategories,
   getCategoryBySlug,
+  createCategory,
   getMenuItems,
   getMenuItemById,
   createMenuItem,

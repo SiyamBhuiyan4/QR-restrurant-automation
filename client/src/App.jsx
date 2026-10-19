@@ -188,7 +188,7 @@ function AppRouter() {
   const navItems = [
     { id: 'customer', label: 'Customer Menu', path: '/?table=1', icon: UtensilsCrossed, badge: 'Diner' },
     { id: 'kds', label: 'Kitchen KDS', path: '/kds', icon: ChefHat, badge: 'Kitchen' },
-    { id: 'waiter', label: 'Waiter Panel', path: '/waiter', icon: ConciergeBell, badge: 'Floor' },
+    { id: 'waiter', label: 'Floor Staff Console', path: '/waiter', icon: ConciergeBell, badge: 'Floor' },
     { id: 'admin', label: 'Admin Portal', path: '/admin', icon: ShieldCheck, badge: 'Manager' },
     { id: 'qr', label: 'Table QR Generator', path: '/qr', icon: QrCode, badge: 'Stickers' },
   ];

@@ -5,7 +5,6 @@ import {
   ShoppingBag,
   ChefHat,
   ConciergeBell,
-  Smartphone,
   UtensilsCrossed,
   QrCode,
   Users,
@@ -93,15 +92,6 @@ export default function AdminSidebar({
       badgeColor: 'rose',
       pulse: assistanceCount > 0,
       externalUrl: '/waiter'
-    },
-    {
-      id: 'customer',
-      label: 'Customer Menu Simulator',
-      shortLabel: 'Diner Menu',
-      icon: Smartphone,
-      badge: 'Live',
-      badgeColor: 'indigo',
-      externalUrl: '/?table=1'
     }
   ];
 

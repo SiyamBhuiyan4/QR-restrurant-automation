@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { resolveServerUrl, useSocket } from '../context/SocketContext';
-import { getPendingOrders, getPendingWaiterCalls } from '../db/indexedDb';
+import { getPendingOrders, getPendingWaiterCalls } from '../db/indexedDb.js';
 
 // Admin Architecture Components
 import AdminSidebar from '../components/admin/AdminSidebar';
@@ -10,7 +10,6 @@ import AdminHeader from '../components/admin/AdminHeader';
 import OverviewModule from '../components/admin/OverviewModule';
 import LiveTablesModule from '../components/admin/LiveTablesModule';
 import LiveOrdersModule from '../components/admin/LiveOrdersModule';
-import CustomerSimulatorModule from '../components/admin/CustomerSimulatorModule';
 import EmployeesModule from '../components/admin/EmployeesModule';
 import CustomerReportsModule from '../components/admin/CustomerReportsModule';
 
@@ -65,7 +64,6 @@ export default function AdminDashboard({ className = '' }) {
         'orders',
         'kds',
         'floor',
-        'customer',
         'menu',
         'qr',
         'employees',
@@ -428,14 +426,7 @@ export default function AdminDashboard({ className = '' }) {
             </div>
           )}
 
-          {/* TAB 6: CUSTOMER MENU SIMULATOR */}
-          {activeTab === 'customer' && (
-            <div className="animate-fadeIn">
-              <CustomerSimulatorModule />
-            </div>
-          )}
-
-          {/* TAB 7: MENU MANAGEMENT */}
+          {/* TAB 6: MENU MANAGEMENT */}
           {activeTab === 'menu' && (
             <div className="animate-fadeIn">
               <MenuManager />

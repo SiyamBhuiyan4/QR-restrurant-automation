@@ -15,6 +15,7 @@ import { useSocket } from '../context/SocketContext';
 import { useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { sendWaiterCallToTelegramChannel } from '../services/telegramClient';
+import { enqueueWaiterCall } from '../db/indexedDb.js';
 
 // Quick one-tap preset reasons specified in system requirements
 export const PRESET_REASONS = [
@@ -231,10 +232,9 @@ export default function CallWaiterModal({
     } catch (err) {
       console.warn('[CallWaiterModal] Network call failed, attempting offline queue:', err.message);
 
-      // Save to IndexedDB if available
+      // Save to IndexedDB (with automatic localStorage/memory fallback)
       let queuedLocally = false;
       try {
-        const { enqueueWaiterCall } = await import('../db/indexedDb.js');
         if (typeof enqueueWaiterCall === 'function') {
           await enqueueWaiterCall({
             tableNumber: finalTable,

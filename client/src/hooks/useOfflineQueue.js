@@ -19,10 +19,13 @@ export function useOfflineQueue() {
       // Additional convenience helpers
       pendingOrdersCount: context.pendingOrdersCount,
       pendingWaiterCallsCount: context.pendingWaiterCallsCount,
+      pendingTableNotesCount: context.pendingTableNotesCount,
       lastSyncTime: context.lastSyncTime,
       refreshCounts: context.refreshPendingCounts,
       submitOrder: context.submitOrder,
-      submitWaiterCall: context.submitWaiterCall
+      submitWaiterCall: context.submitWaiterCall,
+      submitTableNote: context.submitTableNote,
+      enqueueTableNote: context.enqueueTableNote
     };
   }
 

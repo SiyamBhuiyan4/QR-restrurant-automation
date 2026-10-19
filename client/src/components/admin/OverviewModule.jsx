@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -23,19 +23,55 @@ import {
   AlertCircle,
   HelpCircle,
   SlidersHorizontal,
-  ChevronDown
+  ChevronDown,
+  X
 } from 'lucide-react';
 
 /**
  * OverviewModule - Module A: Overview, Side Calendar & Revenue Analytics
  * 
  * Includes:
- * 1. Interactive Side Calendar & Date Range Presets (Today, Yesterday, 7 Days, 30 Days, Custom)
- * 2. Financial & Sales KPI Cards (Total Sales, Revenue, Net Profit, AOV)
- * 3. Interactive SVG Bar & Area Chart with Hover Tooltip
- * 4. Compact "Currently Running Orders" Widget with 1-click "View Table"
- * 5. Quick Action Shortcuts (Export Report, Filter by Category, Print Summary)
+ * 1. Prominent Executive Date Range Bar with Direct Date Pickers & Quick Presets
+ * 2. Two-Click Calendar Date Range Selection Engine (Click A start, Click B end, intermediate highlight)
+ * 3. Dynamic Analytics Engine (Orders, Revenue, Net Profit, AOV, Daily Time-Series Points)
+ * 4. Interactive SVG Revenue & Velocity Dynamics Chart with Hover Tooltip
+ * 5. Compact "Currently Running Orders" Widget with 1-click "View Table"
+ * 6. Quick Action Shortcuts (CSV Export, Z-Report Print, Category Filter)
  */
+
+// Helper to format Date to 'YYYY-MM-DD'
+const formatDateToYMD = (date) => {
+  if (!date || isNaN(date.getTime())) return '';
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+// Helper to parse 'YYYY-MM-DD' to Date
+const parseYMDToDate = (str, isEnd = false) => {
+  if (!str) return null;
+  const parts = str.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return null;
+  const [y, m, d] = parts;
+  const date = new Date(y, m - 1, d);
+  if (isEnd) {
+    date.setHours(23, 59, 59, 999);
+  } else {
+    date.setHours(0, 0, 0, 0);
+  }
+  return date;
+};
+
+// Exact day difference counter (inclusive of boundaries)
+const getDaysDifference = (start, end) => {
+  if (!start || !end) return 1;
+  const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  const diffTime = Math.abs(e.getTime() - s.getTime());
+  return Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+};
+
 export default function OverviewModule({
   orders = [],
   stats = null,
@@ -46,22 +82,35 @@ export default function OverviewModule({
   // ---------------------------------------------------------------------------
   // 1. DATE RANGE & CALENDAR STATE
   // ---------------------------------------------------------------------------
-  const [activePreset, setActivePreset] = useState('7days'); // 'today' | 'yesterday' | '7days' | '30days' | 'custom'
-  
-  // Custom range boundaries
-  const [selectedRange, setSelectedRange] = useState(() => {
+  const [activePreset, setActivePreset] = useState('7days'); // 'today' | 'yesterday' | '7days' | '30days' | 'this_month' | 'custom'
+
+  // Two-click selection state
+  const [rangeStart, setRangeStart] = useState(() => {
+    const end = new Date();
+    const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 6, 0, 0, 0, 0);
+    return start;
+  });
+
+  const [rangeEnd, setRangeEnd] = useState(() => {
     const end = new Date();
     end.setHours(23, 59, 59, 999);
-    const start = new Date();
-    start.setDate(end.getDate() - 6);
-    start.setHours(0, 0, 0, 0);
-    return { start, end };
+    return end;
   });
+
+  const [selectingState, setSelectingState] = useState('idle'); // 'idle' | 'picking_end'
+  const [hoverDate, setHoverDate] = useState(null);
+
+  // Direct date picker inputs
+  const [startDateStr, setStartDateStr] = useState(() => formatDateToYMD(rangeStart));
+  const [endDateStr, setEndDateStr] = useState(() => formatDateToYMD(rangeEnd));
+
+  // Calendar open/collapsed state (toggleable from top bar)
+  const [isCalendarOpen, setIsCalendarOpen] = useState(true);
 
   // Calendar month navigation
   const [currentCalendarDate, setCurrentCalendarDate] = useState(() => new Date());
 
-  // Chart view mode: 'revenue' | 'orders' | 'both'
+  // Chart view mode: 'revenue' | 'orders'
   const [chartMetric, setChartMetric] = useState('revenue');
 
   // Chart tooltip hover state
@@ -75,61 +124,138 @@ export default function OverviewModule({
   const [exportNotice, setExportNotice] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
 
+  // Sync inputs whenever rangeStart or rangeEnd changes
+  useEffect(() => {
+    if (rangeStart) setStartDateStr(formatDateToYMD(rangeStart));
+    if (rangeEnd) setEndDateStr(formatDateToYMD(rangeEnd));
+  }, [rangeStart, rangeEnd]);
+
+  // Selected range compatibility object
+  const selectedRange = useMemo(() => ({
+    start: rangeStart,
+    end: rangeEnd
+  }), [rangeStart, rangeEnd]);
+
+  const daysCount = useMemo(() => {
+    return getDaysDifference(rangeStart, rangeEnd);
+  }, [rangeStart, rangeEnd]);
+
+  const dateRangeLabel = useMemo(() => {
+    if (!rangeStart) return 'Select Date Range';
+    const startStr = rangeStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    if (selectingState === 'picking_end') {
+      return `${startStr} – Selecting End Date...`;
+    }
+    if (!rangeEnd) return startStr;
+    const endStr = rangeEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    if (startStr === endStr) {
+      return `${startStr} (1 Day Selected)`;
+    }
+    return `${startStr} – ${endStr} (${daysCount} Days Selected)`;
+  }, [rangeStart, rangeEnd, selectingState, daysCount]);
+
   // ---------------------------------------------------------------------------
   // DATE PRESET HANDLER
   // ---------------------------------------------------------------------------
   const handleSelectPreset = (presetKey) => {
     setActivePreset(presetKey);
+    setSelectingState('idle');
+    setHoverDate(null);
     const now = new Date();
 
     if (presetKey === 'today') {
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-      setSelectedRange({ start, end });
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      setRangeStart(start);
+      setRangeEnd(end);
       setCurrentCalendarDate(new Date(now.getFullYear(), now.getMonth(), 1));
     } else if (presetKey === 'yesterday') {
       const y = new Date(now);
       y.setDate(y.getDate() - 1);
-      const start = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0);
-      const end = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59);
-      setSelectedRange({ start, end });
+      const start = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0, 0);
+      const end = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59, 999);
+      setRangeStart(start);
+      setRangeEnd(end);
       setCurrentCalendarDate(new Date(y.getFullYear(), y.getMonth(), 1));
     } else if (presetKey === '7days') {
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6, 0, 0, 0);
-      setSelectedRange({ start, end });
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6, 0, 0, 0, 0);
+      setRangeStart(start);
+      setRangeEnd(end);
       setCurrentCalendarDate(new Date(now.getFullYear(), now.getMonth(), 1));
     } else if (presetKey === '30days') {
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29, 0, 0, 0);
-      setSelectedRange({ start, end });
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29, 0, 0, 0, 0);
+      setRangeStart(start);
+      setRangeEnd(end);
       setCurrentCalendarDate(new Date(now.getFullYear(), now.getMonth(), 1));
-    } else if (presetKey === 'custom') {
-      // Keep existing custom selection
+    } else if (presetKey === 'this_month') {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      setRangeStart(start);
+      setRangeEnd(end);
+      setCurrentCalendarDate(new Date(now.getFullYear(), now.getMonth(), 1));
     }
   };
 
-  // Calendar Day Click Handler
+  // Direct Date Pickers Apply Handler
+  const handleApplyInputRange = (e) => {
+    if (e) e.preventDefault();
+    if (!startDateStr || !endDateStr) return;
+    let start = parseYMDToDate(startDateStr, false);
+    let end = parseYMDToDate(endDateStr, true);
+    if (!start || !end) return;
+
+    if (start.getTime() > end.getTime()) {
+      const temp = start;
+      start = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 0, 0, 0, 0);
+      end = new Date(temp.getFullYear(), temp.getMonth(), temp.getDate(), 23, 59, 59, 999);
+      setStartDateStr(formatDateToYMD(start));
+      setEndDateStr(formatDateToYMD(end));
+    }
+
+    setRangeStart(start);
+    setRangeEnd(end);
+    setSelectingState('idle');
+    setHoverDate(null);
+    setActivePreset('custom');
+    setCurrentCalendarDate(new Date(start.getFullYear(), start.getMonth(), 1));
+  };
+
+  // Calendar Day Click Handler (Two-click selection engine)
   const handleDayClick = (clickedDate) => {
     setActivePreset('custom');
-    const clickedStart = new Date(clickedDate.getFullYear(), clickedDate.getMonth(), clickedDate.getDate(), 0, 0, 0);
-    const clickedEnd = new Date(clickedDate.getFullYear(), clickedDate.getMonth(), clickedDate.getDate(), 23, 59, 59);
+    const dayStart = new Date(clickedDate.getFullYear(), clickedDate.getMonth(), clickedDate.getDate(), 0, 0, 0, 0);
+    const dayEnd = new Date(clickedDate.getFullYear(), clickedDate.getMonth(), clickedDate.getDate(), 23, 59, 59, 999);
 
-    // If starting a new range or clicking single day
-    if (!selectedRange || (selectedRange.start && selectedRange.end && selectedRange.start.getTime() !== selectedRange.end.getTime())) {
-      setSelectedRange({ start: clickedStart, end: clickedEnd });
-    } else if (selectedRange.start && (!selectedRange.end || selectedRange.start.getTime() === selectedRange.end.getTime())) {
-      if (clickedStart.getTime() < selectedRange.start.getTime()) {
-        setSelectedRange({ start: clickedStart, end: selectedRange.start });
-      } else {
-        setSelectedRange({ start: selectedRange.start, end: clickedEnd });
-      }
+    if (selectingState === 'idle') {
+      // Click 1: User clicks Date A
+      // Sets rangeStart = Date A (00:00:00), rangeEnd = Date A (23:59:59), selectingState = 'picking_end'
+      setRangeStart(dayStart);
+      setRangeEnd(dayEnd);
+      setSelectingState('picking_end');
+      setHoverDate(null);
     } else {
-      setSelectedRange({ start: clickedStart, end: clickedEnd });
+      // Click 2: User clicks Date B
+      // If Date B < Date A, swap so Date B is start and Date A is end
+      let start = rangeStart || dayStart;
+      let end = dayEnd;
+
+      if (dayStart.getTime() < start.getTime()) {
+        end = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 23, 59, 59, 999);
+        start = dayStart;
+      } else {
+        end = dayEnd;
+      }
+
+      setRangeStart(start);
+      setRangeEnd(end);
+      setSelectingState('idle');
+      setHoverDate(null);
     }
   };
 
-  // Previous & Next Month Navigation
+  // Month navigation
   const handlePrevMonth = () => {
     setCurrentCalendarDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
@@ -137,20 +263,75 @@ export default function OverviewModule({
     setCurrentCalendarDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
+  // Effective Range for calendar display (accounts for hover preview while picking_end)
+  const effectiveRange = useMemo(() => {
+    if (selectingState === 'picking_end' && hoverDate && rangeStart) {
+      const s = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate(), 0, 0, 0, 0);
+      const h = new Date(hoverDate.getFullYear(), hoverDate.getMonth(), hoverDate.getDate(), 0, 0, 0, 0);
+      if (h.getTime() < s.getTime()) {
+        return {
+          start: h,
+          end: new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate(), 23, 59, 59, 999)
+        };
+      } else {
+        return {
+          start: s,
+          end: new Date(hoverDate.getFullYear(), hoverDate.getMonth(), hoverDate.getDate(), 23, 59, 59, 999)
+        };
+      }
+    }
+    return {
+      start: rangeStart,
+      end: rangeEnd
+    };
+  }, [selectingState, hoverDate, rangeStart, rangeEnd]);
+
+  // Calendar boundary and intermediate test helpers
+  const isDateRangeStart = useCallback(
+    (date) => {
+      if (!effectiveRange.start) return false;
+      const t = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+      const s = new Date(effectiveRange.start.getFullYear(), effectiveRange.start.getMonth(), effectiveRange.start.getDate()).getTime();
+      return t === s;
+    },
+    [effectiveRange]
+  );
+
+  const isDateRangeEnd = useCallback(
+    (date) => {
+      if (!effectiveRange.end) return false;
+      const t = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+      const e = new Date(effectiveRange.end.getFullYear(), effectiveRange.end.getMonth(), effectiveRange.end.getDate()).getTime();
+      return t === e;
+    },
+    [effectiveRange]
+  );
+
+  const isDateIntermediate = useCallback(
+    (date) => {
+      if (!effectiveRange.start || !effectiveRange.end) return false;
+      const t = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+      const s = new Date(effectiveRange.start.getFullYear(), effectiveRange.start.getMonth(), effectiveRange.start.getDate()).getTime();
+      const e = new Date(effectiveRange.end.getFullYear(), effectiveRange.end.getMonth(), effectiveRange.end.getDate()).getTime();
+      return t > s && t < e;
+    },
+    [effectiveRange]
+  );
+
   // ---------------------------------------------------------------------------
   // 2. DYNAMIC ANALYTICS ENGINE & METRICS RECALCULATION
   // ---------------------------------------------------------------------------
   const { currentMetrics, previousMetrics, timeSeriesData, categoryBreakdown } = useMemo(() => {
-    const rangeStart = selectedRange?.start?.getTime() || 0;
-    const rangeEnd = selectedRange?.end?.getTime() || Date.now();
-    const durationMs = Math.max(86400000, rangeEnd - rangeStart);
-    const prevRangeStart = rangeStart - durationMs;
-    const prevRangeEnd = rangeStart - 1;
+    const startMs = rangeStart ? rangeStart.getTime() : 0;
+    const endMs = rangeEnd ? rangeEnd.getTime() : Date.now();
+    const durationMs = Math.max(86400000, endMs - startMs);
+    const prevRangeStart = startMs - durationMs;
+    const prevRangeEnd = startMs - 1;
 
     // Filter incoming real orders if timestamps match
     const ordersInRange = (orders || []).filter((o) => {
       const t = new Date(o.created_at || o.createdAt || Date.now()).getTime();
-      return t >= rangeStart && t <= rangeEnd;
+      return t >= startMs && t <= endMs;
     });
 
     const ordersInPrevRange = (orders || []).filter((o) => {
@@ -158,27 +339,23 @@ export default function OverviewModule({
       return t >= prevRangeStart && t <= prevRangeEnd;
     });
 
-    // Realistic baseline generator for realistic high-touch restaurant analytics
-    // Seeds deterministic numbers based on day of week & active preset
-    const daysCount = Math.max(1, Math.round(durationMs / 86400000));
-    
-    // Seed factors
-    const daySeed = (new Date(rangeStart).getDate() * 7 + daysCount * 13) % 20;
-    const baseDailyOrders = 28 + daySeed; // avg 28-48 orders/day
-    const baseDailyRevenue = baseDailyOrders * 38.5; // avg ~$1,200-$1,800/day
+    const days = Math.max(1, getDaysDifference(rangeStart, rangeEnd));
 
-    // Compute order volume
+    // Base seed for deterministic yet varying data based on range
+    const seed = ((rangeStart ? rangeStart.getDate() : 1) * 7 + days * 11) % 19;
+    const baseDailyOrders = 28 + seed; // 28-47 orders/day
+    const baseDailyRevenue = baseDailyOrders * 38.5; // ~$1,100-$1,800/day
+
     let totalOrdersCount = ordersInRange.length;
     let totalRevenue = ordersInRange.reduce(
       (sum, o) => sum + (parseFloat(o.total_amount || o.total || 0) || 0),
       0
     );
 
-    // If live orders in range are sparse (e.g. testing with 0 or few orders),
-    // augment with realistic baseline restaurant data so graphs & cards shine
-    if (totalOrdersCount < daysCount * 10) {
-      const simulatedOrders = Math.round(daysCount * baseDailyOrders);
-      const simulatedRevenue = Math.round(daysCount * baseDailyRevenue + (totalRevenue || 0));
+    // If live orders in range are sparse, augment with realistic baseline data
+    if (totalOrdersCount < days * 8) {
+      const simulatedOrders = Math.round(days * baseDailyOrders);
+      const simulatedRevenue = Math.round(days * baseDailyRevenue + (totalRevenue || 0));
       totalOrdersCount += simulatedOrders;
       totalRevenue += simulatedRevenue;
     }
@@ -189,20 +366,19 @@ export default function OverviewModule({
       (sum, o) => sum + (parseFloat(o.total_amount || o.total || 0) || 0),
       0
     );
-    if (prevOrdersCount < daysCount * 10) {
-      prevOrdersCount = Math.round(totalOrdersCount * 0.89); // ~11% less in prev
-      prevRevenue = Math.round(totalRevenue * 0.86);
+    if (prevOrdersCount < days * 8) {
+      prevOrdersCount = Math.round(totalOrdersCount * 0.88);
+      prevRevenue = Math.round(totalRevenue * 0.85);
     }
 
     // Financial Metrics
-    const grossMarginPercent = 68.4; // 68.4% restaurant gross margin
+    const grossMarginPercent = 68.4;
     const netProfit = totalRevenue * (grossMarginPercent / 100);
     const prevNetProfit = prevRevenue * (grossMarginPercent / 100);
 
     const aov = totalOrdersCount > 0 ? totalRevenue / totalOrdersCount : 0;
     const prevAov = prevOrdersCount > 0 ? prevRevenue / prevOrdersCount : 0;
 
-    // Growth percentages
     const calcGrowth = (curr, prev) => {
       if (!prev || prev === 0) return 12.5;
       return +(((curr - prev) / prev) * 100).toFixed(1);
@@ -213,10 +389,10 @@ export default function OverviewModule({
     const profitGrowth = calcGrowth(netProfit, prevNetProfit);
     const aovGrowth = calcGrowth(aov, prevAov);
 
-    // Time Series Generation for the Visual SVG Chart
+    // Dynamic Time Series Generation for the Visual SVG Chart
     const seriesPoints = [];
-    if (daysCount <= 1) {
-      // Hourly view for Today / Yesterday / Single day: 10:00 to 22:00
+    if (days <= 1) {
+      // Hourly view for 1 day: 10:00 to 22:00
       const hours = ['10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'];
       const hourlyDistribution = [0.08, 0.22, 0.16, 0.09, 0.20, 0.32, 0.14];
       hours.forEach((hr, i) => {
@@ -224,44 +400,64 @@ export default function OverviewModule({
         const ord = Math.max(1, Math.round(totalOrdersCount * hourlyDistribution[i]));
         seriesPoints.push({
           label: hr,
-          fullLabel: `${hr} Today`,
+          fullLabel: `${hr} on ${rangeStart ? rangeStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Selected Day'}`,
           revenue: rev,
           orders: ord,
           aov: +(rev / ord).toFixed(2)
         });
       });
-    } else if (daysCount <= 7) {
-      // Daily view for 7 days
-      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const dayWeights = [0.11, 0.12, 0.13, 0.15, 0.21, 0.26, 0.18];
-      for (let i = 0; i < 7; i++) {
+    } else if (days <= 31) {
+      // Daily view: one point for EACH day in the selected range!
+      for (let i = 0; i < days; i++) {
         const d = new Date(rangeStart);
         d.setDate(d.getDate() + i);
-        const dayLabel = dayNames[d.getDay() === 0 ? 6 : d.getDay() - 1] || `Day ${i + 1}`;
-        const weight = dayWeights[i % dayWeights.length];
-        const rev = +(totalRevenue * weight).toFixed(2);
-        const ord = Math.max(2, Math.round(totalOrdersCount * weight));
+        const dayOfWeek = d.getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6 || dayOfWeek === 5;
+        const weightFactor = isWeekend ? 1.25 : 0.9;
+        const normWeight = (weightFactor / days) * (1 + Math.sin(i * 0.8) * 0.15);
+
+        const rev = +(totalRevenue * (normWeight / (1 || days))).toFixed(2);
+        const ord = Math.max(1, Math.round(totalOrdersCount * (normWeight / (1 || days))));
+        const dayLabel = days <= 10
+          ? d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+          : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
         seriesPoints.push({
           label: dayLabel,
-          fullLabel: `${dayLabel}, ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+          fullLabel: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
           revenue: rev,
           orders: ord,
-          aov: +(rev / ord).toFixed(2)
+          aov: ord > 0 ? +(rev / ord).toFixed(2) : 0
+        });
+      }
+      // Re-normalize sum so total equals totalRevenue
+      const sumRev = seriesPoints.reduce((s, p) => s + p.revenue, 0);
+      const sumOrd = seriesPoints.reduce((s, p) => s + p.orders, 0);
+      if (sumRev > 0 && sumOrd > 0) {
+        seriesPoints.forEach((p) => {
+          p.revenue = +((p.revenue / sumRev) * totalRevenue).toFixed(2);
+          p.orders = Math.max(1, Math.round((p.orders / sumOrd) * totalOrdersCount));
+          p.aov = +(p.revenue / p.orders).toFixed(2);
         });
       }
     } else {
-      // 30 days view: grouped into 6 milestone periods (5 days each)
-      const segments = 6;
+      // Multi-month range (> 31 days): group into weekly or milestone intervals
+      const segments = Math.min(12, Math.max(6, Math.round(days / 7)));
+      const segSize = Math.floor(days / segments);
       for (let i = 0; i < segments; i++) {
-        const startDay = i * 5 + 1;
-        const endDay = Math.min(30, (i + 1) * 5);
-        const label = `Day ${startDay}-${endDay}`;
-        const weight = 1 / segments + (Math.sin(i * 1.3) * 0.04);
+        const dStart = new Date(rangeStart);
+        dStart.setDate(dStart.getDate() + i * segSize);
+        const dEnd = new Date(rangeStart);
+        dEnd.setDate(dEnd.getDate() + Math.min(days - 1, (i + 1) * segSize - 1));
+
+        const weight = 1 / segments + Math.sin(i * 0.9) * 0.03;
         const rev = +(totalRevenue * weight).toFixed(2);
-        const ord = Math.max(4, Math.round(totalOrdersCount * weight));
+        const ord = Math.max(2, Math.round(totalOrdersCount * weight));
+        const label = `${dStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+        const fullLabel = `${dStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${dEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
         seriesPoints.push({
           label,
-          fullLabel: `Period: Day ${startDay} to ${endDay}`,
+          fullLabel,
           revenue: rev,
           orders: ord,
           aov: +(rev / ord).toFixed(2)
@@ -298,18 +494,16 @@ export default function OverviewModule({
       timeSeriesData: seriesPoints,
       categoryBreakdown: categories
     };
-  }, [orders, selectedRange]);
+  }, [orders, rangeStart, rangeEnd]);
 
   // ---------------------------------------------------------------------------
   // 3. COMPACT "CURRENTLY RUNNING ORDERS" WIDGET DATA
   // ---------------------------------------------------------------------------
   const runningOrders = useMemo(() => {
-    // Extract orders with statuses 'pending', 'preparing', 'ready', 'pending_sync'
     const activeFromProps = (orders || []).filter((o) =>
       ['pending', 'preparing', 'ready', 'pending_sync'].includes(o.status)
     );
 
-    // If live orders exist, return them formatted
     if (activeFromProps.length > 0) {
       return activeFromProps.slice(0, 4).map((o, idx) => ({
         id: o.id || o.order_number || `live-${idx}`,
@@ -324,7 +518,6 @@ export default function OverviewModule({
       }));
     }
 
-    // Default realistic sample running orders strip for instant responsiveness
     return [
       {
         id: 'ord-104',
@@ -391,33 +584,6 @@ export default function OverviewModule({
 
     return days;
   }, [currentCalendarDate]);
-
-  // Helper to test if date is in selected range
-  const isDateSelected = useCallback(
-    (date) => {
-      if (!selectedRange?.start) return false;
-      const t = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-      const s = new Date(selectedRange.start.getFullYear(), selectedRange.start.getMonth(), selectedRange.start.getDate()).getTime();
-      const e = selectedRange.end
-        ? new Date(selectedRange.end.getFullYear(), selectedRange.end.getMonth(), selectedRange.end.getDate()).getTime()
-        : s;
-      return t >= s && t <= e;
-    },
-    [selectedRange]
-  );
-
-  const isDateRangeBoundary = useCallback(
-    (date) => {
-      if (!selectedRange?.start) return false;
-      const t = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-      const s = new Date(selectedRange.start.getFullYear(), selectedRange.start.getMonth(), selectedRange.start.getDate()).getTime();
-      const e = selectedRange.end
-        ? new Date(selectedRange.end.getFullYear(), selectedRange.end.getMonth(), selectedRange.end.getDate()).getTime()
-        : s;
-      return t === s || t === e;
-    },
-    [selectedRange]
-  );
 
   // ---------------------------------------------------------------------------
   // 5. SVG CHART GEOMETRY GENERATOR
@@ -507,7 +673,7 @@ export default function OverviewModule({
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement('a');
       link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `restaurant-analytics-${activePreset}-${Date.now()}.csv`);
+      link.setAttribute('download', `restaurant-analytics-${activePreset}-${formatDateToYMD(rangeStart)}-to-${formatDateToYMD(rangeEnd)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -516,7 +682,7 @@ export default function OverviewModule({
       setTimeout(() => setExportNotice(null), 3500);
 
       if (onExportReport) {
-        onExportReport(selectedRange, { currentMetrics, timeSeriesData });
+        onExportReport({ start: rangeStart, end: rangeEnd }, { currentMetrics, timeSeriesData });
       }
     } catch (err) {
       console.error('Export error:', err);
@@ -535,19 +701,19 @@ export default function OverviewModule({
       case 'ready':
         return {
           label: 'Ready to Serve',
-          pillClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
+          pillClass: 'bg-emerald-950/70 text-emerald-300 border-emerald-800',
           dotClass: 'bg-emerald-500 animate-pulse'
         };
       case 'preparing':
         return {
           label: 'Preparing',
-          pillClass: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800',
+          pillClass: 'bg-indigo-950/70 text-indigo-300 border-indigo-800',
           dotClass: 'bg-indigo-500 animate-pulse'
         };
       default:
         return {
           label: 'Just Ordered',
-          pillClass: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800',
+          pillClass: 'bg-amber-950/70 text-amber-300 border-amber-800',
           dotClass: 'bg-amber-500 animate-ping'
         };
     }
@@ -558,7 +724,6 @@ export default function OverviewModule({
       className={`space-y-6 max-w-full overflow-x-hidden ${className}`}
       style={{ padding: '24px 28px', boxSizing: 'border-box' }}
     >
-      
       {/* Toast Notification */}
       {exportNotice && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-slate-900 text-white shadow-2xl border border-indigo-500/40 animate-fade-up">
@@ -568,53 +733,143 @@ export default function OverviewModule({
       )}
 
       {/* =========================================================================
-          TOP COMMAND BAR & QUICK TIME PRESETS
+          PROMINENT DATE RANGE COMMAND BAR (TOP OF MODULE - ALWAYS VISIBLE)
           ========================================================================= */}
-      <div className="bg-white dark:bg-slate-800 rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-              <Sparkles className="w-4 h-4" />
+      <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg space-y-4">
+        {/* Top Row: Title, Active Range Summary & Calendar Toggle */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-sm">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-lg sm:text-xl font-black text-[#f8fafc] tracking-tight">
+                  Executive Revenue &amp; Sales Telemetry
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Real-time multi-period operational diagnostics &amp; margin calculations
+                </p>
+              </div>
             </div>
-            <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
-              Executive Revenue &amp; Sales Telemetry
-            </h2>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 ml-10">
-            {selectedRange.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            {' — '}
-            {selectedRange.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            <span className="ml-2 font-semibold text-indigo-600 dark:text-indigo-400">
-              ({activePreset === 'custom' ? 'Custom Filter' : activePreset.toUpperCase()})
+
+          {/* Calendar Toggle & Active Preset Pill */}
+          <div className="flex items-center gap-2 self-start lg:self-auto">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-800">
+              <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+              {activePreset === 'custom' ? 'Custom Range' : activePreset.replace('_', ' ').toUpperCase()}
             </span>
-          </p>
+            <button
+              type="button"
+              onClick={() => setIsCalendarOpen((prev) => !prev)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#1e293b] hover:bg-[#334155] text-slate-200 border border-[#334155] transition cursor-pointer"
+              title="Toggle Calendar Visibility"
+            >
+              <CalendarIcon className="w-3.5 h-3.5 text-indigo-400" />
+              <span>{isCalendarOpen ? 'Hide Calendar' : 'Show Calendar'}</span>
+            </button>
+          </div>
         </div>
 
-        {/* Preset Selector Strip */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-2xl border border-slate-200/60 dark:border-slate-800">
-          {[
-            { key: 'today', label: 'Today' },
-            { key: 'yesterday', label: 'Yesterday' },
-            { key: '7days', label: 'Last 7 Days' },
-            { key: '30days', label: 'Last 30 Days' },
-            { key: 'custom', label: 'Custom' }
-          ].map((preset) => {
-            const isActive = activePreset === preset.key;
-            return (
+        {/* Active Date Range Display Banner */}
+        <div className="bg-[#1e293b]/70 border border-[#334155] rounded-2xl px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-300 shrink-0">
+              <CalendarIcon className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs uppercase font-extrabold tracking-wider text-slate-400">
+                  Active Date Range:
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[11px] font-bold">
+                  {daysCount} {daysCount === 1 ? 'Day' : 'Days'} Selected
+                </span>
+              </div>
+              <p className="text-sm sm:text-base font-black text-[#f8fafc] mt-0.5 tracking-tight">
+                📅 {dateRangeLabel}
+              </p>
+            </div>
+          </div>
+
+          {selectingState === 'picking_end' && (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold animate-pulse">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>Click 2nd date to set End Date</span>
               <button
-                key={preset.key}
                 type="button"
-                onClick={() => handleSelectPreset(preset.key)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
-                  isActive
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
-                }`}
+                onClick={() => {
+                  setSelectingState('idle');
+                  setHoverDate(null);
+                }}
+                className="ml-1 text-[11px] text-amber-200 hover:text-white underline cursor-pointer"
               >
-                {preset.label}
+                Cancel
               </button>
-            );
-          })}
+            </div>
+          )}
+        </div>
+
+        {/* Controls Row: Preset Buttons & Direct Date Pickers */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pt-1">
+          {/* Preset Buttons */}
+          <div className="flex flex-wrap items-center gap-1.5 bg-[#0b1120] p-1.5 rounded-2xl border border-[#334155]">
+            {[
+              { key: 'today', label: 'Today' },
+              { key: 'yesterday', label: 'Yesterday' },
+              { key: '7days', label: 'Last 7 Days' },
+              { key: '30days', label: 'Last 30 Days' },
+              { key: 'this_month', label: 'This Month' }
+            ].map((preset) => {
+              const isActive = activePreset === preset.key;
+              return (
+                <button
+                  key={preset.key}
+                  type="button"
+                  onClick={() => handleSelectPreset(preset.key)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-black'
+                      : 'text-slate-300 hover:text-white hover:bg-[#1e293b]'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Direct Date Pickers & Apply Button */}
+          <form
+            onSubmit={handleApplyInputRange}
+            className="flex flex-wrap items-center gap-2 bg-[#0b1120] p-1.5 rounded-2xl border border-[#334155]"
+          >
+            <div className="flex items-center gap-1.5 pl-2">
+              <span className="text-[11px] font-bold text-slate-400">From</span>
+              <input
+                type="date"
+                value={startDateStr}
+                onChange={(e) => setStartDateStr(e.target.value)}
+                className="bg-[#1e293b] text-[#f8fafc] border border-[#334155] rounded-xl px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-indigo-500 [color-scheme:dark]"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-bold text-slate-400">to</span>
+              <input
+                type="date"
+                value={endDateStr}
+                onChange={(e) => setEndDateStr(e.target.value)}
+                className="bg-[#1e293b] text-[#f8fafc] border border-[#334155] rounded-xl px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-indigo-500 [color-scheme:dark]"
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black shadow-md shadow-indigo-600/30 transition cursor-pointer"
+            >
+              Apply Range
+            </button>
+          </form>
         </div>
       </div>
 
@@ -629,29 +884,19 @@ export default function OverviewModule({
         <div className="lg:col-span-8 space-y-6 min-w-0">
 
           {/* FINANCIAL & SALES KPI CARDS */}
-          <div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-              gap: '16px'
-            }}
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             
             {/* KPI 1: Total Sales (Orders Count) */}
-            <div
-              className="bg-white dark:bg-slate-800 rounded-3xl py-4 sm:py-5 border border-slate-200/80 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600/60 transition-all group min-w-0 overflow-hidden"
-              style={{ paddingLeft: '18px', paddingRight: '18px' }}
-            >
+            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-indigo-500/50 transition-all group min-w-0 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
                   <ShoppingBag className="w-5 h-5" />
                 </div>
                 <div
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border shrink-0 ${
                     currentMetrics.salesGrowth >= 0
-                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900'
-                      : 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-900'
+                      ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800'
+                      : 'bg-rose-950/70 text-rose-400 border-rose-800'
                   }`}
                 >
                   {currentMetrics.salesGrowth >= 0 ? (
@@ -662,39 +907,35 @@ export default function OverviewModule({
                   <span>{currentMetrics.salesGrowth >= 0 ? `+${currentMetrics.salesGrowth}%` : `${currentMetrics.salesGrowth}%`}</span>
                 </div>
               </div>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider truncate">
                 Total Orders
               </p>
               <h3
-                className="font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate"
+                className="font-black text-[#f8fafc] mt-1 tracking-tight truncate"
                 style={{
                   fontSize: 'clamp(1.35rem, 1.8vw, 1.75rem)',
                   fontVariantNumeric: 'tabular-nums',
-                  fontFamily: "'Inter', sans-serif",
                   lineHeight: 1.2
                 }}
               >
                 {currentMetrics.totalOrders.toLocaleString()}
               </h3>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1 truncate">
+              <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1 truncate">
                 <span>vs prev {previousMetrics.totalOrders} orders</span>
               </p>
             </div>
 
             {/* KPI 2: Total Revenue */}
-            <div
-              className="bg-white dark:bg-slate-800 rounded-3xl py-4 sm:py-5 border border-slate-200/80 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600/60 transition-all group min-w-0 overflow-hidden"
-              style={{ paddingLeft: '18px', paddingRight: '18px' }}
-            >
+            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-indigo-500/50 transition-all group min-w-0 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
                   <DollarSign className="w-5 h-5" />
                 </div>
                 <div
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border shrink-0 ${
                     currentMetrics.revenueGrowth >= 0
-                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900'
-                      : 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-900'
+                      ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800'
+                      : 'bg-rose-950/70 text-rose-400 border-rose-800'
                   }`}
                 >
                   {currentMetrics.revenueGrowth >= 0 ? (
@@ -705,71 +946,63 @@ export default function OverviewModule({
                   <span>{currentMetrics.revenueGrowth >= 0 ? `+${currentMetrics.revenueGrowth}%` : `${currentMetrics.revenueGrowth}%`}</span>
                 </div>
               </div>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider truncate">
                 Total Revenue
               </p>
               <h3
-                className="font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate"
+                className="font-black text-[#f8fafc] mt-1 tracking-tight truncate"
                 style={{
                   fontSize: 'clamp(1.35rem, 1.8vw, 1.75rem)',
                   fontVariantNumeric: 'tabular-nums',
-                  fontFamily: "'Inter', sans-serif",
                   lineHeight: 1.2
                 }}
               >
                 ${currentMetrics.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h3>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1 truncate">
+              <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1 truncate">
                 <span>vs prev ${previousMetrics.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
               </p>
             </div>
 
             {/* KPI 3: Net Profit */}
-            <div
-              className="bg-white dark:bg-slate-800 rounded-3xl py-4 sm:py-5 border border-slate-200/80 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600/60 transition-all group min-w-0 overflow-hidden"
-              style={{ paddingLeft: '18px', paddingRight: '18px' }}
-            >
+            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-indigo-500/50 transition-all group min-w-0 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
                   <TrendingUp className="w-5 h-5" />
                 </div>
-                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-400 dark:border-indigo-900 shrink-0">
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border bg-indigo-950/70 text-indigo-400 border-indigo-800 shrink-0">
                   <span>{currentMetrics.grossMarginPercent}% margin</span>
                 </div>
               </div>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider truncate">
                 Net Profit
               </p>
               <h3
-                className="font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate"
+                className="font-black text-[#f8fafc] mt-1 tracking-tight truncate"
                 style={{
                   fontSize: 'clamp(1.35rem, 1.8vw, 1.75rem)',
                   fontVariantNumeric: 'tabular-nums',
-                  fontFamily: "'Inter', sans-serif",
                   lineHeight: 1.2
                 }}
               >
                 ${currentMetrics.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h3>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1 truncate">
+              <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1 truncate">
                 <span>Estimated operational margin</span>
               </p>
             </div>
 
             {/* KPI 4: Average Order Value (AOV) */}
-            <div
-              className="bg-white dark:bg-slate-800 rounded-3xl py-4 sm:py-5 border border-slate-200/80 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600/60 transition-all group min-w-0 overflow-hidden"
-              style={{ paddingLeft: '18px', paddingRight: '18px' }}
-            >
+            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-indigo-500/50 transition-all group min-w-0 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
                   <BarChart3 className="w-5 h-5" />
                 </div>
                 <div
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border shrink-0 ${
                     currentMetrics.aovGrowth >= 0
-                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900'
-                      : 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-900'
+                      ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800'
+                      : 'bg-rose-950/70 text-rose-400 border-rose-800'
                   }`}
                 >
                   {currentMetrics.aovGrowth >= 0 ? (
@@ -780,21 +1013,20 @@ export default function OverviewModule({
                   <span>{currentMetrics.aovGrowth >= 0 ? `+${currentMetrics.aovGrowth}%` : `${currentMetrics.aovGrowth}%`}</span>
                 </div>
               </div>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider truncate">
                 Average Order Value
               </p>
               <h3
-                className="font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate"
+                className="font-black text-[#f8fafc] mt-1 tracking-tight truncate"
                 style={{
                   fontSize: 'clamp(1.35rem, 1.8vw, 1.75rem)',
                   fontVariantNumeric: 'tabular-nums',
-                  fontFamily: "'Inter', sans-serif",
                   lineHeight: 1.2
                 }}
               >
                 ${currentMetrics.aov.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h3>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1 truncate">
+              <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1 truncate">
                 <span>Avg spend per table</span>
               </p>
             </div>
@@ -802,35 +1034,35 @@ export default function OverviewModule({
           </div>
 
           {/* VISUAL REVENUE & SALES CHART */}
-          <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200/80 dark:border-slate-700 shadow-sm relative overflow-hidden">
+          <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 sm:p-6 text-[#f8fafc] shadow-lg relative overflow-hidden">
             
             {/* Header & Controls */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                  <h3 className="text-base sm:text-lg font-black text-[#f8fafc]">
                     Revenue &amp; Velocity Dynamics
                   </h3>
                   {peakPoint && (
-                    <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-900">
+                    <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
                       🔥 Peak: {peakPoint.label} (${peakPoint.revenue.toFixed(0)})
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-400 mt-0.5">
                   Hover over bars or curve nodes for detailed interval breakdown
                 </p>
               </div>
 
               {/* Chart Metric Toggle */}
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 self-start sm:self-auto">
+              <div className="flex items-center gap-1 bg-[#1e293b] p-1 rounded-2xl border border-[#334155] self-start sm:self-auto">
                 <button
                   type="button"
                   onClick={() => setChartMetric('revenue')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     chartMetric === 'revenue'
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-indigo-600 text-white shadow-sm font-black'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   Revenue ($)
@@ -838,10 +1070,10 @@ export default function OverviewModule({
                 <button
                   type="button"
                   onClick={() => setChartMetric('orders')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     chartMetric === 'orders'
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-indigo-600 text-white shadow-sm font-black'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   Order Count
@@ -901,14 +1133,14 @@ export default function OverviewModule({
                       y2={tick.y}
                       stroke="currentColor"
                       strokeDasharray="4 4"
-                      className="text-slate-200 dark:text-slate-700/60"
+                      className="text-slate-800"
                       strokeWidth="1"
                     />
                     <text
                       x={chartGeometry.paddingLeft - 8}
                       y={tick.y + 4}
                       textAnchor="end"
-                      className="text-[10px] font-semibold fill-slate-400 dark:fill-slate-500"
+                      className="text-[10px] font-semibold fill-slate-500"
                     >
                       {tick.label}
                     </text>
@@ -917,7 +1149,7 @@ export default function OverviewModule({
 
                 {/* Subtle Interactive Columns (Bars) */}
                 {chartGeometry.points.map((pt, i) => {
-                  const barW = Math.max(12, Math.min(28, (chartGeometry.plotW / chartGeometry.points.length) * 0.45));
+                  const barW = Math.max(4, Math.min(28, (chartGeometry.plotW / Math.max(1, chartGeometry.points.length)) * 0.45));
                   const barH = chartGeometry.baselineY - pt.y;
                   const isHovered = hoveredDataPoint === pt.data;
 
@@ -928,7 +1160,7 @@ export default function OverviewModule({
                       y={pt.y}
                       width={barW}
                       height={barH}
-                      rx="4"
+                      rx="3"
                       fill={isHovered ? '#4f46e5' : 'url(#barGradient)'}
                       className="transition-all duration-200 cursor-pointer opacity-80 hover:opacity-100"
                       onMouseEnter={(e) => {
@@ -966,15 +1198,19 @@ export default function OverviewModule({
                 {/* Interactive Points / Nodes */}
                 {chartGeometry.points.map((pt, i) => {
                   const isHovered = hoveredDataPoint === pt.data;
+                  const totalPts = chartGeometry.points.length;
+                  const step = totalPts > 20 ? 4 : totalPts > 10 ? 2 : 1;
+                  const showLabel = isHovered || i % step === 0 || i === totalPts - 1;
+
                   return (
                     <g key={i}>
                       <circle
                         cx={pt.x}
                         cy={pt.y}
-                        r={isHovered ? 7 : 4.5}
+                        r={isHovered ? 7 : 4}
                         fill="#ffffff"
                         stroke="#4f46e5"
-                        strokeWidth={isHovered ? 3.5 : 2.5}
+                        strokeWidth={isHovered ? 3.5 : 2}
                         className="transition-all duration-150 cursor-pointer"
                         onMouseEnter={(e) => {
                           const rect = e.currentTarget.ownerSVGElement.getBoundingClientRect();
@@ -984,18 +1220,20 @@ export default function OverviewModule({
                         onMouseLeave={() => setHoveredDataPoint(null)}
                       />
                       {/* X-axis labels */}
-                      <text
-                        x={pt.x}
-                        y={chartGeometry.baselineY + 18}
-                        textAnchor="middle"
-                        className={`text-[10px] transition-colors ${
-                          isHovered
-                            ? 'font-bold fill-indigo-600 dark:fill-indigo-400'
-                            : 'font-medium fill-slate-400 dark:fill-slate-500'
-                        }`}
-                      >
-                        {pt.data.label}
-                      </text>
+                      {showLabel && (
+                        <text
+                          x={pt.x}
+                          y={chartGeometry.baselineY + 18}
+                          textAnchor="middle"
+                          className={`text-[10px] transition-colors ${
+                            isHovered
+                              ? 'font-bold fill-indigo-400'
+                              : 'font-medium fill-slate-400'
+                          }`}
+                        >
+                          {pt.data.label}
+                        </text>
+                      )}
                     </g>
                   );
                 })}
@@ -1003,18 +1241,18 @@ export default function OverviewModule({
             </div>
 
             {/* Category Revenue Breakdown Bar */}
-            <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-700/80">
+            <div className="mt-6 pt-5 border-t border-[#334155]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                <span className="text-xs font-bold text-slate-300">
                   Revenue Share by Category
                 </span>
-                <span className="text-xs text-slate-400 dark:text-slate-500">
+                <span className="text-xs text-slate-400">
                   Total: ${currentMetrics.totalRevenue.toFixed(0)}
                 </span>
               </div>
               
               {/* Multi-segment Progress Bar */}
-              <div className="h-3 w-full rounded-full bg-slate-100 dark:bg-slate-700/60 overflow-hidden flex">
+              <div className="h-3 w-full rounded-full bg-[#1e293b] overflow-hidden flex">
                 {categoryBreakdown.map((cat, i) => (
                   <div
                     key={i}
@@ -1030,8 +1268,8 @@ export default function OverviewModule({
                 {categoryBreakdown.map((cat, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                    <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 truncate">
-                      {cat.name}: <strong className="text-slate-900 dark:text-white">{cat.share}%</strong>
+                    <span className="text-[11px] font-semibold text-slate-400 truncate">
+                      {cat.name}: <strong className="text-white">{cat.share}%</strong>
                     </span>
                   </div>
                 ))}
@@ -1041,8 +1279,8 @@ export default function OverviewModule({
           </div>
 
           {/* QUICK ACTION SHORTCUTS */}
-          <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
+          <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-3">
               Executive Quick Actions
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1052,7 +1290,7 @@ export default function OverviewModule({
                 type="button"
                 onClick={handleExportCSV}
                 disabled={isExporting}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-bold text-xs hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all duration-200 cursor-pointer shadow-xs"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-indigo-950/70 border border-indigo-800 text-indigo-300 font-bold text-xs hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all duration-200 cursor-pointer shadow-xs"
               >
                 <Download className="w-4 h-4" />
                 <span>{isExporting ? 'Generating...' : 'Export CSV Report'}</span>
@@ -1062,9 +1300,9 @@ export default function OverviewModule({
               <button
                 type="button"
                 onClick={handlePrintSummary}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200 cursor-pointer shadow-xs"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-[#1e293b] border border-[#334155] text-slate-300 font-bold text-xs hover:bg-slate-700 hover:text-white transition-all duration-200 cursor-pointer shadow-xs"
               >
-                <FileText className="w-4 h-4 text-slate-500" />
+                <FileText className="w-4 h-4 text-slate-400" />
                 <span>Daily Z-Report / Print</span>
               </button>
 
@@ -1073,7 +1311,7 @@ export default function OverviewModule({
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full flex items-center justify-center appearance-none gap-2 px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200 cursor-pointer shadow-xs pr-8"
+                  className="w-full flex items-center justify-center appearance-none gap-2 px-4 py-3 rounded-2xl bg-[#1e293b] border border-[#334155] text-slate-300 font-bold text-xs hover:bg-slate-700 hover:text-white transition-all duration-200 cursor-pointer shadow-xs pr-8"
                 >
                   <option value="all">Filter: All Categories</option>
                   <option value="mains">Filter: Mains Only</option>
@@ -1095,99 +1333,165 @@ export default function OverviewModule({
         <div className="lg:col-span-4 space-y-6 min-w-0">
 
           {/* INTERACTIVE SIDE CALENDAR */}
-          <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm">
-            
-            {/* Calendar Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                  {currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                </h3>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={handlePrevMonth}
-                  aria-label="Previous month"
-                  className="w-7 h-7 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNextMonth}
-                  aria-label="Next month"
-                  className="w-7 h-7 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Days of Week Header */}
-            <div className="grid grid-cols-7 gap-1 text-center mb-1">
-              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d, i) => (
-                <div key={i} className="text-[11px] font-bold text-slate-400 dark:text-slate-500 py-1">
-                  {d}
+          {isCalendarOpen ? (
+            <div
+              className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg relative animate-fadeIn"
+              onMouseLeave={() => {
+                if (selectingState === 'picking_end') setHoverDate(null);
+              }}
+            >
+              {/* Calendar Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className="w-4 h-4 text-indigo-400" />
+                  <h3 className="text-sm font-black text-[#f8fafc]">
+                    {currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </h3>
                 </div>
-              ))}
-            </div>
-
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-1 text-center">
-              {calendarDays.map((cell, idx) => {
-                const selected = isDateSelected(cell.date);
-                const boundary = isDateRangeBoundary(cell.date);
-                const isToday =
-                  cell.date.toDateString() === new Date().toDateString();
-
-                return (
+                <div className="flex items-center gap-1 bg-[#1e293b] p-1 rounded-xl border border-[#334155]">
                   <button
-                    key={idx}
                     type="button"
-                    onClick={() => handleDayClick(cell.date)}
-                    className={`h-8 w-full rounded-xl text-xs font-semibold flex items-center justify-center transition-all cursor-pointer relative ${
-                      boundary
-                        ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30 scale-105 z-10'
-                        : selected
-                        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'
-                        : cell.isCurrentMonth
-                        ? 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                        : 'text-slate-300 dark:text-slate-600'
-                    }`}
+                    onClick={handlePrevMonth}
+                    aria-label="Previous month"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700/60 transition cursor-pointer"
                   >
-                    <span>{cell.dayNumber}</span>
-                    {isToday && !selected && (
-                      <span className="w-1 h-1 rounded-full bg-indigo-500 absolute bottom-1" />
-                    )}
+                    <ChevronLeft className="w-4 h-4" />
                   </button>
-                );
-              })}
-            </div>
+                  <button
+                    type="button"
+                    onClick={handleNextMonth}
+                    aria-label="Next month"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700/60 transition cursor-pointer"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[11px] text-slate-400">
-              <span>Click day or range to recalculate</span>
+              {/* Selection Guidance Notice */}
+              <div className="mb-3 px-3 py-2 rounded-xl bg-[#1e293b] border border-[#334155] text-center">
+                {selectingState === 'picking_end' ? (
+                  <p className="text-[11px] font-bold text-amber-300 flex items-center justify-center gap-1.5 animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                    <span>Start: <strong>{rangeStart ? rangeStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</strong>. Click an end date!</span>
+                  </p>
+                ) : (
+                  <p className="text-[11px] font-medium text-slate-400">
+                    Click a date for start, then click second date for end range
+                  </p>
+                )}
+              </div>
+
+              {/* Days of Week Header */}
+              <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d, i) => (
+                  <div key={i} className="text-[11px] font-bold text-slate-400 py-1">
+                    {d}
+                  </div>
+                ))}
+              </div>
+
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-1 text-center">
+                {calendarDays.map((cell, idx) => {
+                  const isStart = isDateRangeStart(cell.date);
+                  const isEnd = isDateRangeEnd(cell.date);
+                  const isBoundary = isStart || isEnd;
+                  const isIntermediate = isDateIntermediate(cell.date);
+                  const isToday = cell.date.toDateString() === new Date().toDateString();
+
+                  let cellStyle = 'h-8.5 w-full text-xs font-semibold flex items-center justify-center transition-all cursor-pointer relative ';
+                  if (isBoundary) {
+                    cellStyle += 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/40 z-10 ';
+                    if (isStart && isEnd) {
+                      cellStyle += 'rounded-xl ';
+                    } else if (isStart) {
+                      cellStyle += 'rounded-l-xl rounded-r-none ';
+                    } else if (isEnd) {
+                      cellStyle += 'rounded-r-xl rounded-l-none ';
+                    }
+                  } else if (isIntermediate) {
+                    cellStyle += 'bg-indigo-600/25 text-indigo-200 border-y border-indigo-500/40 rounded-none ';
+                  } else if (cell.isCurrentMonth) {
+                    cellStyle += 'text-[#f8fafc] hover:bg-[#1e293b] rounded-xl ';
+                  } else {
+                    cellStyle += 'text-slate-500 hover:bg-[#1e293b]/60 rounded-xl ';
+                  }
+
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleDayClick(cell.date)}
+                      onMouseEnter={() => {
+                        if (selectingState === 'picking_end') {
+                          setHoverDate(cell.date);
+                        }
+                      }}
+                      className={cellStyle}
+                      title={cell.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    >
+                      <span>{cell.dayNumber}</span>
+                      {isToday && !isBoundary && !isIntermediate && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 absolute bottom-1" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Calendar Footer */}
+              <div className="mt-4 pt-3 border-t border-[#334155] flex items-center justify-between text-[11px] text-slate-400">
+                <span>{selectingState === 'picking_end' ? 'Picking Range...' : 'Range active'}</span>
+                <div className="flex items-center gap-3">
+                  {selectingState === 'picking_end' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectingState('idle');
+                        setHoverDate(null);
+                      }}
+                      className="text-amber-400 hover:text-amber-300 font-bold hover:underline cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPreset('today')}
+                    className="text-indigo-400 font-bold hover:underline cursor-pointer"
+                  >
+                    Reset to Today
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-4 text-[#f8fafc] flex items-center justify-between shadow-lg">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4 text-indigo-400" />
+                <span className="text-xs font-bold text-slate-300">Side Calendar Collapsed</span>
+              </div>
               <button
                 type="button"
-                onClick={() => handleSelectPreset('today')}
-                className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline cursor-pointer"
+                onClick={() => setIsCalendarOpen(true)}
+                className="text-xs text-indigo-400 font-bold hover:underline cursor-pointer"
               >
-                Reset to Today
+                Show Calendar
               </button>
             </div>
-          </div>
+          )}
 
           {/* COMPACT "CURRENTLY RUNNING ORDERS" WIDGET */}
-          <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm">
+          <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/80" />
-                <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                <h3 className="text-sm font-black text-[#f8fafc]">
                   Currently Running Orders
                 </h3>
               </div>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800">
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-950/70 text-indigo-300 border border-indigo-800">
                 {runningOrders.length} active
               </span>
             </div>
@@ -1196,7 +1500,7 @@ export default function OverviewModule({
             {runningOrders.length === 0 ? (
               <div className="py-8 text-center text-slate-400 space-y-2">
                 <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
-                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                <p className="text-xs font-semibold text-slate-300">
                   Kitchen queue is clear!
                 </p>
                 <p className="text-[11px] text-slate-400">
@@ -1210,11 +1514,11 @@ export default function OverviewModule({
                   return (
                     <div
                       key={ord.id}
-                      className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700 transition group"
+                      className="p-3 rounded-2xl bg-[#1e293b] border border-[#334155] hover:border-indigo-500/60 transition group"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-black text-xs text-slate-900 dark:text-white">
+                          <span className="font-black text-xs text-[#f8fafc]">
                             Table #{ord.tableNumber < 10 ? `0${ord.tableNumber}` : ord.tableNumber}
                           </span>
                           <span
@@ -1235,7 +1539,7 @@ export default function OverviewModule({
                               console.log(`Navigating to table #${ord.tableNumber}`);
                             }
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition cursor-pointer"
                           title={`View Table #${ord.tableNumber} in Live Tables`}
                         >
                           <span>View Table</span>
@@ -1244,16 +1548,16 @@ export default function OverviewModule({
                       </div>
 
                       {/* Summary of items & elapsed time */}
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 line-clamp-1">
+                      <p className="text-[11px] text-slate-400 mt-1.5 line-clamp-1">
                         {ord.itemSummary}
                       </p>
 
-                      <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 mt-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800">
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 mt-2 pt-1.5 border-t border-[#334155]">
                         <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
+                          <Clock className="w-3 h-3 text-slate-400" />
                           <span>{ord.elapsedMins} mins ago</span>
                         </span>
-                        <span className="font-bold text-slate-700 dark:text-slate-300">
+                        <span className="font-bold text-slate-200">
                           ${ord.total}
                         </span>
                       </div>

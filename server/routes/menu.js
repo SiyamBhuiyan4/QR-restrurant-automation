@@ -155,6 +155,42 @@ router.get('/categories', (req, res) => {
 });
 
 /**
+ * POST /api/menu/categories
+ * Create a new menu category
+ */
+router.post('/categories', (req, res) => {
+  try {
+    const { name, slug, icon, sort_order } = req.body;
+    if (!name || String(name).trim() === '') {
+      return res.status(400).json({
+        success: false,
+        error: 'Category name is required'
+      });
+    }
+
+    const newCat = db.createCategory({
+      name: String(name).trim(),
+      slug: slug ? String(slug).trim() : undefined,
+      icon: icon ? String(icon).trim() : '🍽️',
+      sort_order: sort_order !== undefined ? Number(sort_order) : undefined
+    });
+
+    emitSocket(req, 'menu:category_created', newCat);
+
+    return res.status(201).json({
+      success: true,
+      data: newCat
+    });
+  } catch (err) {
+    console.error('Error creating category:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to create category: ' + err.message
+    });
+  }
+});
+
+/**
  * GET /api/menu/items
  * Returns flat list of items, optionally filtered by ?categoryId=
  */

@@ -79,11 +79,6 @@ export default function AdminHeader({
       breadcrumb: 'Staff Floor',
       description: 'Live table summons, guest assistance & response telemetry'
     },
-    customer: {
-      title: 'Customer Menu Simulator',
-      breadcrumb: 'Diner Experience',
-      description: 'Live interactive preview of customer ordering & river background'
-    },
     menu: {
       title: 'Menu Management',
       breadcrumb: 'Menu Catalog',
