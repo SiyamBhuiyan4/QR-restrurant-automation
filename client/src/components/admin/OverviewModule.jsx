@@ -874,164 +874,162 @@ export default function OverviewModule({
       </div>
 
       {/* =========================================================================
-          RESPONSIVE 2-COLUMN GRID (8 COLS MAIN ANALYTICS / 4 COLS SIDE CALENDAR & WIDGETS)
+          TOP: 4 FINANCIAL & SALES KPI CARDS (FULL PAGE WIDTH - NO TRUNCATION)
           ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 w-full">
+        
+        {/* KPI 1: Total Sales (Orders Count) */}
+        <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-emerald-500/50 transition-all group min-w-0">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
+              <ShoppingBag className="w-5 h-5" />
+            </div>
+            <div
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black border shrink-0 ${
+                currentMetrics.salesGrowth >= 0
+                  ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800'
+                  : 'bg-rose-950/70 text-rose-400 border-rose-800'
+              }`}
+            >
+              {currentMetrics.salesGrowth >= 0 ? (
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              ) : (
+                <TrendingDown className="w-3.5 h-3.5" />
+              )}
+              <span>{currentMetrics.salesGrowth >= 0 ? `+${currentMetrics.salesGrowth}%` : `${currentMetrics.salesGrowth}%`}</span>
+            </div>
+          </div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            Total Orders
+          </p>
+          <h3
+            className="font-black text-[#f8fafc] mt-1 tracking-tight text-2xl sm:text-3xl tabular-nums whitespace-nowrap"
+            style={{
+              fontVariantNumeric: 'tabular-nums',
+              lineHeight: 1.2
+            }}
+          >
+            {currentMetrics.totalOrders.toLocaleString()}
+          </h3>
+          <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+            <span>vs prev {previousMetrics.totalOrders} orders</span>
+          </p>
+        </div>
+
+        {/* KPI 2: Total Revenue */}
+        <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-amber-500/50 transition-all group min-w-0">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shrink-0">
+              <DollarSign className="w-5 h-5" />
+            </div>
+            <div
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black border shrink-0 ${
+                currentMetrics.revenueGrowth >= 0
+                  ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800'
+                  : 'bg-rose-950/70 text-rose-400 border-rose-800'
+              }`}
+            >
+              {currentMetrics.revenueGrowth >= 0 ? (
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              ) : (
+                <TrendingDown className="w-3.5 h-3.5" />
+              )}
+              <span>{currentMetrics.revenueGrowth >= 0 ? `+${currentMetrics.revenueGrowth}%` : `${currentMetrics.revenueGrowth}%`}</span>
+            </div>
+          </div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            Total Revenue
+          </p>
+          <h3
+            className="font-black text-[#f8fafc] mt-1 tracking-tight text-2xl sm:text-3xl tabular-nums whitespace-nowrap"
+            style={{
+              fontVariantNumeric: 'tabular-nums',
+              lineHeight: 1.2
+            }}
+          >
+            ${currentMetrics.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </h3>
+          <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+            <span>vs prev ${previousMetrics.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+          </p>
+        </div>
+
+        {/* KPI 3: Net Profit */}
+        <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-emerald-500/50 transition-all group min-w-0">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black border bg-emerald-950/70 text-emerald-400 border-emerald-800 shrink-0">
+              <span>{currentMetrics.grossMarginPercent}% margin</span>
+            </div>
+          </div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            Net Profit
+          </p>
+          <h3
+            className="font-black text-[#f8fafc] mt-1 tracking-tight text-2xl sm:text-3xl tabular-nums whitespace-nowrap"
+            style={{
+              fontVariantNumeric: 'tabular-nums',
+              lineHeight: 1.2
+            }}
+          >
+            ${currentMetrics.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </h3>
+          <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+            <span>Estimated operational margin</span>
+          </p>
+        </div>
+
+        {/* KPI 4: Average Order Value (AOV) */}
+        <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-amber-500/50 transition-all group min-w-0">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shrink-0">
+              <BarChart3 className="w-5 h-5" />
+            </div>
+            <div
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black border shrink-0 ${
+                currentMetrics.aovGrowth >= 0
+                  ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800'
+                  : 'bg-rose-950/70 text-rose-400 border-rose-800'
+              }`}
+            >
+              {currentMetrics.aovGrowth >= 0 ? (
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              ) : (
+                <TrendingDown className="w-3.5 h-3.5" />
+              )}
+              <span>{currentMetrics.aovGrowth >= 0 ? `+${currentMetrics.aovGrowth}%` : `${currentMetrics.aovGrowth}%`}</span>
+            </div>
+          </div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            Average Order Value
+          </p>
+          <h3
+            className="font-black text-[#f8fafc] mt-1 tracking-tight text-2xl sm:text-3xl tabular-nums whitespace-nowrap"
+            style={{
+              fontVariantNumeric: 'tabular-nums',
+              lineHeight: 1.2
+            }}
+          >
+            ${currentMetrics.aov.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </h3>
+          <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+            <span>Avg spend per table</span>
+          </p>
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+          LOWER SECTION: CHART & BEST SELLERS (LEFT 8) + CALENDAR & ACTIVE (RIGHT 4)
+          ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
         {/* ---------------------------------------------------------------------
-            LEFT 8 COLUMNS: FINANCIAL CARDS, VISUAL CHART & QUICK SHORTCUTS
+            LEFT 8 COLUMNS: VISUAL CHART & QUICK SHORTCUTS
             --------------------------------------------------------------------- */}
         <div className="lg:col-span-8 space-y-6 min-w-0">
-
-          {/* FINANCIAL & SALES KPI CARDS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            
-            {/* KPI 1: Total Sales (Orders Count) */}
-            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-emerald-500/50 transition-all group min-w-0 overflow-hidden">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
-                  <ShoppingBag className="w-5 h-5" />
-                </div>
-                <div
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border shrink-0 ${
-                    currentMetrics.salesGrowth >= 0
-                      ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800'
-                      : 'bg-rose-950/70 text-rose-400 border-rose-800'
-                  }`}
-                >
-                  {currentMetrics.salesGrowth >= 0 ? (
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  ) : (
-                    <TrendingDown className="w-3.5 h-3.5" />
-                  )}
-                  <span>{currentMetrics.salesGrowth >= 0 ? `+${currentMetrics.salesGrowth}%` : `${currentMetrics.salesGrowth}%`}</span>
-                </div>
-              </div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider truncate">
-                Total Orders
-              </p>
-              <h3
-                className="font-black text-[#f8fafc] mt-1 tracking-tight truncate"
-                style={{
-                  fontSize: 'clamp(1.35rem, 1.8vw, 1.75rem)',
-                  fontVariantNumeric: 'tabular-nums',
-                  lineHeight: 1.2
-                }}
-              >
-                {currentMetrics.totalOrders.toLocaleString()}
-              </h3>
-              <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1 truncate">
-                <span>vs prev {previousMetrics.totalOrders} orders</span>
-              </p>
-            </div>
-
-            {/* KPI 2: Total Revenue */}
-            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-amber-500/50 transition-all group min-w-0 overflow-hidden">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shrink-0">
-                  <DollarSign className="w-5 h-5" />
-                </div>
-                <div
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border shrink-0 ${
-                    currentMetrics.revenueGrowth >= 0
-                      ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800'
-                      : 'bg-rose-950/70 text-rose-400 border-rose-800'
-                  }`}
-                >
-                  {currentMetrics.revenueGrowth >= 0 ? (
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  ) : (
-                    <TrendingDown className="w-3.5 h-3.5" />
-                  )}
-                  <span>{currentMetrics.revenueGrowth >= 0 ? `+${currentMetrics.revenueGrowth}%` : `${currentMetrics.revenueGrowth}%`}</span>
-                </div>
-              </div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider truncate">
-                Total Revenue
-              </p>
-              <h3
-                className="font-black text-[#f8fafc] mt-1 tracking-tight truncate"
-                style={{
-                  fontSize: 'clamp(1.35rem, 1.8vw, 1.75rem)',
-                  fontVariantNumeric: 'tabular-nums',
-                  lineHeight: 1.2
-                }}
-              >
-                ${currentMetrics.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </h3>
-              <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1 truncate">
-                <span>vs prev ${previousMetrics.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-              </p>
-            </div>
-
-            {/* KPI 3: Net Profit */}
-            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-emerald-500/50 transition-all group min-w-0 overflow-hidden">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
-                  <TrendingUp className="w-5 h-5" />
-                </div>
-                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border bg-emerald-950/70 text-emerald-400 border-emerald-800 shrink-0">
-                  <span>{currentMetrics.grossMarginPercent}% margin</span>
-                </div>
-              </div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider truncate">
-                Net Profit
-              </p>
-              <h3
-                className="font-black text-[#f8fafc] mt-1 tracking-tight truncate"
-                style={{
-                  fontSize: 'clamp(1.35rem, 1.8vw, 1.75rem)',
-                  fontVariantNumeric: 'tabular-nums',
-                  lineHeight: 1.2
-                }}
-              >
-                ${currentMetrics.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </h3>
-              <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1 truncate">
-                <span>Estimated operational margin</span>
-              </p>
-            </div>
-
-            {/* KPI 4: Average Order Value (AOV) */}
-            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-amber-500/50 transition-all group min-w-0 overflow-hidden">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shrink-0">
-                  <BarChart3 className="w-5 h-5" />
-                </div>
-                <div
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border shrink-0 ${
-                    currentMetrics.aovGrowth >= 0
-                      ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800'
-                      : 'bg-rose-950/70 text-rose-400 border-rose-800'
-                  }`}
-                >
-                  {currentMetrics.aovGrowth >= 0 ? (
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  ) : (
-                    <TrendingDown className="w-3.5 h-3.5" />
-                  )}
-                  <span>{currentMetrics.aovGrowth >= 0 ? `+${currentMetrics.aovGrowth}%` : `${currentMetrics.aovGrowth}%`}</span>
-                </div>
-              </div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider truncate">
-                Average Order Value
-              </p>
-              <h3
-                className="font-black text-[#f8fafc] mt-1 tracking-tight truncate"
-                style={{
-                  fontSize: 'clamp(1.35rem, 1.8vw, 1.75rem)',
-                  fontVariantNumeric: 'tabular-nums',
-                  lineHeight: 1.2
-                }}
-              >
-                ${currentMetrics.aov.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </h3>
-              <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1 truncate">
-                <span>Avg spend per table</span>
-              </p>
-            </div>
-
-          </div>
 
           {/* VISUAL REVENUE & SALES CHART */}
           <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 sm:p-6 text-[#f8fafc] shadow-lg relative overflow-hidden">
