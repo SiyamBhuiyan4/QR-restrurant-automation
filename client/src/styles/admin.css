@@ -214,3 +214,36 @@
   flex-direction: column !important;
 }
 
+/* ---------- Admin Login Gate Keyframe Animations ---------- */
+@keyframes adminGateShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  15%, 45%, 75% {
+    transform: translateX(-10px);
+  }
+  30%, 60%, 90% {
+    transform: translateX(10px);
+  }
+}
+
+.animate-gate-shake {
+  animation: adminGateShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes adminGatePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 90, 38, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 90, 38, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 90, 38, 0);
+  }
+}
+
+.animate-flame-pulse {
+  animation: adminGatePulse 2s infinite;
+}
+

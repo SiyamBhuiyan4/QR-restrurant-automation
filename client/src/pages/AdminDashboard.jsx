@@ -13,6 +13,7 @@ import LiveTablesModule from '../components/admin/LiveTablesModule';
 import LiveOrdersModule from '../components/admin/LiveOrdersModule';
 import EmployeesModule from '../components/admin/EmployeesModule';
 import CustomerReportsModule from '../components/admin/CustomerReportsModule';
+import AdminLoginGate from '../components/admin/AdminLoginGate';
 
 // System Standalone Consoles (Directly Embedded into Master Admin)
 import KitchenDisplay from './KitchenDisplay';
@@ -54,6 +55,21 @@ import '../styles/admin.css';
  *   10. Customer Reports & Notes (Direct-to-Admin Notes, Staff Dispatching & Audit Log)
  */
 export default function AdminDashboard({ className = '' }) {
+  // Session Authentication State (strictly gated by Master PIN '808080')
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('smartdine_admin_auth') === 'true';
+    }
+    return false;
+  });
+
+  const handleLogout = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('smartdine_admin_auth');
+    }
+    setIsAuthenticated(false);
+  }, []);
+
   // Navigation tab state (supports URL search param '?tab=...')
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -193,8 +209,10 @@ export default function AdminDashboard({ className = '' }) {
   }, []);
 
   useEffect(() => {
-    fetchDashboardData(true);
-  }, [fetchDashboardData]);
+    if (isAuthenticated) {
+      fetchDashboardData(true);
+    }
+  }, [fetchDashboardData, isAuthenticated]);
 
   // ---------------------------------------------------------------------------
   // INTERACTIVE ACTION HANDLERS
@@ -330,6 +348,11 @@ export default function AdminDashboard({ className = '' }) {
     return list;
   }, [assistanceCalls, customerNotes, liveOrders]);
 
+  // Gate dashboard behind Master Admin Password ('808080')
+  if (!isAuthenticated) {
+    return <AdminLoginGate onLoginSuccess={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <div
       className={`admin-root dark text-slate-100 ${className}`}
@@ -403,6 +426,7 @@ export default function AdminDashboard({ className = '' }) {
           onAddTable={addTable}
           onRemoveTable={removeTable}
           onSetTableCount={setTableCount}
+          onLogout={handleLogout}
         />
 
         {/* Scrollable Dynamic Workspace */}
@@ -439,6 +463,7 @@ export default function AdminDashboard({ className = '' }) {
                   setTables(prev => prev.map(t => (t.tableNumber === tableNum ? { ...t, status: TABLE_STATUS.AVAILABLE, currentOrderId: null } : t)));
                 }}
                 onSelectReportsTab={() => handleSelectTab('reports')}
+                onUpdateTables={setTables}
               />
             </div>
           )}

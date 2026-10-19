@@ -20,7 +20,9 @@ import {
   Sparkles,
   Radio,
   Menu,
-  Plus
+  Plus,
+  Lock,
+  LogOut
 } from 'lucide-react';
 
 /**
@@ -45,13 +47,25 @@ export default function AdminHeader({
   tableCount = 12,
   onAddTable = null,
   onRemoveTable = null,
-  onSetTableCount = null
+  onSetTableCount = null,
+  onLogout = null
 }) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const searchInputRef = useRef(null);
   const notifRef = useRef(null);
   const profileRef = useRef(null);
+
+  const handleLockLogout = () => {
+    try {
+      sessionStorage.removeItem('smartdine_admin_auth');
+    } catch (_) {}
+    if (typeof onLogout === 'function') {
+      onLogout();
+    } else if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  };
 
   // Normalize alerts
   const alertList = Array.isArray(urgentAlerts) ? urgentAlerts : [];
@@ -377,6 +391,7 @@ export default function AdminHeader({
                 ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-700'
                 : 'bg-slate-100 hover:bg-slate-200 border-slate-200'
             }`}
+            title="Admin Manager Profile"
           >
             <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white font-black text-xs flex items-center justify-center">
               AD
@@ -386,7 +401,44 @@ export default function AdminHeader({
               <span className="text-[9px] font-semibold text-slate-400 leading-none mt-0.5">Manager</span>
             </div>
           </button>
+
+          {/* Profile Dropdown */}
+          {isProfileOpen && (
+            <div className={`absolute right-0 mt-2 w-48 rounded-2xl border shadow-2xl p-2 z-50 animate-scaleUp ${
+              isDarkMode
+                ? 'bg-slate-900 border-slate-700 text-slate-100'
+                : 'bg-white border-slate-200 text-slate-800'
+            }`}>
+              <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 mb-1">
+                <p className="text-xs font-bold text-slate-900 dark:text-white">Master Admin</p>
+                <p className="text-[10px] text-slate-400">Authenticated Manager</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  handleLockLogout();
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl text-rose-500 hover:bg-rose-500/10 transition cursor-pointer"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Lock / Logout</span>
+              </button>
+            </div>
+          )}
         </div>
+
+        {/* Lock / Logout Button (Next to Profile Badge) */}
+        <button
+          type="button"
+          onClick={handleLockLogout}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
+          title="Lock Admin Session / Logout"
+          aria-label="Lock / Logout"
+        >
+          <Lock className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Lock / Logout</span>
+        </button>
       </div>
     </header>
   );

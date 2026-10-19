@@ -32,12 +32,16 @@ import {
   ShieldCheck,
   MapPin,
   ExternalLink,
-  MessageSquare,
   Grid3X3,
-  Trash2,
+  PlusCircle,
   Plus,
-  PlusCircle
+  Minus,
+  Trash2,
+  Lock,
+  ShieldAlert
 } from 'lucide-react';
+
+import TableSecurityModal from './TableSecurityModal';
 
 import {
   TABLE_STATUS,
@@ -194,7 +198,8 @@ export default function LiveTablesModule({
   onNotifyEmployee,
   onResetTable,
   onResolveIssue,
-  onSelectReportsTab
+  onSelectReportsTab,
+  onUpdateTables
 }) {
   // ---------------------------------------------------------------------------
   // STATE MANAGEMENT (Self-contained with sync back to parent handlers)
@@ -302,6 +307,180 @@ export default function LiveTablesModule({
     }, 4000);
     return () => clearTimeout(timer);
   }, []);
+
+  // ---------------------------------------------------------------------------
+  // PROTECTED TABLE MANAGEMENT (Requires PIN: 808080 via TableSecurityModal)
+  // ---------------------------------------------------------------------------
+  const [customTableCount, setCustomTableCount] = useState(() => (propTables ? propTables.length.toString() : '12'));
+  const [securityModalState, setSecurityModalState] = useState({
+    isOpen: false,
+    actionTitle: '',
+    actionDescription: '',
+    pendingAction: null
+  });
+
+  // Keep input in sync with tables.length
+  useEffect(() => {
+    setCustomTableCount(tables.length.toString());
+  }, [tables.length]);
+
+  const handleTableCountChange = useCallback((targetCount) => {
+    const num = Math.max(1, Math.min(50, Number(targetCount)));
+    let nextCount = num;
+    setTables(prev => {
+      let nextTables;
+      if (num === prev.length) {
+        nextTables = prev;
+      } else if (num > prev.length) {
+        const toAdd = num - prev.length;
+        const currentMaxNumber = prev.reduce((max, t) => Math.max(max, t.tableNumber || 0), 0);
+        const newEntries = Array.from({ length: toAdd }, (_, i) => {
+          const tNum = currentMaxNumber + i + 1;
+          const loc = tNum % 3 === 0 ? TABLE_LOCATION.WINDOW : (tNum % 2 === 0 ? TABLE_LOCATION.PATIO : TABLE_LOCATION.MAIN_HALL);
+          return {
+            id: Date.now() + i,
+            tableNumber: tNum,
+            name: `Table ${tNum}`,
+            status: TABLE_STATUS.AVAILABLE,
+            assignedEmployeeId: null,
+            currentOrderId: null,
+            capacity: 4,
+            location: loc
+          };
+        });
+        nextTables = [...prev, ...newEntries];
+      } else {
+        nextTables = prev.slice(0, num);
+      }
+      nextCount = nextTables.length;
+      if (typeof onUpdateTables === 'function') {
+        onUpdateTables(nextTables);
+      }
+      return nextTables;
+    });
+
+    setCustomTableCount(nextCount.toString());
+    triggerToast(`Admin password authorized. Floor tables updated to ${nextCount}`, 'success');
+  }, [onUpdateTables, triggerToast]);
+
+  const handleAddNewTable = useCallback(() => {
+    let nextCount = 0;
+    setTables(prev => {
+      const currentMaxNumber = prev.reduce((max, t) => Math.max(max, t.tableNumber || 0), 0);
+      const nextNum = currentMaxNumber + 1;
+      const loc = nextNum % 3 === 0 ? TABLE_LOCATION.WINDOW : (nextNum % 2 === 0 ? TABLE_LOCATION.PATIO : TABLE_LOCATION.MAIN_HALL);
+      const newTable = {
+        id: Date.now(),
+        tableNumber: nextNum,
+        name: `Table ${nextNum}`,
+        status: TABLE_STATUS.AVAILABLE,
+        assignedEmployeeId: null,
+        currentOrderId: null,
+        capacity: 4,
+        location: loc
+      };
+      const nextTables = [...prev, newTable];
+      nextCount = nextTables.length;
+      if (typeof onUpdateTables === 'function') {
+        onUpdateTables(nextTables);
+      }
+      return nextTables;
+    });
+
+    setCustomTableCount(nextCount.toString());
+    triggerToast(`Admin password authorized. Floor tables updated to ${nextCount}`, 'success');
+  }, [onUpdateTables, triggerToast]);
+
+  const handleRemoveSpecificTable = useCallback((tableNumber) => {
+    let nextCount = 0;
+    setTables(prev => {
+      if (prev.length <= 1) {
+        triggerToast('Venue must maintain at least 1 table on the floor', 'error');
+        return prev;
+      }
+      const nextTables = prev.filter(t => t.tableNumber !== tableNumber);
+      nextCount = nextTables.length;
+      if (typeof onUpdateTables === 'function') {
+        onUpdateTables(nextTables);
+      }
+      return nextTables;
+    });
+
+    if (nextCount > 0) {
+      setCustomTableCount(nextCount.toString());
+      triggerToast(`Admin password authorized. Floor tables updated to ${nextCount}`, 'success');
+    }
+  }, [onUpdateTables, triggerToast]);
+
+  // Request handlers that open TableSecurityModal with password 808080 confirmation
+  const requestTableCountChange = useCallback((newCount) => {
+    const target = parseInt(newCount, 10);
+    if (isNaN(target) || target < 1) {
+      triggerToast('Please enter a valid table count (minimum 1)', 'error');
+      return;
+    }
+    if (target > 50) {
+      triggerToast('Maximum floor capacity is 50 tables', 'error');
+      return;
+    }
+    if (target === tables.length) {
+      triggerToast(`Floor tables already set to ${target}`, 'info');
+      return;
+    }
+
+    setSecurityModalState({
+      isOpen: true,
+      actionTitle: 'Authorize Floor Capacity Change',
+      actionDescription: `Change total restaurant floor capacity from ${tables.length} to ${target} tables. ${
+        target > tables.length 
+          ? `Will initialize ${target - tables.length} new available tables.` 
+          : `Will decommission the last ${tables.length - target} tables.`
+      }`,
+      pendingAction: () => handleTableCountChange(target)
+    });
+  }, [tables.length, triggerToast, handleTableCountChange]);
+
+  const requestAddNewTable = useCallback(() => {
+    const currentMax = tables.reduce((max, t) => Math.max(max, t.tableNumber || 0), 0);
+    const nextNum = currentMax + 1;
+    setSecurityModalState({
+      isOpen: true,
+      actionTitle: 'Authorize Add Table',
+      actionDescription: `Add Table #${nextNum} (4 seats, Main Hall) to the live floor matrix. Capacity will increase from ${tables.length} to ${tables.length + 1}.`,
+      pendingAction: () => handleAddNewTable()
+    });
+  }, [tables, handleAddNewTable]);
+
+  const requestRemoveLastTable = useCallback(() => {
+    if (tables.length <= 1) {
+      triggerToast('Venue must maintain at least 1 table on the floor', 'error');
+      return;
+    }
+    const lastTable = tables[tables.length - 1];
+    setSecurityModalState({
+      isOpen: true,
+      actionTitle: 'Authorize Remove Last Table',
+      actionDescription: `Permanently decommission Table #${lastTable.tableNumber} (${lastTable.name}). Total floor capacity will decrease from ${tables.length} to ${tables.length - 1}.`,
+      pendingAction: () => handleRemoveSpecificTable(lastTable.tableNumber)
+    });
+  }, [tables, triggerToast, handleRemoveSpecificTable]);
+
+  const requestRemoveSpecificTable = useCallback((tableNumber) => {
+    if (tables.length <= 1) {
+      triggerToast('Venue must maintain at least 1 table on the floor', 'error');
+      return;
+    }
+    const targetTable = tables.find(t => t.tableNumber === tableNumber);
+    const isOccupied = targetTable && targetTable.status !== TABLE_STATUS.AVAILABLE;
+    setSecurityModalState({
+      isOpen: true,
+      actionTitle: `Authorize Remove Table #${tableNumber}`,
+      actionDescription: `Permanently remove Table #${tableNumber} (${targetTable?.name || `Table ${tableNumber}`}, ${targetTable?.capacity || 4} seats)${
+        isOccupied ? ' ⚠️ Table currently has an active order or assistance call!' : ''
+      }. Total floor tables will decrease from ${tables.length} to ${tables.length - 1}.`,
+      pendingAction: () => handleRemoveSpecificTable(tableNumber)
+    });
+  }, [tables, triggerToast, handleRemoveSpecificTable]);
 
   // ---------------------------------------------------------------------------
   // FILTER PILL COUNTS (Always computed dynamically across the 12 tables)
@@ -479,99 +658,6 @@ export default function LiveTablesModule({
       onResetTable(tableNumber);
     }
   }, [triggerToast, onResetTable]);
-
-  // Dynamic Table Count Scaling (Rule 1)
-  const handleTableCountChange = useCallback((newCount) => {
-    const target = Math.max(1, Math.min(60, parseInt(newCount, 10) || 1));
-    if (onTableCountChange) {
-      onTableCountChange(target);
-    } else {
-      setTables(prev => {
-        if (target === prev.length) return prev;
-        if (target > prev.length) {
-          const added = [];
-          const locations = [TABLE_LOCATION.MAIN_HALL, TABLE_LOCATION.WINDOW, TABLE_LOCATION.PATIO];
-          const capacities = [2, 4, 4, 6, 8];
-          for (let i = prev.length + 1; i <= target; i++) {
-            added.push({
-              id: i,
-              tableNumber: i,
-              name: `Table ${i}`,
-              status: TABLE_STATUS.AVAILABLE,
-              assignedEmployeeId: null,
-              currentOrderId: null,
-              capacity: capacities[(i - 1) % capacities.length],
-              seats: capacities[(i - 1) % capacities.length],
-              location: locations[(i - 1) % locations.length]
-            });
-          }
-          return [...prev, ...added];
-        }
-        return prev.slice(0, target);
-      });
-    }
-    triggerToast(`Total tables updated to ${target}`, 'info');
-  }, [onTableCountChange, triggerToast]);
-
-  // 1-Click / Custom Add New Table (Rule 1)
-  const handleAddNewTable = useCallback((customConfig = null) => {
-    playChimeSound();
-    const config = customConfig || {
-      seats: newTableSeats,
-      zone: newTableZone,
-      assignedEmployeeId: newTableAssignedEmpId || null
-    };
-
-    if (onAddTable) {
-      onAddTable(config);
-    } else if (onTableCountChange) {
-      onTableCountChange(tables.length + 1);
-    } else {
-      const nextNum = tables.length + 1;
-      setTables(prev => [
-        ...prev,
-        {
-          id: nextNum,
-          tableNumber: nextNum,
-          name: `Table ${nextNum}`,
-          status: TABLE_STATUS.AVAILABLE,
-          assignedEmployeeId: config.assignedEmployeeId || null,
-          currentOrderId: null,
-          capacity: config.seats || 4,
-          seats: config.seats || 4,
-          location: config.zone || 'Main Hall',
-          zone: config.zone || 'Main Hall',
-          activeCall: false
-        }
-      ]);
-    }
-
-    setIsAddTableModalOpen(false);
-    triggerToast(`Table ${tables.length + 1} added to floor matrix! Total: ${tables.length + 1}`, 'success');
-  }, [newTableSeats, newTableZone, newTableAssignedEmpId, onAddTable, onTableCountChange, tables.length, triggerToast]);
-
-  // Remove Table (Rule 1: Decrement / Delete Table)
-  const handleRemoveSpecificTable = useCallback((tableNumber) => {
-    const tbl = tables.find(t => t.tableNumber === tableNumber);
-    if (tbl && (tbl.status === TABLE_STATUS.ORDER_RUNNING || tbl.status === TABLE_STATUS.READY_IN_KITCHEN)) {
-      triggerToast(`Cannot remove Table ${tableNumber} while an order is active in kitchen!`, 'error');
-      return;
-    }
-
-    playChimeSound();
-    if (onRemoveTable) {
-      onRemoveTable(tableNumber);
-    } else if (onTableCountChange) {
-      onTableCountChange(tables.length - 1);
-    } else {
-      setTables(prev => {
-        const filtered = prev.filter(t => t.tableNumber !== tableNumber);
-        return filtered.map((t, idx) => ({ ...t, id: idx + 1, tableNumber: idx + 1, name: `Table ${idx + 1}` }));
-      });
-    }
-
-    triggerToast(`Table ${tableNumber} removed from floor matrix.`, 'info');
-  }, [tables, onRemoveTable, onTableCountChange, triggerToast]);
 
   // Reassign Employee to a Table (Rule 2)
   const handleReassignEmployee = useCallback((tableNumber, newEmployeeId) => {
@@ -967,6 +1053,109 @@ export default function LiveTablesModule({
           </div>
         </div>
 
+        {/* Row 2: Floor Table Capacity & Security Authorization Controls */}
+        <div className="pt-4 border-t border-[#334155] flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-[#0b0f19]/70 p-3.5 sm:p-4 rounded-2xl border border-[#1e293b]">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                <Lock className="w-4 h-4 text-amber-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-[#f8fafc] tracking-tight">
+                    Floor Capacity
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-md">
+                    PIN 808080
+                  </span>
+                </div>
+                <span className="text-[11px] text-zinc-400 font-medium block mt-0.5">
+                  Type table count &bull; Authorize changes with Admin PIN
+                </span>
+              </div>
+            </div>
+
+            {/* Direct Input & Apply Button */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                requestTableCountChange(customTableCount);
+              }}
+              className="flex items-center gap-2 pl-0 sm:pl-3 sm:border-l border-[#334155]"
+            >
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={customTableCount}
+                  onChange={(e) => setCustomTableCount(e.target.value)}
+                  placeholder="Count"
+                  className="w-20 pl-3 pr-2 py-1.5 rounded-xl bg-[#1e293b] border border-[#334155] text-xs font-black text-[#f8fafc] text-center focus:outline-none focus:border-[#FF5A26] transition shadow-inner font-mono"
+                  aria-label="Direct floor table count input"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:from-[#ff6b3d] hover:to-[#ff8c5a] text-white text-xs font-black shadow-md shadow-[#FF5A26]/25 transition cursor-pointer flex items-center gap-1.5 active:scale-95"
+              >
+                <span>Apply Count</span>
+              </button>
+            </form>
+          </div>
+
+          {/* Quick Presets & Add/Remove Actions (All Protected by 808080 PIN) */}
+          <div className="flex items-center gap-2 flex-wrap xl:justify-end">
+            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider hidden sm:inline">
+              Presets:
+            </span>
+            <div className="flex items-center gap-1 bg-[#1e293b] p-1 rounded-xl border border-[#334155]">
+              {[8, 10, 12, 16, 20, 24].map((preset) => {
+                const isActive = tables.length === preset;
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => {
+                      setCustomTableCount(preset.toString());
+                      requestTableCountChange(preset);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer ${
+                      isActive
+                        ? 'bg-[#FF5A26] text-white shadow-sm ring-1 ring-[#FF7A45]'
+                        : 'text-zinc-400 hover:text-[#f8fafc] hover:bg-[#334155]'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* + Add Table Button */}
+            <button
+              type="button"
+              onClick={requestAddNewTable}
+              className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 hover:text-emerald-300 text-xs font-black transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Add Table</span>
+            </button>
+
+            {/* - Remove Last Button */}
+            <button
+              type="button"
+              onClick={requestRemoveLastTable}
+              disabled={tables.length <= 1}
+              className="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 hover:text-rose-300 text-xs font-black transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs active:scale-95"
+            >
+              <Minus className="w-3.5 h-3.5" />
+              <span>- Remove Last</span>
+            </button>
+          </div>
+        </div>
+
         {/* Row 2: Status Filter Pills (Exact Requirement: All, Available, Order Running, Ready in Kitchen, Need Assistance) */}
         <div className="pt-4 border-t border-[#334155] flex flex-wrap items-center gap-2">
           
@@ -1126,7 +1315,7 @@ export default function LiveTablesModule({
             }}
             className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold transition"
           >
-            Show All 12 Tables
+            Show All {tables.length} Tables
           </button>
         </div>
       ) : (
@@ -1240,7 +1429,7 @@ export default function LiveTablesModule({
                 }}
               >
                 {/* -----------------------------------------------------------
-                    CARD TOP HEADER: Table #, Capacity, Status Badge
+                    CARD TOP HEADER: Table #, Capacity, Status Badge & Remove
                     ----------------------------------------------------------- */}
                 <div className="space-y-3">
                   <div
@@ -1269,22 +1458,18 @@ export default function LiveTablesModule({
                       </div>
                     </div>
 
-                    {/* Visual Status Badge & Quick Remove Action */}
-                    <div className="shrink-0 flex items-center gap-1.5">
-                      <div className="shrink-0 max-w-full">{statusBadge}</div>
-                      {table.status === TABLE_STATUS.AVAILABLE && tables.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveSpecificTable(table.tableNumber);
-                          }}
-                          className="w-7 h-7 rounded-lg bg-rose-950/40 hover:bg-rose-900/70 border border-rose-800/40 text-rose-400 hover:text-white flex items-center justify-center transition cursor-pointer"
-                          title={`Delete / Remove Table ${table.tableNumber}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                    {/* Visual Status Badge & Protected Remove Table Button */}
+                    <div className="shrink-0 max-w-full flex items-center gap-1.5">
+                      {statusBadge}
+                      <button
+                        type="button"
+                        onClick={() => requestRemoveSpecificTable(table.tableNumber)}
+                        title={`Remove ${table.name} (Requires Admin PIN 808080)`}
+                        aria-label={`Remove Table ${table.tableNumber}`}
+                        className="w-7 h-7 rounded-lg bg-[#1e293b] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 border border-[#334155] hover:border-rose-500/40 flex items-center justify-center transition cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
 
@@ -1614,6 +1799,17 @@ export default function LiveTablesModule({
                         )}
                       </>
                     )}
+
+                    {/* Explicit Remove Table Button (Protected by PIN 808080) */}
+                    <button
+                      type="button"
+                      onClick={() => requestRemoveSpecificTable(table.tableNumber)}
+                      className="py-1.5 px-2.5 rounded-xl bg-[#1e293b] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 border border-[#334155] hover:border-rose-500/40 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                      title={`Remove Table #${table.tableNumber} (Admin PIN 808080)`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span className="text-[11px]">Remove</span>
+                    </button>
                   </div>
 
                 </div>
@@ -2104,6 +2300,22 @@ export default function LiveTablesModule({
           </div>
         </div>
       )}
+
+      {/* =======================================================================
+          ADMIN TABLE SECURITY CONFIRMATION MODAL (PIN: 808080)
+          ======================================================================= */}
+      <TableSecurityModal
+        isOpen={securityModalState.isOpen}
+        onClose={() => setSecurityModalState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={(action) => {
+          if (typeof action === 'function') {
+            action();
+          }
+        }}
+        actionTitle={securityModalState.actionTitle}
+        actionDescription={securityModalState.actionDescription}
+        pendingData={securityModalState.pendingAction}
+      />
 
     </div>
   );
