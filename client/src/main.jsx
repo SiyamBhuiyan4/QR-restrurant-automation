@@ -8,7 +8,7 @@ import './index.css';
 import './styles/motion.css';
 
 // Force fresh cache busting for UI update
-const LATEST_BUILD_TAG = '2026-10-20.03-customer-reports-clean-ui-v1';
+const LATEST_BUILD_TAG = '2026-10-20.04-customer-reports-messaging-v1';
 try {
   const currentTag = localStorage.getItem('smartdine_build_tag');
   if (currentTag !== LATEST_BUILD_TAG) {
