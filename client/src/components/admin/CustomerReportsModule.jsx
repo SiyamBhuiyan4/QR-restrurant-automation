@@ -566,7 +566,10 @@ export default function CustomerReportsModule({ className = '' }) {
   };
 
   return (
-    <div className={`customer-reports-module bg-[#0c0c10] text-stone-100 rounded-3xl border border-zinc-800 shadow-2xl relative overflow-hidden ${className}`}>
+    <div
+      className={`customer-reports-module text-slate-100 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden w-full ${className}`}
+      style={{ width: '100%', backgroundColor: '#0f172a', padding: '24px 28px', boxSizing: 'border-box' }}
+    >
       
       {/* Subtle Ambient Radial Highlight */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF5A26]/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />

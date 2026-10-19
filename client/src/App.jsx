@@ -194,10 +194,13 @@ function AppRouter() {
   ];
 
   return (
-    <div className="relative min-h-screen flex flex-col">
+    <div
+      className="relative min-h-screen flex flex-col"
+      style={activeView === 'admin' ? { backgroundColor: '#0b0f19' } : undefined}
+    >
 
-      {/* Global ambient background: fixed, CSS-only, behind non-customer views */}
-      {activeView !== 'customer' && (
+      {/* Global ambient background: fixed, CSS-only, behind non-customer views (except admin) */}
+      {activeView !== 'customer' && activeView !== 'admin' && (
         <div className="app-ambient" aria-hidden="true">
           <div className="app-ambient__blob app-ambient__blob--a" />
           <div className="app-ambient__blob app-ambient__blob--b" />
@@ -206,13 +209,19 @@ function AppRouter() {
       )}
 
       {/* Active Screen View */}
-      <div className="flex-1">
+      <div
+        className="flex-1"
+        style={activeView === 'admin' ? { backgroundColor: '#0b0f19' } : undefined}
+      >
         {renderView()}
       </div>
 
       {/* QUICK ROLE-SWITCHING FLOATING DOCK (Only visible on Admin Dashboard) */}
       {activeView === 'admin' && (
-        <div className={`no-print fixed bottom-4 left-4 z-50 ${isModalOpen ? 'hidden' : 'flex'} flex-col items-start pointer-events-none`}>
+        <div
+          className={`no-print fixed bottom-5 right-6 z-50 ${isModalOpen ? 'hidden' : 'flex'} flex-col items-end pointer-events-none`}
+          style={{ bottom: '20px', right: '24px' }}
+        >
 
           {/* Expanded Navigation Drawer */}
           {isDockOpen && (

@@ -808,10 +808,18 @@ export default function LiveTablesModule({
           </button>
         </div>
       ) : (
-        <div className={viewMode === 'grid' 
-          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" 
-          : "space-y-3"
-        }>
+        <div
+          className={viewMode === 'grid' 
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full" 
+            : "space-y-3 w-full"
+          }
+          style={viewMode === 'grid' ? {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))',
+            gap: '20px',
+            width: '100%'
+          } : { width: '100%' }}
+        >
           {filteredTables.map(table => {
             const activeOrder = getOrderForTable(table);
             const assignedEmp = getAssignedEmployee(table.assignedEmployeeId);
@@ -827,37 +835,73 @@ export default function LiveTablesModule({
             // Customer Call / Issue: Crimson Red #ef4444 (bg #fee2e2) with subtle pulsing glow.
             // -----------------------------------------------------------------
             let statusBadge = null;
-            let cardBorderClass = 'border-zinc-800 hover:border-zinc-700 bg-[#161619]/90';
+            let cardAccentClass = 'border-slate-800 hover:border-slate-700';
 
             if (table.status === TABLE_STATUS.AVAILABLE) {
-              cardBorderClass = 'border-slate-800/80 hover:border-emerald-500/40 bg-[#14161c]/90';
+              cardAccentClass = 'border-slate-800 hover:border-emerald-500/40';
               statusBadge = (
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-slate-800/90 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shadow-xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span
+                  className="inline-flex items-center gap-1.5 font-black uppercase tracking-wider bg-slate-800/90 text-emerald-400 border border-emerald-500/30 shadow-xs"
+                  style={{
+                    fontSize: '11px',
+                    padding: '4px 10px',
+                    borderRadius: '999px',
+                    whiteSpace: 'nowrap',
+                    maxWidth: '100%'
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                   <span>Available</span>
                 </span>
               );
             } else if (table.status === TABLE_STATUS.ORDER_RUNNING) {
-              cardBorderClass = 'border-amber-500/40 hover:border-amber-400 bg-[#16141a]/95 shadow-md shadow-amber-950/20';
+              cardAccentClass = 'border-slate-800 hover:border-amber-400 shadow-md shadow-amber-950/20';
               statusBadge = (
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#fef3c7] text-[#92400e] border border-amber-300 flex items-center gap-1.5 shadow-sm">
-                  <Flame className="w-3 h-3 text-[#f59e0b]" />
+                <span
+                  className="inline-flex items-center gap-1.5 font-black uppercase tracking-wider bg-[#fef3c7] text-[#92400e] border border-amber-300 shadow-sm"
+                  style={{
+                    fontSize: '11px',
+                    padding: '4px 10px',
+                    borderRadius: '999px',
+                    whiteSpace: 'nowrap',
+                    maxWidth: '100%'
+                  }}
+                >
+                  <Flame className="w-3 h-3 text-[#f59e0b] shrink-0" />
                   <span>Order Running</span>
                 </span>
               );
             } else if (table.status === TABLE_STATUS.READY_IN_KITCHEN) {
-              cardBorderClass = 'border-emerald-500/60 hover:border-emerald-400 bg-[#111915]/95 shadow-lg shadow-emerald-950/40';
+              cardAccentClass = 'border-slate-800 hover:border-emerald-400 shadow-lg shadow-emerald-950/40';
               statusBadge = (
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#d1fae5] text-[#065f46] border border-emerald-300 flex items-center gap-1.5 shadow-sm animate-pulse">
-                  <ConciergeBell className="w-3 h-3 text-[#10b981]" />
+                <span
+                  className="inline-flex items-center gap-1.5 font-black uppercase tracking-wider bg-[#d1fae5] text-[#065f46] border border-emerald-300 shadow-sm animate-pulse"
+                  style={{
+                    fontSize: '11px',
+                    padding: '4px 10px',
+                    borderRadius: '999px',
+                    whiteSpace: 'nowrap',
+                    maxWidth: '100%'
+                  }}
+                >
+                  <ConciergeBell className="w-3 h-3 text-[#10b981] shrink-0" />
                   <span>Ready in Kitchen</span>
                 </span>
               );
             } else if (table.status === TABLE_STATUS.NEED_ASSISTANCE) {
-              cardBorderClass = 'border-red-500/70 bg-gradient-to-b from-red-950/30 via-[#181216] to-[#161619] shadow-[0_0_25px_rgba(239,68,68,0.22)] ring-1 ring-red-500/40 animate-pulse';
+              cardAccentClass = 'border-slate-800 ring-1 ring-red-500/40 shadow-[0_0_25px_rgba(239,68,68,0.22)] animate-pulse';
               statusBadge = (
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#fee2e2] text-[#991b1b] border border-red-300 flex items-center gap-1.5 shadow-md shadow-red-500/20">
-                  <AlertTriangle className="w-3 h-3 text-[#ef4444] animate-bounce" />
+                <span
+                  className="inline-flex items-center gap-1.5 font-black uppercase tracking-wider bg-[#fee2e2] text-[#991b1b] border border-red-300 shadow-md shadow-red-500/20"
+                  style={{
+                    fontSize: '11px',
+                    padding: '4px 10px',
+                    borderRadius: '999px',
+                    whiteSpace: 'nowrap',
+                    maxWidth: '100%'
+                  }}
+                >
+                  <AlertTriangle className="w-3 h-3 text-[#ef4444] animate-bounce shrink-0" />
                   <span>Need Assistance</span>
                 </span>
               );
@@ -866,19 +910,33 @@ export default function LiveTablesModule({
             return (
               <div
                 key={table.id}
-                className={`rounded-3xl border p-5 transition-all duration-300 backdrop-blur-2xl flex flex-col justify-between relative group ${cardBorderClass}`}
+                className={`rounded-3xl border border-slate-800 p-5 transition-all duration-300 backdrop-blur-2xl flex flex-col justify-between relative group overflow-hidden bg-[#111827] ${cardAccentClass}`}
+                style={{
+                  backgroundColor: '#111827',
+                  borderColor: '#1e293b',
+                  overflow: 'hidden'
+                }}
               >
                 {/* -----------------------------------------------------------
                     CARD TOP HEADER: Table #, Capacity, Status Badge
                     ----------------------------------------------------------- */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-xl bg-zinc-800/80 border border-zinc-700/60 flex items-center justify-center font-black text-sm text-white shadow-inner">
+                  <div
+                    className="flex justify-between items-start gap-2 flex-wrap"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      flexWrap: 'wrap'
+                    }}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-zinc-800/80 border border-zinc-700/60 flex items-center justify-center font-black text-sm text-white shadow-inner shrink-0">
                         {table.tableNumber}
                       </div>
-                      <div>
-                        <h3 className="font-black text-white text-base tracking-tight leading-none">
+                      <div className="min-w-0">
+                        <h3 className="font-black text-white text-base tracking-tight leading-none whitespace-normal break-words">
                           {table.name}
                         </h3>
                         <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-medium mt-1">
@@ -890,7 +948,7 @@ export default function LiveTablesModule({
                     </div>
 
                     {/* Visual Status Badge */}
-                    <div>{statusBadge}</div>
+                    <div className="shrink-0 max-w-full">{statusBadge}</div>
                   </div>
 
                   {/* -----------------------------------------------------------
@@ -925,16 +983,16 @@ export default function LiveTablesModule({
                             {assignedEmp.initials || assignedEmp.avatar?.initials || 'EM'}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-bold text-white truncate">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-bold text-white whitespace-normal break-words">
                                 {assignedEmp.name}
                               </span>
-                              <span className={`w-1.5 h-1.5 rounded-full ${
+                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                                 assignedEmp.status === EMPLOYEE_STATUS.ACTIVE ? 'bg-emerald-400' :
                                 assignedEmp.status === EMPLOYEE_STATUS.BUSY ? 'bg-amber-400' : 'bg-zinc-500'
                               }`} />
                             </div>
-                            <p className="text-[10px] text-zinc-400 truncate">
+                            <p className="text-[10px] text-zinc-400 whitespace-normal break-words">
                               {assignedEmp.role}
                             </p>
                           </div>
@@ -985,7 +1043,7 @@ export default function LiveTablesModule({
                                 >
                                   {emp.initials}
                                 </span>
-                                <span className="font-bold truncate">{emp.name}</span>
+                                <span className="font-bold whitespace-normal">{emp.name}</span>
                               </div>
                               <span className="text-[10px] text-zinc-400">{emp.role.split(' ')[0]}</span>
                             </button>
@@ -1046,14 +1104,14 @@ export default function LiveTablesModule({
                         </div>
 
                         {/* Items Preview with Quantities & Prices */}
-                        <div className="space-y-1 text-xs">
+                        <div className="space-y-1.5 text-xs">
                           {activeOrder.items.slice(0, 2).map((item, idx) => (
-                            <div key={item.id || idx} className="flex items-baseline justify-between text-stone-200">
-                              <span className="truncate pr-2">
+                            <div key={item.id || idx} className="flex items-start justify-between gap-2 text-stone-200">
+                              <span className="pr-1 text-slate-200 leading-snug whitespace-normal break-words">
                                 <span className="font-bold text-[#FF7A45]">{item.quantity}×</span>{' '}
                                 <span>{item.name}</span>
                               </span>
-                              <span className="font-semibold text-zinc-300 shrink-0">
+                              <span className="font-semibold text-zinc-300 shrink-0 text-right">
                                 {formatCurrency(item.price * item.quantity)}
                               </span>
                             </div>

@@ -146,11 +146,9 @@ export default function AdminSidebar({
 
   const renderNavGroup = (title, items) => (
     <div className="space-y-1">
-      {!isCollapsed && (
-        <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-          {title}
-        </div>
-      )}
+      <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+        {title}
+      </div>
       {items.map((item) => {
         const Icon = item.icon;
         const isActive = currentTab === item.id;
@@ -160,30 +158,29 @@ export default function AdminSidebar({
             <button
               type="button"
               onClick={() => onSelectTab(item.id)}
-              title={isCollapsed ? item.label : undefined}
-              className={`flex-1 flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150 outline-none cursor-pointer ${
+              className={`flex-1 flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150 outline-none cursor-pointer ${
                 isActive
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80'
-              } ${isCollapsed ? 'justify-center px-0' : 'justify-between'}`}
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
+              }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500 group-hover/item:text-indigo-500 dark:text-slate-400 dark:group-hover/item:text-indigo-400'}`} />
-                {!isCollapsed && <span className="truncate">{item.label}</span>}
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover/item:text-indigo-400'}`} />
+                <span className="truncate">{item.label}</span>
               </div>
 
-              {!isCollapsed && item.badge && (
+              {item.badge && (
                 <span
                   className={`px-1.5 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
                     item.badgeColor === 'emerald'
-                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
                       : item.badgeColor === 'amber'
-                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                      ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
                       : item.badgeColor === 'rose'
-                      ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                      ? 'bg-rose-500/15 text-rose-400 border border-rose-500/20'
                       : item.badgeColor === 'indigo'
-                      ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
-                      : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                      ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/20'
+                      : 'bg-slate-800 text-slate-300'
                   } ${item.pulse ? 'animate-pulse' : ''}`}
                 >
                   {item.badge}
@@ -191,14 +188,14 @@ export default function AdminSidebar({
               )}
             </button>
 
-            {/* Quick Popout in New Tab (only when hovered and expanded) */}
-            {!isCollapsed && item.externalUrl && (
+            {/* Quick Popout in New Tab */}
+            {item.externalUrl && (
               <a
                 href={item.externalUrl}
                 target="_blank"
                 rel="noreferrer"
                 title={`Open ${item.label} in new window`}
-                className="opacity-0 group-hover/item:opacity-100 p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-opacity ml-1 rounded-lg"
+                className="opacity-0 group-hover/item:opacity-100 p-1.5 text-slate-400 hover:text-indigo-400 transition-opacity ml-1 rounded-lg"
               >
                 <ExternalLink className="w-3 h-3" />
               </a>
@@ -211,63 +208,51 @@ export default function AdminSidebar({
 
   return (
     <aside
-      className={`admin-sidebar shrink-0 h-full flex flex-col select-none transition-all duration-200 z-30 border-r ${
-        isDarkMode
-          ? 'bg-[#0e1320] border-slate-800 text-slate-200'
-          : 'bg-white border-slate-200/90 text-slate-700 shadow-xs'
-      } ${isCollapsed ? 'w-18' : 'w-64'}`}
+      className="admin-sidebar select-none border-r border-slate-800 text-slate-200"
+      style={{
+        width: '260px',
+        minWidth: '260px',
+        maxWidth: '260px',
+        flexShrink: 0,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        height: '100vh',
+        zIndex: 40,
+        backgroundColor: '#0b0f19',
+        display: 'flex',
+        flexDirection: 'column'
+      }}
     >
       {/* 1. BRAND HEADER */}
-      <div className={`h-16 flex items-center justify-between px-4 border-b ${
-        isDarkMode ? 'border-slate-800 bg-[#090d16]' : 'border-slate-200/80 bg-slate-50/70'
-      }`}>
+      <div
+        className="h-16 flex items-center justify-between px-4 border-b border-slate-800 shrink-0"
+        style={{ backgroundColor: '#0b0f19' }}
+      >
         <div
           onClick={() => onSelectTab('overview')}
-          className={`flex items-center gap-2.5 cursor-pointer ${isCollapsed ? 'justify-center w-full' : ''}`}
+          className="flex items-center gap-2.5 cursor-pointer"
         >
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/30 shrink-0">
             <Sparkles className="w-4 h-4" />
           </div>
-          {!isCollapsed && (
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-black text-sm tracking-tight text-slate-900 dark:text-white">SmartDine</span>
-                <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded-md bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                  Admin
-                </span>
-              </div>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">Master Operations Suite</span>
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="font-black text-sm tracking-tight text-white">SmartDine</span>
+              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-indigo-500/15 text-indigo-400 border border-indigo-500/20">
+                Admin
+              </span>
             </div>
-          )}
+            <span className="text-[10px] text-slate-400 font-medium truncate">Master Operations Suite</span>
+          </div>
         </div>
-
-        {!isCollapsed && (
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            aria-label="Collapse sidebar"
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-        )}
       </div>
 
-      {isCollapsed && (
-        <div className="flex justify-center py-1.5 border-b border-slate-200/80 dark:border-slate-800">
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            aria-label="Expand sidebar"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
       {/* 2. NAVIGATION GROUPS (Scrollable) */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-5 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+      <div
+        className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-5 scrollbar-thin scrollbar-thumb-slate-800"
+        style={{ paddingBottom: '80px' }}
+      >
         {renderNavGroup('Operations', operationsNav)}
         {renderNavGroup('Live Consoles', consolesNav)}
         {renderNavGroup('Catalog & QR', catalogNav)}
@@ -275,16 +260,15 @@ export default function AdminSidebar({
       </div>
 
       {/* 3. FOOTER STATUS BAR */}
-      <div className={`p-3 border-t text-[11px] font-semibold flex items-center justify-between ${
-        isDarkMode ? 'border-slate-800 bg-[#090d16] text-slate-400' : 'border-slate-200/80 bg-slate-50/70 text-slate-500'
-      }`}>
+      <div
+        className="p-3 border-t border-slate-800 text-[11px] font-semibold flex items-center justify-between shrink-0"
+        style={{ backgroundColor: '#0b0f19', color: '#94a3b8' }}
+      >
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-          {!isCollapsed && <span>System Online • 60 FPS</span>}
+          <span>System Online • 60 FPS</span>
         </div>
-        {!isCollapsed && (
-          <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">v2.4 SaaS</span>
-        )}
+        <span className="text-[10px] font-bold text-indigo-400">v2.4 SaaS</span>
       </div>
     </aside>
   );

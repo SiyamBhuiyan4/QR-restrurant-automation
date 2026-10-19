@@ -676,23 +676,23 @@ export default function MenuManager({ className = '' }) {
     <div className={`space-y-6 ${className}`}>
       
       {/* Top Banner / Actions Bar */}
-      <div className="admin-enter bg-white rounded-2xl border border-neutral-200/80 p-4 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="admin-enter bg-[#111827] rounded-2xl border border-[#334155] p-4 sm:p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 text-[#f8fafc]">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#f8fafc] tracking-tight">
               Menu Management
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
               Admin
             </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800 border border-sky-200 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center gap-1">
               <Send className="w-3 h-3 -rotate-45" /> Telegram CDN
             </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
               <Sparkles className="w-3 h-3" /> Convex Cloud DB
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+          <p className="text-xs sm:text-sm text-[#94a3b8] mt-1">
             Media hosted on Telegram Channel (@Restaurant Media) • Structured text records stored in Convex Cloud Database.
           </p>
         </div>
@@ -703,7 +703,7 @@ export default function MenuManager({ className = '' }) {
             type="button"
             onClick={loadMenu}
             disabled={loading}
-            className="p-2.5 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-600 transition active:scale-95 cursor-pointer shadow-2xs"
+            className="p-2.5 rounded-xl border border-[#334155] bg-[#1e293b] hover:bg-[#334155] text-[#f8fafc] transition active:scale-95 cursor-pointer shadow-xs"
             title="Refresh menu items"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-amber-500' : ''}`} />
@@ -722,15 +722,15 @@ export default function MenuManager({ className = '' }) {
 
       {/* Success Notification Banner */}
       {successToast && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-between gap-2 shadow-xs animate-fadeIn">
+        <div className="p-3.5 bg-emerald-950/70 border border-emerald-800 text-emerald-300 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-between gap-2 shadow-xs animate-fadeIn">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>{successToast}</span>
           </div>
           <button
             type="button"
             onClick={() => setSuccessToast('')}
-            className="text-emerald-500 hover:text-emerald-800 text-xs p-1"
+            className="text-emerald-400 hover:text-emerald-200 text-xs p-1 cursor-pointer"
           >
             ✕
           </button>
@@ -739,65 +739,76 @@ export default function MenuManager({ className = '' }) {
 
       {/* Quick Metrics Bar */}
       <div className="admin-enter grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4" style={{ '--i': 1 }}>
-        <div className="bg-white p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
-          <span className="text-xs font-medium text-neutral-500">Total Items</span>
-          <div className="text-xl sm:text-2xl font-bold text-neutral-900 mt-1">
+        <div className="bg-[#111827] p-4 rounded-xl border border-[#334155] shadow-xs">
+          <span className="text-xs font-medium text-[#94a3b8]">Total Items</span>
+          <div className="text-xl sm:text-2xl font-bold text-[#f8fafc] mt-1">
             {stats.total}
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
-          <span className="text-xs font-medium text-emerald-600 flex items-center gap-1">
+        <div className="bg-[#111827] p-4 rounded-xl border border-[#334155] shadow-xs">
+          <span className="text-xs font-medium text-emerald-400 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span> In Stock
           </span>
-          <div className="text-xl sm:text-2xl font-bold text-emerald-700 mt-1">
+          <div className="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">
             {stats.inStock}
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
-          <span className="text-xs font-medium text-rose-600 flex items-center gap-1">
+        <div className="bg-[#111827] p-4 rounded-xl border border-[#334155] shadow-xs">
+          <span className="text-xs font-medium text-rose-400 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-rose-500"></span> Sold Out
           </span>
-          <div className="text-xl sm:text-2xl font-bold text-rose-700 mt-1">
+          <div className="text-xl sm:text-2xl font-bold text-rose-400 mt-1">
             {stats.outOfStock}
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-neutral-200/80 shadow-2xs">
-          <span className="text-xs font-medium text-amber-600 flex items-center gap-1">
-            <Leaf className="w-3.5 h-3.5 text-emerald-600" /> Vegetarian
+        <div className="bg-[#111827] p-4 rounded-xl border border-[#334155] shadow-xs">
+          <span className="text-xs font-medium text-amber-400 flex items-center gap-1">
+            <Leaf className="w-3.5 h-3.5 text-emerald-400" /> Vegetarian
           </span>
-          <div className="text-xl sm:text-2xl font-bold text-neutral-900 mt-1">
+          <div className="text-xl sm:text-2xl font-bold text-[#f8fafc] mt-1">
             {stats.vegCount}
           </div>
         </div>
-        <div className="col-span-2 sm:col-span-1 bg-white p-4 rounded-xl border border-sky-200/80 shadow-2xs">
-          <span className="text-xs font-medium text-sky-600 flex items-center gap-1">
+        <div className="col-span-2 sm:col-span-1 bg-[#111827] p-4 rounded-xl border border-[#334155] shadow-xs">
+          <span className="text-xs font-medium text-sky-400 flex items-center gap-1">
             <Send className="w-3.5 h-3.5 -rotate-45" /> Telegram CDN
           </span>
-          <div className="text-xl sm:text-2xl font-bold text-sky-700 mt-1 flex items-baseline gap-1">
+          <div className="text-xl sm:text-2xl font-bold text-sky-400 mt-1 flex items-baseline gap-1">
             <span>{stats.tgMediaCount || 0}</span>
-            <span className="text-[10px] text-neutral-400 font-normal">hosted</span>
+            <span className="text-[10px] text-[#94a3b8] font-normal">hosted</span>
           </div>
         </div>
       </div>
 
       {/* Filter and Search Toolbar */}
-      <div className="bg-white p-4 rounded-2xl border border-neutral-200/80 space-y-3 shadow-xs">
+      <div className="bg-[#111827] p-4 rounded-2xl border border-[#334155] space-y-3 shadow-md text-[#f8fafc]">
         <div className="flex flex-col sm:flex-row items-center gap-3">
           {/* Search Input */}
           <div className="relative w-full sm:flex-1">
-            <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#94a3b8] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search dishes by name, description, or ingredients..."
-              className="w-full pl-9 pr-8 py-2 rounded-xl text-xs sm:text-sm border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+              className="admin-dark-input w-full placeholder-[#64748b]"
+              style={{
+                backgroundColor: '#0f172a',
+                color: '#f8fafc',
+                border: '1px solid #334155',
+                padding: '10px 14px',
+                paddingLeft: '38px',
+                paddingRight: '32px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 500
+              }}
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 text-xs"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#f8fafc] text-xs cursor-pointer"
               >
                 ✕
               </button>
@@ -819,8 +830,8 @@ export default function MenuManager({ className = '' }) {
                 onClick={() => setFilterType(f.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition cursor-pointer border ${
                   filterType === f.id
-                    ? 'bg-neutral-900 text-white border-neutral-900 shadow-2xs'
-                    : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-600 border-neutral-200'
+                    ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
+                    : 'bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8] hover:text-[#f8fafc] border-[#334155]'
                 }`}
               >
                 {f.label}
@@ -830,14 +841,14 @@ export default function MenuManager({ className = '' }) {
         </div>
 
         {/* Category Horizontal Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-neutral-100 no-scrollbar">
+        <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-[#334155] no-scrollbar">
           <button
             type="button"
             onClick={() => setSelectedCategory('All')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
               selectedCategory === 'All'
-                ? 'bg-amber-500 text-white shadow-2xs'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80'
+                ? 'bg-amber-500 text-white shadow-xs'
+                : 'bg-[#1e293b] text-[#94a3b8] hover:text-[#f8fafc] hover:bg-[#334155] border border-[#334155]'
             }`}
           >
             All Categories ({dishes.length})
@@ -852,13 +863,13 @@ export default function MenuManager({ className = '' }) {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
                   isSelected
-                    ? 'bg-amber-500 text-white shadow-2xs'
-                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80'
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-[#1e293b] text-[#94a3b8] hover:text-[#f8fafc] hover:bg-[#334155] border border-[#334155]'
                 }`}
               >
                 <span>{cat}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  isSelected ? 'bg-amber-600 text-white' : 'bg-neutral-200 text-neutral-600'
+                  isSelected ? 'bg-amber-600 text-white' : 'bg-[#0f172a] text-[#94a3b8]'
                 }`}>
                   {count}
                 </span>
@@ -872,13 +883,13 @@ export default function MenuManager({ className = '' }) {
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center text-center">
           <RefreshCw className="w-8 h-8 text-amber-500 animate-spin mb-3" />
-          <p className="text-sm font-medium text-neutral-600">Loading restaurant dishes...</p>
+          <p className="text-sm font-medium text-[#94a3b8]">Loading restaurant dishes...</p>
         </div>
       ) : filteredDishes.length === 0 ? (
-        <div className="admin-empty bg-white rounded-2xl border border-dashed border-neutral-300 p-12 px-4 text-center">
-          <UtensilsCrossed className="w-10 h-10 text-neutral-400 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-neutral-800">No dishes found</h3>
-          <p className="text-xs text-neutral-500 max-w-sm mx-auto mt-1 mb-4">
+        <div className="admin-empty bg-[#111827] rounded-2xl border border-dashed border-[#334155] p-12 px-4 text-center">
+          <UtensilsCrossed className="w-10 h-10 text-[#94a3b8] mx-auto mb-3" />
+          <h3 className="text-base font-bold text-[#f8fafc]">No dishes found</h3>
+          <p className="text-xs text-[#94a3b8] max-w-sm mx-auto mt-1 mb-4">
             No menu items match your current search and category filters.
           </p>
           <button
@@ -888,7 +899,7 @@ export default function MenuManager({ className = '' }) {
               setSelectedCategory('All');
               setFilterType('all');
             }}
-            className="px-4 py-2 rounded-xl bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800 transition cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-[#f8fafc] border border-[#334155] text-xs font-semibold transition cursor-pointer"
           >
             Clear Filters
           </button>
@@ -900,13 +911,13 @@ export default function MenuManager({ className = '' }) {
             return (
               <div
                 key={dish.id}
-                className={`group flex flex-col justify-between bg-white rounded-2xl border transition-all duration-200 overflow-hidden shadow-xs hover:shadow-md ${
-                  !isAvailable ? 'border-rose-200/80 bg-neutral-50/70' : 'border-neutral-200/80'
+                className={`group flex flex-col justify-between bg-[#111827] rounded-2xl border transition-all duration-200 overflow-hidden shadow-md hover:border-slate-500 hover:shadow-xl ${
+                  !isAvailable ? 'border-rose-900/60 bg-[#111827]/90' : 'border-[#334155]'
                 }`}
               >
                 <div>
                   {/* Dish Header Image & Tags */}
-                  <div className="relative aspect-16/9 w-full bg-neutral-100 overflow-hidden">
+                  <div className="relative aspect-16/9 w-full bg-[#1e293b] overflow-hidden">
                     {dish.image_url ? (
                       <img
                         src={dish.image_url}
@@ -919,7 +930,7 @@ export default function MenuManager({ className = '' }) {
                         }}
                       />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-amber-50/50 text-amber-700/50">
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-[#1e293b] text-[#94a3b8]">
                         <ImageIcon className="w-8 h-8 mb-1" />
                         <span className="text-[11px] font-medium">No Image Provided</span>
                       </div>
@@ -927,7 +938,7 @@ export default function MenuManager({ className = '' }) {
 
                     {/* Top Badges */}
                     <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 z-10">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-neutral-900/85 backdrop-blur-xs text-white">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0f172a]/90 backdrop-blur-xs text-[#f8fafc] border border-white/10">
                         {dish.category}
                       </span>
                       {Boolean(dish.is_veg) && (
@@ -973,22 +984,22 @@ export default function MenuManager({ className = '' }) {
                   {/* Body Content */}
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <h3 className="font-bold text-neutral-900 text-base leading-snug line-clamp-1 group-hover:text-amber-600 transition-colors">
+                      <h3 className="font-bold text-[#f8fafc] text-base leading-snug line-clamp-1 group-hover:text-amber-400 transition-colors">
                         {dish.name}
                       </h3>
-                      <span className="text-base font-extrabold text-neutral-900 tracking-tight shrink-0">
+                      <span className="text-base font-extrabold text-[#f8fafc] tracking-tight shrink-0">
                         ${dish.price.toFixed(2)}
                       </span>
                     </div>
 
-                    <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed min-h-[32px]">
+                    <p className="text-xs text-[#94a3b8] line-clamp-2 leading-relaxed min-h-[32px]">
                       {dish.description || 'No description provided.'}
                     </p>
                   </div>
                 </div>
 
                 {/* Footer Controls: Availability Switch + Edit + Delete */}
-                <div className="p-3.5 bg-neutral-50/80 border-t border-neutral-100 flex items-center justify-between gap-2">
+                <div className="p-3.5 bg-[#1e293b] border-t border-[#334155] flex items-center justify-between gap-2">
                   
                   {/* Availability Toggle Switch */}
                   <div className="flex items-center gap-2">
@@ -999,9 +1010,9 @@ export default function MenuManager({ className = '' }) {
                         onChange={(e) => handleToggleAvailability(dish.id, dish.is_available, e)}
                         className="sr-only peer"
                       />
-                      <div className="w-9 h-5 bg-neutral-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                      <div className="w-9 h-5 bg-[#334155] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                     </label>
-                    <span className="text-[11px] font-semibold text-neutral-600">
+                    <span className="text-[11px] font-semibold text-[#94a3b8]">
                       {isAvailable ? 'Available' : 'Unavailable'}
                     </span>
                   </div>
@@ -1011,7 +1022,7 @@ export default function MenuManager({ className = '' }) {
                     <button
                       type="button"
                       onClick={() => handleOpenEditModal(dish)}
-                      className="p-1.5 rounded-lg border border-neutral-200 hover:bg-neutral-100 text-neutral-700 hover:text-neutral-900 transition active:scale-95 cursor-pointer"
+                      className="p-1.5 rounded-lg border border-[#334155] bg-[#0f172a] hover:bg-[#334155] text-[#f8fafc] transition active:scale-95 cursor-pointer"
                       title="Edit dish details"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -1019,7 +1030,7 @@ export default function MenuManager({ className = '' }) {
                     <button
                       type="button"
                       onClick={() => setDishToDelete(dish)}
-                      className="p-1.5 rounded-lg border border-neutral-200 hover:bg-rose-50 text-neutral-500 hover:text-rose-600 hover:border-rose-200 transition active:scale-95 cursor-pointer"
+                      className="p-1.5 rounded-lg border border-[#334155] bg-[#0f172a] hover:bg-rose-950/60 hover:border-rose-700 text-[#94a3b8] hover:text-rose-400 transition active:scale-95 cursor-pointer"
                       title="Delete dish"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -1038,20 +1049,20 @@ export default function MenuManager({ className = '' }) {
           ADD / EDIT DISH MODAL
           ========================================================================= */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-neutral-200 overflow-hidden transform transition-all animate-scaleUp max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-lg bg-[#111827] rounded-2xl shadow-2xl border border-[#334155] overflow-hidden transform transition-all animate-scaleUp max-h-[90vh] flex flex-col text-[#f8fafc]">
             
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
+            <div className="px-6 py-4 border-b border-[#334155] flex items-center justify-between bg-[#1e293b]">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
                   {modalMode === 'add' ? <Plus className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
                 </div>
                 <div>
-                  <h3 className="font-bold text-neutral-900 text-base leading-tight">
+                  <h3 className="font-bold text-[#f8fafc] text-base leading-tight">
                     {modalMode === 'add' ? 'Add New Dish' : 'Edit Dish Details'}
                   </h3>
-                  <p className="text-xs text-neutral-500">
+                  <p className="text-xs text-[#94a3b8]">
                     {modalMode === 'add' ? 'Fill out the details to introduce a new menu item' : 'Update pricing, images, or dish information'}
                   </p>
                 </div>
@@ -1059,7 +1070,7 @@ export default function MenuManager({ className = '' }) {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-neutral-400 hover:text-neutral-700 p-1 rounded-lg"
+                className="text-[#94a3b8] hover:text-[#f8fafc] p-1 rounded-lg cursor-pointer transition"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1068,7 +1079,7 @@ export default function MenuManager({ className = '' }) {
             {/* Modal Form Scroll Area */}
             <form onSubmit={handleSaveDish} className="p-6 overflow-y-auto space-y-4 flex-1">
               {formError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-center gap-2">
+                <div className="p-3 bg-rose-950/70 border border-rose-800 rounded-xl text-rose-300 text-xs font-semibold flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{formError}</span>
                 </div>
@@ -1076,7 +1087,7 @@ export default function MenuManager({ className = '' }) {
 
               {/* Dish Name */}
               <div>
-                <label className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
                   Dish Name *
                 </label>
                 <input
@@ -1085,7 +1096,16 @@ export default function MenuManager({ className = '' }) {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Signature Truffle Ribeye"
-                  className="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                  className="admin-dark-input w-full placeholder-[#64748b]"
+                  style={{
+                    backgroundColor: '#0f172a',
+                    color: '#f8fafc',
+                    border: '1px solid #334155',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 500
+                  }}
                 />
               </div>
 
@@ -1093,13 +1113,22 @@ export default function MenuManager({ className = '' }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Category Selection / Input */}
                 <div>
-                  <label className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
                     Category *
                   </label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm border border-neutral-200 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                    className="admin-dark-select w-full"
+                    style={{
+                      backgroundColor: '#0f172a',
+                      color: '#f8fafc',
+                      border: '1px solid #334155',
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: 500
+                    }}
                   >
                     {availableCategories.map((c) => (
                       <option key={c} value={c}>
@@ -1111,11 +1140,11 @@ export default function MenuManager({ className = '' }) {
 
                 {/* Price */}
                 <div>
-                  <label className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
                     Price ($ USD) *
                   </label>
                   <div className="relative">
-                    <DollarSign className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <DollarSign className="w-4 h-4 text-[#94a3b8] absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="number"
                       step="0.01"
@@ -1124,7 +1153,17 @@ export default function MenuManager({ className = '' }) {
                       value={formData.price}
                       onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       placeholder="14.99"
-                      className="w-full pl-8 pr-3.5 py-2 rounded-xl text-xs sm:text-sm border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                      className="admin-dark-input w-full placeholder-[#64748b]"
+                      style={{
+                        backgroundColor: '#0f172a',
+                        color: '#f8fafc',
+                        border: '1px solid #334155',
+                        padding: '10px 14px',
+                        paddingLeft: '36px',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: 500
+                      }}
                     />
                   </div>
                 </div>
@@ -1132,7 +1171,7 @@ export default function MenuManager({ className = '' }) {
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
                   Description
                 </label>
                 <textarea
@@ -1140,14 +1179,23 @@ export default function MenuManager({ className = '' }) {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Ingredients, cooking style, portion notes..."
-                  className="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none"
+                  className="admin-dark-input w-full placeholder-[#64748b] resize-none"
+                  style={{
+                    backgroundColor: '#0f172a',
+                    color: '#f8fafc',
+                    border: '1px solid #334155',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 500
+                  }}
                 />
               </div>
 
               {/* ========================================================= */}
               {/* MEDIA STORAGE: TELEGRAM CHANNEL CDN + CONVEX TEXT DB     */}
               {/* ========================================================= */}
-              <div className="p-4 bg-gradient-to-br from-sky-50/70 via-blue-50/30 to-purple-50/40 rounded-2xl border border-sky-200/80 space-y-4">
+              <div className="p-4 bg-[#1e293b] rounded-2xl border border-[#334155] space-y-4">
                 
                 {/* Section Header */}
                 <div className="flex items-center justify-between">
@@ -1156,21 +1204,21 @@ export default function MenuManager({ className = '' }) {
                       <Send className="w-3.5 h-3.5 -rotate-45" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <h4 className="text-xs font-bold text-[#f8fafc] uppercase tracking-wider flex items-center gap-1.5">
                         <span>Telegram Media Storage & CDN</span>
-                        <span className="text-[10px] font-semibold text-sky-700 bg-sky-100 px-1.5 py-0.2 rounded-full border border-sky-200">
+                        <span className="text-[10px] font-semibold text-sky-400 bg-sky-950/80 px-1.5 py-0.2 rounded-full border border-sky-800">
                           Free Cloud CDN
                         </span>
                       </h4>
-                      <p className="text-[11px] text-neutral-500">
-                        Photos & kitchen reels host on <strong className="text-neutral-700">@Restaurant Media</strong>; records in <strong className="text-neutral-700">Convex</strong>.
+                      <p className="text-[11px] text-[#94a3b8]">
+                        Photos & kitchen reels host on <strong className="text-[#f8fafc]">@Restaurant Media</strong>; records in <strong className="text-[#f8fafc]">Convex</strong>.
                       </p>
                     </div>
                   </div>
                 </div>
 
                 {uploadError && (
-                  <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-center gap-2">
+                  <div className="p-2.5 bg-rose-950/70 border border-rose-800 rounded-xl text-rose-300 text-xs font-semibold flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>{uploadError}</span>
                   </div>
@@ -1179,13 +1227,13 @@ export default function MenuManager({ className = '' }) {
                 {/* 1. FOOD PHOTO SECTION */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between flex-wrap gap-1">
-                    <label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
-                      <ImageIcon className="w-3.5 h-3.5 text-sky-600" />
+                    <label className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5 text-sky-400" />
                       <span>Food Dish Photo</span>
                     </label>
 
                     {(formData.image_url?.includes('telegram') || formData.image_url?.includes('api.telegram.org')) && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 animate-fadeIn">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700 animate-fadeIn">
                         <Check className="w-3 h-3 stroke-[3]" />
                         <span>✅ Hosted on Telegram Channel</span>
                       </span>
@@ -1207,7 +1255,7 @@ export default function MenuManager({ className = '' }) {
                       type="button"
                       onClick={() => photoInputRef.current?.click()}
                       disabled={uploadingPhoto}
-                      className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 active:scale-95 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50 shrink-0"
+                      className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50 shrink-0"
                     >
                       {uploadingPhoto ? (
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -1223,13 +1271,23 @@ export default function MenuManager({ className = '' }) {
                         value={formData.image_url}
                         onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                         placeholder="Telegram CDN URL or external photo link..."
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition font-mono truncate"
+                        className="admin-dark-input w-full font-mono placeholder-[#64748b] truncate"
+                        style={{
+                          backgroundColor: '#0f172a',
+                          color: '#f8fafc',
+                          border: '1px solid #334155',
+                          padding: '10px 14px',
+                          paddingRight: '32px',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          fontWeight: 500
+                        }}
                       />
                       {formData.image_url && (
                         <button
                           type="button"
                           onClick={() => setFormData({ ...formData, image_url: '' })}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 text-xs p-1"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#f8fafc] text-xs p-1 cursor-pointer"
                           title="Clear photo"
                         >
                           ✕
@@ -1240,8 +1298,8 @@ export default function MenuManager({ className = '' }) {
 
                   {/* Photo Preview Box */}
                   {formData.image_url && (
-                    <div className="flex items-center gap-3 p-2 bg-white/80 rounded-xl border border-neutral-200">
-                      <div className="w-14 h-14 rounded-lg overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0">
+                    <div className="flex items-center gap-3 p-2.5 bg-[#0f172a] rounded-xl border border-[#334155]">
+                      <div className="w-14 h-14 rounded-lg overflow-hidden border border-[#334155] bg-[#1e293b] shrink-0">
                         <img
                           src={formData.image_url}
                           alt="Dish Preview"
@@ -1250,14 +1308,14 @@ export default function MenuManager({ className = '' }) {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-bold text-neutral-800 truncate">
+                        <p className="text-[11px] font-bold text-[#f8fafc] truncate">
                           {formData.name || 'Dish Photo Preview'}
                         </p>
-                        <p className="text-[10px] text-neutral-500 truncate font-mono mt-0.5">
+                        <p className="text-[10px] text-[#94a3b8] truncate font-mono mt-0.5">
                           {formData.image_url}
                         </p>
                         {(formData.image_url.includes('telegram') || formData.image_url.includes('api.telegram.org')) && (
-                          <span className="text-[10px] text-sky-600 font-medium flex items-center gap-1 mt-0.5">
+                          <span className="text-[10px] text-sky-400 font-medium flex items-center gap-1 mt-0.5">
                             <Send className="w-2.5 h-2.5 -rotate-45" /> Channel: @Restaurant Media (Telegram CDN)
                           </span>
                         )}
@@ -1267,15 +1325,15 @@ export default function MenuManager({ className = '' }) {
                 </div>
 
                 {/* 2. KITCHEN REEL VIDEO SECTION */}
-                <div className="space-y-2 pt-2 border-t border-sky-100">
+                <div className="space-y-2 pt-2 border-t border-[#334155]">
                   <div className="flex items-center justify-between flex-wrap gap-1">
-                    <label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
-                      <Video className="w-3.5 h-3.5 text-purple-600" />
-                      <span>Kitchen Reel / Making Video <span className="text-[10px] text-neutral-400 font-normal">(Optional)</span></span>
+                    <label className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5">
+                      <Video className="w-3.5 h-3.5 text-purple-400" />
+                      <span>Kitchen Reel / Making Video <span className="text-[10px] text-[#94a3b8] font-normal">(Optional)</span></span>
                     </label>
 
                     {(formData.making_video_url?.includes('telegram') || formData.making_video_url?.includes('api.telegram.org')) && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 animate-fadeIn">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700 animate-fadeIn">
                         <Check className="w-3 h-3 stroke-[3]" />
                         <span>✅ Hosted on Telegram Channel</span>
                       </span>
@@ -1313,13 +1371,23 @@ export default function MenuManager({ className = '' }) {
                         value={formData.making_video_url}
                         onChange={(e) => setFormData({ ...formData, making_video_url: e.target.value })}
                         placeholder="Telegram Video CDN URL or .mp4 reel link..."
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition font-mono truncate"
+                        className="admin-dark-input w-full font-mono placeholder-[#64748b] truncate"
+                        style={{
+                          backgroundColor: '#0f172a',
+                          color: '#f8fafc',
+                          border: '1px solid #334155',
+                          padding: '10px 14px',
+                          paddingRight: '32px',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          fontWeight: 500
+                        }}
                       />
                       {formData.making_video_url && (
                         <button
                           type="button"
                           onClick={() => setFormData({ ...formData, making_video_url: '' })}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 text-xs p-1"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#f8fafc] text-xs p-1 cursor-pointer"
                           title="Clear video"
                         >
                           ✕
@@ -1330,12 +1398,12 @@ export default function MenuManager({ className = '' }) {
 
                   {/* Video Player Preview */}
                   {formData.making_video_url && (
-                    <div className="p-2.5 bg-white/80 rounded-xl border border-neutral-200 space-y-1.5">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-neutral-700">
-                        <span className="flex items-center gap-1 text-purple-700">
+                    <div className="p-2.5 bg-[#0f172a] rounded-xl border border-[#334155] space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-[#f8fafc]">
+                        <span className="flex items-center gap-1 text-purple-400">
                           <Play className="w-3 h-3 fill-current" /> Reel Video Preview
                         </span>
-                        <span className="text-[10px] text-neutral-400 font-mono truncate max-w-xs">
+                        <span className="text-[10px] text-[#94a3b8] font-mono truncate max-w-xs">
                           {formData.making_video_url}
                         </span>
                       </div>
@@ -1344,7 +1412,7 @@ export default function MenuManager({ className = '' }) {
                         controls
                         muted
                         playsInline
-                        className="w-full max-h-40 rounded-lg bg-black object-contain border border-neutral-200"
+                        className="w-full max-h-40 rounded-lg bg-black object-contain border border-[#334155]"
                       />
                     </div>
                   )}
@@ -1353,15 +1421,15 @@ export default function MenuManager({ className = '' }) {
               </div>
 
               {/* Dietary Flags & Stock Switch */}
-              <div className="pt-2 border-t border-neutral-100 space-y-2.5">
-                <span className="block text-xs font-bold text-neutral-800 uppercase tracking-wider">
+              <div className="pt-2 border-t border-[#334155] space-y-2.5">
+                <span className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
                   Dish Attributes
                 </span>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {/* Vegetarian Toggle */}
                   <label className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition select-none ${
-                    formData.is_veg ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-neutral-50 border-neutral-200 text-neutral-600'
+                    formData.is_veg ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300' : 'bg-[#1e293b] border-[#334155] text-[#94a3b8]'
                   }`}>
                     <input
                       type="checkbox"
@@ -1370,17 +1438,17 @@ export default function MenuManager({ className = '' }) {
                       className="sr-only"
                     />
                     <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                      formData.is_veg ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-neutral-300 bg-white'
+                      formData.is_veg ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-[#334155] bg-[#0f172a]'
                     }`}>
                       {formData.is_veg && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
-                    <Leaf className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <Leaf className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     <span className="text-xs font-semibold">Vegetarian</span>
                   </label>
 
                   {/* Spicy Toggle */}
                   <label className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition select-none ${
-                    formData.is_spicy ? 'bg-rose-50 border-rose-300 text-rose-900' : 'bg-neutral-50 border-neutral-200 text-neutral-600'
+                    formData.is_spicy ? 'bg-rose-950/60 border-rose-500 text-rose-300' : 'bg-[#1e293b] border-[#334155] text-[#94a3b8]'
                   }`}>
                     <input
                       type="checkbox"
@@ -1389,17 +1457,17 @@ export default function MenuManager({ className = '' }) {
                       className="sr-only"
                     />
                     <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                      formData.is_spicy ? 'bg-rose-600 border-rose-600 text-white' : 'border-neutral-300 bg-white'
+                      formData.is_spicy ? 'bg-rose-600 border-rose-600 text-white' : 'border-[#334155] bg-[#0f172a]'
                     }`}>
                       {formData.is_spicy && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
-                    <Flame className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                    <Flame className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                     <span className="text-xs font-semibold">Spicy</span>
                   </label>
 
                   {/* Available In Stock Toggle */}
                   <label className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition select-none ${
-                    formData.is_available ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-neutral-50 border-neutral-200 text-neutral-500'
+                    formData.is_available ? 'bg-amber-950/60 border-amber-500 text-amber-300' : 'bg-[#1e293b] border-[#334155] text-[#94a3b8]'
                   }`}>
                     <input
                       type="checkbox"
@@ -1408,22 +1476,22 @@ export default function MenuManager({ className = '' }) {
                       className="sr-only"
                     />
                     <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                      formData.is_available ? 'bg-amber-500 border-amber-500 text-white' : 'border-neutral-300 bg-white'
+                      formData.is_available ? 'bg-amber-500 border-amber-500 text-white' : 'border-[#334155] bg-[#0f172a]'
                     }`}>
                       {formData.is_available && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                     <span className="text-xs font-semibold">In Stock</span>
                   </label>
                 </div>
               </div>
 
               {/* Form Bottom Actions */}
-              <div className="pt-4 border-t border-neutral-100 flex items-center justify-end gap-2.5">
+              <div className="pt-4 border-t border-[#334155] flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-neutral-200 hover:bg-neutral-100 text-neutral-600 text-xs sm:text-sm font-semibold transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-[#334155] bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8] hover:text-[#f8fafc] text-xs sm:text-sm font-semibold transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1446,24 +1514,24 @@ export default function MenuManager({ className = '' }) {
           DELETE CONFIRMATION MODAL
           ========================================================================= */}
       {dishToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-neutral-200 p-6 text-center transform transition-all animate-scaleUp">
-            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-sm bg-[#111827] rounded-2xl shadow-2xl border border-[#334155] p-6 text-center transform transition-all animate-scaleUp text-[#f8fafc]">
+            <div className="w-12 h-12 rounded-full bg-rose-950/80 border border-rose-800 text-rose-400 flex items-center justify-center mx-auto mb-3">
               <Trash2 className="w-6 h-6" />
             </div>
 
-            <h3 className="text-base sm:text-lg font-bold text-neutral-900 mb-1">
+            <h3 className="text-base sm:text-lg font-bold text-[#f8fafc] mb-1">
               Delete Menu Dish?
             </h3>
-            <p className="text-xs text-neutral-500 leading-relaxed mb-5">
-              Are you sure you want to delete <span className="font-semibold text-neutral-800">"{dishToDelete.name}"</span>? This will remove the item immediately from the customer menu.
+            <p className="text-xs text-[#94a3b8] leading-relaxed mb-5">
+              Are you sure you want to delete <span className="font-semibold text-[#f8fafc]">"{dishToDelete.name}"</span>? This will remove the item immediately from the customer menu.
             </p>
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setDishToDelete(null)}
-                className="flex-1 py-2.5 px-3 rounded-xl border border-neutral-200 hover:bg-neutral-100 text-neutral-600 text-xs sm:text-sm font-semibold transition cursor-pointer"
+                className="flex-1 py-2.5 px-3 rounded-xl border border-[#334155] bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8] hover:text-[#f8fafc] text-xs sm:text-sm font-semibold transition cursor-pointer"
               >
                 Keep Dish
               </button>

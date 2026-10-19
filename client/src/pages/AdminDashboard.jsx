@@ -83,7 +83,7 @@ export default function AdminDashboard({ className = '' }) {
       const saved = localStorage.getItem('smartdine_admin_theme');
       if (saved) return saved === 'dark';
     }
-    return false; // Soft Slate #f8fafc as default
+    return true; // Noir / Dark Slate as default
   });
 
   const handleToggleDarkMode = () => {
@@ -95,6 +95,23 @@ export default function AdminDashboard({ className = '' }) {
       return next;
     });
   };
+
+  // Ensure html, body, and all outer viewport elements have background #0b0f19
+  useEffect(() => {
+    document.documentElement.classList.add('admin-active');
+    document.body.classList.add('admin-active');
+    const prevHtmlBg = document.documentElement.style.backgroundColor;
+    const prevBodyBg = document.body.style.backgroundColor;
+    document.documentElement.style.backgroundColor = '#0b0f19';
+    document.body.style.backgroundColor = '#0b0f19';
+
+    return () => {
+      document.documentElement.classList.remove('admin-active');
+      document.body.classList.remove('admin-active');
+      document.documentElement.style.backgroundColor = prevHtmlBg;
+      document.body.style.backgroundColor = prevBodyBg;
+    };
+  }, []);
 
   // Sidebar Layout States
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -287,10 +304,15 @@ export default function AdminDashboard({ className = '' }) {
 
   return (
     <div
-      className={`admin-root h-screen flex overflow-hidden ${
-        isDarkMode ? 'dark bg-[#090d16] text-slate-100' : 'bg-slate-50 text-slate-800'
-      } ${className}`}
-      style={{ fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" }}
+      className={`admin-root dark text-slate-100 ${className}`}
+      style={{
+        display: 'flex',
+        width: '100vw',
+        minHeight: '100vh',
+        backgroundColor: '#0b0f19',
+        overflowX: 'hidden',
+        fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"
+      }}
     >
       {/* =======================================================================
           1. MASTER SAAS SIDEBAR
@@ -313,15 +335,28 @@ export default function AdminDashboard({ className = '' }) {
       {/* Mobile Drawer Backdrop */}
       {isMobileSidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 lg:hidden"
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 lg:hidden"
           onClick={() => setIsMobileSidebarOpen(false)}
         />
       )}
 
       {/* =======================================================================
-          2. MASTER CONTENT VIEWPORT (Header + Scrollable Main)
+          2. MASTER CONTENT VIEWPORT (Header + Content)
           ======================================================================= */}
-      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+      <div
+        className="flex-1 min-w-0"
+        style={{
+          flex: 1,
+          marginLeft: '260px',
+          width: 'calc(100% - 260px)',
+          minWidth: 0,
+          backgroundColor: '#0f172a',
+          padding: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh'
+        }}
+      >
         {/* Sticky Header Bar */}
         <AdminHeader
           activeTab={activeTab}
@@ -338,7 +373,7 @@ export default function AdminDashboard({ className = '' }) {
         />
 
         {/* Scrollable Dynamic Workspace */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto" style={{ backgroundColor: '#0f172a' }}>
           {/* TAB 1: OVERVIEW & REVENUE ANALYTICS */}
           {activeTab === 'overview' && (
             <div className="animate-fadeIn">
@@ -402,14 +437,14 @@ export default function AdminDashboard({ className = '' }) {
 
           {/* TAB 7: MENU MANAGEMENT */}
           {activeTab === 'menu' && (
-            <div className="animate-fadeIn bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="animate-fadeIn">
               <MenuManager />
             </div>
           )}
 
           {/* TAB 8: TABLE QR GENERATOR */}
           {activeTab === 'qr' && (
-            <div className="animate-fadeIn bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="animate-fadeIn">
               <QRBatchGenerator />
             </div>
           )}

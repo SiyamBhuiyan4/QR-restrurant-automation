@@ -154,20 +154,20 @@ export default function QRBatchGenerator({ className = '' }) {
     <div className={`space-y-6 ${className}`}>
       
       {/* Configuration & Controls Card (Hidden during print) */}
-      <div className="admin-enter no-print bg-white rounded-2xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs space-y-6">
+      <div className="admin-enter no-print bg-[#111827] rounded-2xl border border-[#334155] p-5 sm:p-6 shadow-xl space-y-6 text-[#f8fafc]">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-neutral-100">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-[#334155]">
           <div>
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20">
                 <QrCode className="w-5 h-5" />
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-bold text-[#f8fafc] tracking-tight">
                 Table QR Code Generator
               </h2>
             </div>
-            <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+            <p className="text-xs sm:text-sm text-[#94a3b8] mt-1">
               Generate crisp, printable table tent cards with auto-detected table URLs for offline-first ordering.
             </p>
           </div>
@@ -178,9 +178,9 @@ export default function QRBatchGenerator({ className = '' }) {
               type="button"
               onClick={handleDownloadAll}
               disabled={generatedCards.length === 0}
-              className="px-3.5 py-2 rounded-xl border border-neutral-200 hover:bg-neutral-50 active:scale-95 text-neutral-700 text-xs sm:text-sm font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+              className="px-3.5 py-2 rounded-xl border border-[#334155] bg-[#1e293b] hover:bg-[#334155] active:scale-95 text-[#f8fafc] text-xs sm:text-sm font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
             >
-              <Download className="w-4 h-4 text-neutral-500" />
+              <Download className="w-4 h-4 text-[#94a3b8]" />
               <span>Download PNGs</span>
             </button>
 
@@ -188,9 +188,9 @@ export default function QRBatchGenerator({ className = '' }) {
               type="button"
               onClick={handlePrint}
               disabled={generatedCards.length === 0}
-              className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-white text-xs sm:text-sm font-semibold transition shadow-md shadow-neutral-900/15 cursor-pointer flex items-center gap-2"
+              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs sm:text-sm font-semibold transition shadow-md shadow-amber-500/20 cursor-pointer flex items-center gap-2"
             >
-              <Printer className="w-4 h-4 text-amber-400" />
+              <Printer className="w-4 h-4 text-white" />
               <span>Print QR Stickers</span>
             </button>
           </div>
@@ -201,7 +201,7 @@ export default function QRBatchGenerator({ className = '' }) {
           
           {/* Restaurant Name */}
           <div>
-            <label className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">
               Restaurant Name
             </label>
             <input
@@ -209,13 +209,22 @@ export default function QRBatchGenerator({ className = '' }) {
               value={restaurantName}
               onChange={(e) => setRestaurantName(e.target.value)}
               placeholder="e.g. SmartDine Express"
-              className="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+              className="admin-dark-input w-full placeholder-[#64748b]"
+              style={{
+                backgroundColor: '#0f172a',
+                color: '#f8fafc',
+                border: '1px solid #334155',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 500
+              }}
             />
           </div>
 
           {/* Table Start */}
           <div>
-            <label className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">
               Table Start
             </label>
             <input
@@ -223,13 +232,22 @@ export default function QRBatchGenerator({ className = '' }) {
               min="1"
               value={tableStart}
               onChange={(e) => setTableStart(Math.max(1, parseInt(e.target.value, 10) || 1))}
-              className="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+              className="admin-dark-input w-full placeholder-[#64748b]"
+              style={{
+                backgroundColor: '#0f172a',
+                color: '#f8fafc',
+                border: '1px solid #334155',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 500
+              }}
             />
           </div>
 
           {/* Table End */}
           <div>
-            <label className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">
               Table End
             </label>
             <input
@@ -237,19 +255,37 @@ export default function QRBatchGenerator({ className = '' }) {
               min={tableStart}
               value={tableEnd}
               onChange={(e) => setTableEnd(Math.max(tableStart, parseInt(e.target.value, 10) || tableStart))}
-              className="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+              className="admin-dark-input w-full placeholder-[#64748b]"
+              style={{
+                backgroundColor: '#0f172a',
+                color: '#f8fafc',
+                border: '1px solid #334155',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 500
+              }}
             />
           </div>
 
           {/* Layout Mode Selector */}
           <div>
-            <label className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">
               Print Sheet Layout
             </label>
             <select
               value={layoutMode}
               onChange={(e) => setLayoutMode(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm border border-neutral-200 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+              className="admin-dark-select w-full"
+              style={{
+                backgroundColor: '#0f172a',
+                color: '#f8fafc',
+                border: '1px solid #334155',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 500
+              }}
             >
               <option value="grid-2">2 Columns (Standard Table Tents)</option>
               <option value="grid-3">3 Columns (Compact Stickers)</option>
@@ -264,7 +300,7 @@ export default function QRBatchGenerator({ className = '' }) {
           {/* Base URL Input */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
+              <label className="text-xs font-bold text-[#94a3b8] uppercase tracking-wider flex items-center gap-1.5">
                 <Globe className="w-3.5 h-3.5 text-amber-500" />
                 Base Server URL (LAN IP)
               </label>
@@ -272,7 +308,7 @@ export default function QRBatchGenerator({ className = '' }) {
                 <button
                   type="button"
                   onClick={() => setBaseUrl(detectedLanIp)}
-                  className="text-[11px] text-amber-600 hover:text-amber-800 font-medium underline"
+                  className="text-[11px] text-amber-400 hover:text-amber-300 font-medium underline cursor-pointer"
                 >
                   Use Auto-Detected LAN IP
                 </button>
@@ -283,16 +319,25 @@ export default function QRBatchGenerator({ className = '' }) {
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               placeholder="https://192.168.1.100:3000"
-              className="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm border border-neutral-200 font-mono text-neutral-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+              className="admin-dark-input w-full font-mono placeholder-[#64748b]"
+              style={{
+                backgroundColor: '#0f172a',
+                color: '#f8fafc',
+                border: '1px solid #334155',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 500
+              }}
             />
-            <p className="text-[11px] text-neutral-400 mt-1">
+            <p className="text-[11px] text-[#94a3b8] mt-1">
               Ensure this URL matches the local Wi-Fi IP so diners connecting on the same network reach the ordering page.
             </p>
           </div>
 
           {/* Custom Tagline */}
           <div>
-            <label className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">
               Card Tagline / Instructions
             </label>
             <input
@@ -300,9 +345,18 @@ export default function QRBatchGenerator({ className = '' }) {
               value={tagline}
               onChange={(e) => setTagline(e.target.value)}
               placeholder="Scan to order from your phone & leave voice notes!"
-              className="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+              className="admin-dark-input w-full placeholder-[#64748b]"
+              style={{
+                backgroundColor: '#0f172a',
+                color: '#f8fafc',
+                border: '1px solid #334155',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 500
+              }}
             />
-            <p className="text-[11px] text-neutral-400 mt-1">
+            <p className="text-[11px] text-[#94a3b8] mt-1">
               Appears directly below each QR code instructing guests how to order and record voice notes.
             </p>
           </div>
@@ -310,8 +364,8 @@ export default function QRBatchGenerator({ className = '' }) {
         </div>
 
         {/* Quick Range Presets */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-neutral-100">
-          <span className="text-xs font-semibold text-neutral-500 mr-1">Quick Presets:</span>
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[#334155]">
+          <span className="text-xs font-semibold text-[#94a3b8] mr-1">Quick Presets:</span>
           {[
             { label: 'Tables 1 - 6', start: 1, end: 6 },
             { label: 'Tables 1 - 12', start: 1, end: 12 },
@@ -325,7 +379,7 @@ export default function QRBatchGenerator({ className = '' }) {
                 setTableStart(preset.start);
                 setTableEnd(preset.end);
               }}
-              className="px-2.5 py-1 rounded-lg text-xs font-medium bg-neutral-100 hover:bg-neutral-200/80 text-neutral-700 transition cursor-pointer"
+              className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[#1e293b] hover:bg-[#334155] text-[#f8fafc] border border-[#334155] transition cursor-pointer"
             >
               {preset.label}
             </button>
@@ -335,7 +389,7 @@ export default function QRBatchGenerator({ className = '' }) {
             type="button"
             onClick={generateQRCodes}
             disabled={isGenerating}
-            className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-white hover:bg-amber-600 transition cursor-pointer"
+            className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition cursor-pointer shadow-xs"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
             <span>Regenerate ({generatedCards.length} Tables)</span>
@@ -353,12 +407,12 @@ export default function QRBatchGenerator({ className = '' }) {
         {/* On-Screen Preview Bar (Hidden during print) */}
         <div className="no-print flex items-center justify-between pb-3 px-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#94a3b8]">
               Live Preview &bull; {generatedCards.length} Printable Cards
             </span>
           </div>
-          <span className="text-xs text-neutral-400">
-            Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-neutral-100 border text-[11px] font-mono">Ctrl/Cmd + P</kbd> or click Print
+          <span className="text-xs text-[#94a3b8]">
+            Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-[#1e293b] border border-[#334155] text-[11px] font-mono text-[#f8fafc]">Ctrl/Cmd + P</kbd> or click Print
           </span>
         </div>
 
@@ -376,7 +430,7 @@ export default function QRBatchGenerator({ className = '' }) {
             return (
               <div
                 key={card.tableNum}
-                className="qr-sticker-card bg-white rounded-2xl border-2 border-neutral-900/90 p-6 text-center shadow-xs flex flex-col items-center justify-between relative transition-all hover:shadow-md break-inside-avoid"
+                className="qr-sticker-card bg-white text-slate-900 rounded-2xl border-2 border-neutral-900/90 p-6 text-center shadow-xs flex flex-col items-center justify-between relative transition-all hover:shadow-md break-inside-avoid"
               >
                 {/* Card Top Brand & Badge */}
                 <div className="w-full flex items-center justify-between border-b-2 border-neutral-900 pb-3 mb-4">

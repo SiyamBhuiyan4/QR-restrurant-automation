@@ -554,7 +554,10 @@ export default function OverviewModule({
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div
+      className={`space-y-6 max-w-full overflow-x-hidden ${className}`}
+      style={{ padding: '24px 28px', boxSizing: 'border-box' }}
+    >
       
       {/* Toast Notification */}
       {exportNotice && (
@@ -623,19 +626,29 @@ export default function OverviewModule({
         {/* ---------------------------------------------------------------------
             LEFT 8 COLUMNS: FINANCIAL CARDS, VISUAL CHART & QUICK SHORTCUTS
             --------------------------------------------------------------------- */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="lg:col-span-8 space-y-6 min-w-0">
 
           {/* FINANCIAL & SALES KPI CARDS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+              gap: '16px'
+            }}
+          >
             
             {/* KPI 1: Total Sales (Orders Count) */}
-            <div className="bg-white dark:bg-slate-800 rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600/60 transition-all group">
+            <div
+              className="bg-white dark:bg-slate-800 rounded-3xl py-4 sm:py-5 border border-slate-200/80 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600/60 transition-all group min-w-0 overflow-hidden"
+              style={{ paddingLeft: '18px', paddingRight: '18px' }}
+            >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
                   <ShoppingBag className="w-5 h-5" />
                 </div>
                 <div
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-black border ${
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border shrink-0 ${
                     currentMetrics.salesGrowth >= 0
                       ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900'
                       : 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-900'
@@ -649,25 +662,36 @@ export default function OverviewModule({
                   <span>{currentMetrics.salesGrowth >= 0 ? `+${currentMetrics.salesGrowth}%` : `${currentMetrics.salesGrowth}%`}</span>
                 </div>
               </div>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
                 Total Orders
               </p>
-              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1 tracking-tight">
+              <h3
+                className="font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate"
+                style={{
+                  fontSize: 'clamp(1.35rem, 1.8vw, 1.75rem)',
+                  fontVariantNumeric: 'tabular-nums',
+                  fontFamily: "'Inter', sans-serif",
+                  lineHeight: 1.2
+                }}
+              >
                 {currentMetrics.totalOrders.toLocaleString()}
               </h3>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1">
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1 truncate">
                 <span>vs prev {previousMetrics.totalOrders} orders</span>
               </p>
             </div>
 
             {/* KPI 2: Total Revenue */}
-            <div className="bg-white dark:bg-slate-800 rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600/60 transition-all group">
+            <div
+              className="bg-white dark:bg-slate-800 rounded-3xl py-4 sm:py-5 border border-slate-200/80 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600/60 transition-all group min-w-0 overflow-hidden"
+              style={{ paddingLeft: '18px', paddingRight: '18px' }}
+            >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
                   <DollarSign className="w-5 h-5" />
                 </div>
                 <div
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-black border ${
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border shrink-0 ${
                     currentMetrics.revenueGrowth >= 0
                       ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900'
                       : 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-900'
@@ -681,46 +705,68 @@ export default function OverviewModule({
                   <span>{currentMetrics.revenueGrowth >= 0 ? `+${currentMetrics.revenueGrowth}%` : `${currentMetrics.revenueGrowth}%`}</span>
                 </div>
               </div>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
                 Total Revenue
               </p>
-              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1 tracking-tight">
+              <h3
+                className="font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate"
+                style={{
+                  fontSize: 'clamp(1.35rem, 1.8vw, 1.75rem)',
+                  fontVariantNumeric: 'tabular-nums',
+                  fontFamily: "'Inter', sans-serif",
+                  lineHeight: 1.2
+                }}
+              >
                 ${currentMetrics.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h3>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1">
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1 truncate">
                 <span>vs prev ${previousMetrics.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
               </p>
             </div>
 
             {/* KPI 3: Net Profit */}
-            <div className="bg-white dark:bg-slate-800 rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600/60 transition-all group">
+            <div
+              className="bg-white dark:bg-slate-800 rounded-3xl py-4 sm:py-5 border border-slate-200/80 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600/60 transition-all group min-w-0 overflow-hidden"
+              style={{ paddingLeft: '18px', paddingRight: '18px' }}
+            >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
                   <TrendingUp className="w-5 h-5" />
                 </div>
-                <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-black border bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-400 dark:border-indigo-900">
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-400 dark:border-indigo-900 shrink-0">
                   <span>{currentMetrics.grossMarginPercent}% margin</span>
                 </div>
               </div>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
                 Net Profit
               </p>
-              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1 tracking-tight">
+              <h3
+                className="font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate"
+                style={{
+                  fontSize: 'clamp(1.35rem, 1.8vw, 1.75rem)',
+                  fontVariantNumeric: 'tabular-nums',
+                  fontFamily: "'Inter', sans-serif",
+                  lineHeight: 1.2
+                }}
+              >
                 ${currentMetrics.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h3>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1">
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1 truncate">
                 <span>Estimated operational margin</span>
               </p>
             </div>
 
             {/* KPI 4: Average Order Value (AOV) */}
-            <div className="bg-white dark:bg-slate-800 rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600/60 transition-all group">
+            <div
+              className="bg-white dark:bg-slate-800 rounded-3xl py-4 sm:py-5 border border-slate-200/80 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600/60 transition-all group min-w-0 overflow-hidden"
+              style={{ paddingLeft: '18px', paddingRight: '18px' }}
+            >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
                   <BarChart3 className="w-5 h-5" />
                 </div>
                 <div
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-black border ${
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border shrink-0 ${
                     currentMetrics.aovGrowth >= 0
                       ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900'
                       : 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-900'
@@ -734,13 +780,21 @@ export default function OverviewModule({
                   <span>{currentMetrics.aovGrowth >= 0 ? `+${currentMetrics.aovGrowth}%` : `${currentMetrics.aovGrowth}%`}</span>
                 </div>
               </div>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
                 Average Order Value
               </p>
-              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1 tracking-tight">
+              <h3
+                className="font-black text-slate-900 dark:text-white mt-1 tracking-tight truncate"
+                style={{
+                  fontSize: 'clamp(1.35rem, 1.8vw, 1.75rem)',
+                  fontVariantNumeric: 'tabular-nums',
+                  fontFamily: "'Inter', sans-serif",
+                  lineHeight: 1.2
+                }}
+              >
                 ${currentMetrics.aov.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h3>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1">
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1 truncate">
                 <span>Avg spend per table</span>
               </p>
             </div>
@@ -1038,7 +1092,7 @@ export default function OverviewModule({
         {/* ---------------------------------------------------------------------
             RIGHT 4 COLUMNS: INTERACTIVE SIDE CALENDAR & RUNNING ORDERS WIDGET
             --------------------------------------------------------------------- */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-6 min-w-0">
 
           {/* INTERACTIVE SIDE CALENDAR */}
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm">
