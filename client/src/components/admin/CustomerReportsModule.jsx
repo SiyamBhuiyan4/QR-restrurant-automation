@@ -7,1606 +7,853 @@ import {
   CheckCircle2,
   UserCheck,
   UserPlus,
-  RefreshCw,
-  Sparkles,
-  Filter,
   Search,
   Check,
   X,
-  ChevronDown,
   Volume2,
   VolumeX,
-  Flame,
-  ArrowRight,
-  ShieldCheck,
   Send,
-  History,
-  TrendingUp,
-  Award,
   Zap,
-  PhoneCall,
-  UserX,
-  PlusCircle,
-  RotateCcw
+  RotateCcw,
+  Plus,
+  ArrowRight
 } from 'lucide-react';
 
-/**
- * Built-in Web Audio API Chime Synthesizer
- * Produces crisp two-tone restaurant desk bell chimes without any external audio asset dependencies.
- */
-class DirectReportChime {
-  constructor() {
-    this.ctx = null;
-    this.isMuted = false;
-  }
-
-  init() {
+// ─────────────────────────────────────────────────────────────────────────────
+// Audio chime (Web Audio API — no external assets)
+// ─────────────────────────────────────────────────────────────────────────────
+class Chime {
+  constructor() { this.ctx = null; this.muted = false; }
+  _init() {
     if (typeof window === 'undefined') return;
     if (!this.ctx) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (AudioCtx) {
-        this.ctx = new AudioCtx();
-      }
+      const A = window.AudioContext || window.webkitAudioContext;
+      if (A) this.ctx = new A();
     }
-    if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume().catch(() => {});
-    }
+    if (this.ctx?.state === 'suspended') this.ctx.resume().catch(() => {});
   }
-
-  playUrgentChime() {
-    if (this.isMuted) return;
+  _play(freq1, freq2, delay = 0.12) {
+    if (this.muted) return;
     try {
-      this.init();
+      this._init();
       if (!this.ctx) return;
-      const now = this.ctx.currentTime;
-
-      // Two-tone urgent bell sequence: 880Hz (A5) -> 1320Hz (E6)
-      const osc1 = this.ctx.createOscillator();
-      const gain1 = this.ctx.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(880, now);
-      osc1.frequency.exponentialRampToValueAtTime(870, now + 0.35);
-      gain1.gain.setValueAtTime(0.3, now);
-      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-      osc1.connect(gain1);
-      gain1.connect(this.ctx.destination);
-      osc1.start(now);
-      osc1.stop(now + 0.35);
-
-      const osc2 = this.ctx.createOscillator();
-      const gain2 = this.ctx.createGain();
-      osc2.type = 'triangle';
-      osc2.frequency.setValueAtTime(1320, now + 0.12);
-      osc2.frequency.exponentialRampToValueAtTime(1300, now + 0.7);
-      gain2.gain.setValueAtTime(0.25, now + 0.12);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
-      osc2.connect(gain2);
-      gain2.connect(this.ctx.destination);
-      osc2.start(now + 0.12);
-      osc2.stop(now + 0.7);
+      const t = this.ctx.currentTime;
+      [[freq1, 0, 0.35, 'sine', 0.3], [freq2, delay, 0.7, 'triangle', 0.25]].forEach(([f, d, dur, type, vol]) => {
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = type; o.frequency.setValueAtTime(f, t + d);
+        g.gain.setValueAtTime(vol, t + d);
+        g.gain.exponentialRampToValueAtTime(0.001, t + d + dur);
+        o.connect(g); g.connect(this.ctx.destination);
+        o.start(t + d); o.stop(t + d + dur);
+      });
     } catch (_) {}
   }
-
-  playSuccessChime() {
-    if (this.isMuted) return;
-    try {
-      this.init();
-      if (!this.ctx) return;
-      const now = this.ctx.currentTime;
-
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, now); // C5
-      osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.15); // E5
-      gain.gain.setValueAtTime(0.2, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.4);
-    } catch (_) {}
-  }
+  urgent()  { this._play(880, 1320); }
+  success() { this._play(523, 659); }
 }
+const chime = new Chime();
 
-const chimeSynthesizer = new DirectReportChime();
-
-// Initial Mock Staff Members roster with avatars & roles
-const STAFF_ROSTER = [
-  {
-    id: 'emp-1',
-    name: 'Marcus Vance',
-    role: 'Floor Employee',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop&crop=faces',
-    status: 'busy',
-    activeTable: 'Table 4',
-    rating: 4.8
-  },
-  {
-    id: 'emp-2',
-    name: 'Elena Rostova',
-    role: 'Senior Floor Lead',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&h=120&fit=crop&crop=faces',
-    status: 'available',
-    activeTable: 'Floor Lead',
-    rating: 4.95
-  },
-  {
-    id: 'emp-3',
-    name: 'David Kim',
-    role: 'Senior Captain',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&crop=faces',
-    status: 'available',
-    activeTable: 'Booth Section',
-    rating: 4.9
-  },
-  {
-    id: 'emp-4',
-    name: 'Sophia Chen',
-    role: 'Sommelier & Host',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&h=120&fit=crop&crop=faces',
-    status: 'available',
-    activeTable: 'Balcony & Wine',
-    rating: 4.92
-  },
-  {
-    id: 'emp-5',
-    name: 'Liam O’Connor',
-    role: 'Lead Runner & Support',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop&crop=faces',
-    status: 'available',
-    activeTable: 'Expedite Pass',
-    rating: 4.75
-  },
-  {
-    id: 'emp-6',
-    name: 'Isabella Diaz',
-    role: 'VIP Concierge',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&h=120&fit=crop&crop=faces',
-    status: 'available',
-    activeTable: 'Private Dining',
-    rating: 5.0
-  }
+// ─────────────────────────────────────────────────────────────────────────────
+// Static data
+// ─────────────────────────────────────────────────────────────────────────────
+const STAFF = [
+  { id: 'emp-1', name: 'Marcus Vance',    role: 'Floor Employee',      status: 'busy',      zone: 'Table 4' },
+  { id: 'emp-2', name: 'Elena Rostova',   role: 'Senior Floor Lead',   status: 'available', zone: 'Floor Lead' },
+  { id: 'emp-3', name: 'David Kim',       role: 'Senior Captain',      status: 'available', zone: 'Booth Section' },
+  { id: 'emp-4', name: 'Sophia Chen',     role: 'Sommelier & Host',    status: 'available', zone: 'Balcony' },
+  { id: 'emp-5', name: "Liam O'Connor",   role: 'Lead Runner',         status: 'available', zone: 'Expedite Pass' },
+  { id: 'emp-6', name: 'Isabella Diaz',   role: 'VIP Concierge',       status: 'available', zone: 'Private Dining' },
 ];
 
-// Initial default reports matching user specification:
-// Total Notes (4), Urgent / New (2), In Progress (1), Resolved (1).
+const DEMO_POOL = [
+  { table: 9,  note: 'Missing side of garlic truffle butter for the ribeye.',         severity: 'critical' },
+  { table: 15, note: 'Too cold near AC vent — elderly guest needs a blanket.',         severity: 'moderate' },
+  { table: 3,  note: 'Waiting 25 mins for dessert course.',                            severity: 'critical' },
+  { table: 21, note: 'Red wine spill — need fresh tablecloth immediately.',            severity: 'critical' },
+  { table: 14, note: 'Requesting gluten-free bread substitutes for the appetizer dip.',severity: 'general'  },
+];
+
 const INITIAL_REPORTS = [
   {
-    id: 'rep-101',
-    tableNumber: 4,
-    tableLocation: 'Patio West • Bay View',
-    customerNote: 'Requested extra napkins and water 10 mins ago, no one came yet. Kids are getting restless.',
-    severity: 'critical', // 'critical' | 'moderate' | 'general'
-    status: 'new', // 'new' | 'in_progress' | 'resolved'
-    createdAt: Date.now() - 4 * 60 * 1000, // 4 mins ago
-    assignedStaffId: 'emp-1',
-    dispatchLog: null,
-    resolvedAt: null,
-    resolutionTime: null,
-    resolutionNote: null
+    id: 'rep-101', table: 4, note: 'Requested extra napkins and water 10 mins ago — no one came.',
+    severity: 'critical', status: 'new', createdAt: Date.now() - 4 * 60000,
+    staffId: 'emp-1', dispatch: null, resolvedAt: null, resolutionTime: null, resolutionNote: null
   },
   {
-    id: 'rep-102',
-    tableNumber: 12,
-    tableLocation: 'Main Dining • Center Row',
-    customerNote: 'Food arrived warm instead of hot. Wagyu steak needs reheating or fresh preparation please.',
-    severity: 'critical',
-    status: 'new',
-    createdAt: Date.now() - 9 * 60 * 1000, // 9 mins ago
-    assignedStaffId: 'emp-2',
-    dispatchLog: null,
-    resolvedAt: null,
-    resolutionTime: null,
-    resolutionNote: null
+    id: 'rep-102', table: 12, note: 'Food arrived warm instead of hot. Wagyu steak needs reheating.',
+    severity: 'critical', status: 'new', createdAt: Date.now() - 9 * 60000,
+    staffId: 'emp-2', dispatch: null, resolvedAt: null, resolutionTime: null, resolutionNote: null
   },
   {
-    id: 'rep-103',
-    tableNumber: 7,
-    tableLocation: 'Booth 2 • South Wing',
-    customerNote: 'Need assistance with bill splitting across three cards and applying our corporate dining credit.',
-    severity: 'moderate',
-    status: 'in_progress',
-    createdAt: Date.now() - 18 * 60 * 1000, // 18 mins ago
-    assignedStaffId: 'emp-3',
-    dispatchLog: {
-      staffId: 'emp-3',
-      timestamp: Date.now() - 10 * 60 * 1000,
-      note: 'Priority alert sent: David dispatched with wireless handheld POS terminal.'
-    },
-    resolvedAt: null,
-    resolutionTime: null,
-    resolutionNote: null
+    id: 'rep-103', table: 7, note: 'Need help splitting bill across three cards with corporate dining credit.',
+    severity: 'moderate', status: 'in_progress', createdAt: Date.now() - 18 * 60000,
+    staffId: 'emp-3',
+    dispatch: { staffId: 'emp-3', note: 'David dispatched with wireless handheld POS.' },
+    resolvedAt: null, resolutionTime: null, resolutionNote: null
   },
   {
-    id: 'rep-104',
-    tableNumber: 18,
-    tableLocation: 'Balcony Terrace • Table 18',
-    customerNote: 'Celebration anniversary request: Would love two complimentary champagne flutes if possible.',
-    severity: 'general',
-    status: 'resolved',
-    createdAt: Date.now() - 42 * 60 * 1000, // 42 mins ago
-    assignedStaffId: 'emp-4',
-    dispatchLog: {
-      staffId: 'emp-4',
-      timestamp: Date.now() - 36 * 60 * 1000,
-      note: 'Sophia notified for anniversary hospitality package.'
-    },
-    resolvedAt: Date.now() - 28 * 60 * 1000, // resolved 28 mins ago
-    resolutionTime: '14 mins',
-    resolutionNote: 'Resolved - Delivered complimentary vintage Prosecco flutes & anniversary artisanal macaron board with signed chef card.'
-  }
+    id: 'rep-104', table: 18, note: 'Anniversary celebration — requesting two complimentary champagne flutes.',
+    severity: 'general', status: 'resolved', createdAt: Date.now() - 42 * 60000,
+    staffId: 'emp-4',
+    dispatch: { staffId: 'emp-4', note: 'Sophia notified for anniversary hospitality package.' },
+    resolvedAt: Date.now() - 28 * 60000, resolutionTime: '14 mins',
+    resolutionNote: 'Delivered complimentary Prosecco flutes & macaron board.'
+  },
 ];
 
-// Pool of realistic simulation notes for demo button
-const SIMULATION_NOTE_POOL = [
-  {
-    tableNumber: 9,
-    tableLocation: 'Window Alcove • Table 9',
-    customerNote: 'Missing side of garlic truffle butter for the ribeye dish. Assigned employee hasn’t returned to check on us.',
-    severity: 'critical'
-  },
-  {
-    tableNumber: 15,
-    tableLocation: 'Garden Lounge • Table 15',
-    customerNote: 'The draft near the overhead AC vent is too cold for our elderly guest. Could someone adjust temperature or bring a blanket?',
-    severity: 'moderate'
-  },
-  {
-    tableNumber: 3,
-    tableLocation: 'Chef’s Counter • Seat 3-4',
-    customerNote: 'We have been waiting 25 mins for our dessert course to drop. Can an admin check the pastry station timing?',
-    severity: 'critical'
-  },
-  {
-    tableNumber: 21,
-    tableLocation: 'Private Cellar • Table 21',
-    customerNote: 'Accidental spill of red wine on tablecloth. Need discreet cleanup and fresh cloth napkins immediately.',
-    severity: 'critical'
-  },
-  {
-    tableNumber: 14,
-    tableLocation: 'East Courtyard • Table 14',
-    customerNote: 'Can we request gluten-free bread substitutes for the appetizer dip? Digital menu showed allergy option.',
-    severity: 'general'
-  }
-];
+const STORAGE_KEY = 'smartdine_customer_reports_v2';
 
-const STORAGE_KEY = 'smartdine_customer_reports_v1';
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+function timeAgo(ts) {
+  if (!ts) return 'Just now';
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return `${Math.max(1, s)}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  return `${Math.floor(m / 60)}h ago`;
+}
 
+const SEV_CONFIG = {
+  critical: { label: 'Critical', color: 'text-rose-400',   bg: 'bg-rose-500/15 border-rose-500/40',   dot: 'bg-rose-500',   icon: AlertTriangle },
+  moderate: { label: 'Moderate', color: 'text-amber-400',  bg: 'bg-amber-500/15 border-amber-500/40', dot: 'bg-amber-400',  icon: AlertCircle   },
+  general:  { label: 'General',  color: 'text-slate-400',  bg: 'bg-slate-700/40 border-slate-600/40', dot: 'bg-slate-500',  icon: MessageSquare },
+};
+
+const STATUS_CONFIG = {
+  new:         { label: 'New',         pill: 'bg-rose-500/20 text-rose-300 border-rose-500/30',       dot: 'bg-rose-500 animate-pulse' },
+  in_progress: { label: 'In Progress', pill: 'bg-amber-500/20 text-amber-300 border-amber-500/30',   dot: 'bg-amber-400' },
+  resolved:    { label: 'Resolved',    pill: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', dot: 'bg-emerald-400' },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-components
+// ─────────────────────────────────────────────────────────────────────────────
+function SevBadge({ severity }) {
+  const cfg = SEV_CONFIG[severity] || SEV_CONFIG.general;
+  const Icon = cfg.icon;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold border ${cfg.bg} ${cfg.color}`}>
+      <Icon className="w-3 h-3" />
+      {cfg.label}
+    </span>
+  );
+}
+
+function StatusPill({ status }) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.new;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold border ${cfg.pill}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {cfg.label}
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────────────────────────────────────
 export default function CustomerReportsModule({ className = '' }) {
-  // Reports state initialized from localStorage with fallback
+  // ── State ──────────────────────────────────────────────────────────────────
   const [reports, setReports] = useState(() => {
-    if (typeof localStorage !== 'undefined') {
-      try {
-        const cached = localStorage.getItem(STORAGE_KEY);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
-          }
-        }
-      } catch (_) {}
-    }
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
     return INITIAL_REPORTS;
   });
 
-  // Current filter tab: 'all' | 'new' | 'in_progress' | 'resolved'
-  const [activeTab, setActiveTab] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [severityFilter, setSeverityFilter] = useState('all'); // 'all' | 'critical' | 'moderate' | 'general'
-  const [isMuted, setIsMuted] = useState(false);
-  const [ticker, setTicker] = useState(0);
+  const [tab, setTab]                   = useState('all');
+  const [severity, setSeverity]         = useState('all');
+  const [search, setSearch]             = useState('');
+  const [muted, setMuted]               = useState(false);
+  const [toast, setToast]               = useState(null);
+  const [tick, setTick]                 = useState(0);
 
-  // Modals state
-  // Dispatch Modal
-  const [dispatchModalReport, setDispatchModalReport] = useState(null);
-  const [selectedStaffToDispatch, setSelectedStaffToDispatch] = useState(STAFF_ROSTER[1].id);
-  const [dispatchPriorityNote, setDispatchPriorityNote] = useState('');
+  // Modals
+  const [dispatchRpt, setDispatchRpt]   = useState(null);
+  const [dispatchStaff, setDispatchStaff] = useState(STAFF[1].id);
+  const [dispatchNote, setDispatchNote] = useState('');
+  const [reassignRpt, setReassignRpt]   = useState(null);
+  const [reassignStaff, setReassignStaff] = useState(STAFF[2].id);
+  const [resolveRpt, setResolveRpt]     = useState(null);
+  const [resolveNote, setResolveNote]   = useState('');
 
-  // Reassign Modal
-  const [reassignModalReport, setReassignModalReport] = useState(null);
-  const [selectedStaffToReassign, setSelectedStaffToReassign] = useState(STAFF_ROSTER[2].id);
-
-  // Resolve Modal
-  const [resolveModalReport, setResolveModalReport] = useState(null);
-  const [resolutionInput, setResolutionInput] = useState('');
-
-  // Live Toast Notification
-  const [toastMessage, setToastMessage] = useState(null);
-
-  // Save to localStorage whenever reports change
+  // ── Effects ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (typeof localStorage !== 'undefined') {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
-      } catch (_) {}
-    }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(reports)); } catch (_) {}
   }, [reports]);
 
-  // Periodic ticker to recalculate elapsed relative times every 30s
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTicker((t) => t + 1);
-    }, 30000);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setTick(n => n + 1), 30000);
+    return () => clearInterval(t);
   }, []);
 
-  // Show auto-dismissing toast
-  const triggerToast = useCallback((title, subtitle = '', type = 'info') => {
-    setToastMessage({ title, subtitle, type, id: Date.now() });
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 4500);
+  // ── Toast helper ──────────────────────────────────────────────────────────
+  const showToast = useCallback((msg, type = 'info') => {
+    setToast({ msg, type, id: Date.now() });
+    setTimeout(() => setToast(null), 3500);
   }, []);
 
-  // Format relative timestamp
-  const formatTimeAgo = useCallback((timestamp) => {
-    if (!timestamp) return 'Just now';
-    const seconds = Math.floor((Date.now() - timestamp) / 1000);
-    if (seconds < 60) return `${Math.max(1, seconds)}s ago`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours}h ago`;
-  }, [ticker]);
+  // ── Metrics ───────────────────────────────────────────────────────────────
+  const metrics = useMemo(() => ({
+    total:      reports.length,
+    newCount:   reports.filter(r => r.status === 'new').length,
+    inProgress: reports.filter(r => r.status === 'in_progress').length,
+    resolved:   reports.filter(r => r.status === 'resolved').length,
+  }), [reports]);
 
-  // Metric counts
-  const metrics = useMemo(() => {
-    const total = reports.length;
-    const urgentNew = reports.filter((r) => r.status === 'new').length;
-    const inProgress = reports.filter((r) => r.status === 'in_progress').length;
-    const resolved = reports.filter((r) => r.status === 'resolved').length;
-    const criticalCount = reports.filter((r) => r.severity === 'critical' && r.status !== 'resolved').length;
-    return { total, urgentNew, inProgress, resolved, criticalCount };
-  }, [reports]);
-
-  // Filtered reports
-  const filteredReports = useMemo(() => {
-    return reports.filter((item) => {
-      // Tab filter
-      if (activeTab === 'new' && item.status !== 'new') return false;
-      if (activeTab === 'in_progress' && item.status !== 'in_progress') return false;
-      if (activeTab === 'resolved' && item.status !== 'resolved') return false;
-
-      // Severity filter
-      if (severityFilter !== 'all' && item.severity !== severityFilter) return false;
-
-      // Search query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesTable = String(item.tableNumber).includes(q) || (item.tableLocation || '').toLowerCase().includes(q);
-        const matchesNote = (item.customerNote || '').toLowerCase().includes(q);
-        const staff = STAFF_ROSTER.find((s) => s.id === item.assignedStaffId);
-        const matchesStaff = staff && staff.name.toLowerCase().includes(q);
-        const matchesRes = (item.resolutionNote || '').toLowerCase().includes(q);
-        if (!matchesTable && !matchesNote && !matchesStaff && !matchesRes) {
-          return false;
-        }
+  // ── Filtered list ─────────────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    return reports.filter(r => {
+      if (tab === 'new' && r.status !== 'new') return false;
+      if (tab === 'in_progress' && r.status !== 'in_progress') return false;
+      if (tab === 'resolved' && r.status !== 'resolved') return false;
+      if (severity !== 'all' && r.severity !== severity) return false;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        const staff = STAFF.find(s => s.id === r.staffId);
+        return (
+          String(r.table).includes(q) ||
+          r.note.toLowerCase().includes(q) ||
+          (staff?.name.toLowerCase().includes(q)) ||
+          (r.resolutionNote?.toLowerCase().includes(q))
+        );
       }
-
       return true;
     });
-  }, [reports, activeTab, severityFilter, searchQuery]);
+  }, [reports, tab, severity, search]);
 
-  // Direct Action 1: Assign / Dispatch Employee via Dropdown (updates state immediately)
-  const handleDirectAssignEmployee = (reportId, newStaffId) => {
-    const targetStaff = STAFF_ROSTER.find((s) => s.id === newStaffId) || STAFF_ROSTER[0];
-    const targetReport = reports.find((r) => r.id === reportId);
-    setReports((prev) =>
-      prev.map((r) => {
-        if (r.id === reportId) {
-          return {
-            ...r,
-            assignedStaffId: targetStaff.id,
-            status: r.status === 'new' ? 'in_progress' : r.status,
-            dispatchLog: {
-              staffId: targetStaff.id,
-              timestamp: Date.now(),
-              note: `Direct dispatch: ${targetStaff.name} assigned to Table ${r.tableNumber}`
-            }
-          };
-        }
-        return r;
-      })
-    );
-    chimeSynthesizer.playSuccessChime();
-    triggerToast(
-      `Assigned ${targetStaff.name} to Table ${targetReport ? targetReport.tableNumber : ''}`,
-      `Employee assigned and dispatched immediately.`,
-      'success'
-    );
+  // ── Action handlers ───────────────────────────────────────────────────────
+  const assignStaff = (reportId, staffId) => {
+    const s = STAFF.find(x => x.id === staffId) || STAFF[0];
+    setReports(prev => prev.map(r => r.id !== reportId ? r : {
+      ...r, staffId: s.id,
+      status: r.status === 'new' ? 'in_progress' : r.status,
+      dispatch: { staffId: s.id, note: `${s.name} assigned to Table ${r.table}` }
+    }));
+    chime.success();
+    showToast(`${s.name} assigned`, 'success');
   };
 
-  // Direct Action 2: Priority Ping Button (updates state immediately)
-  const handlePriorityPing = (report) => {
-    const assignedStaff = STAFF_ROSTER.find((s) => s.id === report.assignedStaffId) || STAFF_ROSTER[0];
-    setReports((prev) =>
-      prev.map((r) => {
-        if (r.id === report.id) {
-          return {
-            ...r,
-            status: r.status === 'new' ? 'in_progress' : r.status,
-            dispatchLog: {
-              staffId: assignedStaff.id,
-              timestamp: Date.now(),
-              note: `Priority Ping: Urgent assistance beamed to ${assignedStaff.name} for Table ${r.tableNumber}!`
-            }
-          };
-        }
-        return r;
-      })
-    );
-    chimeSynthesizer.playUrgentChime();
-    triggerToast(
-      `Priority Ping Sent!`,
-      `Urgent alert beamed to ${assignedStaff.name} for Table ${report.tableNumber}.`,
-      'critical'
-    );
+  const priorityPing = (report) => {
+    const s = STAFF.find(x => x.id === report.staffId) || STAFF[0];
+    setReports(prev => prev.map(r => r.id !== report.id ? r : {
+      ...r,
+      status: r.status === 'new' ? 'in_progress' : r.status,
+      dispatch: { staffId: s.id, note: `Priority ping sent to ${s.name}` }
+    }));
+    chime.urgent();
+    showToast(`Priority ping → ${s.name} (Table ${report.table})`, 'warn');
   };
 
-  // Direct Action 3: Mark Resolved Button (updates state immediately)
-  const handleDirectMarkResolved = (report) => {
-    const resolvedTimeMs = Date.now();
-    const elapsedMinutes = Math.max(1, Math.round((resolvedTimeMs - report.createdAt) / 60000));
-    const resolutionTimeString = `${elapsedMinutes} min${elapsedMinutes === 1 ? '' : 's'}`;
-    const defaultNote = report.customerNote.toLowerCase().includes('napkin') || report.customerNote.toLowerCase().includes('water')
-      ? 'Delivered napkins and fresh water promptly; customer verified satisfied.'
-      : report.customerNote.toLowerCase().includes('warm') || report.customerNote.toLowerCase().includes('steak')
-      ? 'Kitchen reprepared hot Wagyu steak with priority manager table check.'
-      : report.customerNote.toLowerCase().includes('bill')
-      ? 'Payment settled smoothly and applied dining discount.'
-      : 'Resolved table inquiry directly with customer; full dining satisfaction confirmed.';
-
-    setReports((prev) =>
-      prev.map((r) => {
-        if (r.id === report.id) {
-          return {
-            ...r,
-            status: 'resolved',
-            resolvedAt: resolvedTimeMs,
-            resolutionTime: resolutionTimeString,
-            resolutionNote: `Resolved - ${defaultNote}`
-          };
-        }
-        return r;
-      })
-    );
-    chimeSynthesizer.playSuccessChime();
-    triggerToast(
-      `Table ${report.tableNumber} Marked as Resolved!`,
-      `Audited in ${resolutionTimeString}. Logged into quality records.`,
-      'success'
-    );
+  const markResolved = (report) => {
+    const ms = Date.now();
+    const mins = Math.max(1, Math.round((ms - report.createdAt) / 60000));
+    setReports(prev => prev.map(r => r.id !== report.id ? r : {
+      ...r, status: 'resolved', resolvedAt: ms,
+      resolutionTime: `${mins} min${mins === 1 ? '' : 's'}`,
+      resolutionNote: 'Resolved — customer confirmed satisfied.'
+    }));
+    chime.success();
+    showToast(`Table ${report.table} resolved`, 'success');
   };
 
-  // Direct Action 4: Reopen Issue
-  const handleDirectReopen = (report) => {
-    setReports((prev) =>
-      prev.map((r) => {
-        if (r.id === report.id) {
-          return {
-            ...r,
-            status: 'in_progress',
-            resolvedAt: null,
-            resolutionTime: null,
-            resolutionNote: null
-          };
-        }
-        return r;
-      })
-    );
-    triggerToast(`Table ${report.tableNumber} Reopened`, `Issue status changed back to In Progress.`, 'info');
+  const reopen = (report) => {
+    setReports(prev => prev.map(r => r.id !== report.id ? r : {
+      ...r, status: 'in_progress', resolvedAt: null, resolutionTime: null, resolutionNote: null
+    }));
+    showToast(`Table ${report.table} reopened`, 'info');
   };
 
-  // 1-Click Action 1: Open Dispatch Modal
-  const handleOpenDispatch = (report) => {
-    setDispatchModalReport(report);
-    // Default to an available employee
-    const available = STAFF_ROSTER.find((s) => s.status === 'available' && s.id !== report.assignedStaffId);
-    setSelectedStaffToDispatch(available ? available.id : STAFF_ROSTER[0].id);
-    setDispatchPriorityNote('');
+  const confirmDispatch = () => {
+    if (!dispatchRpt) return;
+    const s = STAFF.find(x => x.id === dispatchStaff) || STAFF[0];
+    setReports(prev => prev.map(r => r.id !== dispatchRpt.id ? r : {
+      ...r, staffId: s.id,
+      status: r.status === 'new' ? 'in_progress' : r.status,
+      dispatch: { staffId: s.id, note: dispatchNote.trim() || `${s.name} dispatched to Table ${r.table}` }
+    }));
+    chime.success();
+    showToast(`${s.name} dispatched to Table ${dispatchRpt.table}`, 'success');
+    setDispatchRpt(null);
   };
 
-  // Submit Dispatch Action
-  const handleConfirmDispatch = () => {
-    if (!dispatchModalReport) return;
-    const targetStaff = STAFF_ROSTER.find((s) => s.id === selectedStaffToDispatch) || STAFF_ROSTER[0];
-    const reportId = dispatchModalReport.id;
-
-    setReports((prev) =>
-      prev.map((r) => {
-        if (r.id === reportId) {
-          return {
-            ...r,
-            assignedStaffId: targetStaff.id,
-            status: r.status === 'new' ? 'in_progress' : r.status,
-            dispatchLog: {
-              staffId: targetStaff.id,
-              timestamp: Date.now(),
-              note: dispatchPriorityNote.trim()
-                ? `Priority dispatch: "${dispatchPriorityNote.trim()}"`
-                : `Urgent priority dispatch: ${targetStaff.name} sent to Table ${r.tableNumber}`
-            }
-          };
-        }
-        return r;
-      })
-    );
-
-    chimeSynthesizer.playSuccessChime();
-    triggerToast(
-      `Dispatched ${targetStaff.name} to Table ${dispatchModalReport.tableNumber}`,
-      `Urgent priority alert beamed to staff handheld device.`,
-      'success'
-    );
-    setDispatchModalReport(null);
+  const confirmReassign = () => {
+    if (!reassignRpt) return;
+    const s = STAFF.find(x => x.id === reassignStaff) || STAFF[0];
+    const prev_name = STAFF.find(x => x.id === reassignRpt.staffId)?.name || '—';
+    setReports(prev => prev.map(r => r.id !== reassignRpt.id ? r : {
+      ...r, staffId: s.id,
+      status: r.status === 'new' ? 'in_progress' : r.status,
+      dispatch: { staffId: s.id, note: `Reassigned from ${prev_name} → ${s.name}` }
+    }));
+    chime.success();
+    showToast(`Table ${reassignRpt.table} reassigned to ${s.name}`, 'success');
+    setReassignRpt(null);
   };
 
-  // 1-Click Action 2: Open Reassign Modal
-  const handleOpenReassign = (report) => {
-    setReassignModalReport(report);
-    const other = STAFF_ROSTER.find((s) => s.id !== report.assignedStaffId && s.status === 'available') || STAFF_ROSTER[0];
-    setSelectedStaffToReassign(other.id);
+  const confirmResolve = () => {
+    if (!resolveRpt) return;
+    const ms = Date.now();
+    const mins = Math.max(1, Math.round((ms - resolveRpt.createdAt) / 60000));
+    const note = resolveNote.trim() || 'Resolved by manager.';
+    setReports(prev => prev.map(r => r.id !== resolveRpt.id ? r : {
+      ...r, status: 'resolved', resolvedAt: ms,
+      resolutionTime: `${mins} min${mins === 1 ? '' : 's'}`,
+      resolutionNote: note.startsWith('Resolved') ? note : `Resolved — ${note}`
+    }));
+    chime.success();
+    showToast(`Table ${resolveRpt.table} marked resolved`, 'success');
+    setResolveRpt(null);
   };
 
-  // Submit Reassignment Action
-  const handleConfirmReassign = () => {
-    if (!reassignModalReport) return;
-    const newStaff = STAFF_ROSTER.find((s) => s.id === selectedStaffToReassign) || STAFF_ROSTER[0];
-    const prevStaff = STAFF_ROSTER.find((s) => s.id === reassignModalReport.assignedStaffId);
-    const reportId = reassignModalReport.id;
-
-    setReports((prev) =>
-      prev.map((r) => {
-        if (r.id === reportId) {
-          return {
-            ...r,
-            assignedStaffId: newStaff.id,
-            status: r.status === 'new' ? 'in_progress' : r.status,
-            dispatchLog: {
-              staffId: newStaff.id,
-              timestamp: Date.now(),
-              note: `Table reassigned from ${prevStaff ? prevStaff.name : 'previous employee'} to ${newStaff.name} due to pace of service.`
-            }
-          };
-        }
-        return r;
-      })
-    );
-
-    chimeSynthesizer.playSuccessChime();
-    triggerToast(
-      `Table ${reassignModalReport.tableNumber} Reassigned to ${newStaff.name}`,
-      `Previous employee released. Service continuity restored.`,
-      'success'
-    );
-    setReassignModalReport(null);
-  };
-
-  // 1-Click Action 3: Open Mark as Resolved Modal
-  const handleOpenResolve = (report) => {
-    setResolveModalReport(report);
-    // Provide smart default preset based on note
-    if (report.customerNote.toLowerCase().includes('napkin') || report.customerNote.toLowerCase().includes('water')) {
-      setResolutionInput('Napkins delivered immediately and complimentary drink served.');
-    } else if (report.customerNote.toLowerCase().includes('warm') || report.customerNote.toLowerCase().includes('food') || report.customerNote.toLowerCase().includes('steak')) {
-      setResolutionInput('Chef prepared fresh hot Wagyu steak & manager table-check complete.');
-    } else if (report.customerNote.toLowerCase().includes('bill') || report.customerNote.toLowerCase().includes('credit')) {
-      setResolutionInput('Bill split successfully across 3 cards and dining discount applied.');
-    } else {
-      setResolutionInput('Resolved with customer directly; diner fully satisfied.');
-    }
-  };
-
-  // Submit Resolution Action
-  const handleConfirmResolve = () => {
-    if (!resolveModalReport) return;
-    const reportId = resolveModalReport.id;
-    const resolvedTimeMs = Date.now();
-    const elapsedMinutes = Math.max(1, Math.round((resolvedTimeMs - resolveModalReport.createdAt) / 60000));
-    const resolutionTimeString = `${elapsedMinutes} min${elapsedMinutes === 1 ? '' : 's'}`;
-
-    const noteToSave = resolutionInput.trim() || 'Resolved by Manager with table follow-up.';
-
-    setReports((prev) =>
-      prev.map((r) => {
-        if (r.id === reportId) {
-          return {
-            ...r,
-            status: 'resolved',
-            resolvedAt: resolvedTimeMs,
-            resolutionTime: resolutionTimeString,
-            resolutionNote: noteToSave.startsWith('Resolved -') ? noteToSave : `Resolved - ${noteToSave}`
-          };
-        }
-        return r;
-      })
-    );
-
-    chimeSynthesizer.playSuccessChime();
-    triggerToast(
-      `Table ${resolveModalReport.tableNumber} Marked as Resolved!`,
-      `Audited in ${resolutionTimeString}. Logged into resolved history.`,
-      'success'
-    );
-    setResolveModalReport(null);
-  };
-
-  // 5. "Simulate New Customer Note" Demo Trigger
-  const handleSimulateNewCustomerNote = () => {
-    const randomTemplate = SIMULATION_NOTE_POOL[Math.floor(Math.random() * SIMULATION_NOTE_POOL.length)];
-    // Pick an employee
-    const randomStaff = STAFF_ROSTER[Math.floor(Math.random() * STAFF_ROSTER.length)];
-    
-    const newReport = {
-      id: `rep-${Date.now().toString().slice(-4)}`,
-      tableNumber: randomTemplate.tableNumber,
-      tableLocation: randomTemplate.tableLocation,
-      customerNote: randomTemplate.customerNote,
-      severity: randomTemplate.severity,
-      status: 'new',
-      createdAt: Date.now(),
-      assignedStaffId: randomStaff.id,
-      dispatchLog: null,
-      resolvedAt: null,
-      resolutionTime: null,
-      resolutionNote: null
+  const simulateNew = () => {
+    const t = DEMO_POOL[Math.floor(Math.random() * DEMO_POOL.length)];
+    const s = STAFF[Math.floor(Math.random() * STAFF.length)];
+    const r = {
+      id: `rep-${Date.now()}`, table: t.table, note: t.note, severity: t.severity,
+      status: 'new', createdAt: Date.now(), staffId: s.id,
+      dispatch: null, resolvedAt: null, resolutionTime: null, resolutionNote: null
     };
-
-    setReports((prev) => [newReport, ...prev]);
-
-    // Play chime sound
-    chimeSynthesizer.playUrgentChime();
-
-    // Trigger high-priority alert toast
-    triggerToast(
-      `🚨 LIVE ALERT: Table ${newReport.tableNumber} Customer Report!`,
-      `"${newReport.customerNote.slice(0, 65)}..."`,
-      'critical'
-    );
+    setReports(prev => [r, ...prev]);
+    chime.urgent();
+    showToast(`New report — Table ${t.table}`, 'warn');
   };
 
-  // Reset to original demo dataset
-  const handleResetDemo = () => {
-    if (typeof window !== 'undefined' && window.confirm('Reset all customer reports back to clean demo initial state?')) {
-      setReports(INITIAL_REPORTS);
-      triggerToast('Reset Complete', 'Default 4 reports restored.', 'info');
-    }
+  const openDispatch = (report) => {
+    setDispatchRpt(report);
+    const avail = STAFF.find(s => s.status === 'available' && s.id !== report.staffId);
+    setDispatchStaff(avail?.id || STAFF[0].id);
+    setDispatchNote('');
   };
 
+  const openReassign = (report) => {
+    setReassignRpt(report);
+    const other = STAFF.find(s => s.id !== report.staffId && s.status === 'available') || STAFF[0];
+    setReassignStaff(other.id);
+  };
+
+  const openResolve = (report) => {
+    setResolveRpt(report);
+    setResolveNote(report.resolutionNote || '');
+  };
+
+  const TABS = [
+    { id: 'all',         label: 'All',         count: metrics.total      },
+    { id: 'new',         label: 'New',          count: metrics.newCount,   alert: metrics.newCount > 0 },
+    { id: 'in_progress', label: 'In Progress',  count: metrics.inProgress },
+    { id: 'resolved',    label: 'Resolved',     count: metrics.resolved   },
+  ];
+
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div
-      className={`customer-reports-module text-[#f8fafc] rounded-3xl border border-[#334155] shadow-2xl relative overflow-hidden w-full ${className}`}
-      style={{ width: '100%', padding: '24px 28px', backgroundColor: '#0f172a', boxSizing: 'border-box' }}
+      className={`relative w-full text-slate-100 ${className}`}
+      style={{ backgroundColor: '#0b0f19', minHeight: '100%' }}
     >
-      
-      {/* Subtle Ambient Radial Highlight */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF5A26]/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-slate-800/10 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
-
-      {/* =========================================================================
-          LIVE FLOATING TOAST NOTIFICATION
-          ========================================================================= */}
-      {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 max-w-md w-full animate-fadeIn shadow-2xl">
-          <div className={`p-4 rounded-2xl border backdrop-blur-xl flex items-start gap-3 shadow-2xl ${
-            toastMessage.type === 'critical'
-              ? 'bg-rose-950/95 border-rose-500/70 text-rose-100 ring-2 ring-rose-500/50 shadow-rose-900/50'
-              : toastMessage.type === 'success'
-              ? 'bg-emerald-950/95 border-emerald-500/70 text-emerald-100 ring-2 ring-emerald-500/40 shadow-emerald-900/50'
-              : 'bg-[#1e293b] border-[#334155] text-slate-200'
+      {/* ── Toast ─────────────────────────────────────────────────────────── */}
+      {toast && (
+        <div className="fixed top-5 right-5 z-50 animate-fadeIn">
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl text-sm font-semibold backdrop-blur-md ${
+            toast.type === 'success' ? 'bg-emerald-950/95 border-emerald-500/50 text-emerald-200' :
+            toast.type === 'warn'    ? 'bg-rose-950/95 border-rose-500/50 text-rose-200' :
+                                       'bg-slate-800/95 border-slate-600/50 text-slate-200'
           }`}>
-            <div className="mt-0.5 shrink-0">
-              {toastMessage.type === 'critical' ? (
-                <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center animate-bounce">
-                  <AlertTriangle className="w-4 h-4" />
-                </div>
-              ) : toastMessage.type === 'success' ? (
-                <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center">
-                  <Check className="w-4 h-4" />
-                </div>
-              ) : (
-                <div className="w-8 h-8 rounded-xl bg-[#0f172a] text-slate-300 border border-[#334155] flex items-center justify-center">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-              )}
-            </div>
-            <div className="flex-1 pr-2">
-              <h4 className="text-sm font-black tracking-tight">{toastMessage.title}</h4>
-              {toastMessage.subtitle && (
-                <p className="text-xs opacity-90 mt-0.5 leading-relaxed">{toastMessage.subtitle}</p>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => setToastMessage(null)}
-              className="text-slate-400 hover:text-white p-1 rounded-lg"
-            >
-              <X className="w-4 h-4" />
+            {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> :
+             toast.type === 'warn'    ? <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 animate-bounce" /> :
+                                        <MessageSquare className="w-4 h-4 text-slate-400 shrink-0" />}
+            <span>{toast.msg}</span>
+            <button type="button" onClick={() => setToast(null)} className="ml-1 text-slate-400 hover:text-white">
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       )}
 
-      {/* =========================================================================
-          1. DIRECT CONSUMER-TO-ADMIN CHANNEL: HEADER & DESCRIPTION
-          ========================================================================= */}
-      <div className="p-6 sm:p-8 border-b border-[#334155] relative z-10 bg-[#111827] rounded-2xl mb-6 shadow-xl">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          
-          {/* Header Title & Explanatory Badge */}
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#FF5A26] to-[#FF7A45] text-white flex items-center justify-center shadow-lg shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/40 shrink-0">
-                <MessageSquare className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-xl sm:text-2xl font-black text-[#f8fafc] tracking-tight">
-                    Customer Reports &amp; Direct-to-Admin Notes
-                  </h2>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/15 border border-rose-500/40 text-rose-400 animate-pulse">
-                    Live Channel
-                  </span>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                  Direct Consumer-to-Admin communication loop. These reports and notes originate <strong className="text-slate-100">exclusively from the customer digital menu</strong> directly to executive floor management, bypassing service bottlenecks for immediate intervention.
-                </p>
-              </div>
-            </div>
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/25 to-orange-600/10 border border-orange-500/30 flex items-center justify-center">
+            <MessageSquare className="w-5 h-5 text-orange-400" />
           </div>
-
-          {/* Action Toolbar: Simulate Demo & Audio Toggles */}
-          <div className="flex flex-wrap items-center gap-2.5 sm:self-start lg:self-center">
-            
-            {/* Audio Toggle */}
-            <button
-              type="button"
-              onClick={() => {
-                const next = !isMuted;
-                setIsMuted(next);
-                chimeSynthesizer.isMuted = next;
-                if (!next) chimeSynthesizer.playSuccessChime();
-              }}
-              className={`p-2.5 rounded-2xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                isMuted
-                  ? 'bg-[#1e293b] border-[#334155] text-slate-400 hover:text-white'
-                  : 'bg-amber-950/40 border-amber-500/40 text-amber-300 shadow-sm shadow-amber-900/30'
-              }`}
-              title={isMuted ? 'Unmute alert chimes' : 'Mute alert chimes'}
-            >
-              {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 animate-pulse" />}
-              <span className="hidden sm:inline">{isMuted ? 'Muted' : 'Audio ON'}</span>
-            </button>
-
-            {/* Reset Demo Button */}
-            <button
-              type="button"
-              onClick={handleResetDemo}
-              className="p-2.5 rounded-2xl bg-[#1e293b] hover:bg-slate-700 border border-[#334155] text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-              title="Reset to 4 initial default demo reports"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
-
-            {/* 5. "SIMULATE NEW CUSTOMER NOTE" DEMO BUTTON */}
-            <button
-              type="button"
-              onClick={handleSimulateNewCustomerNote}
-              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:from-[#FF7A45] hover:to-[#FF5A26] text-white text-xs sm:text-sm font-black shadow-lg shadow-[#FF5A26]/40 ring-1 ring-[#FF7A45]/60 transition-all duration-200 active:scale-95 flex items-center gap-2 cursor-pointer group"
-              title="Simulate receiving an instant customer issue from a diner table in real-time"
-            >
-              <Flame className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform animate-pulse" />
-              <span>Simulate New Customer Note</span>
-              <PlusCircle className="w-4 h-4 opacity-80" />
-            </button>
-
+          <div>
+            <h2 className="text-base font-extrabold text-white tracking-tight">Customer Reports & Notes</h2>
+            <p className="text-xs text-slate-500">Direct customer feedback from the digital menu</p>
           </div>
-
         </div>
 
-        {/* =========================================================================
-            1. METRIC COUNTERS: Total Notes, Urgent / New, In Progress, Resolved
-            ========================================================================= */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6">
-          
-          {/* Total Notes */}
-          <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4 transition-all hover:border-slate-500 shadow-sm">
-            <div className="flex items-center justify-between text-slate-300 text-xs font-bold uppercase tracking-wider">
-              <span>Total Notes</span>
-              <MessageSquare className="w-4 h-4 text-[#FF7A45]" />
-            </div>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-black text-[#f8fafc] tracking-tight">{metrics.total}</span>
-              <span className="text-xs text-slate-400">received</span>
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          {/* Mute toggle */}
+          <button
+            type="button"
+            onClick={() => { const next = !muted; setMuted(next); chime.muted = next; if (!next) chime.success(); }}
+            className={`p-2 rounded-lg border text-xs transition cursor-pointer ${
+              muted ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+            }`}
+            title={muted ? 'Unmute' : 'Mute alerts'}
+          >
+            {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          </button>
 
-          {/* Urgent / New */}
-          <div className={`rounded-2xl p-4 transition-all border shadow-sm ${
-            metrics.urgentNew > 0
-              ? 'bg-[#1e293b] border-rose-500/50 text-rose-300 ring-1 ring-rose-500/30'
-              : 'bg-[#1e293b] border-[#334155] text-slate-400'
-          }`}>
-            <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
-              <span className={metrics.urgentNew > 0 ? 'text-rose-400' : 'text-slate-400'}>Urgent / New</span>
-              <AlertTriangle className={`w-4 h-4 ${metrics.urgentNew > 0 ? 'text-rose-400 animate-bounce' : 'text-slate-500'}`} />
-            </div>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className={`text-3xl font-black tracking-tight ${metrics.urgentNew > 0 ? 'text-rose-300' : 'text-[#f8fafc]'}`}>
-                {metrics.urgentNew}
-              </span>
-              <span className="text-xs font-semibold">
-                {metrics.urgentNew > 0 ? 'require action' : 'all dispatched'}
-              </span>
-            </div>
-          </div>
+          {/* Reset */}
+          <button
+            type="button"
+            onClick={() => { if (window.confirm('Reset to default demo reports?')) { setReports(INITIAL_REPORTS); showToast('Reset complete', 'info'); } }}
+            className="p-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 hover:text-white text-xs transition cursor-pointer"
+            title="Reset demo data"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
 
-          {/* In Progress */}
-          <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4 transition-all hover:border-amber-500/40 shadow-sm">
-            <div className="flex items-center justify-between text-slate-300 text-xs font-bold uppercase tracking-wider">
-              <span className="text-amber-400">In Progress</span>
-              <Clock className="w-4 h-4 text-amber-400 animate-spin-slow" />
-            </div>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-black text-amber-300 tracking-tight">{metrics.inProgress}</span>
-              <span className="text-xs text-amber-300/80">being handled</span>
-            </div>
-          </div>
-
-          {/* Resolved */}
-          <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4 transition-all hover:border-emerald-500/40 shadow-sm">
-            <div className="flex items-center justify-between text-slate-300 text-xs font-bold uppercase tracking-wider">
-              <span className="text-emerald-400">Resolved</span>
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-black text-emerald-300 tracking-tight">{metrics.resolved}</span>
-              <span className="text-xs text-emerald-300/80">closed cases</span>
-            </div>
-          </div>
-
+          {/* Simulate */}
+          <button
+            type="button"
+            onClick={simulateNew}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white text-xs font-bold shadow-lg shadow-orange-500/20 transition active:scale-95 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Simulate Report
+          </button>
         </div>
-
       </div>
 
-      {/* =========================================================================
-          FILTER TABS, SEVERITY SELECTOR & SEARCH
-          ========================================================================= */}
-      <div className="p-4 sm:p-6 bg-[#111827] border-b border-[#334155] rounded-2xl mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 relative z-10 shadow-xl">
-        
-        {/* Filter Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-[#1e293b] rounded-2xl border border-[#334155] overflow-x-auto">
-          {[
-            { id: 'all', label: 'All Reports', count: metrics.total },
-            { id: 'new', label: 'New Issues', count: metrics.urgentNew, highlight: metrics.urgentNew > 0 },
-            { id: 'in_progress', label: 'In Progress', count: metrics.inProgress },
-            { id: 'resolved', label: 'Resolved', count: metrics.resolved },
-          ].map((tab) => (
+      {/* ── KPI Row ───────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        {[
+          { label: 'Total',       value: metrics.total,      color: 'text-white',        accent: 'bg-slate-700/40 border-slate-600/40'           },
+          { label: 'New',         value: metrics.newCount,   color: metrics.newCount > 0 ? 'text-rose-300' : 'text-white', accent: metrics.newCount > 0 ? 'bg-rose-500/15 border-rose-500/40' : 'bg-slate-700/40 border-slate-600/40' },
+          { label: 'In Progress', value: metrics.inProgress, color: 'text-amber-300',    accent: 'bg-amber-500/10 border-amber-500/30'           },
+          { label: 'Resolved',    value: metrics.resolved,   color: 'text-emerald-300',  accent: 'bg-emerald-500/10 border-emerald-500/30'       },
+        ].map(k => (
+          <div key={k.label} className={`p-4 rounded-xl border ${k.accent} flex flex-col`}>
+            <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">{k.label}</span>
+            <span className={`text-3xl font-extrabold mt-1 ${k.color}`}>{k.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Filter bar ────────────────────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5 p-3 rounded-xl bg-[#111726]/85 border border-slate-800">
+        {/* Tabs */}
+        <div className="flex items-center gap-1">
+          {TABS.map(t => (
             <button
-              key={tab.id}
+              key={t.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-                activeTab === tab.id
-                  ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+              onClick={() => setTab(t.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                tab === t.id
+                  ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md shadow-orange-500/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <span>{tab.label}</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                activeTab === tab.id
-                  ? 'bg-black/30 text-white'
-                  : tab.highlight
-                  ? 'bg-rose-500/20 text-rose-300 animate-pulse'
-                  : 'bg-[#0f172a] text-slate-300'
+              {t.label}
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                tab === t.id ? 'bg-black/25 text-white' : t.alert ? 'bg-rose-500/20 text-rose-300 animate-pulse' : 'bg-slate-800 text-slate-400'
               }`}>
-                {tab.count}
+                {t.count}
               </span>
             </button>
           ))}
         </div>
 
-        {/* Severity Filter & Search Bar */}
-        <div className="flex items-center gap-2.5">
-          
-          {/* Severity Dropdown */}
+        {/* Severity + Search */}
+        <div className="flex items-center gap-2">
           <select
-            value={severityFilter}
-            onChange={(e) => setSeverityFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] focus:outline-none focus:border-[#FF5A26] cursor-pointer"
+            value={severity}
+            onChange={e => setSeverity(e.target.value)}
+            className="px-2.5 py-1.5 rounded-lg bg-[#0b0f19] border border-slate-800 text-xs text-slate-300 focus:outline-none focus:border-orange-500/60 cursor-pointer"
           >
-            <option value="all" className="bg-[#111827]">All Severities</option>
-            <option value="critical" className="bg-[#111827]">Critical / High</option>
-            <option value="moderate" className="bg-[#111827]">Moderate</option>
-            <option value="general" className="bg-[#111827]">General Note</option>
+            <option value="all">All Severity</option>
+            <option value="critical">Critical</option>
+            <option value="moderate">Moderate</option>
+            <option value="general">General</option>
           </select>
-
-          {/* Search Input */}
-          <div className="relative flex-1 sm:w-64">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search table, note, or employee..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] placeholder-slate-400 focus:outline-none focus:border-[#FF5A26]"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search table, note, staff..."
+              className="w-56 pl-8 pr-3 py-1.5 rounded-lg bg-[#0b0f19] border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-orange-500/60"
             />
           </div>
-
         </div>
-
       </div>
 
-      {/* =========================================================================
-          2. REPORT CARDS LIST & 4. RESOLVED HISTORY LOG
-          ========================================================================= */}
-      <div className="space-y-4 relative z-10 mb-6">
-        
-        {filteredReports.length === 0 ? (
-          <div className="text-center py-16 px-4 bg-[#111827] rounded-3xl border border-dashed border-[#334155]">
-            <MessageSquare className="w-12 h-12 text-slate-500 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-[#f8fafc]">No reports found</h3>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-              No customer reports match your current filters. Tap "Simulate New Customer Note" above to test receiving live notes.
-            </p>
+      {/* ── Report Cards ──────────────────────────────────────────────────── */}
+      <div className="space-y-3">
+        {filtered.length === 0 ? (
+          <div className="text-center py-14 rounded-xl border border-dashed border-slate-800 bg-[#111726]/50">
+            <MessageSquare className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+            <p className="text-sm font-semibold text-slate-400">No reports match your filters</p>
+            <p className="text-xs text-slate-600 mt-1">Try adjusting the tab or search query</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {filteredReports.map((report) => {
-              const assignedStaff = STAFF_ROSTER.find((s) => s.id === report.assignedStaffId) || STAFF_ROSTER[0];
-              const isCritical = report.severity === 'critical';
-              const isModerate = report.severity === 'moderate';
-              const isResolved = report.status === 'resolved';
-              const isNew = report.status === 'new';
-              const isInProgress = report.status === 'in_progress';
+          filtered.map(report => {
+            const staff     = STAFF.find(s => s.id === report.staffId) || STAFF[0];
+            const isNew     = report.status === 'new';
+            const isIP      = report.status === 'in_progress';
+            const isRes     = report.status === 'resolved';
+            const isCrit    = report.severity === 'critical';
 
-              return (
-                <div
-                  key={report.id}
-                  className={`rounded-3xl border p-5 sm:p-6 transition-all duration-300 shadow-xl space-y-4 relative ${
-                    isCritical && !isResolved
-                      ? 'bg-[#111827] border-rose-500/50 hover:border-rose-500/70 ring-1 ring-rose-500/20 shadow-rose-950/20'
-                      : isResolved
-                      ? 'bg-[#111827] border-emerald-500/30 hover:border-emerald-500/50 opacity-95'
-                      : 'bg-[#111827] border-[#334155] hover:border-slate-600'
-                  }`}
-                >
-                  
-                  {/* Top Bar: Table Badge, Severity, Status, Timestamp */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#334155]">
-                    
-                    {/* Left: Table Badge & Table Location */}
-                    <div className="flex items-center gap-3">
-                      <div className="px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-[#FF5A26]/20 to-[#FF7A45]/15 border border-[#FF5A26]/40 text-white font-black text-sm flex items-center gap-2 shadow-xs">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#FF5A26] animate-pulse" />
-                        <span>Table {report.tableNumber}</span>
+            return (
+              <div
+                key={report.id}
+                className={`rounded-xl border p-4 transition-all ${
+                  isCrit && !isRes
+                    ? 'bg-[#111726]/85 border-rose-500/30 ring-1 ring-rose-500/10'
+                    : isRes
+                    ? 'bg-[#111726]/60 border-emerald-500/20 opacity-90'
+                    : 'bg-[#111726]/85 border-slate-800'
+                }`}
+              >
+                {/* Card top row */}
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    {/* Table badge */}
+                    <span className="px-2.5 py-1 rounded-lg bg-orange-500/15 border border-orange-500/30 text-orange-300 font-bold text-xs">
+                      Table {report.table}
+                    </span>
+                    <SevBadge severity={report.severity} />
+                    <StatusPill status={report.status} />
+                  </div>
+                  <span className="text-xs text-slate-500 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {timeAgo(report.createdAt)}
+                  </span>
+                </div>
+
+                {/* Note text */}
+                <p className="text-sm text-slate-200 font-medium leading-relaxed mb-3 px-1">
+                  "{report.note}"
+                </p>
+
+                {/* Assigned staff row */}
+                <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg bg-[#0b0f19]/60 border border-slate-800/80 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    {/* Avatar initials */}
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-600 to-slate-700 border border-slate-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                      {staff.name.split(' ').map(n => n[0]).join('').slice(0,2)}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold text-white">{staff.name}</span>
+                        <span className="text-[10px] text-slate-400">{staff.role}</span>
+                        <span className={`w-1.5 h-1.5 rounded-full ${staff.status === 'available' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
                       </div>
-                      <span className="text-xs font-semibold text-slate-300">
-                        {report.tableLocation}
+                      {report.dispatch && (
+                        <p className="text-[11px] text-amber-400/90 mt-0.5 flex items-center gap-1">
+                          <Zap className="w-3 h-3" />
+                          {report.dispatch.note}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Quick assign dropdown */}
+                  <select
+                    value={report.staffId}
+                    onChange={e => assignStaff(report.id, e.target.value)}
+                    className="text-xs bg-[#0b0f19] border border-slate-700 text-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:border-orange-500/60 cursor-pointer"
+                  >
+                    {STAFF.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Resolved note */}
+                {isRes && report.resolutionNote && (
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-emerald-950/30 border border-emerald-500/25 mb-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-emerald-200 leading-relaxed">{report.resolutionNote}</p>
+                      <span className="text-[11px] text-emerald-400/70 mt-0.5 block">
+                        Resolved in {report.resolutionTime || '—'} · {timeAgo(report.resolvedAt)}
                       </span>
                     </div>
+                  </div>
+                )}
 
-                    {/* Right: Badges & Timestamp */}
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      
-                      {/* Severity Badge */}
-                      {isCritical && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider bg-rose-600/20 border border-rose-500/50 text-rose-300 shadow-xs shadow-rose-950/50 animate-pulse">
-                          <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-                          <span>Critical / High</span>
-                        </span>
-                      )}
-
-                      {isModerate && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider bg-amber-500/15 border border-amber-500/40 text-amber-300">
-                          <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Moderate</span>
-                        </span>
-                      )}
-
-                      {!isCritical && !isModerate && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/40 text-emerald-300">
-                          <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>General Note</span>
-                        </span>
-                      )}
-
-                      {/* Status Badge */}
-                      {isNew && (
-                        <span className="px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider bg-rose-950 text-rose-300 border border-rose-500/40">
-                          New Issue
-                        </span>
-                      )}
-
-                      {isInProgress && (
-                        <span className="px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider bg-amber-950 text-amber-300 border border-amber-500/40 flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-amber-400 animate-spin-slow" />
-                          <span>In Progress</span>
-                        </span>
-                      )}
-
-                      {isResolved && (
-                        <span className="px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider bg-emerald-950 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                          <span>Resolved</span>
-                        </span>
-                      )}
-
-                      {/* Timestamp & Elapsed */}
-                      <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium pl-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-500" />
-                        <span>{formatTimeAgo(report.createdAt)}</span>
-                      </div>
-
-                    </div>
-
+                {/* Action bar */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-800/60">
+                  {/* Left actions */}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => openDispatch(report)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-medium transition cursor-pointer"
+                      title="Dispatch employee"
+                    >
+                      <Send className="w-3.5 h-3.5 text-orange-400" />
+                      Dispatch
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openReassign(report)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-medium transition cursor-pointer"
+                      title="Reassign to another employee"
+                    >
+                      <UserCheck className="w-3.5 h-3.5 text-amber-400" />
+                      Reassign
+                    </button>
                   </div>
 
-                  {/* Customer Note / Complaint Text */}
-                  <div className="space-y-2">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                      <MessageSquare className="w-3.5 h-3.5 text-[#FF5A26]" />
-                      <span>Customer Digital Menu Note:</span>
-                    </div>
-                    <div className="p-4 rounded-2xl bg-[#1e293b] border border-[#334155] text-[#f8fafc] text-sm sm:text-base font-medium leading-relaxed shadow-inner">
-                      "{report.customerNote}"
-                    </div>
-                  </div>
-
-                  {/* Employee Assignment Strip */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#1e293b] border border-[#334155]">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <img
-                          src={assignedStaff.avatar}
-                          alt={assignedStaff.name}
-                          className="w-10 h-10 rounded-xl object-cover ring-2 ring-[#334155] shadow-sm"
-                        />
-                        <span
-                          className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#1e293b] ${
-                            assignedStaff.status === 'available' ? 'bg-emerald-400' : 'bg-amber-400'
-                          }`}
-                          title={`Status: ${assignedStaff.status}`}
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-[#f8fafc]">{assignedStaff.name}</span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#0f172a] text-slate-300 border border-[#334155]">
-                            {assignedStaff.role}
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                          Assigned table lead &bull; Workload: <strong className="text-slate-200">{assignedStaff.activeTable}</strong>
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Dispatch info if exists */}
-                    {report.dispatchLog && (
-                      <div className="text-[11px] text-amber-300 bg-amber-950/40 border border-amber-500/30 px-3 py-1.5 rounded-xl flex items-center gap-1.5 max-w-md">
-                        <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        <span className="truncate">{report.dispatchLog.note}</span>
-                      </div>
+                  {/* Right actions */}
+                  <div className="flex items-center gap-1.5">
+                    {!isRes && (
+                      <button
+                        type="button"
+                        onClick={() => priorityPing(report)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-medium transition cursor-pointer"
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        Ping
+                      </button>
+                    )}
+                    {!isRes ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => markResolved(report)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm shadow-emerald-500/20 transition cursor-pointer active:scale-95"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          Resolve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openResolve(report)}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-emerald-950/40 border border-slate-700 hover:border-emerald-500/40 text-emerald-400 text-xs transition cursor-pointer"
+                          title="Resolve with custom note"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => reopen(report)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-400 hover:text-white text-xs font-medium transition cursor-pointer"
+                      >
+                        Reopen
+                      </button>
                     )}
                   </div>
-
-                  {/* Resolved Details Banner if Resolved */}
-                  {isResolved && (
-                    <div className="p-4 rounded-2xl bg-[#1e293b] border border-emerald-500/40 space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-black text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                          <span>Quality Audit Log • Issue Closed</span>
-                        </span>
-                        <span className="font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-500/40 px-2 py-0.5 rounded-lg text-[11px]">
-                          Resolution Time: {report.resolutionTime || 'Under 15 mins'}
-                        </span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-emerald-100 font-medium leading-relaxed italic">
-                        "{report.resolutionNote}"
-                      </p>
-                      <div className="flex items-center justify-between text-[11px] text-emerald-300/70 pt-1 border-t border-emerald-500/20">
-                        <span>Audited by Floor Manager</span>
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenResolve(report)}
-                            className="text-emerald-400 hover:text-emerald-300 underline font-semibold cursor-pointer"
-                            title="Edit resolution audit note"
-                          >
-                            Edit Note
-                          </button>
-                          <span>Closed {formatTimeAgo(report.resolvedAt)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* =========================================================================
-                      ADMIN ACTION BAR (Assign/Dispatch Employee dropdown, Priority Ping, Mark Resolved)
-                      Aligned in a clean flex row at the bottom of the card
-                      ========================================================================= */}
-                  <div className="pt-3 border-t border-[#334155] flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    {/* Left: Assign/Dispatch Employee Dropdown & Modal Triggers */}
-                    <div className="flex items-center gap-2 flex-1 min-w-[260px]">
-                      <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0">
-                        <UserPlus className="w-3.5 h-3.5 text-[#FF7A45]" />
-                        <span>Assign Employee:</span>
-                      </span>
-                      <select
-                        value={report.assignedStaffId || ''}
-                        onChange={(e) => handleDirectAssignEmployee(report.id, e.target.value)}
-                        className="flex-1 bg-[#1e293b] border border-[#334155] text-xs font-semibold text-[#f8fafc] rounded-xl py-2 px-3 focus:outline-none focus:border-[#FF5A26] cursor-pointer"
-                        title="1-click direct dispatch employee"
-                      >
-                        {STAFF_ROSTER.map((staff) => (
-                          <option key={staff.id} value={staff.id} className="bg-[#111827] text-[#f8fafc]">
-                            {staff.name} — {staff.role} ({staff.status})
-                          </option>
-                        ))}
-                      </select>
-                      {/* Open Dispatch Directives Modal */}
-                      <button
-                        type="button"
-                        onClick={() => handleOpenDispatch(report)}
-                        className="p-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-300 hover:text-[#f8fafc] border border-[#334155] text-xs font-bold transition shrink-0 cursor-pointer"
-                        title="Open Dispatch Directives Modal with priority notes"
-                      >
-                        <Send className="w-3.5 h-3.5 text-[#FF7A45]" />
-                      </button>
-                      {/* Open Reassign Table Modal */}
-                      <button
-                        type="button"
-                        onClick={() => handleOpenReassign(report)}
-                        className="p-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-300 hover:text-[#f8fafc] border border-[#334155] text-xs font-bold transition shrink-0 cursor-pointer"
-                        title="Open Reassign Table Modal"
-                      >
-                        <UserCheck className="w-3.5 h-3.5 text-amber-400" />
-                      </button>
-                    </div>
-
-                    {/* Right: Priority Ping Button & Mark Resolved Controls */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      {/* Priority Ping button */}
-                      <button
-                        type="button"
-                        onClick={() => handlePriorityPing(report)}
-                        className="px-3.5 py-2 rounded-xl bg-[#1e293b] hover:bg-amber-950/60 text-amber-300 hover:text-amber-200 border border-amber-500/40 hover:border-amber-500 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
-                        title="Send urgent priority ping to assigned employee"
-                      >
-                        <Zap className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                        <span>Priority Ping</span>
-                      </button>
-
-                      {/* Mark Resolved controls */}
-                      {!isResolved ? (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleDirectMarkResolved(report)}
-                            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-md shadow-emerald-950/40 flex items-center gap-1.5 cursor-pointer active:scale-95"
-                            title="Mark as resolved immediately with automatic resolution note (1-click)"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                            <span>Mark Resolved</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenResolve(report)}
-                            className="p-2 rounded-xl bg-[#1e293b] hover:bg-emerald-950/40 text-emerald-400 hover:text-emerald-300 border border-emerald-500/40 text-xs font-bold transition cursor-pointer"
-                            title="Resolve with custom resolution note & quick presets modal"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenResolve(report)}
-                            className="px-3 py-1.5 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-emerald-300 hover:text-emerald-200 text-xs font-bold transition flex items-center gap-1.5 border border-[#334155] cursor-pointer"
-                            title="Edit resolution audit note"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                            <span>Resolved ✓ (Edit Note)</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDirectReopen(report)}
-                            className="px-2.5 py-1.5 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-400 hover:text-[#f8fafc] text-xs font-bold transition border border-[#334155] cursor-pointer"
-                            title="Click to reopen issue"
-                          >
-                            <span>Reopen</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })
         )}
-
       </div>
 
-      {/* =========================================================================
-          4. RESOLVED QUALITY AUDITING METRICS STRIP
-          ========================================================================= */}
-      <div className="p-6 bg-[#111827] border-t border-[#334155] rounded-2xl mb-4 shadow-xl">
-        <div className="flex items-center gap-2 mb-4">
-          <History className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-xs font-black uppercase tracking-wider text-slate-200">
-            Quality Auditing &amp; Resolution Performance Metrics
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 rounded-2xl bg-[#1e293b] border border-[#334155] flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider block">
-                Avg Resolution Time
-              </span>
-              <span className="text-2xl font-black text-[#f8fafc] mt-1 block">8.5 mins</span>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center font-bold">
-              <Clock className="w-5 h-5" />
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#1e293b] border border-[#334155] flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider block">
-                Resolution Rate
-              </span>
-              <span className="text-2xl font-black text-emerald-400 mt-1 block">97.8%</span>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center font-bold">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#1e293b] border border-[#334155] flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider block">
-                Customer Recovery Score
-              </span>
-              <span className="text-2xl font-black text-amber-300 mt-1 block">4.9 / 5.0</span>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center font-bold">
-              <Award className="w-5 h-5" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          MODAL 1: ASSIGN / DISPATCH EMPLOYEE MODAL
-          ========================================================================= */}
-      {dispatchModalReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-lg bg-[#111827] border border-[#334155] rounded-3xl p-6 shadow-2xl space-y-5 text-[#f8fafc]">
-            
-            <div className="flex items-center justify-between pb-3 border-b border-[#334155]">
+      {/* ═══════════════════════════════════════════════════════════════════════
+          MODAL 1 — DISPATCH
+      ═══════════════════════════════════════════════════════════════════════ */}
+      {dispatchRpt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-[#111726] border border-slate-700 rounded-2xl p-5 shadow-2xl space-y-4 text-slate-100">
+            {/* Header */}
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#FF5A26]/20 text-[#FF7A45] flex items-center justify-center font-bold">
-                  <UserPlus className="w-5 h-5" />
+                <div className="w-8 h-8 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
+                  <Send className="w-4 h-4 text-orange-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-[#f8fafc]">
-                    Dispatch Employee to Table {dispatchModalReport.tableNumber}
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Send high-priority intervention alert to staff handheld
-                  </p>
+                  <h3 className="text-sm font-bold text-white">Dispatch to Table {dispatchRpt.table}</h3>
+                  <p className="text-xs text-slate-500">Select employee & add a note</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setDispatchModalReport(null)}
-                className="text-slate-400 hover:text-[#f8fafc] p-1 rounded-lg"
-              >
-                <X className="w-5 h-5" />
+              <button type="button" onClick={() => setDispatchRpt(null)} className="text-slate-500 hover:text-white cursor-pointer">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Complaint Context Preview */}
-            <div className="p-3.5 rounded-2xl bg-[#1e293b] border border-[#334155] text-xs space-y-1">
-              <span className="font-bold text-[#FF7A45] uppercase tracking-wider block text-[10px]">
-                Issue Description:
-              </span>
-              <p className="text-[#f8fafc] font-medium">"{dispatchModalReport.customerNote}"</p>
+            {/* Issue preview */}
+            <div className="p-3 rounded-lg bg-[#0b0f19] border border-slate-800 text-xs text-slate-300 italic">
+              "{dispatchRpt.note}"
             </div>
 
-            {/* Select Active Employee */}
+            {/* Staff picker */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-                Select Floor Employee:
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
-                {STAFF_ROSTER.map((staff) => {
-                  const isSelected = selectedStaffToDispatch === staff.id;
-                  return (
-                    <button
-                      key={staff.id}
-                      type="button"
-                      onClick={() => setSelectedStaffToDispatch(staff.id)}
-                      className={`p-3 rounded-2xl border text-left transition flex items-center gap-3 cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#FF5A26]/15 border-[#FF5A26] text-[#f8fafc] ring-1 ring-[#FF7A45]'
-                          : 'bg-[#1e293b] border-[#334155] text-slate-300 hover:border-slate-500'
-                      }`}
-                    >
-                      <img
-                        src={staff.avatar}
-                        alt={staff.name}
-                        className="w-9 h-9 rounded-xl object-cover shrink-0"
-                      />
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-[#f8fafc] block truncate">{staff.name}</span>
-                        <span className="text-[10px] text-slate-400 block truncate">{staff.role}</span>
-                        <span className={`text-[9px] font-black uppercase ${
-                          staff.status === 'available' ? 'text-emerald-400' : 'text-amber-400'
-                        }`}>
-                          {staff.status}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Priority Directives Note */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-                Priority Directive Note (Optional):
-              </label>
-              <input
-                type="text"
-                value={dispatchPriorityNote}
-                onChange={(e) => setDispatchPriorityNote(e.target.value)}
-                placeholder="e.g. Bring extra napkins and ice water immediately with apology"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] placeholder-slate-400 focus:outline-none focus:border-[#FF5A26]"
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#334155]">
-              <button
-                type="button"
-                onClick={() => setDispatchModalReport(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-[#f8fafc]"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDispatch}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:from-[#FF7A45] hover:to-[#FF5A26] text-[#f8fafc] text-xs font-black shadow-lg shadow-[#FF5A26]/30 flex items-center gap-1.5 cursor-pointer"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>Transmit Urgent Dispatch</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          MODAL 2: REASSIGN TABLE MODAL
-          ========================================================================= */}
-      {reassignModalReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-lg bg-[#111827] border border-[#334155] rounded-3xl p-6 shadow-2xl space-y-5 text-[#f8fafc]">
-            
-            <div className="flex items-center justify-between pb-3 border-b border-[#334155]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
-                  <UserCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-[#f8fafc]">
-                    Reassign Table {reassignModalReport.tableNumber}
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Swap employee if table pace or attention is lagging
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setReassignModalReport(null)}
-                className="text-slate-400 hover:text-[#f8fafc] p-1 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Current Employee vs Replacement */}
-            <div className="p-3.5 rounded-2xl bg-[#1e293b] border border-[#334155] flex items-center justify-between text-xs">
-              <div>
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">Current Employee</span>
-                <span className="text-[#f8fafc] font-bold">
-                  {STAFF_ROSTER.find((s) => s.id === reassignModalReport.assignedStaffId)?.name || 'Marcus Vance'}
-                </span>
-              </div>
-              <ArrowRight className="w-4 h-4 text-amber-400" />
-              <div>
-                <span className="text-[10px] text-amber-400 uppercase font-bold block">New Assigned Lead</span>
-                <span className="text-[#f8fafc] font-bold">
-                  {STAFF_ROSTER.find((s) => s.id === selectedStaffToReassign)?.name}
-                </span>
-              </div>
-            </div>
-
-            {/* Selection Grid */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-                Choose Replacement Employee:
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
-                {STAFF_ROSTER.filter((s) => s.id !== reassignModalReport.assignedStaffId).map((staff) => {
-                  const isSelected = selectedStaffToReassign === staff.id;
-                  return (
-                    <button
-                      key={staff.id}
-                      type="button"
-                      onClick={() => setSelectedStaffToReassign(staff.id)}
-                      className={`p-3 rounded-2xl border text-left transition flex items-center gap-3 cursor-pointer ${
-                        isSelected
-                          ? 'bg-amber-500/20 border-amber-500 text-[#f8fafc] ring-1 ring-amber-400'
-                          : 'bg-[#1e293b] border-[#334155] text-slate-300 hover:border-slate-500'
-                      }`}
-                    >
-                      <img
-                        src={staff.avatar}
-                        alt={staff.name}
-                        className="w-9 h-9 rounded-xl object-cover shrink-0"
-                      />
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-[#f8fafc] block truncate">{staff.name}</span>
-                        <span className="text-[10px] text-slate-400 block truncate">{staff.role}</span>
-                        <span className={`text-[9px] font-black uppercase ${
-                          staff.status === 'available' ? 'text-emerald-400' : 'text-amber-400'
-                        }`}>
-                          {staff.status}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#334155]">
-              <button
-                type="button"
-                onClick={() => setReassignModalReport(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-[#f8fafc]"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmReassign}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-[#f8fafc] text-xs font-black shadow-lg shadow-amber-950/40 flex items-center gap-1.5 cursor-pointer"
-              >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>Confirm Reassignment</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          MODAL 3: MARK AS RESOLVED MODAL WITH QUICK PRESETS
-          ========================================================================= */}
-      {resolveModalReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-lg bg-[#111827] border border-[#334155] rounded-3xl p-6 shadow-2xl space-y-5 text-[#f8fafc]">
-            
-            <div className="flex items-center justify-between pb-3 border-b border-[#334155]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-[#f8fafc]">
-                    Resolve Table {resolveModalReport.tableNumber} Issue
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Record resolution note for quality auditing &amp; service log
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setResolveModalReport(null)}
-                className="text-slate-400 hover:text-[#f8fafc] p-1 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Original Complaint Review */}
-            <div className="p-3.5 rounded-2xl bg-[#1e293b] border border-[#334155] text-xs space-y-1">
-              <span className="font-bold text-slate-400 uppercase tracking-wider block text-[10px]">
-                Original Customer Complaint:
-              </span>
-              <p className="text-[#f8fafc] font-medium italic">"{resolveModalReport.customerNote}"</p>
-            </div>
-
-            {/* Quick Resolution Preset Chips */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-                Quick Preset Resolution Templates:
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  'Delivered napkins and fresh water with complimentary drink.',
-                  'Wagyu steak refired hot by Head Chef; customer delighted.',
-                  'Split bill across three cards & applied dining promo.',
-                  'Manager table visit completed; guest satisfaction confirmed.'
-                ].map((preset, idx) => (
+              <label className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold block">Select Employee</label>
+              <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
+                {STAFF.map(s => (
                   <button
-                    key={idx}
+                    key={s.id}
                     type="button"
-                    onClick={() => setResolutionInput(preset)}
-                    className="px-2.5 py-1.5 rounded-xl bg-[#1e293b] hover:bg-emerald-950/40 border border-[#334155] hover:border-emerald-500/40 text-[11px] text-slate-300 hover:text-emerald-200 text-left transition"
+                    onClick={() => setDispatchStaff(s.id)}
+                    className={`p-2.5 rounded-lg border text-left text-xs transition cursor-pointer ${
+                      dispatchStaff === s.id
+                        ? 'bg-orange-500/15 border-orange-500/50 text-white'
+                        : 'bg-[#0b0f19] border-slate-800 text-slate-400 hover:border-slate-600'
+                    }`}
                   >
-                    + {preset}
+                    <div className="font-semibold text-white truncate">{s.name}</div>
+                    <div className="text-slate-500 truncate">{s.role}</div>
+                    <span className={`text-[10px] font-bold ${s.status === 'available' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {s.status}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Custom Input */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-                Resolution &amp; Audit Note:
-              </label>
-              <textarea
-                rows={3}
-                value={resolutionInput}
-                onChange={(e) => setResolutionInput(e.target.value)}
-                placeholder="Enter actions taken to resolve the complaint..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] placeholder-slate-400 focus:outline-none focus:border-emerald-500 leading-relaxed"
-              />
-            </div>
+            {/* Note */}
+            <input
+              type="text"
+              value={dispatchNote}
+              onChange={e => setDispatchNote(e.target.value)}
+              placeholder="Optional directive note..."
+              className="w-full px-3 py-2 rounded-lg bg-[#0b0f19] border border-slate-800 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/60"
+            />
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#334155]">
-              <button
-                type="button"
-                onClick={() => setResolveModalReport(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-[#f8fafc]"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmResolve}
-                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-[#f8fafc] text-xs font-black shadow-lg shadow-emerald-950/40 flex items-center gap-1.5 cursor-pointer"
-              >
-                <Check className="w-3.5 h-3.5" />
-                <span>Save Resolution &amp; Close Case</span>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+              <button type="button" onClick={() => setDispatchRpt(null)} className="px-3 py-1.5 text-xs text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+              <button type="button" onClick={confirmDispatch}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold cursor-pointer active:scale-95">
+                <Send className="w-3.5 h-3.5" /> Dispatch
               </button>
             </div>
-
           </div>
         </div>
       )}
 
+      {/* ═══════════════════════════════════════════════════════════════════════
+          MODAL 2 — REASSIGN
+      ═══════════════════════════════════════════════════════════════════════ */}
+      {reassignRpt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-[#111726] border border-slate-700 rounded-2xl p-5 shadow-2xl space-y-4 text-slate-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                  <UserCheck className="w-4 h-4 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Reassign Table {reassignRpt.table}</h3>
+                  <p className="text-xs text-slate-500">Switch to a different employee</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => setReassignRpt(null)} className="text-slate-500 hover:text-white cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Current → New */}
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-[#0b0f19] border border-slate-800 text-xs">
+              <div>
+                <div className="text-slate-500 uppercase tracking-wider text-[10px]">Current</div>
+                <div className="text-white font-semibold">{STAFF.find(s => s.id === reassignRpt.staffId)?.name}</div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-amber-400 shrink-0" />
+              <div>
+                <div className="text-amber-400 uppercase tracking-wider text-[10px]">New</div>
+                <div className="text-white font-semibold">{STAFF.find(s => s.id === reassignStaff)?.name}</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
+              {STAFF.filter(s => s.id !== reassignRpt.staffId).map(s => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setReassignStaff(s.id)}
+                  className={`p-2.5 rounded-lg border text-left text-xs transition cursor-pointer ${
+                    reassignStaff === s.id
+                      ? 'bg-amber-500/15 border-amber-500/50 text-white'
+                      : 'bg-[#0b0f19] border-slate-800 text-slate-400 hover:border-slate-600'
+                  }`}
+                >
+                  <div className="font-semibold text-white truncate">{s.name}</div>
+                  <div className="text-slate-500 truncate">{s.role}</div>
+                  <span className={`text-[10px] font-bold ${s.status === 'available' ? 'text-emerald-400' : 'text-amber-400'}`}>{s.status}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+              <button type="button" onClick={() => setReassignRpt(null)} className="px-3 py-1.5 text-xs text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+              <button type="button" onClick={confirmReassign}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold cursor-pointer active:scale-95">
+                <UserCheck className="w-3.5 h-3.5" /> Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          MODAL 3 — RESOLVE WITH NOTE
+      ═══════════════════════════════════════════════════════════════════════ */}
+      {resolveRpt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-[#111726] border border-slate-700 rounded-2xl p-5 shadow-2xl space-y-4 text-slate-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Resolve Table {resolveRpt.table}</h3>
+                  <p className="text-xs text-slate-500">Add a resolution note</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => setResolveRpt(null)} className="text-slate-500 hover:text-white cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3 rounded-lg bg-[#0b0f19] border border-slate-800 text-xs text-slate-400 italic">
+              "{resolveRpt.note}"
+            </div>
+
+            {/* Quick presets */}
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                'Delivered napkins & water.',
+                'Chef refired — customer happy.',
+                'Bill split & discount applied.',
+                'Manager follow-up complete.',
+              ].map((p, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setResolveNote(p)}
+                  className="px-2.5 py-1 rounded-lg bg-[#0b0f19] hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-500/40 text-[11px] text-slate-400 hover:text-emerald-300 transition cursor-pointer"
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              rows={3}
+              value={resolveNote}
+              onChange={e => setResolveNote(e.target.value)}
+              placeholder="Describe what was done to resolve this..."
+              className="w-full px-3 py-2 rounded-lg bg-[#0b0f19] border border-slate-800 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/60 leading-relaxed resize-none"
+            />
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+              <button type="button" onClick={() => setResolveRpt(null)} className="px-3 py-1.5 text-xs text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+              <button type="button" onClick={confirmResolve}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer active:scale-95">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Mark Resolved
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
