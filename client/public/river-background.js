@@ -1202,8 +1202,8 @@ void main(){
 
   let nextAuto = 1.5, last = performance.now();
   function frame(now) {
-    // 24fps cap: phone/low-end laptop e bhari kaj kome, UI smooth thake
-    if (now - last < 1000 / 24 - 1) { requestAnimationFrame(frame); return; }
+    // 20fps cap: phone/low-end laptop e bhari kaj kome, UI smooth thake
+    if (now - last < 1000 / 20 - 1) { requestAnimationFrame(frame); return; }
     const dt = Math.min(0.05, (now - last) / 1000) * MOTION;
     last = now;
     T += dt;

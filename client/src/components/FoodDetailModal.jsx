@@ -712,7 +712,7 @@ export default function FoodDetailModal({
         {/* ------------------------------------------------------------------
             1. Sticky Top Bar: Category, Dietary Badges, Controls
            ------------------------------------------------------------------ */}
-        <div className="relative flex items-center justify-between px-4 sm:px-5 py-3 border-b border-sky-400/20 bg-[#021424]/85 backdrop-blur-md z-30 fdm-d1">
+        <div className="relative flex items-center justify-between px-4 sm:px-5 py-3 border-b border-sky-400/20 bg-[#021424]/85 z-30 fdm-d1">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-sky-400/15 text-sky-300 border border-sky-400/30">
               {dish.category || 'Specialty'}
@@ -786,7 +786,7 @@ export default function FoodDetailModal({
                         e.stopPropagation();
                         setSelectedImageIndex(idx);
                       }}
-                      className="flex-1 h-1 sm:h-1.5 rounded-full overflow-hidden bg-white/25 hover:bg-white/40 backdrop-blur-sm transition-colors cursor-pointer py-1 -my-1"
+                      className="flex-1 h-1 sm:h-1.5 rounded-full overflow-hidden bg-white/25 hover:bg-white/40 transition-colors cursor-pointer py-1 -my-1"
                       aria-label={`Jump to photo ${idx + 1}`}
                     >
                       <div
@@ -805,7 +805,7 @@ export default function FoodDetailModal({
 
               {/* Floating Photo Counter Badge */}
               <div className="absolute top-5 sm:top-6 right-3 sm:right-4 z-20 pointer-events-none">
-                <span className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-sky-200 bg-stone-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-sky-400/30 shadow-lg">
+                <span className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-sky-200 bg-stone-950/80 px-2.5 py-1 rounded-full border border-sky-400/30 shadow-lg">
                   <ImageIcon className="w-3 h-3 text-sky-400" />
                   <span>Slide {selectedImageIndex + 1} of {photos.length}</span>
                 </span>
@@ -828,7 +828,7 @@ export default function FoodDetailModal({
                   <button
                     type="button"
                     onClick={handlePrevPhoto}
-                    className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#021424]/75 hover:bg-[#021424] text-slate-100 backdrop-blur-md border border-sky-400/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
+                    className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#021424]/75 hover:bg-[#021424] text-slate-100 border border-sky-400/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
                     aria-label="Previous photo"
                     title="Previous photo (Left arrow)"
                   >
@@ -838,7 +838,7 @@ export default function FoodDetailModal({
                   <button
                     type="button"
                     onClick={handleNextPhoto}
-                    className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#021424]/75 hover:bg-[#021424] text-slate-100 backdrop-blur-md border border-sky-400/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
+                    className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#021424]/75 hover:bg-[#021424] text-slate-100 border border-sky-400/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer shadow-xl shadow-black/60"
                     aria-label="Next photo"
                     title="Next photo (Right arrow)"
                   >
@@ -848,14 +848,14 @@ export default function FoodDetailModal({
               )}
 
               {/* Swipe Guidance Pill (Mobile hint) */}
-              <div className="absolute top-11 sm:top-12 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-[10px] text-stone-300 border border-white/10 pointer-events-none sm:hidden">
+              <div className="absolute top-11 sm:top-12 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-black/60 text-[10px] text-stone-300 border border-white/10 pointer-events-none sm:hidden">
                 👈 Swipe left/right to browse {photos.length} photos 👉
               </div>
 
               {/* Bottom Thumbnail Dock */}
               {photos.length > 1 && (
                 <div className="absolute bottom-2.5 sm:bottom-3 left-0 right-0 flex justify-center items-center z-20 px-3 pointer-events-none">
-                  <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-stone-950/85 backdrop-blur-md border border-white/15 shadow-2xl pointer-events-auto max-w-full overflow-x-auto scrollbar-none">
+                  <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-stone-950/85 border border-white/15 shadow-2xl pointer-events-auto max-w-full overflow-x-auto scrollbar-none">
                     {photos.map((img, idx) => (
                       <button
                         key={idx}
@@ -1005,7 +1005,7 @@ export default function FoodDetailModal({
               {/* Center Play/Pause Flash */}
               {showBodyPlayOverlay && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/35 animate-fadeOut">
-                  <div className="w-14 h-14 rounded-full bg-[#021424]/80 backdrop-blur-md flex items-center justify-center text-white border border-sky-400/40 scale-110 transition-transform">
+                  <div className="w-14 h-14 rounded-full bg-[#021424]/80 flex items-center justify-center text-white border border-sky-400/40 scale-110 transition-transform">
                     {isBodyVideoPlaying ? <Play className="w-7 h-7 fill-current translate-x-0.5" /> : <Pause className="w-7 h-7 fill-current" />}
                   </div>
                 </div>
@@ -1015,7 +1015,7 @@ export default function FoodDetailModal({
               {!isBodyVideoPlaying && !showBodyPlayOverlay && (
                 <div 
                   onClick={toggleBodyVideoPlay}
-                  className="absolute inset-0 bg-black/45 backdrop-blur-2xs flex items-center justify-center cursor-pointer"
+                  className="absolute inset-0 bg-black/45 flex items-center justify-center cursor-pointer"
                 >
                   <div className="w-14 h-14 rounded-full fdm-gold-btn flex items-center justify-center shadow-xl shadow-sky-400/50 hover:scale-110 active:scale-95 transition-transform ring-2 ring-sky-300/40">
                     <Play className="w-6 h-6 fill-current translate-x-0.5" />
@@ -1383,7 +1383,7 @@ export default function FoodDetailModal({
         {/* ------------------------------------------------------------------
             7. Prominent Sticky Bottom Bar
            ------------------------------------------------------------------ */}
-        <div className="fdm-footer p-3.5 sm:p-4 bg-[#021424]/95 backdrop-blur-xl border-t border-sky-400/35 flex items-center gap-3 z-30 shadow-2xl fdm-d6">
+        <div className="fdm-footer p-3.5 sm:p-4 bg-[#021424]/95 border-t border-sky-400/35 flex items-center gap-3 z-30 shadow-2xl fdm-d6">
           {/* Stepper */}
           <div className="flex items-center bg-[#032038] border border-sky-400/30 rounded-xl p-1 shrink-0">
             <button
