@@ -92,6 +92,40 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    target: 'es2020',
+    sourcemap: false,
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+              return 'vendor-react';
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendor-lucide';
+            }
+            if (
+              id.includes('socket.io-client') ||
+              id.includes('socket.io-parser') ||
+              id.includes('engine.io-client') ||
+              id.includes('engine.io-parser')
+            ) {
+              return 'vendor-socket';
+            }
+            if (id.includes('convex')) {
+              return 'vendor-convex';
+            }
+            if (id.includes('qrcode') || id.includes('idb')) {
+              return 'vendor-utils';
+            }
+            return 'vendor-common';
+          }
+        },
+      },
+    },
+  },
   server: {
     host: true, // Listen on all network interfaces (e.g. 0.0.0.0) so LAN devices can connect
     port: 5173,

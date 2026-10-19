@@ -745,14 +745,14 @@ export default function WaiterPanel() {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
-                    Floor Employee Console
+                    On-Field Waiter Console
                   </h1>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                    Employee Assistance Hub
+                    On-Field Floor Service
                   </span>
                 </div>
                 <p className="text-xs text-neutral-300 font-medium">
-                  Real-Time Table Dispatch &amp; Floor Service Requests
+                  Real-Time Table Service, Assistance Requests &amp; Order Delivery
                 </p>
               </div>
             </div>

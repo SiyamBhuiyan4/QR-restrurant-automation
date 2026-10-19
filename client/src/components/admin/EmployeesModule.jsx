@@ -215,7 +215,8 @@ export default function EmployeesModule({
   onAssignTable,
   onReassignAllTables,
   onSetEmployeeStatus,
-  onAutoBalance
+  onAutoBalance,
+  isEmbedded = false
 }) {
   // Main State
   const [employees, setEmployees] = useState(() => {

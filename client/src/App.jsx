@@ -6,7 +6,7 @@ import { CartProvider } from './context/CartContext';
 
 // Pages
 import CustomerMenu from './pages/CustomerMenu';
-import KitchenDisplay from './pages/KitchenDisplay';
+import EmployeeView from './pages/EmployeeView';
 import WaiterPanel from './pages/WaiterPanel';
 import AdminDashboard from './pages/AdminDashboard';
 import QRBatchGenerator from './pages/QRBatchGenerator';
@@ -17,7 +17,6 @@ import {
   ChefHat, 
   ConciergeBell, 
   ShieldCheck, 
-  QrCode, 
   ChevronUp, 
   ChevronDown, 
   Compass,
@@ -89,12 +88,11 @@ class ErrorBoundary extends React.Component {
 }
 
 /**
- * AppRouter: URL Path-based router switching seamlessly between
- * - Customer Menu ('/', '/menu', or '/?table=X')
- * - Kitchen Display System ('/kds')
- * - Waiter Panel ('/waiter')
- * - Admin Dashboard ('/admin')
- * - QR Batch Generator ('/qr')
+ * AppRouter: URL Path-based router switching seamlessly between 4 distinct views:
+ * - Customer View ('/', '/menu', or '/?table=X')
+ * - Employee View ('/employee', with '/kds' redirecting/mapping to it)
+ * - On-Field / Waiter View ('/waiter')
+ * - Admin Portal ('/admin')
  */
 function AppRouter() {
   const [currentPath, setCurrentPath] = useState(() => {
@@ -146,18 +144,33 @@ function AppRouter() {
   const navigate = useCallback((targetPath) => {
     if (typeof window !== 'undefined') {
       const url = new URL(targetPath, window.location.origin);
+      if (url.pathname.toLowerCase() === '/kds') {
+        url.pathname = '/employee';
+      }
       window.history.pushState({}, '', url.toString());
       setCurrentPath(url.pathname.toLowerCase());
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, []);
 
-  // Determine current active view based on pathname
+  // Determine current active view based on pathname (4 distinct views)
   const normalizedPath = currentPath.replace(/\/+$/, '') || '/';
 
+  // Handle automatic redirect from legacy /kds route to /employee
+  useEffect(() => {
+    if (normalizedPath === '/kds') {
+      const search = typeof window !== 'undefined' ? window.location.search : '';
+      const target = `/employee${search}`;
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', target);
+      }
+      setCurrentPath('/employee');
+    }
+  }, [normalizedPath]);
+
   const activeView = useMemo(() => {
-    if (normalizedPath === '/kds') return 'kds';
-    if (normalizedPath === '/waiter') return 'waiter';
+    if (normalizedPath === '/employee' || normalizedPath === '/kds') return 'employee';
+    if (normalizedPath === '/waiter' || normalizedPath === '/onfield' || normalizedPath === '/floor') return 'waiter';
     if (normalizedPath === '/admin') return 'admin';
     if (normalizedPath === '/qr') return 'qr';
     return 'customer';
@@ -166,8 +179,8 @@ function AppRouter() {
   // Render view
   const renderView = () => {
     switch (activeView) {
-      case 'kds':
-        return <KitchenDisplay />;
+      case 'employee':
+        return <EmployeeView />;
       case 'waiter':
         return <WaiterPanel />;
       case 'admin':
@@ -186,22 +199,22 @@ function AppRouter() {
     }
   };
 
+  // 4 Primary Application Views in Quick Role Switcher
   const navItems = [
-    { id: 'customer', label: 'Customer Menu', path: '/?table=1', icon: UtensilsCrossed, badge: 'Diner' },
-    { id: 'kds', label: 'Kitchen KDS', path: '/kds', icon: ChefHat, badge: 'Kitchen' },
-    { id: 'waiter', label: 'Floor Employee Console', path: '/waiter', icon: ConciergeBell, badge: 'Floor' },
+    { id: 'customer', label: 'Customer View', path: '/?table=1', icon: UtensilsCrossed, badge: 'Diner' },
+    { id: 'employee', label: 'Employee View (Kitchen & Staff)', path: '/employee', icon: ChefHat, badge: 'Staff' },
+    { id: 'waiter', label: 'On-Field / Waiter View', path: '/waiter', icon: ConciergeBell, badge: 'Floor' },
     { id: 'admin', label: 'Admin Portal', path: '/admin', icon: ShieldCheck, badge: 'Manager' },
-    { id: 'qr', label: 'Table QR Generator', path: '/qr', icon: QrCode, badge: 'Stickers' },
   ];
 
   return (
     <div
       className="relative min-h-screen flex flex-col"
-      style={activeView === 'admin' ? { backgroundColor: '#0b0f19' } : undefined}
+      style={activeView === 'admin' || activeView === 'employee' ? { backgroundColor: '#0b0f19' } : undefined}
     >
 
-      {/* Global ambient background: fixed, CSS-only, behind non-customer views (except admin) */}
-      {activeView !== 'customer' && activeView !== 'admin' && (
+      {/* Global ambient background: fixed, CSS-only, behind non-customer views (except admin/employee) */}
+      {activeView !== 'customer' && activeView !== 'admin' && activeView !== 'employee' && (
         <div className="app-ambient" aria-hidden="true">
           <div className="app-ambient__blob app-ambient__blob--a" />
           <div className="app-ambient__blob app-ambient__blob--b" />
@@ -281,7 +294,7 @@ function AppRouter() {
             type="button"
             onClick={() => setIsDockOpen(prev => !prev)}
             className="pointer-events-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#06140e]/90 hover:bg-[#0f3d2a]/90 text-[#f5efe0] shadow-xl shadow-black/40 backdrop-blur-md border border-[#d4af37] text-xs font-semibold tracking-wide transition-all active:scale-95 cursor-pointer"
-            title="Quick switch between Customer, Kitchen, Waiter, and Admin views"
+            title="Quick switch between Customer, Employee, Waiter, and Admin views"
           >
             <Compass className="w-4 h-4 text-[#d4af37] animate-spin-slow" />
             <span className="hidden sm:inline text-[#f0d27a]">Switch Role</span>

@@ -43,7 +43,7 @@ export default function AdminSidebar({
   } = counts;
 
   // Normalized active tab
-  const currentTab = activeTab === 'stats' ? 'overview' : activeTab;
+  const currentTab = activeTab === 'stats' ? 'overview' : activeTab === 'employee' ? 'kds' : activeTab;
 
   // 1. OPERATIONS & ANALYTICS
   const operationsNav = [
@@ -73,21 +73,21 @@ export default function AdminSidebar({
     }
   ];
 
-  // 2. LIVE FLOOR CONSOLES (Embedded Direct Access)
+  // 2. LIVE FLOOR & SERVICE CONSOLES (Embedded Direct Access)
   const consolesNav = [
     {
       id: 'kds',
-      label: 'Kitchen KDS Console',
-      shortLabel: 'Kitchen',
+      label: 'Employee & Kitchen Hub',
+      shortLabel: 'Kitchen Hub',
       icon: ChefHat,
       badge: activeOrders > 0 ? activeOrders : null,
       badgeColor: 'amber',
-      externalUrl: '/kds'
+      externalUrl: '/employee'
     },
     {
       id: 'floor',
-      label: 'Floor Staff Console',
-      shortLabel: 'Floor',
+      label: 'On-Field Waiter Console',
+      shortLabel: 'Waiter',
       icon: ConciergeBell,
       badge: assistanceCount > 0 ? assistanceCount : null,
       badgeColor: 'rose',
@@ -118,11 +118,12 @@ export default function AdminSidebar({
   const staffNav = [
     {
       id: 'employees',
-      label: 'Employees Hub',
-      shortLabel: 'Employees',
+      label: 'Employee Roster & Shifts',
+      shortLabel: 'Staff Hub',
       icon: Users,
       badge: busyEmployees > 0 ? `${busyEmployees} busy` : null,
-      badgeColor: 'neutral'
+      badgeColor: 'neutral',
+      externalUrl: '/employee?tab=roster'
     },
     {
       id: 'reports',

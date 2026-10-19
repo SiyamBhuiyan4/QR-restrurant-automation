@@ -18,8 +18,10 @@ import AdminLoginGate from '../components/admin/AdminLoginGate';
 // System Standalone Consoles (Directly Embedded into Master Admin)
 import KitchenDisplay from './KitchenDisplay';
 import WaiterPanel from './WaiterPanel';
+import EmployeeView from './EmployeeView';
 import MenuManager from '../components/MenuManager';
 import QRBatchGenerator from './QRBatchGenerator';
+import { ExternalLink } from 'lucide-react';
 
 // State Architecture & Realistic Mock Datasets
 import {
@@ -84,10 +86,14 @@ export default function AdminDashboard({ className = '' }) {
         'menu',
         'qr',
         'employees',
-        'reports'
+        'reports',
+        'employee'
       ];
-      if (validTabs.includes(tabParam)) return tabParam;
       if (tabParam === 'stats') return 'overview';
+      if (tabParam === 'kitchen') return 'kds';
+      if (tabParam === 'waiter') return 'floor';
+      if (tabParam === 'roster') return 'employees';
+      if (validTabs.includes(tabParam)) return tabParam;
     }
     return 'overview';
   });
@@ -163,7 +169,10 @@ export default function AdminDashboard({ className = '' }) {
 
   // Sync tab selection with browser history
   const handleSelectTab = (tabId) => {
-    const normalizedTab = tabId === 'stats' ? 'overview' : tabId;
+    let normalizedTab = tabId === 'stats' ? 'overview' : tabId;
+    if (normalizedTab === 'kitchen') normalizedTab = 'kds';
+    if (normalizedTab === 'waiter') normalizedTab = 'floor';
+    if (normalizedTab === 'roster') normalizedTab = 'employees';
     setActiveTab(normalizedTab);
     setIsMobileSidebarOpen(false);
     if (typeof window !== 'undefined' && window.history?.pushState) {
