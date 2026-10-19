@@ -164,7 +164,7 @@ export default function MenuItemCard({
 
     const modalContent = (
       <div 
-        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 animate-fadeIn"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn"
         onClick={(e) => {
           e.stopPropagation();
           setIsNoteModalOpen(false);
@@ -471,7 +471,7 @@ export default function MenuItemCard({
       <>
         <div
           onClick={() => onSelectDish && onSelectDish(item)}
-          className={`group relative flex items-center justify-between bg-[#141418]/90 hover:bg-[#18181f] rounded-2xl border border-zinc-800 hover:border-[#FF5A26]/40 p-2.5 sm:p-3 gap-2.5 sm:gap-3.5 shadow-md hover:shadow-xl hover:shadow-black/50 transition-all duration-300 cursor-pointer ${
+          className={`group relative flex items-center justify-between bg-[#141418]/90 hover:bg-[#18181f] backdrop-blur-xl rounded-2xl border border-zinc-800 hover:border-[#FF5A26]/40 p-2.5 sm:p-3 gap-2.5 sm:gap-3.5 shadow-md hover:shadow-xl hover:shadow-black/50 transition-all duration-300 cursor-pointer ${
             !isAvailable ? 'opacity-65' : 'hover:-translate-y-0.5'
           }`}
         >
@@ -497,14 +497,14 @@ export default function MenuItemCard({
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/25 pointer-events-none" />
 
             <div className="absolute bottom-1 left-1 flex items-center gap-1 z-10">
-              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[8px] font-extrabold bg-black/80 text-amber-300">
+              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[8px] font-extrabold bg-black/80 text-amber-300 backdrop-blur-md">
                 <Star className="w-2 h-2 fill-amber-400 text-amber-400" />
                 <span>{item.rating || '4.9'}</span>
               </span>
             </div>
 
             {!isAvailable && (
-              <div className="absolute inset-0 bg-neutral-950/75 flex items-center justify-center z-20">
+              <div className="absolute inset-0 bg-neutral-950/75 backdrop-blur-xs flex items-center justify-center z-20">
                 <span className="px-1.5 py-0.5 rounded bg-rose-600 text-white font-extrabold text-[8px] uppercase tracking-wider shadow-md">
                   Sold Out
                 </span>

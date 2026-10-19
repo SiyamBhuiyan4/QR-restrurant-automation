@@ -458,7 +458,7 @@ export default function CartDrawer({
       {/* Backdrop overlay */}
       <div
         onClick={handleClose}
-        className={`fixed inset-0 bg-[#021424]/80 transition-opacity duration-300 ease-out motion-reduce:transition-none ${entered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-[#021424]/80 backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none ${entered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       />
 
       {/* Mobile: bottom sheet. Desktop: right-side panel. */}
@@ -466,7 +466,7 @@ export default function CartDrawer({
         className={`fixed inset-x-0 bottom-20 h-[calc(92dvh-5rem)] sm:inset-x-auto sm:inset-y-0 sm:bottom-0 sm:h-auto sm:right-0 max-w-full flex sm:pl-10 ${entered ? '' : 'pointer-events-none'}`}
       >
         <div
-          className={`w-screen max-w-md h-full bg-[#02182b]/95 text-slate-100 shadow-2xl shadow-black/70 flex flex-col border-t sm:border-t-0 sm:border-l border-sky-400/35 sm:border-sky-400/35 rounded-t-[28px] sm:rounded-t-none sm:rounded-l-3xl overflow-hidden transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none will-change-transform ${entered ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:translate-y-0 sm:translate-x-full'} ${className}`}
+          className={`w-screen max-w-md h-full bg-[#02182b]/95 backdrop-blur-xl text-slate-100 shadow-2xl shadow-black/70 flex flex-col border-t sm:border-t-0 sm:border-l border-sky-400/35 sm:border-sky-400/35 rounded-t-[28px] sm:rounded-t-none sm:rounded-l-3xl overflow-hidden transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none will-change-transform ${entered ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:translate-y-0 sm:translate-x-full'} ${className}`}
         >
           
           {/* ========================================================
@@ -851,7 +851,7 @@ export default function CartDrawer({
 
               {/* Drawer Footer: Bill Breakdown & Submit Button */}
               {items.length > 0 && (
-                <div className="relative z-10 shrink-0 px-4 sm:px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-5 bg-[#021424]/95 border-t border-sky-400/25 space-y-3.5 shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.7)]">
+                <div className="relative z-10 shrink-0 px-4 sm:px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-5 bg-[#021424]/95 backdrop-blur-md border-t border-sky-400/25 space-y-3.5 shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.7)]">
 
                   {/* Bill Breakdown */}
                   <div className="space-y-2 text-xs text-sky-200/65 font-medium">
