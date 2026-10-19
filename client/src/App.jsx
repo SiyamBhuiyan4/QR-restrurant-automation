@@ -210,8 +210,8 @@ function AppRouter() {
         {renderView()}
       </div>
 
-      {/* QUICK ROLE-SWITCHING FLOATING DOCK (Hidden on Customer Menu and during print) */}
-      {activeView !== 'customer' && (
+      {/* QUICK ROLE-SWITCHING FLOATING DOCK (Only visible on Admin Dashboard) */}
+      {activeView === 'admin' && (
         <div className={`no-print fixed bottom-4 left-4 z-50 ${isModalOpen ? 'hidden' : 'flex'} flex-col items-start pointer-events-none`}>
 
           {/* Expanded Navigation Drawer */}
