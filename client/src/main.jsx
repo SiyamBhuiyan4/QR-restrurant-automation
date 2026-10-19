@@ -8,7 +8,7 @@ import './index.css';
 import './styles/motion.css';
 
 // Force fresh cache busting for UI update
-const LATEST_BUILD_TAG = 'v2026.10.19.1700';
+const LATEST_BUILD_TAG = 'v2026.10.19.1745';
 try {
   const currentTag = localStorage.getItem('smartdine_build_tag');
   if (currentTag !== LATEST_BUILD_TAG) {
@@ -20,6 +20,14 @@ try {
         }
       });
     }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+    window.location.reload();
   }
 } catch (e) {}
 
