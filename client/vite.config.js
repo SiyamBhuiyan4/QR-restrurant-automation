@@ -123,6 +123,9 @@ export default defineConfig({
             if (id.includes('convex')) {
               return 'vendor-convex';
             }
+            if (id.includes('jspdf') || id.includes('fflate')) {
+              return 'vendor-pdf';
+            }
             if (id.includes('qrcode') || id.includes('idb')) {
               return 'vendor-utils';
             }
