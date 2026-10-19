@@ -1540,10 +1540,10 @@ export default function WaiterPanel() {
               <ExternalLink className="w-3 h-3" />
             </a>
             <a
-              href="/kds"
+              href="/employee?tab=kitchen"
               className="text-neutral-400 hover:text-amber-400 transition flex items-center gap-1 font-semibold"
             >
-              <span>Kitchen Display (KDS)</span>
+              <span>Employee View (Kitchen &amp; Staff)</span>
               <ExternalLink className="w-3 h-3" />
             </a>
             <a

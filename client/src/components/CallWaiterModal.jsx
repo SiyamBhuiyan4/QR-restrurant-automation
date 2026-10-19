@@ -302,41 +302,41 @@ export default function CallWaiterModal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 pb-20 sm:p-4 bg-[#021424]/85 backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none ${entered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 pb-20 sm:p-4 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none ${entered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className={`cw-modal w-full max-w-md max-h-[calc(92dvh-5rem)] sm:max-h-[92dvh] overflow-y-auto overflow-x-hidden overscroll-contain bg-[#02182b] rounded-t-[28px] sm:rounded-3xl shadow-2xl shadow-black/70 border border-sky-400/30 sm:border-sky-400/40 text-slate-100 transform transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:transform-none ${entered ? 'translate-y-0 sm:scale-100 opacity-100' : 'translate-y-8 sm:translate-y-0 sm:scale-95 opacity-0'}`}
+        className={`cw-modal w-full max-w-md max-h-[calc(92dvh-5rem)] sm:max-h-[92dvh] overflow-y-auto overflow-x-hidden overscroll-contain bg-[#0f172a] rounded-t-[28px] sm:rounded-3xl shadow-2xl shadow-black/80 border border-emerald-500/30 sm:border-amber-500/40 text-slate-100 transform transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:transform-none ${entered ? 'translate-y-0 sm:scale-100 opacity-100' : 'translate-y-8 sm:translate-y-0 sm:scale-95 opacity-0'}`}
       >
         {/* Header Bar */}
-        <div className="cw-header bg-[linear-gradient(135deg,#0369a1,#02182b)] border-b border-sky-400/35 p-5 text-white relative shadow-lg shadow-black/40">
+        <div className="cw-header bg-[linear-gradient(135deg,#064e3b,#0f172a)] border-b border-emerald-500/30 p-5 text-white relative shadow-lg shadow-black/40">
           <button
             type="button"
             onClick={handleDismiss}
             disabled={isSubmitting}
-            className="absolute top-3 right-3 w-11 h-11 rounded-full bg-[#021424]/60 hover:bg-[#021424]/80 border border-sky-400/40 flex items-center justify-center text-sky-300 transition-transform duration-150 active:scale-95 cursor-pointer disabled:opacity-50 motion-reduce:transform-none"
+            className="absolute top-3 right-3 w-11 h-11 rounded-full bg-[#0b0f19]/70 hover:bg-[#0b0f19] border border-amber-500/40 flex items-center justify-center text-amber-300 hover:text-white transition-transform duration-150 active:scale-95 cursor-pointer disabled:opacity-50 motion-reduce:transform-none"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
 
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-sky-400/20 border border-sky-400/50 flex items-center justify-center shadow-inner">
-              <BellRing className="w-6 h-6 text-sky-300 animate-wiggle motion-reduce:animate-none" />
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center shadow-inner">
+              <BellRing className="w-6 h-6 text-amber-300 animate-wiggle motion-reduce:animate-none" />
             </div>
             <div>
               <h2 className="text-xl font-extrabold tracking-tight text-white">Call Employee</h2>
-              <div className="flex items-center gap-2 mt-0.5 text-xs text-sky-200/80 font-medium flex-wrap">
-                <span className="bg-[#021424]/60 px-2.5 py-0.5 rounded-full font-bold text-sky-300 border border-sky-400/50">
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-300 font-medium flex-wrap">
+                <span className="bg-[#0b0f19]/80 px-2.5 py-0.5 rounded-full font-bold text-amber-300 border border-amber-500/40">
                   Table {tableNumber || '?'}
                 </span>
                 {assignedEmployee ? (
-                  <span className="bg-sky-400/20 px-2.5 py-0.5 rounded-full font-semibold text-sky-200 border border-sky-400/40">
+                  <span className="bg-emerald-500/20 px-2.5 py-0.5 rounded-full font-semibold text-emerald-200 border border-emerald-500/40">
                     Assigned: {assignedEmployee.name}
                   </span>
                 ) : (
-                  <span>&bull; Instant Floor Assistance</span>
+                  <span className="text-slate-400">&bull; Instant Floor Assistance</span>
                 )}
               </div>
             </div>
@@ -348,7 +348,7 @@ export default function CallWaiterModal({
           {/* CONFIRMED STATE */}
           {isConfirmed ? (
             <div className="text-center py-4 space-y-4 animate-scaleUp motion-reduce:animate-none">
-              <div className="w-20 h-20 mx-auto rounded-3xl bg-[#021424] text-sky-300 border border-sky-400/60 flex items-center justify-center shadow-lg shadow-black/40">
+              <div className="w-20 h-20 mx-auto rounded-3xl bg-[#0b0f19] text-emerald-400 border border-emerald-500/60 flex items-center justify-center shadow-lg shadow-black/40">
                 <CheckCircle2 className="w-10 h-10 animate-bounce motion-reduce:animate-none" />
               </div>
 
@@ -356,20 +356,20 @@ export default function CallWaiterModal({
                 <h3 className="text-2xl font-black text-white">
                   Employee Alerted!
                 </h3>
-                <p className="text-sm font-semibold text-sky-300 mt-1">
+                <p className="text-sm font-semibold text-emerald-300 mt-1">
                   {assignedEmployee ? (
                     <>Directly routed to your assigned employee: <span className="font-bold text-white">{assignedEmployee.name}</span></>
                   ) : (
                     <>Floor team has been notified for Table {tableNumber}.</>
                   )}
                 </p>
-                <div className="mt-3 p-3 bg-[#021424]/70 rounded-2xl border border-sky-400/30 text-xs text-sky-200/80 inline-block max-w-xs text-left">
-                  <span className="font-semibold text-sky-200/70">Requested:</span>{' '}
-                  <span className="font-bold text-sky-400">
+                <div className="mt-3 p-3 bg-[#0b0f19]/80 rounded-2xl border border-emerald-500/30 text-xs text-slate-300 inline-block max-w-xs text-left">
+                  <span className="font-semibold text-slate-400">Requested:</span>{' '}
+                  <span className="font-bold text-amber-400">
                     {selectedReason.label}
                   </span>
                   {customMessage.trim() && (
-                    <p className="mt-1 italic text-sky-200/70">
+                    <p className="mt-1 italic text-slate-400">
                       "{customMessage.trim()}"
                     </p>
                   )}
@@ -378,21 +378,21 @@ export default function CallWaiterModal({
 
               {isOfflineQueued && (
                 <div className="p-3 bg-[#c8442b]/15 rounded-2xl border border-[#c8442b]/50 text-xs text-white flex items-center gap-2 text-left">
-                  <WifiOff className="w-4 h-4 shrink-0 text-sky-300" />
+                  <WifiOff className="w-4 h-4 shrink-0 text-amber-300" />
                   <span>
                     Offline Mode: Alert has been saved locally and will auto-sync the moment Wi-Fi reconnects!
                   </span>
                 </div>
               )}
 
-              <p className="text-xs text-sky-200/60">
+              <p className="text-xs text-slate-400">
                 Floor staff will be at your table in a moment. Auto-closing in {dismissCountdown}s...
               </p>
 
               <button
                 type="button"
                 onClick={handleDismiss}
-                className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl bg-sky-400 hover:bg-sky-300 text-[#021424] font-bold text-sm transition-transform duration-150 active:scale-[0.98] shadow-md shadow-black/40 cursor-pointer motion-reduce:transform-none"
+                className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-sm transition-transform duration-150 active:scale-[0.98] shadow-md shadow-black/40 cursor-pointer motion-reduce:transform-none"
               >
                 Done
               </button>
@@ -401,27 +401,26 @@ export default function CallWaiterModal({
             /* SELECTION STATE */
             <div className="space-y-4">
               {/* Optional Table Number Confirmation */}
-              {/* Optional Table Number Confirmation */}
-              <div className="flex items-center justify-between pb-3 border-b border-sky-400/25">
-                <span className="text-xs font-semibold uppercase tracking-wider text-sky-300/80">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-700">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
                   Your Table Number
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium text-sky-200/60">Table #</span>
+                  <span className="text-sm font-medium text-slate-400">Table #</span>
                   <input
                     type="number"
                     min="1"
                     max="99"
                     value={tableNumber}
                     onChange={(e) => setTableNumber(e.target.value)}
-                    className="w-20 min-h-11 text-center font-bold text-base py-2 px-2 border border-sky-400/40 rounded-xl focus:outline-none focus:ring-1 focus:ring-sky-400 bg-[#021424] text-white"
+                    className="w-20 min-h-11 text-center font-bold text-base py-2 px-2 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-[#0b0f19] text-white"
                   />
                 </div>
               </div>
 
               {/* Preset Reason Choices */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-sky-300/80 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
                   Select Reason (One-Tap)
                 </label>
                 <div className="grid grid-cols-1 gap-2">
@@ -434,8 +433,8 @@ export default function CallWaiterModal({
                         onClick={() => setSelectedReason(preset)}
                         className={`w-full min-h-[56px] flex items-center justify-between p-3 rounded-2xl border transition-[transform,background-color,box-shadow] duration-200 text-left cursor-pointer active:scale-[0.98] motion-reduce:transform-none ${
                           isSelected
-                            ? 'bg-sky-400 text-[#021424] shadow-md shadow-sky-400/30 ring-1 ring-sky-300/60 border-transparent font-bold'
-                            : 'bg-[#021424]/60 hover:bg-sky-900/40 text-slate-100 border-sky-400/30'
+                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-1 ring-amber-400/60 border-transparent font-bold'
+                            : 'bg-[#1e293b]/70 hover:bg-[#1e293b] text-slate-200 border-slate-700/80'
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -446,7 +445,7 @@ export default function CallWaiterModal({
                             </p>
                             <p
                               className={`text-[11px] ${
-                                isSelected ? 'text-[#021424]/75' : 'text-sky-200/65'
+                                isSelected ? 'text-white/80' : 'text-slate-400'
                               }`}
                             >
                               {preset.desc}
@@ -455,11 +454,11 @@ export default function CallWaiterModal({
                         </div>
 
                         {isSelected ? (
-                          <div className="w-6 h-6 rounded-full bg-[#021424] text-sky-400 flex items-center justify-center shrink-0">
+                          <div className="w-6 h-6 rounded-full bg-[#0b0f19] text-amber-400 flex items-center justify-center shrink-0">
                             <CheckCircle2 className="w-4 h-4" />
                           </div>
                         ) : (
-                          <span className="text-xs font-medium text-sky-400">
+                          <span className="text-xs font-medium text-emerald-400">
                             Select
                           </span>
                         )}
@@ -471,8 +470,8 @@ export default function CallWaiterModal({
 
               {/* Optional Custom Message Field */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-sky-300/80 mb-1.5 flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-sky-400" />
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
                   <span>Custom Request Note (Optional)</span>
                 </label>
                 <input
@@ -481,7 +480,7 @@ export default function CallWaiterModal({
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
                   placeholder="e.g., Warm water, extra spice, split bill..."
-                  className="w-full min-h-11 py-2.5 px-3.5 text-base sm:text-sm border border-sky-400/40 rounded-xl focus:outline-none focus:ring-1 focus:ring-sky-400 bg-[#021424] text-white placeholder-sky-200/40 transition"
+                  className="w-full min-h-11 py-2.5 px-3.5 text-base sm:text-sm border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-[#0b0f19] text-white placeholder-slate-500 transition"
                 />
               </div>
 
@@ -499,7 +498,7 @@ export default function CallWaiterModal({
                   type="button"
                   onClick={handleDismiss}
                   disabled={isSubmitting}
-                  className="flex-1 min-h-12 py-3 px-4 rounded-2xl border border-white/20 text-slate-100 hover:bg-sky-900/40 hover:text-white text-sm font-bold transition-colors duration-150 cursor-pointer disabled:opacity-50"
+                  className="flex-1 min-h-12 py-3 px-4 rounded-2xl border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white text-sm font-bold transition-colors duration-150 cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -508,7 +507,7 @@ export default function CallWaiterModal({
                   type="button"
                   onClick={() => handleSubmit()}
                   disabled={isSubmitting || !tableNumber}
-                  className="flex-[2] min-h-12 py-3 px-5 rounded-2xl bg-gradient-to-r from-sky-400 via-sky-500 to-sky-600 text-[#021424] font-bold text-sm transition-transform duration-150 active:scale-[0.98] shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed motion-reduce:transform-none"
+                  className="flex-[2] min-h-12 py-3 px-5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-500 text-slate-950 font-black text-sm transition-transform duration-150 active:scale-[0.98] shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed motion-reduce:transform-none hover:brightness-105"
                 >
                   {isSubmitting ? (
                     <>

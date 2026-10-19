@@ -96,12 +96,12 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  /* Card panel is see-through so the river shows behind it; food images stay opaque. Lower alpha = more transparent. */
-  background: linear-gradient(180deg, rgba(8, 47, 73, 0.35) 0%, rgba(3, 29, 51, 0.42) 60%, rgba(2, 20, 36, 0.5) 100%);
-  border: 1px solid rgba(56, 189, 248, 0.32);
+  /* Card panel: deep emerald & dark slate blend */
+  background: linear-gradient(180deg, rgba(6, 20, 14, 0.85) 0%, rgba(15, 61, 42, 0.5) 60%, rgba(6, 20, 14, 0.92) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.35);
   border-radius: 1.25rem;
   padding: 1.15rem 1rem 1rem;
-  box-shadow: 0 12px 32px -10px rgba(2, 20, 36, 0.5), 0 0 20px -5px rgba(56, 189, 248, 0.12), inset 0 1px 0 rgba(224, 242, 254, 0.12);
+  box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.6), 0 0 20px -5px rgba(212, 175, 55, 0.12), inset 0 1px 0 rgba(240, 210, 122, 0.12);
   transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
               box-shadow 320ms ease,
               border-color 320ms ease;
@@ -111,8 +111,8 @@
 
 .plate-card:hover {
   transform: translateY(-5px);
-  border-color: rgba(56, 189, 248, 0.85);
-  box-shadow: 0 20px 42px -10px rgba(2, 20, 36, 0.85), 0 0 32px -4px rgba(56, 189, 248, 0.28);
+  border-color: rgba(212, 175, 55, 0.8);
+  box-shadow: 0 20px 42px -10px rgba(0, 0, 0, 0.8), 0 0 32px -4px rgba(212, 175, 55, 0.25);
 }
 
 .plate-card--unavailable {
@@ -257,9 +257,9 @@
   margin-top: 0.4rem;
   padding: 0.15rem 0.5rem;
   border-radius: 9999px;
-  background: rgba(8, 47, 73, 0.7);
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  color: #7dd3fc;
+  background: rgba(15, 61, 42, 0.7);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #f0d27a;
   font-size: 0.65rem;
   font-weight: 500;
   max-width: 100%;
@@ -272,7 +272,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(56, 189, 248, 0.22);
+  border-top: 1px solid rgba(212, 175, 55, 0.22);
   margin-top: auto;
   position: relative;
   z-index: 2;
@@ -285,22 +285,22 @@
   width: 32px;
   height: 32px;
   border-radius: 9999px;
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  background: rgba(8, 47, 73, 0.6);
-  color: #7dd3fc;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: rgba(15, 61, 42, 0.6);
+  color: #f0d27a;
   cursor: pointer;
   transition: all 180ms ease;
 }
 
 .plate-note-btn:hover {
-  background: rgba(56, 189, 248, 0.25);
-  border-color: #38bdf8;
+  background: rgba(212, 175, 55, 0.25);
+  border-color: #d4af37;
   color: #ffffff;
 }
 
 .plate-note-btn--active {
-  background: rgba(14, 165, 233, 0.35);
-  border-color: #38bdf8;
+  background: rgba(212, 175, 55, 0.35);
+  border-color: #d4af37;
   color: #ffffff;
 }
 
@@ -310,12 +310,12 @@
   gap: 0.3rem;
   padding: 0.45rem 1rem;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 60%, #0369a1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 60%, #047857 100%);
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.04em;
-  box-shadow: 0 4px 14px -3px rgba(2, 132, 199, 0.6);
+  box-shadow: 0 4px 14px -3px rgba(16, 185, 129, 0.6);
   cursor: pointer;
   border: none;
   transition: all 180ms ease;
@@ -324,7 +324,7 @@
 .plate-order-btn:hover {
   filter: brightness(1.12);
   transform: scale(1.03);
-  box-shadow: 0 6px 18px -3px rgba(56, 189, 248, 0.5);
+  box-shadow: 0 6px 18px -3px rgba(16, 185, 129, 0.5);
 }
 
 .plate-order-btn:active {
@@ -335,11 +335,11 @@
 .plate-stepper {
   display: inline-flex;
   align-items: center;
-  background: rgba(8, 47, 73, 0.85);
-  border: 1px solid rgba(56, 189, 248, 0.6);
+  background: rgba(15, 61, 42, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.5);
   border-radius: 9999px;
   padding: 0.15rem;
-  box-shadow: 0 4px 14px -2px rgba(2, 20, 36, 0.6);
+  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.6);
 }
 
 .plate-stepper__btn {

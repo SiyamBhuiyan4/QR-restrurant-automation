@@ -182,6 +182,41 @@ export default function AdminDashboard({ className = '' }) {
     }
   };
 
+  // Synchronize activeTab on browser Back/Forward (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      const validTabs = [
+        'overview',
+        'tables',
+        'orders',
+        'kds',
+        'floor',
+        'menu',
+        'qr',
+        'employees',
+        'reports',
+        'employee'
+      ];
+      if (tabParam === 'stats') {
+        setActiveTab('overview');
+      } else if (tabParam === 'kitchen') {
+        setActiveTab('kds');
+      } else if (tabParam === 'waiter') {
+        setActiveTab('floor');
+      } else if (tabParam === 'roster') {
+        setActiveTab('employees');
+      } else if (validTabs.includes(tabParam)) {
+        setActiveTab(tabParam);
+      } else {
+        setActiveTab('overview');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // Real-time Convex mutations
   let updateConvexStatus = null;
   let resolveConvexCall = null;

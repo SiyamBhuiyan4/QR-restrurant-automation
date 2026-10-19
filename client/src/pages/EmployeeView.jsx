@@ -18,10 +18,13 @@ import EmployeesModule from '../components/admin/EmployeesModule';
  * - Dark slate styling matching SmartDine architecture
  */
 export default function EmployeeView() {
-  // Helper to read initial tab from URL query parameter
+  // Helper to read tab from URL query parameter (?tab=kitchen | ?tab=roster) or subpath (/employee/roster)
   const getTabFromUrl = useCallback(() => {
     if (typeof window === 'undefined') return 'kitchen';
     try {
+      const path = window.location.pathname.toLowerCase();
+      if (path.includes('/roster')) return 'roster';
+      if (path.includes('/kitchen')) return 'kitchen';
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab')?.toLowerCase();
       if (tabParam === 'roster') return 'roster';
@@ -34,14 +37,18 @@ export default function EmployeeView() {
 
   const [activeTab, setActiveTab] = useState(getTabFromUrl);
 
-  // Synchronize state when browser back/forward buttons (popstate) are triggered
+  // Synchronize state when browser back/forward buttons (popstate) or custom navigate events are triggered
   useEffect(() => {
-    const handlePopState = () => {
+    const syncTab = () => {
       setActiveTab(getTabFromUrl());
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('popstate', syncTab);
+    window.addEventListener('smartdine:navigate', syncTab);
+    return () => {
+      window.removeEventListener('popstate', syncTab);
+      window.removeEventListener('smartdine:navigate', syncTab);
+    };
   }, [getTabFromUrl]);
 
   // Tab switch handler: updates activeTab state & syncs URL search params without page reload
@@ -137,6 +144,31 @@ export default function EmployeeView() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
               <span>Hub Synchronized</span>
+            </div>
+
+            {/* Quick Navigation to Other Views */}
+            <div className="hidden sm:flex items-center gap-1.5 ml-1">
+              <a
+                href="/"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 text-xs font-semibold transition"
+                title="Customer Menu View"
+              >
+                <span>🍽️ Customer</span>
+              </a>
+              <a
+                href="/waiter"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 text-xs font-semibold transition"
+                title="On-Field Waiter Console"
+              >
+                <span>🛎️ Waiter</span>
+              </a>
+              <a
+                href="/admin"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 text-xs font-semibold transition"
+                title="Admin Dashboard"
+              >
+                <span>🛡️ Admin</span>
+              </a>
             </div>
           </div>
         </div>

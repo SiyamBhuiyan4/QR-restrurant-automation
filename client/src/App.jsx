@@ -156,11 +156,13 @@ function AppRouter() {
   // Determine current active view based on pathname (4 distinct views)
   const normalizedPath = currentPath.replace(/\/+$/, '') || '/';
 
-  // Handle automatic redirect from legacy /kds route to /employee
+  // Handle automatic redirect from legacy /kds or /kitchen route to /employee?tab=kitchen
   useEffect(() => {
-    if (normalizedPath === '/kds') {
+    if (normalizedPath === '/kds' || normalizedPath === '/kitchen') {
       const search = typeof window !== 'undefined' ? window.location.search : '';
-      const target = `/employee${search}`;
+      const params = new URLSearchParams(search);
+      if (!params.get('tab')) params.set('tab', 'kitchen');
+      const target = `/employee?${params.toString()}`;
       if (typeof window !== 'undefined') {
         window.history.replaceState({}, '', target);
       }
@@ -169,9 +171,26 @@ function AppRouter() {
   }, [normalizedPath]);
 
   const activeView = useMemo(() => {
-    if (normalizedPath === '/employee' || normalizedPath === '/kds') return 'employee';
-    if (normalizedPath === '/waiter' || normalizedPath === '/onfield' || normalizedPath === '/floor') return 'waiter';
-    if (normalizedPath === '/admin') return 'admin';
+    if (
+      normalizedPath === '/employee' ||
+      normalizedPath.startsWith('/employee/') ||
+      normalizedPath === '/kds' ||
+      normalizedPath === '/kitchen' ||
+      normalizedPath === '/staff'
+    ) {
+      return 'employee';
+    }
+    if (
+      normalizedPath === '/waiter' ||
+      normalizedPath.startsWith('/waiter/') ||
+      normalizedPath === '/onfield' ||
+      normalizedPath === '/floor'
+    ) {
+      return 'waiter';
+    }
+    if (normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')) {
+      return 'admin';
+    }
     if (normalizedPath === '/qr') return 'qr';
     return 'customer';
   }, [normalizedPath]);
