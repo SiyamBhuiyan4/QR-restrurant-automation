@@ -1,34 +1,42 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import KitchenDisplay from './KitchenDisplay';
 import EmployeesModule from '../components/admin/EmployeesModule';
+import CustomerReportsModule, { getCustomerReportsCount } from '../components/admin/CustomerReportsModule';
 
 /**
  * EmployeeView (SmartDine Staff & Kitchen Hub)
  * 
- * Houses the Employee View with Kitchen Display System (KDS) under it as requested:
- * "kitchen ta employee er under e thkbe"
+ * Houses the unified Employee View with Kitchen Display System (KDS), Staff Roster,
+ * and Customer Reports & Notes as requested:
+ * "ar eita employee section e o thakbe mane employee ra o korte parbe arki"
+ * 
+ * Top-Level Navigation Tabs:
+ *   1. 'kitchen': 🍳 Kitchen Display (KDS) - renders <KitchenDisplay isEmbedded={true} />
+ *   2. 'roster':  👥 Staff Roster & Shifts - renders <EmployeesModule isEmbedded={true} />
+ *   3. 'reports': 📋 Customer Requests & Notes - renders <CustomerReportsModule isEmbedded={true} employeeMode={true} />
  * 
  * Features:
- * - Top header with branding "👨‍🍳 SmartDine Staff & Kitchen Hub"
- * - Tab switcher with 2 tabs:
- *     1. 'kitchen': 🍳 Kitchen Display (KDS) - renders <KitchenDisplay isEmbedded={true} />
- *     2. 'roster': 👥 Staff Roster & Shifts - renders <EmployeesModule isEmbedded={true} />
- * - URL query parameter support: ?tab=kitchen and ?tab=roster (default: 'kitchen')
- * - Full browser back/forward history synchronization
- * - Dark slate styling matching SmartDine architecture
+ * - URL query parameter support: ?tab=kitchen, ?tab=roster, ?tab=reports
+ * - Pathname support: /employee?tab=reports, /employee/reports, /employee/roster, /employee/kitchen
+ * - Live badge counter for pending & urgent customer requests with real-time sync
+ * - Full browser back/forward history synchronization without page reloads
+ * - High contrast dark slate styling matching SmartDine architecture
  */
 export default function EmployeeView() {
-  // Helper to read tab from URL query parameter (?tab=kitchen | ?tab=roster) or subpath (/employee/roster)
+  // Helper to read tab from URL query parameter (?tab=kitchen | ?tab=roster | ?tab=reports) or subpaths
   const getTabFromUrl = useCallback(() => {
     if (typeof window === 'undefined') return 'kitchen';
     try {
       const path = window.location.pathname.toLowerCase();
-      if (path.includes('/roster')) return 'roster';
-      if (path.includes('/kitchen')) return 'kitchen';
+      if (path.includes('/reports') || path.includes('/requests')) return 'reports';
+      if (path.includes('/roster') || path.includes('/shifts')) return 'roster';
+      if (path.includes('/kitchen') || path.includes('/kds')) return 'kitchen';
+
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab')?.toLowerCase();
-      if (tabParam === 'roster') return 'roster';
-      if (tabParam === 'kitchen') return 'kitchen';
+      if (tabParam === 'reports' || tabParam === 'requests') return 'reports';
+      if (tabParam === 'roster' || tabParam === 'shifts') return 'roster';
+      if (tabParam === 'kitchen' || tabParam === 'kds') return 'kitchen';
     } catch (e) {
       console.warn('[EmployeeView] URL search params error:', e);
     }
@@ -36,6 +44,45 @@ export default function EmployeeView() {
   }, []);
 
   const [activeTab, setActiveTab] = useState(getTabFromUrl);
+  const [reportsCount, setReportsCount] = useState(() => getCustomerReportsCount());
+
+  // Keep live customer requests badge counter synchronized across tabs & updates
+  useEffect(() => {
+    const syncReportsCount = () => {
+      setReportsCount(getCustomerReportsCount());
+    };
+
+    // Initial check
+    syncReportsCount();
+
+    // Listen to real-time events, BroadcastChannel, and storage changes
+    window.addEventListener('storage', syncReportsCount);
+    window.addEventListener('smartdine:report_updated', syncReportsCount);
+    window.addEventListener('smartdine:reports-updated', syncReportsCount);
+    const interval = setInterval(syncReportsCount, 4000);
+
+    let bc = null;
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        bc = new BroadcastChannel('smartdine_restaurant_state');
+        bc.onmessage = (e) => {
+          if (e.data?.type === 'REPORTS_UPDATED' || (e.data?.type === 'SYNC_ALL' && e.data.data?.reports)) {
+            syncReportsCount();
+          }
+        };
+      } catch (_) {}
+    }
+
+    return () => {
+      if (bc) {
+        try { bc.close(); } catch (_) {}
+      }
+      window.removeEventListener('storage', syncReportsCount);
+      window.removeEventListener('smartdine:report_updated', syncReportsCount);
+      window.removeEventListener('smartdine:reports-updated', syncReportsCount);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Synchronize state when browser back/forward buttons (popstate) or custom navigate events are triggered
   useEffect(() => {
@@ -87,7 +134,7 @@ export default function EmployeeView() {
                   </span>
                 </h1>
                 <p className="text-xs text-slate-400 font-medium">
-                  Unified operational center for kitchen operations, shifts & table dispatch
+                  Unified operational center for kitchen operations, shifts & customer request dispatch
                 </p>
               </div>
             </div>
@@ -104,12 +151,13 @@ export default function EmployeeView() {
             {/* Tab Switcher */}
             <nav
               aria-label="Staff Hub Tabs"
-              className="inline-flex p-1 bg-slate-950/90 border border-slate-800 rounded-2xl shadow-inner w-full sm:w-auto justify-center"
+              className="inline-flex p-1 bg-slate-950/90 border border-slate-800 rounded-2xl shadow-inner w-full sm:w-auto justify-center flex-wrap sm:flex-nowrap gap-1"
             >
+              {/* Tab 1: 🍳 Kitchen Display (KDS) */}
               <button
                 type="button"
                 onClick={() => handleTabChange('kitchen')}
-                className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer ${
                   activeTab === 'kitchen'
                     ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25 scale-[1.02]'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -118,13 +166,14 @@ export default function EmployeeView() {
                 role="tab"
               >
                 <span className="text-base">🍳</span>
-                <span>Kitchen Display (KDS)</span>
+                <span className="whitespace-nowrap">Kitchen Display (KDS)</span>
               </button>
 
+              {/* Tab 2: 👥 Staff Roster & Shifts */}
               <button
                 type="button"
                 onClick={() => handleTabChange('roster')}
-                className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer ${
                   activeTab === 'roster'
                     ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25 scale-[1.02]'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -133,7 +182,37 @@ export default function EmployeeView() {
                 role="tab"
               >
                 <span className="text-base">👥</span>
-                <span>Staff Roster & Shifts</span>
+                <span className="whitespace-nowrap">Staff Roster & Shifts</span>
+              </button>
+
+              {/* Tab 3: 📋 Customer Requests & Notes */}
+              <button
+                type="button"
+                onClick={() => handleTabChange('reports')}
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer ${
+                  activeTab === 'reports' || activeTab === 'requests'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25 scale-[1.02]'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
+                aria-selected={activeTab === 'reports' || activeTab === 'requests'}
+                role="tab"
+              >
+                <span className="text-base">📋</span>
+                <span className="whitespace-nowrap">Customer Requests & Notes</span>
+                {reportsCount.pending > 0 && (
+                  <span
+                    className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 transition-transform ${
+                      activeTab === 'reports' || activeTab === 'requests'
+                        ? 'bg-slate-950 text-amber-400 border border-slate-900 shadow-sm'
+                        : reportsCount.urgent > 0
+                        ? 'bg-rose-500 text-white animate-pulse shadow-md shadow-rose-500/50'
+                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                    }`}
+                    title={`${reportsCount.pending} pending requests (${reportsCount.urgent} urgent)`}
+                  >
+                    {reportsCount.pending}
+                  </span>
+                )}
               </button>
             </nav>
 
@@ -187,6 +266,12 @@ export default function EmployeeView() {
         {activeTab === 'roster' && (
           <div className="flex-1 w-full max-w-[1700px] mx-auto p-4 sm:p-6 lg:p-8 animate-fadeIn">
             <EmployeesModule isEmbedded={true} />
+          </div>
+        )}
+
+        {(activeTab === 'reports' || activeTab === 'requests') && (
+          <div className="flex-1 w-full max-w-[1700px] mx-auto p-4 sm:p-6 lg:p-8 animate-fadeIn">
+            <CustomerReportsModule isEmbedded={true} employeeMode={true} />
           </div>
         )}
       </main>

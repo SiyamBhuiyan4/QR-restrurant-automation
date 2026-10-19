@@ -631,6 +631,21 @@ export default function AdminDashboard({ className = '' }) {
           {/* TAB 10: CUSTOMER REPORTS & NOTES */}
           {activeTab === 'reports' && (
             <div className="animate-fadeIn">
+              <div className="flex items-center justify-between gap-3 mb-3 px-1">
+                <span className="text-xs text-slate-400 font-medium">
+                  Direct customer reports synchronized in real-time with Staff Operations Console
+                </span>
+                <a
+                  href="/employee?tab=reports"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold transition cursor-pointer"
+                  title="Open Customer Requests in Employee Hub"
+                >
+                  <span>Open in Employee Hub (/employee?tab=reports)</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
               <CustomerReportsModule />
             </div>
           )}

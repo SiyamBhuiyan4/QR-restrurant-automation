@@ -132,7 +132,8 @@ export default function AdminSidebar({
       icon: MessageSquareWarning,
       badge: pendingReports > 0 ? pendingReports : null,
       badgeColor: 'rose',
-      pulse: pendingReports > 0
+      pulse: pendingReports > 0,
+      externalUrl: '/employee?tab=reports'
     }
   ];
 

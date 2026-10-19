@@ -11,14 +11,15 @@ import { useSocket, useSocketListener } from './SocketContext';
 
 const RestaurantContext = createContext(null);
 
-const STORAGE_KEYS = {
+export const STORAGE_KEYS = {
   TABLES: 'smartdine_restaurant_tables',
   EMPLOYEES: 'smartdine_restaurant_employees',
   TABLE_COUNT: 'smartdine_table_count',
-  CALLS: 'smartdine_active_assistance_calls'
+  CALLS: 'smartdine_active_assistance_calls',
+  REPORTS: 'smartdine_customer_reports_v4'
 };
 
-const DEFAULT_EMPLOYEE_ROSTER = [
+export const DEFAULT_EMPLOYEE_ROSTER = [
   {
     id: 'emp-1',
     numericId: 1,
@@ -94,7 +95,7 @@ const DEFAULT_EMPLOYEE_ROSTER = [
   {
     id: 'emp-5',
     numericId: 5,
-    name: 'Saima Islam',
+    name: 'Sadia Islam',
     initials: 'SI',
     role: 'Senior Host',
     shift: 'Evening Shift (16:00 - 00:00)',
@@ -105,9 +106,71 @@ const DEFAULT_EMPLOYEE_ROSTER = [
     avatarBg: 'from-pink-500 to-rose-600',
     zone: 'Zone 5 (Private Dining)',
     phone: '+880 1515-678005',
-    email: 'saima.islam@restaurant.local',
+    email: 'sadia.islam@restaurant.local',
     avgResponseTime: '11s',
     onTimeRate: '98%'
+  }
+];
+
+export const DEFAULT_CUSTOMER_REPORTS = [
+  {
+    id: 'rep-101',
+    table: 4,
+    note: 'Requested extra napkins and water 10 mins ago — no one came.',
+    severity: 'critical',
+    status: 'new',
+    createdAt: Date.now() - 4 * 60000,
+    staffId: 'emp-1',
+    dispatch: null,
+    resolvedAt: null,
+    resolutionTime: null,
+    resolutionNote: null,
+    messages: []
+  },
+  {
+    id: 'rep-102',
+    table: 12,
+    note: 'Food arrived warm instead of hot. Wagyu steak needs reheating.',
+    severity: 'critical',
+    status: 'new',
+    createdAt: Date.now() - 9 * 60000,
+    staffId: 'emp-2',
+    dispatch: null,
+    resolvedAt: null,
+    resolutionTime: null,
+    resolutionNote: null,
+    messages: []
+  },
+  {
+    id: 'rep-103',
+    table: 7,
+    note: 'Need help splitting bill across three cards with corporate dining credit.',
+    severity: 'moderate',
+    status: 'in_progress',
+    createdAt: Date.now() - 18 * 60000,
+    staffId: 'emp-3',
+    dispatch: { staffId: 'emp-3', note: 'Priya Sen dispatched with wireless handheld POS.' },
+    resolvedAt: null,
+    resolutionTime: null,
+    resolutionNote: null,
+    messages: [
+      { id: 'm1', to: 'employee', text: 'Please go to Table 7 with the POS terminal.', sentAt: Date.now() - 15 * 60000, from: 'Admin' },
+      { id: 'm2', to: 'customer', text: 'We are on our way to your table right now!', sentAt: Date.now() - 14 * 60000, from: 'Admin' }
+    ]
+  },
+  {
+    id: 'rep-104',
+    table: 8,
+    note: 'Anniversary celebration — requesting two complimentary champagne flutes.',
+    severity: 'general',
+    status: 'resolved',
+    createdAt: Date.now() - 42 * 60000,
+    staffId: 'emp-4',
+    dispatch: { staffId: 'emp-4', note: 'Tanvir Rahman notified for anniversary hospitality package.' },
+    resolvedAt: Date.now() - 28 * 60000,
+    resolutionTime: '14 mins',
+    resolutionNote: 'Delivered complimentary Prosecco flutes & macaron board.',
+    messages: []
   }
 ];
 
@@ -162,7 +225,18 @@ export function RestaurantProvider({ children }) {
         const saved = localStorage.getItem(STORAGE_KEYS.EMPLOYEES);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map(e => {
+              if (e.id === 'emp-5' || e.numericId === 5 || e.name === 'Saima Islam') {
+                return {
+                  ...e,
+                  name: 'Sadia Islam',
+                  email: e.email ? e.email.replace('saima', 'sadia') : 'sadia.islam@restaurant.local'
+                };
+              }
+              return e;
+            });
+          }
         }
       } catch (_) {}
     }
@@ -203,6 +277,34 @@ export function RestaurantProvider({ children }) {
       } catch (_) {}
     }
     return [];
+  });
+
+  // 5. Customer Reports & Notes
+  const [customerReports, setCustomerReportsState] = useState(() => {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEYS.REPORTS);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map(r => ({ messages: [], ...r }));
+          }
+        }
+        // Fallback migration from older v3 key if v4 is not yet populated
+        const legacyV3 = localStorage.getItem('smartdine_customer_reports_v3');
+        if (legacyV3) {
+          const parsedV3 = JSON.parse(legacyV3);
+          if (Array.isArray(parsedV3) && parsedV3.length > 0) {
+            return parsedV3.map(r => {
+              let staffId = r.staffId || 'emp-1';
+              if (staffId === 'emp-6') staffId = 'emp-5';
+              return { messages: [], ...r, staffId };
+            });
+          }
+        }
+      } catch (_) {}
+    }
+    return DEFAULT_CUSTOMER_REPORTS;
   });
 
   // Broadcast Channel for ultra-fast same-origin cross-tab synchronization
@@ -263,6 +365,12 @@ export function RestaurantProvider({ children }) {
     }
   }, [assistanceCalls]);
 
+  useEffect(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(customerReports));
+    }
+  }, [customerReports]);
+
   // Broadcast state changes across tabs
   const broadcastState = useCallback((type, data) => {
     if (broadcastChannel) {
@@ -283,6 +391,7 @@ export function RestaurantProvider({ children }) {
         if (msg.data.employees) setEmployeesState(msg.data.employees);
         if (msg.data.tables) setTablesState(msg.data.tables);
         if (msg.data.calls) setAssistanceCalls(msg.data.calls);
+        if (msg.data.reports) setCustomerReportsState(msg.data.reports);
       } else if (msg.type === 'TABLE_COUNT_UPDATED') {
         setTableCountState(msg.data);
       } else if (msg.type === 'TABLES_UPDATED') {
@@ -291,6 +400,8 @@ export function RestaurantProvider({ children }) {
         setEmployeesState(msg.data);
       } else if (msg.type === 'CALLS_UPDATED') {
         setAssistanceCalls(msg.data);
+      } else if (msg.type === 'REPORTS_UPDATED') {
+        setCustomerReportsState(msg.data);
       }
     };
     broadcastChannel.addEventListener('message', handleMessage);
@@ -312,6 +423,9 @@ export function RestaurantProvider({ children }) {
       }
       if (e.key === STORAGE_KEYS.CALLS && e.newValue) {
         try { setAssistanceCalls(JSON.parse(e.newValue)); } catch (_) {}
+      }
+      if (e.key === STORAGE_KEYS.REPORTS && e.newValue) {
+        try { setCustomerReportsState(JSON.parse(e.newValue)); } catch (_) {}
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -745,17 +859,233 @@ export function RestaurantProvider({ children }) {
     });
   }, [broadcastState]);
 
+  // ---------------------------------------------------------------------------
+  // CUSTOMER REPORTS & NOTES (Rule 5 & Cross-View State Sync)
+  // ---------------------------------------------------------------------------
+  const setCustomerReports = useCallback((updater) => {
+    setCustomerReportsState(prevReports => {
+      const nextReports = typeof updater === 'function' ? updater(prevReports) : updater;
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(nextReports));
+        } catch (_) {}
+      }
+      broadcastState('REPORTS_UPDATED', nextReports);
+      return nextReports;
+    });
+  }, [broadcastState]);
+
+  const addCustomerReport = useCallback((reportData) => {
+    const tblNum = Number(reportData.table || reportData.tableNumber || 1);
+    const assignedEmp = getAssignedEmployeeForTable(tblNum) || employees[0];
+    const newReport = {
+      id: reportData.id || `rep-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      table: tblNum,
+      note: reportData.note || reportData.complaintText || '',
+      severity: reportData.severity || 'general',
+      status: reportData.status || 'new',
+      createdAt: reportData.createdAt || Date.now(),
+      staffId: reportData.staffId || (assignedEmp ? assignedEmp.id : 'emp-1'),
+      dispatch: reportData.dispatch || null,
+      resolvedAt: null,
+      resolutionTime: null,
+      resolutionNote: null,
+      messages: reportData.messages || []
+    };
+
+    setCustomerReportsState(prev => {
+      const next = [newReport, ...prev];
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(next)); } catch (_) {}
+      }
+      broadcastState('REPORTS_UPDATED', next);
+      return next;
+    });
+
+    return newReport;
+  }, [getAssignedEmployeeForTable, employees, broadcastState]);
+
+  const updateCustomerReport = useCallback((reportId, patchOrUpdater) => {
+    setCustomerReportsState(prev => {
+      const next = prev.map(r => {
+        if (r.id === reportId) {
+          if (typeof patchOrUpdater === 'function') {
+            return patchOrUpdater(r);
+          }
+          return { ...r, ...patchOrUpdater };
+        }
+        return r;
+      });
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(next)); } catch (_) {}
+      }
+      broadcastState('REPORTS_UPDATED', next);
+      return next;
+    });
+  }, [broadcastState]);
+
+  const assignReportStaff = useCallback((reportId, staffId, dispatchNote = null) => {
+    const targetEmp = employees.find(e => e.id === staffId || String(e.numericId) === String(staffId)) || employees[0];
+    setCustomerReportsState(prev => {
+      const next = prev.map(r => {
+        if (r.id === reportId) {
+          const noteText = dispatchNote || `${targetEmp.name} assigned to Table ${r.table}`;
+          return {
+            ...r,
+            staffId: targetEmp.id,
+            status: r.status === 'new' ? 'in_progress' : r.status,
+            dispatch: { staffId: targetEmp.id, note: noteText }
+          };
+        }
+        return r;
+      });
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(next)); } catch (_) {}
+      }
+      broadcastState('REPORTS_UPDATED', next);
+      return next;
+    });
+  }, [employees, broadcastState]);
+
+  const sendReportMessage = useCallback((reportId, to, text, from = 'Admin') => {
+    const cleanText = String(text || '').trim();
+    if (!cleanText) return null;
+
+    const msg = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      to,
+      text: cleanText,
+      sentAt: Date.now(),
+      from
+    };
+
+    setCustomerReportsState(prev => {
+      const next = prev.map(r => {
+        if (r.id === reportId) {
+          const emp = employees.find(e => e.id === r.staffId) || employees[0];
+          const autoProgress = (to === 'employee' && r.status === 'new');
+          return {
+            ...r,
+            messages: [...(r.messages || []), msg],
+            status: autoProgress ? 'in_progress' : r.status,
+            dispatch: (to === 'employee' && !r.dispatch)
+              ? { staffId: r.staffId, note: `Message sent to ${emp.name}` }
+              : r.dispatch
+          };
+        }
+        return r;
+      });
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(next)); } catch (_) {}
+      }
+      broadcastState('REPORTS_UPDATED', next);
+      return next;
+    });
+
+    return msg;
+  }, [employees, broadcastState]);
+
+  const resolveCustomerReport = useCallback((reportId, customResolutionNote = null) => {
+    const now = Date.now();
+    setCustomerReportsState(prev => {
+      const next = prev.map(r => {
+        if (r.id === reportId) {
+          const elapsedMin = Math.max(1, Math.round((now - (r.createdAt || now)) / 60000));
+          const note = customResolutionNote?.trim() || 'Resolved — customer confirmed satisfied.';
+          return {
+            ...r,
+            status: 'resolved',
+            resolvedAt: now,
+            resolutionTime: `${elapsedMin} min${elapsedMin === 1 ? '' : 's'}`,
+            resolutionNote: note.startsWith('Resolved') ? note : `Resolved — ${note}`
+          };
+        }
+        return r;
+      });
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(next)); } catch (_) {}
+      }
+      broadcastState('REPORTS_UPDATED', next);
+      return next;
+    });
+  }, [broadcastState]);
+
+  const reopenCustomerReport = useCallback((reportId) => {
+    setCustomerReportsState(prev => {
+      const next = prev.map(r => {
+        if (r.id === reportId) {
+          return {
+            ...r,
+            status: 'in_progress',
+            resolvedAt: null,
+            resolutionTime: null,
+            resolutionNote: null
+          };
+        }
+        return r;
+      });
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(next)); } catch (_) {}
+      }
+      broadcastState('REPORTS_UPDATED', next);
+      return next;
+    });
+  }, [broadcastState]);
+
+  const priorityPingReport = useCallback((reportId) => {
+    setCustomerReportsState(prev => {
+      const next = prev.map(r => {
+        if (r.id === reportId) {
+          const emp = employees.find(e => e.id === r.staffId) || employees[0];
+          return {
+            ...r,
+            status: r.status === 'new' ? 'in_progress' : r.status,
+            dispatch: { staffId: r.staffId, note: `Priority ping sent to ${emp.name}` }
+          };
+        }
+        return r;
+      });
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(next)); } catch (_) {}
+      }
+      broadcastState('REPORTS_UPDATED', next);
+      return next;
+    });
+  }, [employees, broadcastState]);
+
+  const resetCustomerReports = useCallback((newReports = null) => {
+    const target = newReports || DEFAULT_CUSTOMER_REPORTS;
+    setCustomerReportsState(target);
+    if (typeof localStorage !== 'undefined') {
+      try { localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(target)); } catch (_) {}
+    }
+    broadcastState('REPORTS_UPDATED', target);
+  }, [broadcastState]);
+
+  const getReportsForEmployee = useCallback((employeeId) => {
+    const empId = String(employeeId);
+    return customerReports.filter(r => r.staffId === empId || String(r.staffId) === empId);
+  }, [customerReports]);
+
+  const getReportsForTable = useCallback((tableNumber) => {
+    const tbl = Number(tableNumber);
+    return customerReports.filter(r => Number(r.table) === tbl);
+  }, [customerReports]);
+
   const contextValue = {
     // State
     tableCount,
     tables,
     employees,
     assistanceCalls,
+    customerReports,
 
     // Lookups
     getAssignedEmployeeForTable,
+    getReportsForEmployee,
+    getReportsForTable,
 
-    // Actions
+    // Actions (Floor & Tables)
     setTableCount,
     addTable,
     removeTable,
@@ -766,7 +1096,18 @@ export function RestaurantProvider({ children }) {
     setEmployeeStatus,
     autoBalanceTables,
     registerAssistanceCall,
-    resolveAssistanceCall
+    resolveAssistanceCall,
+
+    // Actions (Customer Reports & Notes)
+    setCustomerReports,
+    addCustomerReport,
+    updateCustomerReport,
+    assignReportStaff,
+    sendReportMessage,
+    resolveCustomerReport,
+    reopenCustomerReport,
+    priorityPingReport,
+    resetCustomerReports
   };
 
   return (
@@ -782,6 +1123,41 @@ export function useRestaurant() {
     throw new Error('useRestaurant must be used within a RestaurantProvider');
   }
   return context;
+}
+
+export function useCustomerReports() {
+  const {
+    customerReports,
+    setCustomerReports,
+    addCustomerReport,
+    updateCustomerReport,
+    assignReportStaff,
+    sendReportMessage,
+    resolveCustomerReport,
+    reopenCustomerReport,
+    priorityPingReport,
+    resetCustomerReports,
+    getReportsForEmployee,
+    getReportsForTable,
+    employees
+  } = useRestaurant();
+
+  return {
+    reports: customerReports,
+    customerReports,
+    setCustomerReports,
+    addCustomerReport,
+    updateCustomerReport,
+    assignReportStaff,
+    sendReportMessage,
+    resolveCustomerReport,
+    reopenCustomerReport,
+    priorityPingReport,
+    resetCustomerReports,
+    getReportsForEmployee,
+    getReportsForTable,
+    employees
+  };
 }
 
 export default RestaurantContext;

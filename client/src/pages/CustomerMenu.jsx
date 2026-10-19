@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { useRestaurant } from '../context/RestaurantContext';
@@ -28,7 +28,9 @@ import {
   ChefHat,
   Clock,
   BellRing,
-  Star
+  Star,
+  MessageCircle,
+  Send
 } from 'lucide-react';
 
 // Default initial menu items for full offline or standalone browsing
@@ -787,12 +789,288 @@ export default function CustomerMenu({
   };
 
   // Toast notification helper
-  const showToast = (msg) => {
+  const showToast = useCallback((msg) => {
     setToMessage(msg);
     setTimeout(() => {
       setToMessage(null);
     }, 4000);
-  };
+  }, []);
+
+  // ── Two-Way Staff & Customer Messaging Engine ─────────────────────────────
+  const [activeStaffMessage, setActiveStaffMessage] = useState(null);
+  const [staffMessageHistory, setStaffMessageHistory] = useState([]);
+  const [isReplyOpen, setIsReplyOpen] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [isSendingReply, setIsSendingReply] = useState(false);
+
+  // Play pleasant audible chime on receiving a new staff message
+  const playStaffMessageChime = useCallback(() => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+      const t = ctx.currentTime;
+      // 2-tone melodic chime: E5 (659Hz) -> A5 (880Hz)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(659.25, t);
+      gain1.gain.setValueAtTime(0.25, t);
+      gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(t);
+      osc1.stop(t + 0.3);
+
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(880, t + 0.12);
+      gain2.gain.setValueAtTime(0.2, t + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(t + 0.12);
+      osc2.stop(t + 0.5);
+    } catch (_) {}
+  }, []);
+
+  // Time formatter for message elapsed time
+  const formatTimeAgo = useCallback((ts) => {
+    if (!ts) return 'Just now';
+    const diffSec = Math.floor((Date.now() - ts) / 1000);
+    if (diffSec < 60) return `${Math.max(1, diffSec)}s ago`;
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${Math.floor(diffHours / 24)}d ago`;
+  }, []);
+
+  // Load initial staff message for this table on mount or when tableNumber changes
+  useEffect(() => {
+    if (!tableNumber) return;
+    const tblStr = String(tableNumber);
+    try {
+      const raw = localStorage.getItem(`smartdine_table_msg_${tblStr}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.text && !parsed.dismissed) {
+          // Keep visible if within last 2 hours
+          if (!parsed.sentAt || Date.now() - parsed.sentAt < 2 * 3600 * 1000) {
+            setActiveStaffMessage(parsed);
+          }
+        }
+      }
+      const histRaw = localStorage.getItem(`smartdine_table_msgs_${tblStr}`);
+      if (histRaw) {
+        const histParsed = JSON.parse(histRaw);
+        if (Array.isArray(histParsed)) {
+          setStaffMessageHistory(histParsed);
+        }
+      }
+    } catch (_) {}
+  }, [tableNumber]);
+
+  // Real-time listener for incoming staff messages to Table #X
+  useEffect(() => {
+    if (!tableNumber) return;
+    const tblStr = String(tableNumber);
+
+    const handleIncomingMessage = (msgData) => {
+      if (!msgData || String(msgData.table) !== tblStr) return;
+      setActiveStaffMessage(msgData);
+      setStaffMessageHistory(prev => {
+        const exists = prev.some(m => m.id === msgData.id);
+        return exists ? prev : [...prev, msgData];
+      });
+      playStaffMessageChime();
+      showToast(`💬 Staff Message: "${msgData.text}"`);
+    };
+
+    // 1. Cross-tab BroadcastChannel
+    let bc = null;
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        bc = new BroadcastChannel('smartdine_restaurant_state');
+        bc.onmessage = (e) => {
+          if (e.data?.type === 'CUSTOMER_MESSAGE' && e.data?.data) {
+            handleIncomingMessage(e.data.data);
+          }
+        };
+      }
+    } catch (_) {}
+
+    // 2. Storage event for cross-tab fallback
+    const handleStorage = (e) => {
+      if (e.key === `smartdine_table_msg_${tblStr}` && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed && !parsed.dismissed) {
+            handleIncomingMessage(parsed);
+          }
+        } catch (_) {}
+      }
+    };
+
+    // 3. Custom DOM event (for same-window / embedded simulator iframes)
+    const handleCustomEvent = (e) => {
+      if (e.detail) {
+        handleIncomingMessage(e.detail);
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('smartdine:table_message', handleCustomEvent);
+
+    return () => {
+      if (bc) {
+        try { bc.close(); } catch (_) {}
+      }
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('smartdine:table_message', handleCustomEvent);
+    };
+  }, [tableNumber, playStaffMessageChime, showToast]);
+
+  // Dismiss active staff message
+  const handleDismissStaffMessage = useCallback(() => {
+    if (!activeStaffMessage || !tableNumber) {
+      setActiveStaffMessage(null);
+      return;
+    }
+    const tblStr = String(tableNumber);
+    try {
+      const updated = { ...activeStaffMessage, dismissed: true };
+      localStorage.setItem(`smartdine_table_msg_${tblStr}`, JSON.stringify(updated));
+    } catch (_) {}
+    setActiveStaffMessage(null);
+    setIsReplyOpen(false);
+  }, [activeStaffMessage, tableNumber]);
+
+  // Send customer reply back to staff / manager
+  const handleSendCustomerReply = useCallback((replyContent) => {
+    const textToSend = (replyContent || replyText).trim();
+    if (!textToSend || !tableNumber) return;
+
+    setIsSendingReply(true);
+    const tblNum = Number(tableNumber);
+    const timestamp = Date.now();
+    const replyPayload = {
+      id: `reply-${timestamp}-${Math.random().toString(36).substr(2, 4)}`,
+      reportId: activeStaffMessage?.reportId || null,
+      table: tblNum,
+      from: `Table #${tblNum} Guest`,
+      text: textToSend,
+      sentAt: timestamp
+    };
+
+    // 1. Append to reports in localStorage
+    try {
+      ['smartdine_customer_reports_v4', 'smartdine_customer_reports_v3'].forEach(key => {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const reports = JSON.parse(raw);
+          if (Array.isArray(reports)) {
+            const updated = reports.map(r => {
+              const matchesId = activeStaffMessage?.reportId && r.id === activeStaffMessage.reportId;
+              const matchesTable = Number(r.table) === tblNum && r.status !== 'resolved';
+              if (matchesId || matchesTable) {
+                return {
+                  ...r,
+                  messages: [
+                    ...(r.messages || []),
+                    {
+                      id: replyPayload.id,
+                      to: 'staff',
+                      from: `Table #${tblNum} Guest`,
+                      text: textToSend,
+                      sentAt: timestamp
+                    }
+                  ]
+                };
+              }
+              return r;
+            });
+            localStorage.setItem(key, JSON.stringify(updated));
+            window.dispatchEvent(new CustomEvent('smartdine:report_updated', { detail: { reports: updated } }));
+          }
+        }
+      });
+
+      // Also set dedicated customer reply key for immediate storage triggers
+      localStorage.setItem('smartdine_customer_reply', JSON.stringify(replyPayload));
+    } catch (_) {}
+
+    // 2. BroadcastChannel
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('smartdine_restaurant_state');
+        bc.postMessage({
+          type: 'CUSTOMER_REPLY',
+          data: replyPayload,
+          timestamp
+        });
+        bc.close();
+      }
+    } catch (_) {}
+
+    // 3. UI feedback
+    showToast(`✓ Sent reply to staff: "${textToSend}"`);
+    setReplyText('');
+    setIsReplyOpen(false);
+    setIsSendingReply(false);
+  }, [replyText, tableNumber, activeStaffMessage, showToast]);
+
+  // Look up if current table has an active waiter assistance request
+  const activeTableAssistanceCall = useMemo(() => {
+    if (!tableNumber) return null;
+    const tblNum = Number(tableNumber);
+    if (!tblNum) return null;
+
+    if (restaurant?.assistanceCalls && Array.isArray(restaurant.assistanceCalls)) {
+      const found = restaurant.assistanceCalls.find(
+        c => Number(c.tableNumber || c.table_number || c.table) === tblNum && c.status !== 'resolved'
+      );
+      if (found) return found;
+    }
+
+    try {
+      const raw = localStorage.getItem('smartdine_active_assistance_calls');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const found = parsed.find(
+            c => Number(c.tableNumber || c.table_number || c.table) === tblNum && c.status !== 'resolved'
+          );
+          if (found) return found;
+        }
+      }
+    } catch (_) {}
+
+    return null;
+  }, [restaurant?.assistanceCalls, tableNumber]);
+
+  // Cancel assistance call
+  const handleCancelAssistance = useCallback(() => {
+    if (!activeTableAssistanceCall) return;
+    const idToResolve = activeTableAssistanceCall.id || activeTableAssistanceCall.tableNumber;
+    if (restaurant?.resolveAssistanceCall) {
+      restaurant.resolveAssistanceCall(idToResolve);
+    } else {
+      try {
+        const raw = localStorage.getItem('smartdine_active_assistance_calls');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const filtered = parsed.filter(c => c.id !== idToResolve && Number(c.tableNumber) !== Number(tableNumber));
+          localStorage.setItem('smartdine_active_assistance_calls', JSON.stringify(filtered));
+        }
+      } catch (_) {}
+    }
+    showToast('Assistance request cancelled.');
+  }, [activeTableAssistanceCall, restaurant, tableNumber, showToast]);
 
   // Cart operations
   const handleAddToCart = (item) => {
@@ -1277,6 +1555,125 @@ export default function CustomerMenu({
 
       {/* Main Container: Dedicated 3D Interactive Restaurant Menu Book */}
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 pt-2 pb-16 relative z-10 flex flex-col items-center">
+
+        {/* ── REAL-TIME STAFF DISPATCH MESSAGE BANNER ── */}
+        {activeStaffMessage && (
+          <div className="w-full max-w-5xl mb-4 bg-gradient-to-r from-cyan-950/90 via-slate-900/95 to-[#0b101d]/95 border border-cyan-500/50 ring-1 ring-cyan-400/30 rounded-3xl p-4 sm:p-5 shadow-2xl shadow-cyan-950/40 backdrop-blur-md animate-fadeIn transition-all">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 flex items-center justify-center shrink-0 shadow-inner">
+                  <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-cyan-500/25 border border-cyan-400/40 text-cyan-200">
+                      Staff Message &bull; Table #{tableNumber}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {activeStaffMessage.from || 'Restaurant Staff'} &bull; {formatTimeAgo(activeStaffMessage.sentAt)}
+                    </span>
+                  </div>
+                  <p className="text-sm sm:text-base font-extrabold text-white leading-snug break-words">
+                    "{activeStaffMessage.text}"
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsReplyOpen(prev => !prev)}
+                  className="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  title="Send a quick reply to staff"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Reply</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDismissStaffMessage}
+                  className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition cursor-pointer"
+                  title="Dismiss notification"
+                  aria-label="Dismiss staff message"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Reply Drawer / Chips */}
+            {isReplyOpen && (
+              <div className="mt-3.5 pt-3 border-t border-cyan-500/20 animate-fadeIn">
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {['Thank you! 👍', "We're ready 👌", 'Please hurry 🙏', 'Understood, thanks! ✨'].map((chip, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSendCustomerReply(chip)}
+                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-500/30 text-cyan-200 transition cursor-pointer active:scale-95"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendCustomerReply()}
+                    placeholder="Write a quick note back to staff..."
+                    className="flex-1 px-3.5 py-2 text-xs sm:text-sm rounded-xl bg-[#070b14] border border-cyan-500/30 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                  />
+                  <button
+                    type="button"
+                    disabled={!replyText.trim() || isSendingReply}
+                    onClick={() => handleSendCustomerReply()}
+                    className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Send</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── ACTIVE WAITER ASSISTANCE STATUS BANNER ── */}
+        {activeTableAssistanceCall && (
+          <div className="w-full max-w-5xl mb-4 bg-gradient-to-r from-amber-950/40 via-slate-900/90 to-amber-950/30 border border-amber-500/40 ring-1 ring-amber-400/20 rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-3 shadow-lg shadow-black/40 backdrop-blur-md animate-fadeIn">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center shrink-0">
+                <BellRing className="w-4 h-4 animate-bounce" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-black uppercase tracking-wider text-amber-300">
+                    Waiter Assistance Active
+                  </span>
+                  <span className="text-[10px] font-bold text-amber-200 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">
+                    {activeTableAssistanceCall.assignedEmployeeName ? `Routed to: ${activeTableAssistanceCall.assignedEmployeeName}` : 'Floor Staff Alerted'}
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    &bull; {formatTimeAgo(activeTableAssistanceCall.timestamp)}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-200 truncate mt-0.5 font-medium">
+                  Requested: <span className="font-semibold text-white">{activeTableAssistanceCall.reason || 'Assistance requested'}</span>
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleCancelAssistance}
+              className="px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 rounded-xl border border-slate-700 transition shrink-0 cursor-pointer active:scale-95"
+              title="Cancel assistance call"
+            >
+              Cancel Request
+            </button>
+          </div>
+        )}
 
         {/* Live Customer Order Status Tracker (only if active order) */}
         {activeOrder && activeOrder.status !== 'served' && (
