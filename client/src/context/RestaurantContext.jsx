@@ -27,15 +27,15 @@ const DEFAULT_EMPLOYEE_ROSTER = [
     role: 'Floor Specialist',
     shift: 'Morning Shift (08:00 - 16:00)',
     status: 'Active',
-    assignedTables: [1, 5],
+    assignedTables: [1, 6, 11],
     color: 'from-orange-500 to-amber-600',
-    avatarColor: '#f97316',
+    avatarColor: '#f59e0b',
     avatarBg: 'from-orange-500 to-amber-600',
     zone: 'Zone 1 (Main Hall)',
     phone: '+880 1712-345001',
     email: 'rakib.ahmed@restaurant.local',
-    avgResponseTime: '1m 24s',
-    onTimeRate: '98%'
+    avgResponseTime: '11s',
+    onTimeRate: '99%'
   },
   {
     id: 'emp-2',
@@ -45,15 +45,15 @@ const DEFAULT_EMPLOYEE_ROSTER = [
     role: 'Senior Host',
     shift: 'Morning Shift (08:00 - 16:00)',
     status: 'Active',
-    assignedTables: [2, 10],
+    assignedTables: [2, 7, 12],
     color: 'from-blue-500 to-indigo-600',
     avatarColor: '#3b82f6',
     avatarBg: 'from-blue-500 to-indigo-600',
     zone: 'Zone 2 (Window Side)',
     phone: '+880 1819-456002',
     email: 'hasan.mahmud@restaurant.local',
-    avgResponseTime: '1m 04s',
-    onTimeRate: '99%'
+    avgResponseTime: '11s',
+    onTimeRate: '98%'
   },
   {
     id: 'emp-3',
@@ -63,14 +63,14 @@ const DEFAULT_EMPLOYEE_ROSTER = [
     role: 'Operations Lead',
     shift: 'Morning Shift (08:00 - 16:00)',
     status: 'Active',
-    assignedTables: [4, 9],
+    assignedTables: [3, 8],
     color: 'from-purple-500 to-violet-600',
     avatarColor: '#8b5cf6',
     avatarBg: 'from-purple-500 to-violet-600',
     zone: 'Zone 3 (Patio & Terrace)',
     phone: '+880 1913-789003',
     email: 'priya.sen@restaurant.local',
-    avgResponseTime: '52s',
+    avgResponseTime: '11s',
     onTimeRate: '100%'
   },
   {
@@ -79,17 +79,17 @@ const DEFAULT_EMPLOYEE_ROSTER = [
     name: 'Tanvir Rahman',
     initials: 'TR',
     role: 'Floor Specialist',
-    shift: 'Evening Shift (16:00 - 00:00)',
+    shift: 'Mid Shift (12:00 - 20:00)',
     status: 'Active',
-    assignedTables: [3, 7],
-    color: 'from-emerald-500 to-teal-600',
-    avatarColor: '#10b981',
-    avatarBg: 'from-emerald-500 to-teal-600',
+    assignedTables: [4, 9],
+    color: 'from-amber-500 to-yellow-600',
+    avatarColor: '#f59e0b',
+    avatarBg: 'from-amber-500 to-yellow-600',
     zone: 'Zone 4 (Central Hall)',
     phone: '+880 1614-234004',
     email: 'tanvir.rahman@restaurant.local',
-    avgResponseTime: '1m 34s',
-    onTimeRate: '95%'
+    avgResponseTime: '11s',
+    onTimeRate: '97%'
   },
   {
     id: 'emp-5',
@@ -99,15 +99,15 @@ const DEFAULT_EMPLOYEE_ROSTER = [
     role: 'Senior Host',
     shift: 'Evening Shift (16:00 - 00:00)',
     status: 'Active',
-    assignedTables: [6, 8, 11, 12],
+    assignedTables: [5, 10],
     color: 'from-pink-500 to-rose-600',
     avatarColor: '#ec4899',
     avatarBg: 'from-pink-500 to-rose-600',
     zone: 'Zone 5 (Private Dining)',
     phone: '+880 1515-678005',
     email: 'saima.islam@restaurant.local',
-    avgResponseTime: '1m 18s',
-    onTimeRate: '97%'
+    avgResponseTime: '11s',
+    onTimeRate: '98%'
   }
 ];
 
