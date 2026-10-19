@@ -165,14 +165,11 @@ export default function TableSecurityModal({
           <div>
             <label
               htmlFor="admin-security-pin"
-              className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2 flex items-center justify-between"
+              className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2"
             >
               <span className="flex items-center gap-1.5">
                 <KeyRound className="w-3.5 h-3.5 text-emerald-400" />
                 Security PIN / Password
-              </span>
-              <span className="text-[10px] text-zinc-500 font-mono font-normal">
-                PIN: 808080
               </span>
             </label>
 
@@ -186,7 +183,7 @@ export default function TableSecurityModal({
                   setPassword(e.target.value);
                   if (errorMessage) setErrorMessage('');
                 }}
-                placeholder="Enter Admin PIN / Password (808080)"
+                placeholder="Enter Admin PIN / Password"
                 autoComplete="off"
                 className={`w-full bg-[#1e293b] border ${
                   errorMessage

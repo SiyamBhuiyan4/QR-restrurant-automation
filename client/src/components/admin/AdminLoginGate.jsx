@@ -2,17 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Lock,
   Unlock,
-  ShieldCheck,
   Eye,
   EyeOff,
-  Delete,
-  RotateCcw,
   AlertCircle,
   ArrowRight,
   ArrowLeft,
   KeyRound,
-  CheckCircle2,
-  Sparkles
+  CheckCircle2
 } from 'lucide-react';
 import '../../styles/admin.css';
 
@@ -27,11 +23,6 @@ const PIN_LENGTH = 6;
  * AdminLoginGate Component
  * 
  * Secure Master Admin authentication gate protecting the SmartDine Restaurant Admin Suite.
- * Features:
- * - Deep dark slate theme (#0b0f19 background, #0f172a card, #1e293b accents, #FF5A26 flame highlights)
- * - Numeric PIN keypad + password input with show/hide toggle
- * - Shaking animation & validation on incorrect password
- * - Session storage persistence ('smartdine_admin_auth' = 'true')
  */
 export default function AdminLoginGate({ onLoginSuccess }) {
   const [pin, setPin] = useState('');
@@ -82,38 +73,6 @@ export default function AdminLoginGate({ onLoginSuccess }) {
       return;
     }
     handleValidate(pin);
-  };
-
-  const handleKeypadPress = (digit) => {
-    if (isSuccess) return;
-    setError('');
-    if (pin.length < PIN_LENGTH) {
-      const nextPin = pin + String(digit);
-      setPin(nextPin);
-      if (nextPin.length === PIN_LENGTH) {
-        handleValidate(nextPin);
-      }
-    }
-  };
-
-  const handleClear = () => {
-    if (isSuccess) return;
-    setPin('');
-    setError('');
-    inputRef.current?.focus();
-  };
-
-  const handleBackspace = () => {
-    if (isSuccess) return;
-    setPin(prev => prev.slice(0, -1));
-    setError('');
-    inputRef.current?.focus();
-  };
-
-  const handleQuickFill = () => {
-    setPin(MASTER_ADMIN_PIN);
-    setError('');
-    handleValidate(MASTER_ADMIN_PIN);
   };
 
   const handleBackToCustomer = () => {
@@ -169,37 +128,11 @@ export default function AdminLoginGate({ onLoginSuccess }) {
         />
 
         <div className="p-6 sm:p-8">
-          {/* Header Branding */}
+          {/* Clean Header */}
           <div className="flex flex-col items-center text-center mb-6">
-            <div
-              className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 relative ${
-                isSuccess
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                  : 'bg-slate-900 border border-slate-700/80 text-[#FF5A26]'
-              }`}
-            >
-              {isSuccess ? (
-                <CheckCircle2 className="w-8 h-8 animate-bounce text-emerald-400" />
-              ) : (
-                <>
-                  <ShieldCheck className="w-8 h-8" />
-                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#FF5A26] border-2 border-[#0f172a] animate-ping" />
-                </>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-black tracking-widest uppercase px-2.5 py-0.5 rounded-md bg-[#FF5A26]/15 text-[#FF5A26] border border-[#FF5A26]/30">
-                Restaurant Admin Suite
-              </span>
-            </div>
-
-            <h1 className="text-2xl font-black tracking-tight text-white mt-1">
+            <h1 className="text-2xl font-black tracking-tight text-white">
               SmartDine Admin Access
             </h1>
-            <p className="text-xs text-slate-400 mt-1.5 max-w-xs">
-              Enter master credentials to unlock operational telemetry, kitchen passes, and floor management.
-            </p>
           </div>
 
           {/* Form */}
@@ -217,15 +150,19 @@ export default function AdminLoginGate({ onLoginSuccess }) {
                   pattern="[0-9]*"
                   value={pin}
                   onChange={(e) => {
-                    setPin(e.target.value);
+                    const val = e.target.value;
+                    setPin(val);
                     if (error) setError('');
+                    if (val.trim().length === PIN_LENGTH) {
+                      handleValidate(val.trim());
+                    }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       handleSubmit(e);
                     }
                   }}
-                  placeholder="Enter 6-digit Master PIN"
+                  placeholder="Enter Master PIN"
                   maxLength={12}
                   disabled={isSuccess}
                   autoComplete="current-password"
@@ -281,54 +218,6 @@ export default function AdminLoginGate({ onLoginSuccess }) {
               </div>
             )}
 
-            {/* Keypad Grid (3 x 4) */}
-            <div className="grid grid-cols-3 gap-2.5 pt-2">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
-                <button
-                  key={digit}
-                  type="button"
-                  onClick={() => handleKeypadPress(digit)}
-                  disabled={isSuccess}
-                  className="h-12 sm:h-13 rounded-2xl bg-[#1e293b] hover:bg-slate-700 active:scale-95 border border-slate-700/80 text-white font-mono text-lg font-bold transition-all duration-100 flex items-center justify-center cursor-pointer hover:border-[#FF5A26]/50 shadow-xs"
-                >
-                  {digit}
-                </button>
-              ))}
-
-              {/* Clear (C) */}
-              <button
-                type="button"
-                onClick={handleClear}
-                disabled={isSuccess}
-                className="h-12 sm:h-13 rounded-2xl bg-[#1e293b]/70 hover:bg-slate-800 active:scale-95 border border-slate-700/80 text-slate-400 hover:text-rose-400 font-semibold text-xs transition-all duration-100 flex items-center justify-center gap-1 cursor-pointer"
-                title="Clear entered PIN"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Clear</span>
-              </button>
-
-              {/* 0 */}
-              <button
-                type="button"
-                onClick={() => handleKeypadPress(0)}
-                disabled={isSuccess}
-                className="h-12 sm:h-13 rounded-2xl bg-[#1e293b] hover:bg-slate-700 active:scale-95 border border-slate-700/80 text-white font-mono text-lg font-bold transition-all duration-100 flex items-center justify-center cursor-pointer hover:border-[#FF5A26]/50 shadow-xs"
-              >
-                0
-              </button>
-
-              {/* Backspace */}
-              <button
-                type="button"
-                onClick={handleBackspace}
-                disabled={isSuccess}
-                className="h-12 sm:h-13 rounded-2xl bg-[#1e293b]/70 hover:bg-slate-800 active:scale-95 border border-slate-700/80 text-slate-400 hover:text-white font-semibold text-xs transition-all duration-100 flex items-center justify-center cursor-pointer"
-                title="Backspace"
-              >
-                <Delete className="w-4 h-4" />
-              </button>
-            </div>
-
             {/* Submit Action Button */}
             <button
               type="submit"
@@ -349,22 +238,6 @@ export default function AdminLoginGate({ onLoginSuccess }) {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Helper */}
-          <div className="mt-6 pt-5 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
-            <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#FF5A26]" />
-              <span>Master Admin PIN:</span>
-            </span>
-            <button
-              type="button"
-              onClick={handleQuickFill}
-              className="font-mono font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-[#FF5A26] hover:bg-slate-700 transition cursor-pointer"
-              title="Click to autofill 808080"
-            >
-              808080
-            </button>
-          </div>
         </div>
       </div>
 
