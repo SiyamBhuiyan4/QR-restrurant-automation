@@ -487,17 +487,71 @@ export default function AdminDashboard({ className = '' }) {
             </div>
           )}
 
-          {/* TAB 4: KITCHEN DISPLAY SYSTEM (DIRECT EMBEDDED CONSOLE) */}
-          {activeTab === 'kds' && (
-            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md bg-black">
-              <KitchenDisplay />
+          {/* TAB: EMPLOYEE VIEW (FULL UNIFIED HUB) */}
+          {activeTab === 'employee' && (
+            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+              <EmployeeView />
             </div>
           )}
 
-          {/* TAB 5: FLOOR STAFF ASSISTANCE (DIRECT EMBEDDED CONSOLE) */}
+          {/* TAB 4: EMPLOYEE & KITCHEN HUB (KDS) */}
+          {activeTab === 'kds' && (
+            <div className="space-y-3 animate-fadeIn">
+              <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="font-bold text-slate-200">Employee &amp; Kitchen Hub</span>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400">Direct Embedded Cook Station (4-View Model)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectTab('employees')}
+                    className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition cursor-pointer"
+                  >
+                    Switch to Staff Roster →
+                  </button>
+                  <a
+                    href="/employee?tab=kitchen"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold transition"
+                  >
+                    <span>Launch /employee</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+              <div className="rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md bg-black">
+                <KitchenDisplay isEmbedded={true} />
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: ON-FIELD WAITER CONSOLE */}
           {activeTab === 'floor' && (
-            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
-              <WaiterPanel />
+            <div className="space-y-3 animate-fadeIn">
+              <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
+                  <span className="font-bold text-slate-200">On-Field Waiter Console</span>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400">Direct Embedded Floor Staff Station (4-View Model)</span>
+                </div>
+                <a
+                  href="/waiter"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold transition"
+                >
+                  <span>Launch /waiter</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              <div className="rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+                <WaiterPanel />
+              </div>
             </div>
           )}
 
@@ -515,9 +569,35 @@ export default function AdminDashboard({ className = '' }) {
             </div>
           )}
 
-          {/* TAB 9: EMPLOYEES MANAGEMENT */}
+          {/* TAB 9: EMPLOYEES & STAFF ROSTER HUB */}
           {activeTab === 'employees' && (
-            <div className="animate-fadeIn">
+            <div className="space-y-3 animate-fadeIn">
+              <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                  <span className="font-bold text-slate-200">Employee Roster &amp; Shifts</span>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400">Duty Allocation &amp; Shift Management (Employee Hub)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectTab('kds')}
+                    className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition cursor-pointer"
+                  >
+                    Switch to Kitchen KDS →
+                  </button>
+                  <a
+                    href="/employee?tab=roster"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-bold transition"
+                  >
+                    <span>Launch /employee</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
               <EmployeesModule
                 employees={employees}
                 tables={tables}

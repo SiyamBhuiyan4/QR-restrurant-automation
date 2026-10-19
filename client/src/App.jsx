@@ -4,12 +4,12 @@ import { SocketProvider } from './context/SocketContext';
 import { RestaurantProvider } from './context/RestaurantContext';
 import { CartProvider } from './context/CartContext';
 
-// Pages
-import CustomerMenu from './pages/CustomerMenu';
-import EmployeeView from './pages/EmployeeView';
-import WaiterPanel from './pages/WaiterPanel';
-import AdminDashboard from './pages/AdminDashboard';
-import QRBatchGenerator from './pages/QRBatchGenerator';
+// Lazy-loaded Views for Clean Code-Splitting
+const CustomerMenu = React.lazy(() => import('./pages/CustomerMenu'));
+const EmployeeView = React.lazy(() => import('./pages/EmployeeView'));
+const WaiterPanel = React.lazy(() => import('./pages/WaiterPanel'));
+const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
+const QRBatchGenerator = React.lazy(() => import('./pages/QRBatchGenerator'));
 
 // Icons
 import { 
@@ -176,27 +176,48 @@ function AppRouter() {
     return 'customer';
   }, [normalizedPath]);
 
-  // Render view
+  // Render view with clean Suspense code-splitting fallback
   const renderView = () => {
+    let content = null;
     switch (activeView) {
       case 'employee':
-        return <EmployeeView />;
+        content = <EmployeeView />;
+        break;
       case 'waiter':
-        return <WaiterPanel />;
+        content = <WaiterPanel />;
+        break;
       case 'admin':
-        return <AdminDashboard />;
+        content = <AdminDashboard />;
+        break;
       case 'qr':
-        return (
+        content = (
           <div className="min-h-screen bg-[#0b0f19] text-[#f8fafc] p-4 sm:p-8">
             <div className="max-w-7xl mx-auto">
               <QRBatchGenerator />
             </div>
           </div>
         );
+        break;
       case 'customer':
       default:
-        return <CustomerMenu />;
+        content = <CustomerMenu />;
+        break;
     }
+
+    return (
+      <React.Suspense
+        fallback={
+          <div className="min-h-screen bg-[#0b0f19] flex flex-col items-center justify-center p-6 text-amber-400">
+            <div className="w-9 h-9 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-3" />
+            <div className="text-xs uppercase tracking-widest text-slate-400 font-semibold animate-pulse">
+              Loading View...
+            </div>
+          </div>
+        }
+      >
+        {content}
+      </React.Suspense>
+    );
   };
 
   // 4 Primary Application Views in Quick Role Switcher

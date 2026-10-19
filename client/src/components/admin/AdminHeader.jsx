@@ -89,13 +89,13 @@ export default function AdminHeader({
       description: 'Real-time kitchen tickets, customer voice notes & invoice tickets'
     },
     kds: {
-      title: 'Kitchen Display System (KDS)',
+      title: 'Employee & Kitchen Hub (KDS)',
       breadcrumb: 'Kitchen Pass',
       description: 'Cook line Kanban tickets, prep timers & culinary alert chimes'
     },
     floor: {
-      title: 'Floor Staff Assistance Console',
-      breadcrumb: 'Staff Floor',
+      title: 'On-Field Waiter Console',
+      breadcrumb: 'Floor Staff',
       description: 'Live table summons, guest assistance & response telemetry'
     },
     menu: {
@@ -109,9 +109,14 @@ export default function AdminHeader({
       description: `High-res printable QR code stickers for all ${tableCount} tables`
     },
     employees: {
-      title: 'Employees Management Hub',
-      breadcrumb: 'Employees',
+      title: 'Employee Roster & Shifts',
+      breadcrumb: 'Staff Roster',
       description: 'Floor team roster, table allocation matrix & service benchmarks'
+    },
+    employee: {
+      title: 'Employee & Kitchen Hub',
+      breadcrumb: 'Staff Hub',
+      description: 'Unified operational center for kitchen operations & shifts'
     },
     reports: {
       title: 'Customer Reports & Admin Notes',
