@@ -116,7 +116,7 @@ const STAFF_ROSTER = [
   {
     id: 'emp-1',
     name: 'Marcus Vance',
-    role: 'Floor Server',
+    role: 'Floor Employee',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop&crop=faces',
     status: 'busy',
     activeTable: 'Table 4',
@@ -389,6 +389,116 @@ export default function CustomerReportsModule({ className = '' }) {
     });
   }, [reports, activeTab, severityFilter, searchQuery]);
 
+  // Direct Action 1: Assign / Dispatch Employee via Dropdown (updates state immediately)
+  const handleDirectAssignEmployee = (reportId, newStaffId) => {
+    const targetStaff = STAFF_ROSTER.find((s) => s.id === newStaffId) || STAFF_ROSTER[0];
+    const targetReport = reports.find((r) => r.id === reportId);
+    setReports((prev) =>
+      prev.map((r) => {
+        if (r.id === reportId) {
+          return {
+            ...r,
+            assignedStaffId: targetStaff.id,
+            status: r.status === 'new' ? 'in_progress' : r.status,
+            dispatchLog: {
+              staffId: targetStaff.id,
+              timestamp: Date.now(),
+              note: `Direct dispatch: ${targetStaff.name} assigned to Table ${r.tableNumber}`
+            }
+          };
+        }
+        return r;
+      })
+    );
+    chimeSynthesizer.playSuccessChime();
+    triggerToast(
+      `Assigned ${targetStaff.name} to Table ${targetReport ? targetReport.tableNumber : ''}`,
+      `Employee assigned and dispatched immediately.`,
+      'success'
+    );
+  };
+
+  // Direct Action 2: Priority Ping Button (updates state immediately)
+  const handlePriorityPing = (report) => {
+    const assignedStaff = STAFF_ROSTER.find((s) => s.id === report.assignedStaffId) || STAFF_ROSTER[0];
+    setReports((prev) =>
+      prev.map((r) => {
+        if (r.id === report.id) {
+          return {
+            ...r,
+            status: r.status === 'new' ? 'in_progress' : r.status,
+            dispatchLog: {
+              staffId: assignedStaff.id,
+              timestamp: Date.now(),
+              note: `Priority Ping: Urgent assistance beamed to ${assignedStaff.name} for Table ${r.tableNumber}!`
+            }
+          };
+        }
+        return r;
+      })
+    );
+    chimeSynthesizer.playUrgentChime();
+    triggerToast(
+      `Priority Ping Sent!`,
+      `Urgent alert beamed to ${assignedStaff.name} for Table ${report.tableNumber}.`,
+      'critical'
+    );
+  };
+
+  // Direct Action 3: Mark Resolved Button (updates state immediately)
+  const handleDirectMarkResolved = (report) => {
+    const resolvedTimeMs = Date.now();
+    const elapsedMinutes = Math.max(1, Math.round((resolvedTimeMs - report.createdAt) / 60000));
+    const resolutionTimeString = `${elapsedMinutes} min${elapsedMinutes === 1 ? '' : 's'}`;
+    const defaultNote = report.customerNote.toLowerCase().includes('napkin') || report.customerNote.toLowerCase().includes('water')
+      ? 'Delivered napkins and fresh water promptly; customer verified satisfied.'
+      : report.customerNote.toLowerCase().includes('warm') || report.customerNote.toLowerCase().includes('steak')
+      ? 'Kitchen reprepared hot Wagyu steak with priority manager table check.'
+      : report.customerNote.toLowerCase().includes('bill')
+      ? 'Payment settled smoothly and applied dining discount.'
+      : 'Resolved table inquiry directly with customer; full dining satisfaction confirmed.';
+
+    setReports((prev) =>
+      prev.map((r) => {
+        if (r.id === report.id) {
+          return {
+            ...r,
+            status: 'resolved',
+            resolvedAt: resolvedTimeMs,
+            resolutionTime: resolutionTimeString,
+            resolutionNote: `Resolved - ${defaultNote}`
+          };
+        }
+        return r;
+      })
+    );
+    chimeSynthesizer.playSuccessChime();
+    triggerToast(
+      `Table ${report.tableNumber} Marked as Resolved!`,
+      `Audited in ${resolutionTimeString}. Logged into quality records.`,
+      'success'
+    );
+  };
+
+  // Direct Action 4: Reopen Issue
+  const handleDirectReopen = (report) => {
+    setReports((prev) =>
+      prev.map((r) => {
+        if (r.id === report.id) {
+          return {
+            ...r,
+            status: 'in_progress',
+            resolvedAt: null,
+            resolutionTime: null,
+            resolutionNote: null
+          };
+        }
+        return r;
+      })
+    );
+    triggerToast(`Table ${report.tableNumber} Reopened`, `Issue status changed back to In Progress.`, 'info');
+  };
+
   // 1-Click Action 1: Open Dispatch Modal
   const handleOpenDispatch = (report) => {
     setDispatchModalReport(report);
@@ -457,7 +567,7 @@ export default function CustomerReportsModule({ className = '' }) {
             dispatchLog: {
               staffId: newStaff.id,
               timestamp: Date.now(),
-              note: `Table reassigned from ${prevStaff ? prevStaff.name : 'previous server'} to ${newStaff.name} due to pace of service.`
+              note: `Table reassigned from ${prevStaff ? prevStaff.name : 'previous employee'} to ${newStaff.name} due to pace of service.`
             }
           };
         }
@@ -468,7 +578,7 @@ export default function CustomerReportsModule({ className = '' }) {
     chimeSynthesizer.playSuccessChime();
     triggerToast(
       `Table ${reassignModalReport.tableNumber} Reassigned to ${newStaff.name}`,
-      `Previous server released. Service continuity restored.`,
+      `Previous employee released. Service continuity restored.`,
       'success'
     );
     setReassignModalReport(null);
@@ -567,13 +677,13 @@ export default function CustomerReportsModule({ className = '' }) {
 
   return (
     <div
-      className={`customer-reports-module text-slate-100 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden w-full ${className}`}
-      style={{ width: '100%', backgroundColor: '#0f172a', padding: '24px 28px', boxSizing: 'border-box' }}
+      className={`customer-reports-module text-[#f8fafc] rounded-3xl border border-[#334155] shadow-2xl relative overflow-hidden w-full ${className}`}
+      style={{ width: '100%', padding: '24px 28px', backgroundColor: '#0f172a', boxSizing: 'border-box' }}
     >
       
       {/* Subtle Ambient Radial Highlight */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF5A26]/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-900/10 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-slate-800/10 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
 
       {/* =========================================================================
           LIVE FLOATING TOAST NOTIFICATION
@@ -585,7 +695,7 @@ export default function CustomerReportsModule({ className = '' }) {
               ? 'bg-rose-950/95 border-rose-500/70 text-rose-100 ring-2 ring-rose-500/50 shadow-rose-900/50'
               : toastMessage.type === 'success'
               ? 'bg-emerald-950/95 border-emerald-500/70 text-emerald-100 ring-2 ring-emerald-500/40 shadow-emerald-900/50'
-              : 'bg-zinc-900/95 border-zinc-700 text-stone-200'
+              : 'bg-[#1e293b] border-[#334155] text-slate-200'
           }`}>
             <div className="mt-0.5 shrink-0">
               {toastMessage.type === 'critical' ? (
@@ -597,7 +707,7 @@ export default function CustomerReportsModule({ className = '' }) {
                   <Check className="w-4 h-4" />
                 </div>
               ) : (
-                <div className="w-8 h-8 rounded-xl bg-zinc-800 text-zinc-300 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-[#0f172a] text-slate-300 border border-[#334155] flex items-center justify-center">
                   <Sparkles className="w-4 h-4" />
                 </div>
               )}
@@ -611,7 +721,7 @@ export default function CustomerReportsModule({ className = '' }) {
             <button
               type="button"
               onClick={() => setToastMessage(null)}
-              className="text-stone-400 hover:text-white p-1 rounded-lg"
+              className="text-slate-400 hover:text-white p-1 rounded-lg"
             >
               <X className="w-4 h-4" />
             </button>
@@ -622,7 +732,7 @@ export default function CustomerReportsModule({ className = '' }) {
       {/* =========================================================================
           1. DIRECT CONSUMER-TO-ADMIN CHANNEL: HEADER & DESCRIPTION
           ========================================================================= */}
-      <div className="p-6 sm:p-8 border-b border-zinc-800/80 relative z-10 bg-gradient-to-b from-[#141418] to-transparent">
+      <div className="p-6 sm:p-8 border-b border-[#334155] relative z-10 bg-[#111827] rounded-2xl mb-6 shadow-xl">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           
           {/* Header Title & Explanatory Badge */}
@@ -633,15 +743,15 @@ export default function CustomerReportsModule({ className = '' }) {
               </div>
               <div>
                 <div className="flex items-center gap-2.5">
-                  <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  <h2 className="text-xl sm:text-2xl font-black text-[#f8fafc] tracking-tight">
                     Customer Reports &amp; Direct-to-Admin Notes
                   </h2>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/15 border border-rose-500/40 text-rose-400 animate-pulse">
                     Live Channel
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-zinc-400 mt-1 max-w-2xl leading-relaxed">
-                  Direct Consumer-to-Admin communication loop. These reports and notes originate <strong className="text-stone-200">exclusively from the customer digital menu</strong> directly to executive floor management, bypassing service bottlenecks for immediate intervention.
+                <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                  Direct Consumer-to-Admin communication loop. These reports and notes originate <strong className="text-slate-100">exclusively from the customer digital menu</strong> directly to executive floor management, bypassing service bottlenecks for immediate intervention.
                 </p>
               </div>
             </div>
@@ -661,7 +771,7 @@ export default function CustomerReportsModule({ className = '' }) {
               }}
               className={`p-2.5 rounded-2xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                 isMuted
-                  ? 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                  ? 'bg-[#1e293b] border-[#334155] text-slate-400 hover:text-white'
                   : 'bg-amber-950/40 border-amber-500/40 text-amber-300 shadow-sm shadow-amber-900/30'
               }`}
               title={isMuted ? 'Unmute alert chimes' : 'Mute alert chimes'}
@@ -674,7 +784,7 @@ export default function CustomerReportsModule({ className = '' }) {
             <button
               type="button"
               onClick={handleResetDemo}
-              className="p-2.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+              className="p-2.5 rounded-2xl bg-[#1e293b] hover:bg-slate-700 border border-[#334155] text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
               title="Reset to 4 initial default demo reports"
             >
               <RotateCcw className="w-4 h-4" />
@@ -703,29 +813,29 @@ export default function CustomerReportsModule({ className = '' }) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6">
           
           {/* Total Notes */}
-          <div className="bg-[#161619]/90 border border-zinc-800 rounded-2xl p-4 transition-all hover:border-zinc-700 shadow-sm">
-            <div className="flex items-center justify-between text-zinc-400 text-xs font-bold uppercase tracking-wider">
+          <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4 transition-all hover:border-slate-500 shadow-sm">
+            <div className="flex items-center justify-between text-slate-300 text-xs font-bold uppercase tracking-wider">
               <span>Total Notes</span>
               <MessageSquare className="w-4 h-4 text-[#FF7A45]" />
             </div>
             <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-black text-white tracking-tight">{metrics.total}</span>
-              <span className="text-xs text-zinc-400">received</span>
+              <span className="text-3xl font-black text-[#f8fafc] tracking-tight">{metrics.total}</span>
+              <span className="text-xs text-slate-400">received</span>
             </div>
           </div>
 
           {/* Urgent / New */}
           <div className={`rounded-2xl p-4 transition-all border shadow-sm ${
             metrics.urgentNew > 0
-              ? 'bg-rose-950/30 border-rose-500/50 text-rose-300 ring-1 ring-rose-500/30'
-              : 'bg-[#161619]/90 border-zinc-800 text-zinc-400'
+              ? 'bg-[#1e293b] border-rose-500/50 text-rose-300 ring-1 ring-rose-500/30'
+              : 'bg-[#1e293b] border-[#334155] text-slate-400'
           }`}>
             <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
-              <span className={metrics.urgentNew > 0 ? 'text-rose-400' : 'text-zinc-400'}>Urgent / New</span>
-              <AlertTriangle className={`w-4 h-4 ${metrics.urgentNew > 0 ? 'text-rose-400 animate-bounce' : 'text-zinc-500'}`} />
+              <span className={metrics.urgentNew > 0 ? 'text-rose-400' : 'text-slate-400'}>Urgent / New</span>
+              <AlertTriangle className={`w-4 h-4 ${metrics.urgentNew > 0 ? 'text-rose-400 animate-bounce' : 'text-slate-500'}`} />
             </div>
             <div className="flex items-baseline gap-2 mt-2">
-              <span className={`text-3xl font-black tracking-tight ${metrics.urgentNew > 0 ? 'text-rose-300' : 'text-white'}`}>
+              <span className={`text-3xl font-black tracking-tight ${metrics.urgentNew > 0 ? 'text-rose-300' : 'text-[#f8fafc]'}`}>
                 {metrics.urgentNew}
               </span>
               <span className="text-xs font-semibold">
@@ -735,8 +845,8 @@ export default function CustomerReportsModule({ className = '' }) {
           </div>
 
           {/* In Progress */}
-          <div className="bg-[#161619]/90 border border-zinc-800 rounded-2xl p-4 transition-all hover:border-amber-500/40 shadow-sm">
-            <div className="flex items-center justify-between text-zinc-400 text-xs font-bold uppercase tracking-wider">
+          <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4 transition-all hover:border-amber-500/40 shadow-sm">
+            <div className="flex items-center justify-between text-slate-300 text-xs font-bold uppercase tracking-wider">
               <span className="text-amber-400">In Progress</span>
               <Clock className="w-4 h-4 text-amber-400 animate-spin-slow" />
             </div>
@@ -747,8 +857,8 @@ export default function CustomerReportsModule({ className = '' }) {
           </div>
 
           {/* Resolved */}
-          <div className="bg-[#161619]/90 border border-zinc-800 rounded-2xl p-4 transition-all hover:border-emerald-500/40 shadow-sm">
-            <div className="flex items-center justify-between text-zinc-400 text-xs font-bold uppercase tracking-wider">
+          <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4 transition-all hover:border-emerald-500/40 shadow-sm">
+            <div className="flex items-center justify-between text-slate-300 text-xs font-bold uppercase tracking-wider">
               <span className="text-emerald-400">Resolved</span>
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             </div>
@@ -765,10 +875,10 @@ export default function CustomerReportsModule({ className = '' }) {
       {/* =========================================================================
           FILTER TABS, SEVERITY SELECTOR & SEARCH
           ========================================================================= */}
-      <div className="p-4 sm:p-6 bg-[#101013]/90 border-b border-zinc-800/80 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 relative z-10">
+      <div className="p-4 sm:p-6 bg-[#111827] border-b border-[#334155] rounded-2xl mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 relative z-10 shadow-xl">
         
         {/* Filter Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-[#18181d] rounded-2xl border border-zinc-800 overflow-x-auto">
+        <div className="flex items-center gap-1.5 p-1 bg-[#1e293b] rounded-2xl border border-[#334155] overflow-x-auto">
           {[
             { id: 'all', label: 'All Reports', count: metrics.total },
             { id: 'new', label: 'New Issues', count: metrics.urgentNew, highlight: metrics.urgentNew > 0 },
@@ -782,7 +892,7 @@ export default function CustomerReportsModule({ className = '' }) {
               className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
                 activeTab === tab.id
                   ? 'bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] text-white shadow-md shadow-[#FF5A26]/30'
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
               }`}
             >
               <span>{tab.label}</span>
@@ -791,7 +901,7 @@ export default function CustomerReportsModule({ className = '' }) {
                   ? 'bg-black/30 text-white'
                   : tab.highlight
                   ? 'bg-rose-500/20 text-rose-300 animate-pulse'
-                  : 'bg-zinc-800 text-zinc-400'
+                  : 'bg-[#0f172a] text-slate-300'
               }`}>
                 {tab.count}
               </span>
@@ -806,23 +916,23 @@ export default function CustomerReportsModule({ className = '' }) {
           <select
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-[#18181d] border border-zinc-800 text-xs text-stone-200 focus:outline-none focus:border-[#FF5A26] cursor-pointer"
+            className="px-3 py-2 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] focus:outline-none focus:border-[#FF5A26] cursor-pointer"
           >
-            <option value="all">All Severities</option>
-            <option value="critical">Critical / High</option>
-            <option value="moderate">Moderate</option>
-            <option value="general">General Note</option>
+            <option value="all" className="bg-[#111827]">All Severities</option>
+            <option value="critical" className="bg-[#111827]">Critical / High</option>
+            <option value="moderate" className="bg-[#111827]">Moderate</option>
+            <option value="general" className="bg-[#111827]">General Note</option>
           </select>
 
           {/* Search Input */}
           <div className="relative flex-1 sm:w-64">
-            <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search table, note, or staff..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#18181d] border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#FF5A26]"
+              placeholder="Search table, note, or employee..."
+              className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] placeholder-slate-400 focus:outline-none focus:border-[#FF5A26]"
             />
           </div>
 
@@ -833,13 +943,13 @@ export default function CustomerReportsModule({ className = '' }) {
       {/* =========================================================================
           2. REPORT CARDS LIST & 4. RESOLVED HISTORY LOG
           ========================================================================= */}
-      <div className="p-4 sm:p-6 space-y-4 relative z-10">
+      <div className="space-y-4 relative z-10 mb-6">
         
         {filteredReports.length === 0 ? (
-          <div className="text-center py-16 px-4 bg-[#141418]/60 rounded-3xl border border-dashed border-zinc-800">
-            <MessageSquare className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-stone-200">No reports found</h3>
-            <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
+          <div className="text-center py-16 px-4 bg-[#111827] rounded-3xl border border-dashed border-[#334155]">
+            <MessageSquare className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+            <h3 className="text-base font-bold text-[#f8fafc]">No reports found</h3>
+            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
               No customer reports match your current filters. Tap "Simulate New Customer Note" above to test receiving live notes.
             </p>
           </div>
@@ -858,15 +968,15 @@ export default function CustomerReportsModule({ className = '' }) {
                   key={report.id}
                   className={`rounded-3xl border p-5 sm:p-6 transition-all duration-300 shadow-xl space-y-4 relative ${
                     isCritical && !isResolved
-                      ? 'bg-gradient-to-br from-[#1a1216] via-[#141419] to-[#121215] border-rose-500/40 hover:border-rose-500/70 ring-1 ring-rose-500/20 shadow-rose-950/20'
+                      ? 'bg-[#111827] border-rose-500/50 hover:border-rose-500/70 ring-1 ring-rose-500/20 shadow-rose-950/20'
                       : isResolved
-                      ? 'bg-[#121215]/80 border-emerald-500/20 hover:border-emerald-500/40 opacity-95'
-                      : 'bg-[#141419] border-zinc-800 hover:border-zinc-700'
+                      ? 'bg-[#111827] border-emerald-500/30 hover:border-emerald-500/50 opacity-95'
+                      : 'bg-[#111827] border-[#334155] hover:border-slate-600'
                   }`}
                 >
                   
                   {/* Top Bar: Table Badge, Severity, Status, Timestamp */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-zinc-800/80">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#334155]">
                     
                     {/* Left: Table Badge & Table Location */}
                     <div className="flex items-center gap-3">
@@ -874,7 +984,7 @@ export default function CustomerReportsModule({ className = '' }) {
                         <span className="w-2.5 h-2.5 rounded-full bg-[#FF5A26] animate-pulse" />
                         <span>Table {report.tableNumber}</span>
                       </div>
-                      <span className="text-xs font-semibold text-zinc-400">
+                      <span className="text-xs font-semibold text-slate-300">
                         {report.tableLocation}
                       </span>
                     </div>
@@ -926,8 +1036,8 @@ export default function CustomerReportsModule({ className = '' }) {
                       )}
 
                       {/* Timestamp & Elapsed */}
-                      <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-medium pl-1">
-                        <Clock className="w-3.5 h-3.5 text-zinc-500" />
+                      <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium pl-1">
+                        <Clock className="w-3.5 h-3.5 text-slate-500" />
                         <span>{formatTimeAgo(report.createdAt)}</span>
                       </div>
 
@@ -937,26 +1047,26 @@ export default function CustomerReportsModule({ className = '' }) {
 
                   {/* Customer Note / Complaint Text */}
                   <div className="space-y-2">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                       <MessageSquare className="w-3.5 h-3.5 text-[#FF5A26]" />
                       <span>Customer Digital Menu Note:</span>
                     </div>
-                    <div className="p-4 rounded-2xl bg-[#0e0e12]/90 border border-zinc-800/90 text-stone-100 text-sm sm:text-base font-medium leading-relaxed shadow-inner">
+                    <div className="p-4 rounded-2xl bg-[#1e293b] border border-[#334155] text-[#f8fafc] text-sm sm:text-base font-medium leading-relaxed shadow-inner">
                       "{report.customerNote}"
                     </div>
                   </div>
 
                   {/* Employee Assignment Strip */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#18181d]/80 border border-zinc-800">
+                  <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#1e293b] border border-[#334155]">
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <img
                           src={assignedStaff.avatar}
                           alt={assignedStaff.name}
-                          className="w-10 h-10 rounded-xl object-cover ring-2 ring-zinc-700 shadow-sm"
+                          className="w-10 h-10 rounded-xl object-cover ring-2 ring-[#334155] shadow-sm"
                         />
                         <span
-                          className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#18181d] ${
+                          className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#1e293b] ${
                             assignedStaff.status === 'available' ? 'bg-emerald-400' : 'bg-amber-400'
                           }`}
                           title={`Status: ${assignedStaff.status}`}
@@ -964,20 +1074,20 @@ export default function CustomerReportsModule({ className = '' }) {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-white">{assignedStaff.name}</span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700">
+                          <span className="text-xs font-bold text-[#f8fafc]">{assignedStaff.name}</span>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#0f172a] text-slate-300 border border-[#334155]">
                             {assignedStaff.role}
                           </span>
                         </div>
-                        <span className="text-[11px] text-zinc-400 flex items-center gap-1 mt-0.5">
-                          Assigned table lead • Workload: <strong className="text-stone-300">{assignedStaff.activeTable}</strong>
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                          Assigned table lead &bull; Workload: <strong className="text-slate-200">{assignedStaff.activeTable}</strong>
                         </span>
                       </div>
                     </div>
 
                     {/* Dispatch info if exists */}
                     {report.dispatchLog && (
-                      <div className="text-[11px] text-amber-300 bg-amber-950/30 border border-amber-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5 max-w-md">
+                      <div className="text-[11px] text-amber-300 bg-amber-950/40 border border-amber-500/30 px-3 py-1.5 rounded-xl flex items-center gap-1.5 max-w-md">
                         <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                         <span className="truncate">{report.dispatchLog.note}</span>
                       </div>
@@ -986,7 +1096,7 @@ export default function CustomerReportsModule({ className = '' }) {
 
                   {/* Resolved Details Banner if Resolved */}
                   {isResolved && (
-                    <div className="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 space-y-2">
+                    <div className="p-4 rounded-2xl bg-[#1e293b] border border-emerald-500/40 space-y-2">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-black text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
                           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -1007,61 +1117,65 @@ export default function CustomerReportsModule({ className = '' }) {
                   )}
 
                   {/* =========================================================================
-                      3. ADMIN TABLE ISSUE HANDLER (INTERACTIVE ACTION CENTER)
+                      ADMIN ACTION BAR (Assign/Dispatch Employee dropdown, Priority Ping, Mark Resolved)
+                      Aligned in a clean flex row at the bottom of the card
                       ========================================================================= */}
-                  <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800/80">
-                    <div className="text-xs text-zinc-400 font-medium">
-                      <span>Action Center:</span>
+                  <div className="pt-3 border-t border-[#334155] flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    {/* Left: Assign/Dispatch Employee Dropdown */}
+                    <div className="flex items-center gap-2.5 flex-1 min-w-[260px]">
+                      <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0">
+                        <UserPlus className="w-3.5 h-3.5 text-[#FF7A45]" />
+                        <span>Assign Employee:</span>
+                      </span>
+                      <select
+                        value={report.assignedStaffId || ''}
+                        onChange={(e) => handleDirectAssignEmployee(report.id, e.target.value)}
+                        className="flex-1 bg-[#1e293b] border border-[#334155] text-xs font-semibold text-[#f8fafc] rounded-xl py-2 px-3 focus:outline-none focus:border-[#FF5A26] cursor-pointer"
+                      >
+                        {STAFF_ROSTER.map((staff) => (
+                          <option key={staff.id} value={staff.id} className="bg-[#111827] text-[#f8fafc]">
+                            {staff.name} — {staff.role} ({staff.status})
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      
-                      {/* Action Button 1: Assign / Dispatch Employee to Table */}
+                    {/* Right: Priority Ping Button & Mark Resolved Button */}
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      {/* Priority Ping button */}
                       <button
                         type="button"
-                        onClick={() => handleOpenDispatch(report)}
-                        className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-[#FF5A26] hover:text-white text-stone-200 text-xs font-bold transition-all border border-zinc-700 hover:border-[#FF5A26] flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
-                        title="Dispatch an active employee with priority instructions"
+                        onClick={() => handlePriorityPing(report)}
+                        className="px-3.5 py-2 rounded-xl bg-[#1e293b] hover:bg-amber-950/60 text-amber-300 hover:text-amber-200 border border-amber-500/40 hover:border-amber-500 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                        title="Send urgent priority ping to assigned employee"
                       >
-                        <UserPlus className="w-3.5 h-3.5 text-[#FF7A45] group-hover:text-white" />
-                        <span>Assign / Dispatch Staff</span>
+                        <Zap className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                        <span>Priority Ping</span>
                       </button>
 
-                      {/* Action Button 2: Reassign Table */}
-                      <button
-                        type="button"
-                        onClick={() => handleOpenReassign(report)}
-                        className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-amber-600 hover:text-white text-stone-200 text-xs font-bold transition-all border border-zinc-700 hover:border-amber-500 flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
-                        title="Swap out current employee for another available staff member"
-                      >
-                        <UserCheck className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Reassign Table</span>
-                      </button>
-
-                      {/* Action Button 3: Mark as Resolved */}
+                      {/* Mark Resolved button */}
                       {!isResolved ? (
                         <button
                           type="button"
-                          onClick={() => handleOpenResolve(report)}
+                          onClick={() => handleDirectMarkResolved(report)}
                           className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-md shadow-emerald-950/40 flex items-center gap-1.5 cursor-pointer active:scale-95"
-                          title="Record resolution notes and mark case as resolved"
+                          title="Mark as resolved immediately"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                          <span>Mark as Resolved</span>
+                          <span>Mark Resolved</span>
                         </button>
                       ) : (
                         <button
                           type="button"
-                          onClick={() => handleOpenResolve(report)}
-                          className="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                          title="Edit audit resolution note"
+                          onClick={() => handleDirectReopen(report)}
+                          className="px-3.5 py-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-emerald-300 hover:text-emerald-200 text-xs font-bold transition flex items-center gap-1.5 border border-[#334155] cursor-pointer"
+                          title="Click to reopen issue"
                         >
-                          <span>Edit Audit Note</span>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Resolved ✓ (Reopen)</span>
                         </button>
                       )}
-
                     </div>
-
                   </div>
 
                 </div>
@@ -1075,30 +1189,30 @@ export default function CustomerReportsModule({ className = '' }) {
       {/* =========================================================================
           4. RESOLVED QUALITY AUDITING METRICS STRIP
           ========================================================================= */}
-      <div className="p-6 bg-gradient-to-t from-[#0e0e12] to-transparent border-t border-zinc-800/80">
+      <div className="p-6 bg-[#111827] border-t border-[#334155] rounded-2xl mb-4 shadow-xl">
         <div className="flex items-center gap-2 mb-4">
           <History className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-xs font-black uppercase tracking-wider text-stone-200">
+          <h3 className="text-xs font-black uppercase tracking-wider text-slate-200">
             Quality Auditing &amp; Resolution Performance Metrics
           </h3>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 rounded-2xl bg-[#141419] border border-zinc-800 flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-[#1e293b] border border-[#334155] flex items-center justify-between">
             <div>
-              <span className="text-[11px] text-zinc-400 uppercase font-bold tracking-wider block">
+              <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider block">
                 Avg Resolution Time
               </span>
-              <span className="text-2xl font-black text-white mt-1 block">8.5 mins</span>
+              <span className="text-2xl font-black text-[#f8fafc] mt-1 block">8.5 mins</span>
             </div>
             <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center font-bold">
               <Clock className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#141419] border border-zinc-800 flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-[#1e293b] border border-[#334155] flex items-center justify-between">
             <div>
-              <span className="text-[11px] text-zinc-400 uppercase font-bold tracking-wider block">
+              <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider block">
                 Resolution Rate
               </span>
               <span className="text-2xl font-black text-emerald-400 mt-1 block">97.8%</span>
@@ -1108,9 +1222,9 @@ export default function CustomerReportsModule({ className = '' }) {
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#141419] border border-zinc-800 flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-[#1e293b] border border-[#334155] flex items-center justify-between">
             <div>
-              <span className="text-[11px] text-zinc-400 uppercase font-bold tracking-wider block">
+              <span className="text-[11px] text-slate-400 uppercase font-bold tracking-wider block">
                 Customer Recovery Score
               </span>
               <span className="text-2xl font-black text-amber-300 mt-1 block">4.9 / 5.0</span>
@@ -1127,18 +1241,18 @@ export default function CustomerReportsModule({ className = '' }) {
           ========================================================================= */}
       {dispatchModalReport && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-lg bg-[#16161c] border border-zinc-700 rounded-3xl p-6 shadow-2xl space-y-5">
+          <div className="w-full max-w-lg bg-[#111827] border border-[#334155] rounded-3xl p-6 shadow-2xl space-y-5 text-[#f8fafc]">
             
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+            <div className="flex items-center justify-between pb-3 border-b border-[#334155]">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-[#FF5A26]/20 text-[#FF7A45] flex items-center justify-center font-bold">
                   <UserPlus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">
+                  <h3 className="text-base font-black text-[#f8fafc]">
                     Dispatch Employee to Table {dispatchModalReport.tableNumber}
                   </h3>
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-slate-400">
                     Send high-priority intervention alert to staff handheld
                   </p>
                 </div>
@@ -1146,23 +1260,23 @@ export default function CustomerReportsModule({ className = '' }) {
               <button
                 type="button"
                 onClick={() => setDispatchModalReport(null)}
-                className="text-zinc-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Complaint Context Preview */}
-            <div className="p-3.5 rounded-2xl bg-[#0f0f14] border border-zinc-800 text-xs space-y-1">
+            <div className="p-3.5 rounded-2xl bg-[#1e293b] border border-[#334155] text-xs space-y-1">
               <span className="font-bold text-[#FF7A45] uppercase tracking-wider block text-[10px]">
                 Issue Description:
               </span>
-              <p className="text-stone-200 font-medium">"{dispatchModalReport.customerNote}"</p>
+              <p className="text-slate-200 font-medium">"{dispatchModalReport.customerNote}"</p>
             </div>
 
             {/* Select Active Employee */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
                 Select Floor Employee:
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
@@ -1176,7 +1290,7 @@ export default function CustomerReportsModule({ className = '' }) {
                       className={`p-3 rounded-2xl border text-left transition flex items-center gap-3 cursor-pointer ${
                         isSelected
                           ? 'bg-[#FF5A26]/15 border-[#FF5A26] text-white ring-1 ring-[#FF7A45]'
-                          : 'bg-[#101015] border-zinc-800 text-zinc-300 hover:border-zinc-700'
+                          : 'bg-[#1e293b] border-[#334155] text-slate-300 hover:border-slate-500'
                       }`}
                     >
                       <img
@@ -1186,7 +1300,7 @@ export default function CustomerReportsModule({ className = '' }) {
                       />
                       <div className="min-w-0">
                         <span className="text-xs font-bold text-white block truncate">{staff.name}</span>
-                        <span className="text-[10px] text-zinc-400 block truncate">{staff.role}</span>
+                        <span className="text-[10px] text-slate-400 block truncate">{staff.role}</span>
                         <span className={`text-[9px] font-black uppercase ${
                           staff.status === 'available' ? 'text-emerald-400' : 'text-amber-400'
                         }`}>
@@ -1201,7 +1315,7 @@ export default function CustomerReportsModule({ className = '' }) {
 
             {/* Priority Directives Note */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
                 Priority Directive Note (Optional):
               </label>
               <input
@@ -1209,16 +1323,16 @@ export default function CustomerReportsModule({ className = '' }) {
                 value={dispatchPriorityNote}
                 onChange={(e) => setDispatchPriorityNote(e.target.value)}
                 placeholder="e.g. Bring extra napkins and ice water immediately with apology"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#101015] border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#FF5A26]"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#FF5A26]"
               />
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#334155]">
               <button
                 type="button"
                 onClick={() => setDispatchModalReport(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
               >
                 Cancel
               </button>
@@ -1241,35 +1355,35 @@ export default function CustomerReportsModule({ className = '' }) {
           ========================================================================= */}
       {reassignModalReport && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-lg bg-[#16161c] border border-zinc-700 rounded-3xl p-6 shadow-2xl space-y-5">
+          <div className="w-full max-w-lg bg-[#111827] border border-[#334155] rounded-3xl p-6 shadow-2xl space-y-5 text-[#f8fafc]">
             
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+            <div className="flex items-center justify-between pb-3 border-b border-[#334155]">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
                   <UserCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">
+                  <h3 className="text-base font-black text-[#f8fafc]">
                     Reassign Table {reassignModalReport.tableNumber}
                   </h3>
-                  <p className="text-xs text-zinc-400">
-                    Swap server if table pace or attention is lagging
+                  <p className="text-xs text-slate-400">
+                    Swap employee if table pace or attention is lagging
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setReassignModalReport(null)}
-                className="text-zinc-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Current Server vs Replacement */}
-            <div className="p-3.5 rounded-2xl bg-[#0f0f14] border border-zinc-800 flex items-center justify-between text-xs">
+            {/* Current Employee vs Replacement */}
+            <div className="p-3.5 rounded-2xl bg-[#1e293b] border border-[#334155] flex items-center justify-between text-xs">
               <div>
-                <span className="text-[10px] text-zinc-500 uppercase font-bold block">Current Server</span>
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Current Employee</span>
                 <span className="text-white font-bold">
                   {STAFF_ROSTER.find((s) => s.id === reassignModalReport.assignedStaffId)?.name || 'Marcus Vance'}
                 </span>
@@ -1277,7 +1391,7 @@ export default function CustomerReportsModule({ className = '' }) {
               <ArrowRight className="w-4 h-4 text-amber-400" />
               <div>
                 <span className="text-[10px] text-amber-400 uppercase font-bold block">New Assigned Lead</span>
-                <span className="text-stone-200 font-bold">
+                <span className="text-slate-200 font-bold">
                   {STAFF_ROSTER.find((s) => s.id === selectedStaffToReassign)?.name}
                 </span>
               </div>
@@ -1285,8 +1399,8 @@ export default function CustomerReportsModule({ className = '' }) {
 
             {/* Selection Grid */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
-                Choose Replacement Server:
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                Choose Replacement Employee:
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
                 {STAFF_ROSTER.filter((s) => s.id !== reassignModalReport.assignedStaffId).map((staff) => {
@@ -1299,7 +1413,7 @@ export default function CustomerReportsModule({ className = '' }) {
                       className={`p-3 rounded-2xl border text-left transition flex items-center gap-3 cursor-pointer ${
                         isSelected
                           ? 'bg-amber-500/20 border-amber-500 text-white ring-1 ring-amber-400'
-                          : 'bg-[#101015] border-zinc-800 text-zinc-300 hover:border-zinc-700'
+                          : 'bg-[#1e293b] border-[#334155] text-slate-300 hover:border-slate-500'
                       }`}
                     >
                       <img
@@ -1309,7 +1423,7 @@ export default function CustomerReportsModule({ className = '' }) {
                       />
                       <div className="min-w-0">
                         <span className="text-xs font-bold text-white block truncate">{staff.name}</span>
-                        <span className="text-[10px] text-zinc-400 block truncate">{staff.role}</span>
+                        <span className="text-[10px] text-slate-400 block truncate">{staff.role}</span>
                         <span className={`text-[9px] font-black uppercase ${
                           staff.status === 'available' ? 'text-emerald-400' : 'text-amber-400'
                         }`}>
@@ -1323,11 +1437,11 @@ export default function CustomerReportsModule({ className = '' }) {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#334155]">
               <button
                 type="button"
                 onClick={() => setReassignModalReport(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
               >
                 Cancel
               </button>
@@ -1350,18 +1464,18 @@ export default function CustomerReportsModule({ className = '' }) {
           ========================================================================= */}
       {resolveModalReport && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-lg bg-[#16161c] border border-zinc-700 rounded-3xl p-6 shadow-2xl space-y-5">
+          <div className="w-full max-w-lg bg-[#111827] border border-[#334155] rounded-3xl p-6 shadow-2xl space-y-5 text-[#f8fafc]">
             
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+            <div className="flex items-center justify-between pb-3 border-b border-[#334155]">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">
+                  <h3 className="text-base font-black text-[#f8fafc]">
                     Resolve Table {resolveModalReport.tableNumber} Issue
                   </h3>
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-slate-400">
                     Record resolution note for quality auditing &amp; service log
                   </p>
                 </div>
@@ -1369,23 +1483,23 @@ export default function CustomerReportsModule({ className = '' }) {
               <button
                 type="button"
                 onClick={() => setResolveModalReport(null)}
-                className="text-zinc-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Original Complaint Review */}
-            <div className="p-3.5 rounded-2xl bg-[#0f0f14] border border-zinc-800 text-xs space-y-1">
-              <span className="font-bold text-zinc-400 uppercase tracking-wider block text-[10px]">
+            <div className="p-3.5 rounded-2xl bg-[#1e293b] border border-[#334155] text-xs space-y-1">
+              <span className="font-bold text-slate-400 uppercase tracking-wider block text-[10px]">
                 Original Customer Complaint:
               </span>
-              <p className="text-stone-200 font-medium italic">"{resolveModalReport.customerNote}"</p>
+              <p className="text-slate-200 font-medium italic">"{resolveModalReport.customerNote}"</p>
             </div>
 
             {/* Quick Resolution Preset Chips */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
                 Quick Preset Resolution Templates:
               </label>
               <div className="flex flex-wrap gap-1.5">
@@ -1399,7 +1513,7 @@ export default function CustomerReportsModule({ className = '' }) {
                     key={idx}
                     type="button"
                     onClick={() => setResolutionInput(preset)}
-                    className="px-2.5 py-1.5 rounded-xl bg-[#101015] hover:bg-emerald-950/40 border border-zinc-800 hover:border-emerald-500/40 text-[11px] text-zinc-300 hover:text-emerald-200 text-left transition"
+                    className="px-2.5 py-1.5 rounded-xl bg-[#1e293b] hover:bg-emerald-950/40 border border-[#334155] hover:border-emerald-500/40 text-[11px] text-slate-300 hover:text-emerald-200 text-left transition"
                   >
                     + {preset}
                   </button>
@@ -1409,7 +1523,7 @@ export default function CustomerReportsModule({ className = '' }) {
 
             {/* Custom Input */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
                 Resolution &amp; Audit Note:
               </label>
               <textarea
@@ -1417,16 +1531,16 @@ export default function CustomerReportsModule({ className = '' }) {
                 value={resolutionInput}
                 onChange={(e) => setResolutionInput(e.target.value)}
                 placeholder="Enter actions taken to resolve the complaint..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#101015] border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 leading-relaxed"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 leading-relaxed"
               />
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#334155]">
               <button
                 type="button"
                 onClick={() => setResolveModalReport(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
               >
                 Cancel
               </button>
