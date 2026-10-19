@@ -762,7 +762,7 @@ export default function LiveTablesModule({
 
         {/* Action Controls: Direct Write & Protected by PIN 808080 */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Direct Write Input (NO + / - Stepper) */}
+          {/* Direct Write Input (NO + / - Stepper, NO presets, NO loose buttons) */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -786,58 +786,13 @@ export default function LiveTablesModule({
             />
             <button
               type="submit"
-              className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-orange-50 text-orange-600 font-black text-xs shadow-md transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-white hover:bg-orange-50 text-orange-600 font-black text-xs sm:text-sm shadow-md transition active:scale-95 cursor-pointer flex items-center gap-1.5"
               title="Apply desired table count (Requires PIN 808080)"
             >
               <Lock className="w-3.5 h-3.5" />
               <span>Apply</span>
             </button>
           </form>
-
-          {/* Presets (Protected by PIN 808080) */}
-          <div className="hidden sm:flex items-center gap-1 bg-black/30 backdrop-blur-md border border-white/20 p-1 rounded-2xl">
-            {[8, 10, 12, 16, 20, 24].map((cnt) => (
-              <button
-                key={cnt}
-                type="button"
-                onClick={() => {
-                  setCustomTableCount(String(cnt));
-                  requestTableCountChange(cnt);
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
-                  tables.length === cnt
-                    ? 'bg-white text-orange-600 shadow-md font-black'
-                    : 'text-orange-100 hover:text-white hover:bg-white/10'
-                }`}
-                title={`Set to ${cnt} tables (Requires PIN 808080)`}
-              >
-                {cnt}
-              </button>
-            ))}
-          </div>
-
-          {/* Big White Add Table Button (Protected by PIN 808080) */}
-          <button
-            type="button"
-            onClick={() => requestAddNewTable()}
-            className="px-5 py-2.5 rounded-2xl bg-white hover:bg-orange-50 text-orange-600 font-black text-xs sm:text-sm shadow-xl shadow-black/20 flex items-center gap-2 transition active:scale-95 cursor-pointer"
-            title="Commission new table (Requires PIN 808080)"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>+ Add Table</span>
-          </button>
-
-          {/* Remove Last Table Button (Protected by PIN 808080) */}
-          <button
-            type="button"
-            onClick={requestRemoveLastTable}
-            disabled={tables.length <= 1}
-            className="px-4 py-2.5 rounded-2xl bg-black/40 hover:bg-black/60 disabled:opacity-30 border border-white/20 text-white font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer flex items-center gap-1.5"
-            title="Remove highest numbered table (Requires PIN 808080)"
-          >
-            <Trash2 className="w-4 h-4 text-red-300" />
-            <span>- Remove Last</span>
-          </button>
         </div>
       </div>
 
@@ -948,16 +903,6 @@ export default function LiveTablesModule({
               </button>
             )}
 
-            {/* Direct Add Table Button in Top Filter Row (Protected by PIN 808080) */}
-            <button
-              type="button"
-              onClick={() => requestAddNewTable()}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:brightness-110 text-white font-black text-xs shadow-md shadow-[#FF5A26]/30 flex items-center gap-1.5 transition active:scale-95 cursor-pointer shrink-0"
-              title="Add table (Requires PIN 808080)"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>+ Add Table</span>
-            </button>
           </div>
         </div>
 
