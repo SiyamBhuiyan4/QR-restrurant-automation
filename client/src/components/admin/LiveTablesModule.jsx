@@ -313,6 +313,7 @@ export default function LiveTablesModule({
     isOpen: false,
     actionTitle: '',
     actionDescription: '',
+    actionNotice: '',
     pendingAction: null
   });
 
@@ -652,6 +653,39 @@ export default function LiveTablesModule({
     triggerToast(`Table ${tableNumber} assigned to ${empName}`, 'success');
   }, [employees, onAssignEmployee, triggerToast]);
 
+  // Request Employee Reassignment with Admin PIN (808080) verification
+  const requestReassignEmployee = useCallback((tableNumber, newEmployeeId, onModalConfirmedCallback) => {
+    const targetTable = tables.find(t => t.tableNumber === tableNumber);
+    const currentEmpId = targetTable?.assignedEmployeeId ? String(targetTable.assignedEmployeeId) : '';
+    const targetEmpId = newEmployeeId ? String(newEmployeeId) : '';
+
+    // If no change, return immediately without requiring PIN
+    if (currentEmpId === targetEmpId) {
+      return;
+    }
+
+    const currentEmp = employees.find(e => String(e.id) === currentEmpId || (e.numericId && String(e.numericId) === currentEmpId));
+    const currentEmpName = currentEmp ? currentEmp.name : 'Unassigned (Floor Pool)';
+
+    const targetEmp = employees.find(e => String(e.id) === targetEmpId || (e.numericId && String(e.numericId) === targetEmpId));
+    const targetEmpName = targetEmp ? `${targetEmp.name} (${targetEmp.role?.split(' ')[0] || 'Staff'})` : 'Unassigned (Floor Pool)';
+
+    setSecurityModalState({
+      isOpen: true,
+      actionTitle: `Authorize Staff Assignment • Table #${tableNumber}`,
+      actionDescription: targetEmpId
+        ? `Assign Table #${tableNumber} to ${targetEmpName}. Real-time waiter dispatch, kitchen pickup alerts, and table management for Table #${tableNumber} will route to ${targetEmp?.name || 'this staff member'}.`
+        : `Unassign Table #${tableNumber} (currently assigned to ${currentEmpName}) and return to the unassigned floor pool.`,
+      actionNotice: 'Admin PIN verification (808080) required to update floor staff table routing.',
+      pendingAction: () => {
+        handleReassignEmployee(tableNumber, newEmployeeId);
+        if (typeof onModalConfirmedCallback === 'function') {
+          onModalConfirmedCallback();
+        }
+      }
+    });
+  }, [tables, employees, handleReassignEmployee]);
+
   // Resolve Customer Assistance / Issue
   const handleResolveIssue = useCallback((noteId, tableNumber, resolutionMemo) => {
     playChimeSound();
@@ -831,11 +865,19 @@ export default function LiveTablesModule({
               <button
                 type="button"
                 onClick={() => {
-                  onAutoBalanceTables();
-                  triggerToast('Tables balanced evenly across all active floor employees!', 'success');
+                  setSecurityModalState({
+                    isOpen: true,
+                    actionTitle: 'Authorize Floor Staff Auto-Balance',
+                    actionDescription: `Automatically redistribute all ${tables.length} floor tables evenly across all active floor staff. Existing table assignments will be reallocated.`,
+                    actionNotice: 'Admin PIN verification (808080) required to rebalance table assignments.',
+                    pendingAction: () => {
+                      onAutoBalanceTables();
+                      triggerToast('Tables balanced evenly across all active floor employees!', 'success');
+                    }
+                  });
                 }}
                 className="px-3 py-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 border border-[#334155] cursor-pointer active:scale-95 shrink-0"
-                title="Distribute tables evenly across active employees"
+                title="Distribute tables evenly across active employees (Requires PIN 808080)"
               >
                 <span>⚖️ Balance Staff</span>
               </button>
@@ -1162,9 +1204,15 @@ export default function LiveTablesModule({
                       ----------------------------------------------------------- */}
                   <div className="relative pt-2 pb-1 border-t border-[#334155] space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
-                        Assigned Employee
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                          Assigned Employee
+                        </span>
+                        <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1 py-0.5 rounded" title="Assignment protected by Admin PIN (808080)">
+                          <Lock className="w-2.5 h-2.5" />
+                          <span>PIN</span>
+                        </span>
+                      </div>
                       {assignedEmp && (
                         <span className="text-[10px] font-bold text-slate-400 truncate max-w-[130px]">
                           {assignedEmp.role}
@@ -1185,7 +1233,7 @@ export default function LiveTablesModule({
                         value={table.assignedEmployeeId ? String(table.assignedEmployeeId) : ''}
                         onChange={(e) => {
                           const val = e.target.value ? e.target.value : null;
-                          handleReassignEmployee(table.tableNumber, val);
+                          requestReassignEmployee(table.tableNumber, val);
                         }}
                         className="flex-1 bg-transparent text-xs font-bold text-[#f8fafc] focus:outline-none cursor-pointer py-1 truncate"
                       >
@@ -1729,17 +1777,20 @@ export default function LiveTablesModule({
                 </div>
               </div>
 
-              {/* Quick Reassign dropdown inside modal */}
+              {/* Quick Reassign dropdown inside modal (Protected by PIN 808080) */}
               <select
-                value={selectedOrderModal.table.assignedEmployeeId || ''}
+                aria-label="Reassign Table Staff"
+                value={selectedOrderModal.table.assignedEmployeeId ? String(selectedOrderModal.table.assignedEmployeeId) : ''}
                 onChange={(e) => {
-                  handleReassignEmployee(selectedOrderModal.table.tableNumber, e.target.value);
-                  const newEmp = employees.find(emp => emp.id === Number(e.target.value));
-                  setSelectedOrderModal(prev => ({
-                    ...prev,
-                    employee: newEmp,
-                    table: { ...prev.table, assignedEmployeeId: Number(e.target.value) }
-                  }));
+                  const val = e.target.value ? e.target.value : null;
+                  requestReassignEmployee(selectedOrderModal.table.tableNumber, val, () => {
+                    const newEmp = employees.find(emp => String(emp.id) === String(val) || (emp.numericId && String(emp.numericId) === String(val)));
+                    setSelectedOrderModal(prev => prev ? ({
+                      ...prev,
+                      employee: newEmp,
+                      table: { ...prev.table, assignedEmployeeId: val }
+                    }) : null);
+                  });
                 }}
                 className="bg-[#111827] border border-[#334155] text-xs text-[#f8fafc] px-3 py-1.5 rounded-xl font-bold cursor-pointer focus:outline-none"
               >
@@ -1998,6 +2049,7 @@ export default function LiveTablesModule({
         }}
         actionTitle={securityModalState.actionTitle}
         actionDescription={securityModalState.actionDescription}
+        actionNotice={securityModalState.actionNotice}
         pendingData={securityModalState.pendingAction}
       />
 

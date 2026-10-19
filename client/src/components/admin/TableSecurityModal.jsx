@@ -32,6 +32,7 @@ export default function TableSecurityModal({
   onConfirm = () => {},
   actionTitle = 'Critical Table Operation',
   actionDescription = 'Authorize table modification',
+  actionNotice = '',
   pendingData = null
 }) {
   const [password, setPassword] = useState('');
@@ -102,7 +103,7 @@ export default function TableSecurityModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -156,7 +157,7 @@ export default function TableSecurityModal({
           </p>
           <div className="text-[11px] text-zinc-400 flex items-center gap-1.5 pt-1">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-            Critical change: table inventory & live routing will update immediately.
+            <span>{actionNotice || 'Critical change: table inventory & live routing will update immediately.'}</span>
           </div>
         </div>
 

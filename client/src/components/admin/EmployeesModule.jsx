@@ -22,8 +22,11 @@ import {
   CheckCheck,
   Table,
   ArrowRight,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Lock
 } from 'lucide-react';
+
+import TableSecurityModal from './TableSecurityModal';
 
 // Total floor tables in the venue
 const TOTAL_TABLES_COUNT = 12;
@@ -247,6 +250,15 @@ export default function EmployeesModule({
   const [selectedBackupEmpId, setSelectedBackupEmpId] = useState('');
   const [rerouteActiveAlerts, setRerouteActiveAlerts] = useState(true);
 
+  // Security Confirmation Modal State (Requires Admin PIN 808080)
+  const [securityModalState, setSecurityModalState] = useState({
+    isOpen: false,
+    actionTitle: '',
+    actionDescription: '',
+    actionNotice: '',
+    pendingAction: null
+  });
+
   // Dynamic Venue Table Count & Array (Rule 1)
   const totalVenueTables = propTableCount || (propTables ? propTables.length : TOTAL_TABLES_COUNT);
   const allTableNumbers = useMemo(() => Array.from({ length: totalVenueTables }, (_, i) => i + 1), [totalVenueTables]);
@@ -469,6 +481,35 @@ export default function EmployeesModule({
 
     showToast(`Auto-balanced all ${allTableNumbers.length} tables across ${onDutyEmployees.length} on-duty Employees!`, 'success');
   }, [employees, allTableNumbers, onAutoBalance, showToast]);
+
+  // Request Table Reassignment with PIN (808080) verification
+  const requestDirectTableReassign = useCallback((tableNumber, newEmployeeId) => {
+    const targetEmp = employees.find(e => String(e.id) === String(newEmployeeId));
+    const targetName = targetEmp ? `${targetEmp.name} (${targetEmp.role || 'Staff'})` : 'selected Employee';
+
+    setSecurityModalState({
+      isOpen: true,
+      actionTitle: `Authorize Staff Assignment • Table #${tableNumber}`,
+      actionDescription: `Assign Table #${tableNumber} to ${targetName}. Floor routing will update immediately.`,
+      actionNotice: 'Admin PIN verification (808080) required to update staff table assignments.',
+      pendingAction: () => {
+        handleDirectTableReassign(tableNumber, newEmployeeId);
+      }
+    });
+  }, [employees, handleDirectTableReassign]);
+
+  // Request Auto-Balance with PIN (808080) verification
+  const requestAutoBalanceTables = useCallback(() => {
+    setSecurityModalState({
+      isOpen: true,
+      actionTitle: 'Authorize Floor Staff Auto-Balance',
+      actionDescription: `Automatically redistribute all ${allTableNumbers.length} venue tables evenly across on-duty floor staff.`,
+      actionNotice: 'Admin PIN verification (808080) required to rebalance table assignments.',
+      pendingAction: () => {
+        handleAutoBalanceTables();
+      }
+    });
+  }, [allTableNumbers.length, handleAutoBalanceTables]);
 
   // ---------------------------------------------------------------------------
   // EMPLOYEE ABSENCE & BACKUP HANDLER HUB (Rule 4)
@@ -828,9 +869,9 @@ export default function EmployeesModule({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={handleAutoBalanceTables}
+              onClick={requestAutoBalanceTables}
               className="px-3.5 py-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-slate-200 border border-[#334155] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
-              title="Evenly distribute tables 1-12 among active employees"
+              title="Evenly distribute tables among active employees (Requires PIN 808080)"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>Auto-Balance Tables</span>
@@ -1274,8 +1315,9 @@ export default function EmployeesModule({
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={handleAutoBalanceTables}
+                onClick={requestAutoBalanceTables}
                 className="px-3.5 py-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-slate-200 border border-[#334155] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
+                title="Auto-balance tables across staff (Requires PIN 808080)"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>Auto-Balance Tables</span>
@@ -1357,15 +1399,21 @@ export default function EmployeesModule({
 
                   {/* Bottom: Inline Reassignment Dropdown */}
                   <div className="pt-2 border-t border-[#334155]">
-                    <label className="text-[10px] text-slate-400 font-medium block mb-1">
-                      Assigned Employee:
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] text-slate-400 font-medium block">
+                        Assigned Employee:
+                      </label>
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1 py-0.2 rounded" title="Requires PIN 808080">
+                        <Lock className="w-2.5 h-2.5" />
+                        <span>PIN</span>
+                      </span>
+                    </div>
                     <select
                       value={assignedEmp ? assignedEmp.id : ''}
                       onChange={e => {
                         const newEmpId = e.target.value;
                         if (newEmpId) {
-                          handleDirectTableReassign(tableNum, newEmpId);
+                          requestDirectTableReassign(tableNum, newEmpId);
                         }
                       }}
                       className="w-full bg-[#0f172a] border border-[#334155] text-xs text-[#f8fafc] rounded-xl py-1.5 px-2.5 focus:outline-none focus:border-[#FF5A26] cursor-pointer"
@@ -1981,6 +2029,23 @@ export default function EmployeesModule({
           </div>
         </div>
       )}
+
+      {/* =======================================================================
+          ADMIN STAFF ASSIGNMENT SECURITY MODAL (PIN: 808080)
+          ======================================================================= */}
+      <TableSecurityModal
+        isOpen={securityModalState.isOpen}
+        onClose={() => setSecurityModalState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={(action) => {
+          if (typeof action === 'function') {
+            action();
+          }
+        }}
+        actionTitle={securityModalState.actionTitle}
+        actionDescription={securityModalState.actionDescription}
+        actionNotice={securityModalState.actionNotice}
+        pendingData={securityModalState.pendingAction}
+      />
     </div>
   );
 }
