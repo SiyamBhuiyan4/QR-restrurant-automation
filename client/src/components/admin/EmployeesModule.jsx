@@ -877,49 +877,6 @@ export default function EmployeesModule({
         </div>
       )}
 
-      {/* =========================================================================
-          1. TOP NAVBAR
-          ========================================================================= */}
-      <nav className="w-full bg-[#131926] border border-[#1E293B] rounded-2xl px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
-        {/* Left: Green Status Dot + Title + Muted Subtitle */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-          <h1 className="text-sm sm:text-base font-bold text-white tracking-tight">
-            Employee Roster &amp; Shifts
-          </h1>
-          <span className="text-xs text-slate-400 hidden sm:inline">
-            • Duty Allocation &amp; Shift Management (Employee Hub)
-          </span>
-        </div>
-
-        {/* Right: Switch to Kitchen KDS + Launch /employee */}
-        <div className="flex items-center gap-2.5 self-end sm:self-auto">
-          <button
-            type="button"
-            onClick={() => {
-              if (onSwitchToKds) {
-                onSwitchToKds();
-              } else if (typeof window !== 'undefined') {
-                window.location.assign('/employee?tab=kitchen');
-              }
-            }}
-            className="text-xs font-semibold text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-[#1E293B]/70 hover:bg-[#1E293B] border border-[#2A384C] transition cursor-pointer flex items-center gap-1.5 shadow-sm"
-          >
-            <span>Switch to Kitchen KDS</span>
-            <span className="text-slate-400">➔</span>
-          </button>
-
-          <a
-            href="/employee?tab=roster"
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs font-bold text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition flex items-center gap-1.5 shadow-sm"
-          >
-            <span>Launch /employee</span>
-            <ExternalLink className="w-3 h-3 text-emerald-400" />
-          </a>
-        </div>
-      </nav>
 
       {/* =========================================================================
           2. HERO CARD SECTION
