@@ -8,7 +8,7 @@ import './index.css';
 import './styles/motion.css';
 
 // Force fresh cache busting for UI update
-const LATEST_BUILD_TAG = 'v2026.10.19.2248';
+const LATEST_BUILD_TAG = '2026-10-19.10-lineage-rollback-engine-v1';
 try {
   const currentTag = localStorage.getItem('smartdine_build_tag');
   if (currentTag !== LATEST_BUILD_TAG) {

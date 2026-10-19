@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Users,
   UserPlus,
@@ -23,14 +23,52 @@ import {
   ChefHat,
   BellRing,
   RotateCcw,
-  AlertTriangle
+  AlertTriangle,
+  Undo2
 } from 'lucide-react';
 
 import TableSecurityModal from './TableSecurityModal';
 
+// Storage key for table custody lineage tracking across sessions and days
+const STORAGE_KEY_CUSTODY = 'smartdine_table_custody_v1';
+
 // Total floor tables in the venue
 const TOTAL_TABLES_COUNT = 12;
 const ALL_TABLE_NUMBERS = Array.from({ length: TOTAL_TABLES_COUNT }, (_, i) => i + 1);
+
+// Initial default shift assignment mapping
+const DEFAULT_ROSTER_MAP_BY_ID = {
+  'emp-1': [1, 6, 11],
+  'emp-2': [2, 7, 12],
+  'emp-3': [3, 8],
+  'emp-4': [4, 9],
+  'emp-5': [5, 10]
+};
+
+// Look up default shift owner for any table number
+const getDefaultOwnerForTable = (tableNumber) => {
+  const num = Number(tableNumber);
+  for (const [empId, tables] of Object.entries(DEFAULT_ROSTER_MAP_BY_ID)) {
+    if (tables.includes(num)) return empId;
+  }
+  return null;
+};
+
+// Initial Root Custody Mapping (Table -> Original Shift Owner)
+const INITIAL_TABLE_CUSTODY = {
+  1: { tableNumber: 1, originalOwnerId: 'emp-1', delegationTrail: ['emp-1'] },
+  2: { tableNumber: 2, originalOwnerId: 'emp-2', delegationTrail: ['emp-2'] },
+  3: { tableNumber: 3, originalOwnerId: 'emp-3', delegationTrail: ['emp-3'] },
+  4: { tableNumber: 4, originalOwnerId: 'emp-4', delegationTrail: ['emp-4'] },
+  5: { tableNumber: 5, originalOwnerId: 'emp-5', delegationTrail: ['emp-5'] },
+  6: { tableNumber: 6, originalOwnerId: 'emp-1', delegationTrail: ['emp-1'] },
+  7: { tableNumber: 7, originalOwnerId: 'emp-2', delegationTrail: ['emp-2'] },
+  8: { tableNumber: 8, originalOwnerId: 'emp-3', delegationTrail: ['emp-3'] },
+  9: { tableNumber: 9, originalOwnerId: 'emp-4', delegationTrail: ['emp-4'] },
+  10: { tableNumber: 10, originalOwnerId: 'emp-5', delegationTrail: ['emp-5'] },
+  11: { tableNumber: 11, originalOwnerId: 'emp-1', delegationTrail: ['emp-1'] },
+  12: { tableNumber: 12, originalOwnerId: 'emp-2', delegationTrail: ['emp-2'] }
+};
 
 // Initial Mock Employees Roster - Aligned strictly with design specs
 const INITIAL_EMPLOYEES = [
@@ -48,7 +86,7 @@ const INITIAL_EMPLOYEES = [
     avgResponseTime: '11s',
     lastCallResponse: 'Responded in 11s (on time)',
     onTimeRate: '99%',
-    avatarType: 'orange', // Orange circle with RA
+    avatarType: 'orange',
     phone: '+880 1712-345001',
     email: 'rakib.ahmed@smartdine.internal',
     nudgesCount: 0
@@ -67,7 +105,7 @@ const INITIAL_EMPLOYEES = [
     avgResponseTime: '11s',
     lastCallResponse: 'Responded in 11s (on time)',
     onTimeRate: '98%',
-    avatarType: 'blue', // Blue circle with HM
+    avatarType: 'blue',
     phone: '+880 1819-456002',
     email: 'hasan.mahmud@smartdine.internal',
     nudgesCount: 0
@@ -235,10 +273,57 @@ export default function EmployeesModule({
   });
 
   useEffect(() => {
-    if (propEmployees && Array.isArray(propEmployees)) {
-      setEmployees(propEmployees);
+    if (propEmployees && Array.isArray(propEmployees) && propEmployees.length > 0) {
+      setEmployees(prev => {
+        return propEmployees.map(propEmp => {
+          const localEmp = prev.find(e => e.id === propEmp.id || String(e.numericId) === String(propEmp.id));
+          if (!localEmp) return propEmp;
+          return {
+            ...localEmp,
+            ...propEmp,
+            nudgesCount: localEmp.nudgesCount ?? propEmp.nudgesCount ?? 0,
+            assignedTables: propEmp.assignedTables || localEmp.assignedTables || []
+          };
+        });
+      });
     }
   }, [propEmployees]);
+
+  // Table Custody Lineage Tracking State (persisted across sessions and days)
+  const [tableCustody, setTableCustody] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_CUSTODY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed === 'object') return parsed;
+        }
+      } catch (e) {}
+    }
+    return INITIAL_TABLE_CUSTODY;
+  });
+
+  // Save custody lineage to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_CUSTODY, JSON.stringify(tableCustody));
+      } catch (e) {}
+    }
+  }, [tableCustody]);
+
+  // Undo Stack: stores snapshots of previous employee and table custody states (max 30 actions)
+  const [undoStack, setUndoStack] = useState([]);
+  const undoStackRef = useRef(undoStack);
+  const employeesRef = useRef(employees);
+
+  useEffect(() => {
+    undoStackRef.current = undoStack;
+  }, [undoStack]);
+
+  useEffect(() => {
+    employeesRef.current = employees;
+  }, [employees]);
 
   const [alerts, setAlerts] = useState(INITIAL_ALERTS);
   const [searchQuery, setSearchQuery] = useState('');
@@ -296,15 +381,122 @@ export default function EmployeesModule({
     assignedTables: []
   });
 
-  // Notification Toast State
+  // Notification Toast State with Timer Ref & Interactive Hover Ergonomics
   const [toastMessage, setToastMessage] = useState(null);
+  const toastTimeoutRef = useRef(null);
 
-  const showToast = useCallback((msg, type = 'success') => {
-    setToastMessage({ id: Date.now(), text: msg, type });
-    setTimeout(() => {
-      setToastMessage(prev => (prev?.text === msg ? null : prev));
-    }, 4000);
+  const showToast = useCallback((msg, type = 'success', action = null, duration = 6000) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToastMessage({ id: Date.now(), text: msg, type, action });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+      toastTimeoutRef.current = null;
+    }, duration);
   }, []);
+
+  const handleToastMouseEnter = useCallback(() => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handleToastMouseLeave = useCallback(() => {
+    if (toastMessage) {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = setTimeout(() => {
+        setToastMessage(null);
+        toastTimeoutRef.current = null;
+      }, 3500);
+    }
+  }, [toastMessage]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Push snapshot to Undo Stack (maintains up to 30 actions with deep clones)
+  const pushUndoSnapshot = useCallback((description) => {
+    const snapshot = {
+      id: `undo-${Date.now()}-${Math.random()}`,
+      description,
+      employees: JSON.parse(JSON.stringify(employees)),
+      tableCustody: JSON.parse(JSON.stringify(tableCustody)),
+      timestamp: Date.now()
+    };
+    setUndoStack(prev => {
+      const nextStack = [snapshot, ...prev.slice(0, 29)];
+      undoStackRef.current = nextStack;
+      return nextStack;
+    });
+  }, [employees, tableCustody]);
+
+  // Instant Undo Handler: restores deep clones of employees and tableCustody, shows informative toast
+  const handleUndo = useCallback(() => {
+    if (undoStackRef.current.length === 0) {
+      showToast('Nothing to undo in roster history', 'info');
+      return;
+    }
+
+    const [topAction, ...remainingStack] = undoStackRef.current;
+    undoStackRef.current = remainingStack;
+    setUndoStack(remainingStack);
+
+    const restoredEmployees = JSON.parse(JSON.stringify(topAction.employees));
+    const restoredCustody = JSON.parse(JSON.stringify(topAction.tableCustody));
+
+    // Synchronize parent context if onAssignTable prop is provided
+    if (onAssignTable) {
+      for (let t = 1; t <= totalVenueTables; t++) {
+        const currentHolder = employeesRef.current.find(e => (e.assignedTables || []).includes(t));
+        const previousHolder = restoredEmployees.find(e => (e.assignedTables || []).includes(t));
+        if (currentHolder?.id !== previousHolder?.id) {
+          onAssignTable(t, previousHolder ? previousHolder.id : null);
+        }
+      }
+    }
+    if (onSetEmployeeStatus) {
+      restoredEmployees.forEach(emp => {
+        onSetEmployeeStatus(emp.id, emp.status);
+      });
+    }
+
+    setEmployees(restoredEmployees);
+    setTableCustody(restoredCustody);
+    showToast(`Undid: ${topAction.description}`, 'info');
+  }, [totalVenueTables, onAssignTable, onSetEmployeeStatus, showToast]);
+
+  // Global Keyboard Shortcut: Cmd+Z (macOS) or Ctrl+Z (Windows/Linux) for Instant Undo in Roster
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const isZ = e.key === 'z' || e.key === 'Z' || e.code === 'KeyZ';
+      const isModifier = e.metaKey || e.ctrlKey;
+
+      if (isModifier && isZ && !e.shiftKey && !e.altKey) {
+        // Skip shortcut if user is actively typing in a form input, textarea, or contentEditable element
+        const tag = e.target?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) {
+          return;
+        }
+
+        if (activeTab === 'roster') {
+          e.preventDefault();
+          handleUndo();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeTab, handleUndo]);
 
   // Summary Metrics
   const summaryMetrics = useMemo(() => {
@@ -387,27 +579,42 @@ export default function EmployeesModule({
   }, [alerts, alertFilter]);
 
   // ---------------------------------------------------------------------------
-  // TABLE ASSIGNMENT LOGIC
+  // TABLE ASSIGNMENT & UNDO LOGIC
   // ---------------------------------------------------------------------------
 
   const handleToggleTableAssignment = useCallback((employeeId, tableNumber) => {
+    const targetEmp = employees.find(e => e.id === employeeId);
+    if (!targetEmp) return;
+
+    // Identify who currently holds this table
+    const currentHolder = employees.find(e => (e.assignedTables || []).includes(tableNumber));
+    const isCurrentlyAssignedToTarget = currentHolder?.id === employeeId;
+
+    let actionDesc = '';
+    if (isCurrentlyAssignedToTarget) {
+      actionDesc = `Unassigned Table ${tableNumber} from ${targetEmp.name}`;
+    } else if (currentHolder) {
+      actionDesc = `Transferred Table ${tableNumber} from ${currentHolder.name} to ${targetEmp.name}`;
+    } else {
+      actionDesc = `Assigned Table ${tableNumber} to ${targetEmp.name}`;
+    }
+
+    // Record snapshot in Undo Stack
+    pushUndoSnapshot(actionDesc);
+
+    // Update employees
     setEmployees(prev => {
-      const targetEmp = prev.find(e => e.id === employeeId);
-      if (!targetEmp) return prev;
-
-      const isAlreadyAssignedToTarget = (targetEmp.assignedTables || []).includes(tableNumber);
-
       return prev.map(emp => {
         if (emp.id === employeeId) {
-          const nextTables = isAlreadyAssignedToTarget
-            ? emp.assignedTables.filter(t => t !== tableNumber)
+          const nextTables = isCurrentlyAssignedToTarget
+            ? (emp.assignedTables || []).filter(t => t !== tableNumber)
             : [...(emp.assignedTables || []), tableNumber].sort((a, b) => a - b);
           return { ...emp, assignedTables: nextTables };
         } else {
-          if (!isAlreadyAssignedToTarget && (emp.assignedTables || []).includes(tableNumber)) {
+          if (!isCurrentlyAssignedToTarget && (emp.assignedTables || []).includes(tableNumber)) {
             return {
               ...emp,
-              assignedTables: emp.assignedTables.filter(t => t !== tableNumber)
+              assignedTables: (emp.assignedTables || []).filter(t => t !== tableNumber)
             };
           }
           return emp;
@@ -415,18 +622,42 @@ export default function EmployeesModule({
       });
     });
 
-    const target = employees.find(e => e.id === employeeId);
-    const targetName = target ? target.name : 'Employee';
-    const isCurrentlyAssigned = target?.assignedTables?.includes(tableNumber);
+    // Update table custody trail preserving root original owner
+    setTableCustody(prev => {
+      const orig = prev[tableNumber]?.originalOwnerId || getDefaultOwnerForTable(tableNumber) || (currentHolder ? currentHolder.id : employeeId);
+      const trail = prev[tableNumber]?.delegationTrail || [orig];
+      return {
+        ...prev,
+        [tableNumber]: {
+          tableNumber,
+          originalOwnerId: orig,
+          delegationTrail: isCurrentlyAssignedToTarget ? trail : [...trail, employeeId]
+        }
+      };
+    });
 
-    if (isCurrentlyAssigned) {
-      showToast(`Table ${tableNumber} unassigned from ${targetName}`, 'info');
-    } else {
-      showToast(`Table ${tableNumber} assigned to ${targetName}!`, 'success');
+    if (onAssignTable) {
+      onAssignTable(tableNumber, isCurrentlyAssignedToTarget ? null : employeeId);
     }
-  }, [employees, showToast]);
+
+    // Show toast with instant interactive Undo action
+    showToast(
+      actionDesc,
+      currentHolder && currentHolder.id !== employeeId ? 'warning' : 'success',
+      {
+        label: 'Undo',
+        onClick: handleUndo
+      }
+    );
+  }, [employees, pushUndoSnapshot, showToast, handleUndo, onAssignTable]);
 
   const handleDirectTableReassign = useCallback((tableNumber, newEmployeeId) => {
+    const currentHolder = employees.find(e => (e.assignedTables || []).includes(tableNumber));
+    const targetEmp = employees.find(e => e.id === newEmployeeId);
+    const actionDesc = `Reassigned Table ${tableNumber} from ${currentHolder?.name || 'Unassigned'} to ${targetEmp?.name || 'Staff'}`;
+
+    pushUndoSnapshot(actionDesc);
+
     setEmployees(prev => {
       return prev.map(emp => {
         if (emp.id === newEmployeeId) {
@@ -443,13 +674,218 @@ export default function EmployeesModule({
       });
     });
 
+    // Update table custody trail preserving root original owner
+    setTableCustody(prev => {
+      const orig = prev[tableNumber]?.originalOwnerId || getDefaultOwnerForTable(tableNumber) || (currentHolder ? currentHolder.id : newEmployeeId);
+      const trail = prev[tableNumber]?.delegationTrail || [orig];
+      return {
+        ...prev,
+        [tableNumber]: {
+          tableNumber,
+          originalOwnerId: orig,
+          delegationTrail: [...trail, newEmployeeId]
+        }
+      };
+    });
+
     if (onAssignTable) {
       onAssignTable(tableNumber, newEmployeeId);
     }
 
-    const targetEmp = employees.find(e => e.id === newEmployeeId);
-    showToast(`Table ${tableNumber} reassigned to ${targetEmp?.name || 'selected Employee'}`, 'success');
-  }, [employees, onAssignTable, showToast]);
+    showToast(actionDesc, 'success', {
+      label: 'Undo',
+      onClick: handleUndo
+    });
+  }, [employees, pushUndoSnapshot, onAssignTable, showToast, handleUndo]);
+
+  // ---------------------------------------------------------------------------
+  // ROLLBACK ENGINE (Delegation Lineage & Batch Rollback)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Rollback / Reclaim tables for a specific employee.
+   * Handles multi-hop chains (e.g. 3 -> 2 -> 1):
+   * Retrieves 3's tables from whoever currently holds them (even 1),
+   * without disrupting 2's tables!
+   */
+  const handleRollbackEmployeeTables = useCallback((employeeId) => {
+    const targetEmp = employees.find(e => e.id === employeeId || String(e.numericId) === String(employeeId));
+    if (!targetEmp) return;
+
+    // Identify all tables that originally belong to this employee
+    const originalTables = Object.keys(tableCustody)
+      .map(Number)
+      .filter(tblNum => tableCustody[tblNum]?.originalOwnerId === targetEmp.id || tableCustody[tblNum]?.originalOwnerId === employeeId);
+
+    const tablesToReclaim = originalTables.length > 0
+      ? originalTables
+      : (DEFAULT_ROSTER_MAP_BY_ID[targetEmp.id] || DEFAULT_ROSTER_MAP_BY_ID[employeeId] || []);
+
+    if (tablesToReclaim.length === 0) {
+      showToast(`${targetEmp.name} has no original shift tables to reclaim.`, 'info');
+      return;
+    }
+
+    // Find which tables are currently NOT with targetEmp
+    const tablesDelegatedAway = tablesToReclaim.filter(
+      tblNum => !(targetEmp.assignedTables || []).includes(tblNum)
+    );
+
+    if (tablesDelegatedAway.length === 0) {
+      showToast(`${targetEmp.name} already holds all their original shift tables (T${tablesToReclaim.join(', T')}).`, 'info');
+      return;
+    }
+
+    // Push snapshot to Undo Stack
+    pushUndoSnapshot(`Rolled back ${tablesDelegatedAway.length} tables to ${targetEmp.name}`);
+
+    // Map which employees currently hold each of these tables
+    const holdersMap = {};
+    employees.forEach(emp => {
+      if (emp.id !== targetEmp.id) {
+        const held = (emp.assignedTables || []).filter(t => tablesDelegatedAway.includes(t));
+        if (held.length > 0) {
+          holdersMap[emp.id] = held;
+        }
+      }
+    });
+
+    // Reclaim tables: take from current holders and give back to targetEmp
+    setEmployees(prev => {
+      return prev.map(emp => {
+        if (emp.id === targetEmp.id) {
+          const combined = Array.from(new Set([...(emp.assignedTables || []), ...tablesDelegatedAway])).sort((a, b) => a - b);
+          return {
+            ...emp,
+            status: emp.status === 'Absent' || emp.status === 'Absent / Off-duty' ? 'Active' : emp.status,
+            assignedTables: combined
+          };
+        }
+        if (holdersMap[emp.id]) {
+          return {
+            ...emp,
+            assignedTables: (emp.assignedTables || []).filter(t => !tablesDelegatedAway.includes(t))
+          };
+        }
+        return emp;
+      });
+    });
+
+    // Update custody records
+    setTableCustody(prev => {
+      const updated = { ...prev };
+      tablesDelegatedAway.forEach(t => {
+        const trail = updated[t]?.delegationTrail || [targetEmp.id];
+        updated[t] = {
+          tableNumber: t,
+          originalOwnerId: targetEmp.id,
+          delegationTrail: [...trail, targetEmp.id]
+        };
+      });
+      return updated;
+    });
+
+    // Synchronize to RestaurantContext / Parent
+    if (onAssignTable) {
+      tablesDelegatedAway.forEach(t => {
+        onAssignTable(t, targetEmp.id);
+      });
+    }
+    if (onSetEmployeeStatus && (targetEmp.status === 'Absent' || targetEmp.status === 'Absent / Off-duty')) {
+      onSetEmployeeStatus(targetEmp.id, 'Active');
+    }
+
+    const holderNames = Object.keys(holdersMap)
+      .map(hid => employees.find(e => e.id === hid)?.name?.split(' ')[0] || 'Staff')
+      .filter(Boolean)
+      .join(', ');
+
+    showToast(
+      `Reclaimed ${tablesDelegatedAway.length} tables (T${tablesDelegatedAway.join(', T')}) to ${targetEmp.name}${holderNames ? ` (retrieved from ${holderNames})` : ''}!`,
+      'success',
+      {
+        label: 'Undo',
+        onClick: handleUndo
+      }
+    );
+  }, [employees, tableCustody, pushUndoSnapshot, onAssignTable, onSetEmployeeStatus, showToast, handleUndo]);
+
+  /**
+   * Batch Rollback: Restore all tables venue-wide to their original default shift roster owners.
+   */
+  const handleRollbackAllToShiftRoster = useCallback(() => {
+    let delegatedCount = 0;
+    employees.forEach(emp => {
+      (emp.assignedTables || []).forEach(tblNum => {
+        const orig = tableCustody[tblNum]?.originalOwnerId || getDefaultOwnerForTable(tblNum);
+        if (orig && orig !== emp.id) {
+          delegatedCount++;
+        }
+      });
+    });
+
+    pushUndoSnapshot('Batch rollback of all tables to original shift roster');
+
+    setEmployees(prev => {
+      return prev.map(emp => {
+        const origTables = Object.keys(tableCustody)
+          .map(Number)
+          .filter(tblNum => tableCustody[tblNum]?.originalOwnerId === emp.id);
+
+        const assigned = origTables.length > 0
+          ? origTables
+          : (DEFAULT_ROSTER_MAP_BY_ID[emp.id] || []);
+
+        return {
+          ...emp,
+          status: emp.status === 'Absent' || emp.status === 'Absent / Off-duty' ? 'Active' : emp.status,
+          assignedTables: assigned.sort((a, b) => a - b)
+        };
+      });
+    });
+
+    // Reset custody trails
+    setTableCustody(prev => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach(tblNum => {
+        const orig = updated[tblNum]?.originalOwnerId || getDefaultOwnerForTable(Number(tblNum));
+        if (orig) {
+          updated[tblNum] = {
+            tableNumber: Number(tblNum),
+            originalOwnerId: orig,
+            delegationTrail: [orig]
+          };
+        }
+      });
+      return updated;
+    });
+
+    // Synchronize to RestaurantContext / Parent
+    if (onAssignTable) {
+      allTableNumbers.forEach(tblNum => {
+        const origOwner = tableCustody[tblNum]?.originalOwnerId || getDefaultOwnerForTable(tblNum);
+        if (origOwner) {
+          onAssignTable(tblNum, origOwner);
+        }
+      });
+    }
+    if (onSetEmployeeStatus) {
+      employees.forEach(emp => {
+        if (emp.status === 'Absent' || emp.status === 'Absent / Off-duty') {
+          onSetEmployeeStatus(emp.id, 'Active');
+        }
+      });
+    }
+
+    showToast(
+      `Full shift rollback complete: All ${delegatedCount || 12} tables restored to default shift owners!`,
+      'success',
+      {
+        label: 'Undo',
+        onClick: handleUndo
+      }
+    );
+  }, [employees, tableCustody, allTableNumbers, pushUndoSnapshot, onAssignTable, onSetEmployeeStatus, showToast, handleUndo]);
 
   const handleAutoBalanceTables = useCallback(() => {
     if (onAutoBalance) {
@@ -463,6 +899,8 @@ export default function EmployeesModule({
       showToast('No active or busy employees available for floor coverage', 'error');
       return;
     }
+
+    pushUndoSnapshot('Auto-balanced tables across on-duty employees');
 
     const assignments = {};
     onDutyEmployees.forEach(e => {
@@ -487,8 +925,15 @@ export default function EmployeesModule({
       });
     });
 
-    showToast(`Auto-balanced all ${allTableNumbers.length} tables across ${onDutyEmployees.length} on-duty Employees!`, 'success');
-  }, [employees, allTableNumbers, onAutoBalance, showToast]);
+    showToast(
+      `Auto-balanced all ${allTableNumbers.length} tables across ${onDutyEmployees.length} on-duty Employees!`,
+      'success',
+      {
+        label: 'Undo',
+        onClick: handleUndo
+      }
+    );
+  }, [employees, allTableNumbers, onAutoBalance, pushUndoSnapshot, showToast, handleUndo]);
 
   const requestDirectTableReassign = useCallback((tableNumber, newEmployeeId) => {
     const targetEmp = employees.find(e => String(e.id) === String(newEmployeeId));
@@ -538,6 +983,14 @@ export default function EmployeesModule({
       return;
     }
 
+    // If an employee returns to Active and has tables delegated away, prompt quick rollback
+    const origTables = Object.keys(tableCustody)
+      .map(Number)
+      .filter(tblNum => tableCustody[tblNum]?.originalOwnerId === employeeId);
+    const delegatedAway = origTables.filter(t => !(targetEmp.assignedTables || []).includes(t));
+
+    pushUndoSnapshot(`Changed ${targetEmp.name} status to ${newStatus}`);
+
     if (onSetEmployeeStatus) {
       onSetEmployeeStatus(employeeId, newStatus);
     }
@@ -549,8 +1002,23 @@ export default function EmployeesModule({
         return emp;
       })
     );
-    showToast(`${targetEmp.name} status updated to "${newStatus}"`, 'info');
-  }, [employees, onSetEmployeeStatus, showToast]);
+
+    if (newStatus === 'Active' && delegatedAway.length > 0) {
+      showToast(
+        `${targetEmp.name} is now Active! Reclaim their ${delegatedAway.length} shift tables (T${delegatedAway.join(', T')})?`,
+        'info',
+        {
+          label: 'Reclaim',
+          onClick: () => handleRollbackEmployeeTables(employeeId)
+        }
+      );
+    } else {
+      showToast(`${targetEmp.name} status updated to "${newStatus}"`, 'info', {
+        label: 'Undo',
+        onClick: handleUndo
+      });
+    }
+  }, [employees, tableCustody, pushUndoSnapshot, onSetEmployeeStatus, showToast, handleRollbackEmployeeTables, handleUndo]);
 
   const handleConfirmTransfer = useCallback(() => {
     if (!transferModalData?.sourceEmployee || !selectedBackupEmpId) {
@@ -564,24 +1032,43 @@ export default function EmployeesModule({
 
     const tablesToTransfer = [...(sourceEmp.assignedTables || [])];
 
+    // Snapshot for Undo
+    pushUndoSnapshot(`Transferred ${tablesToTransfer.length} tables from ${sourceEmp.name} to ${backupEmp.name}`);
+
+    // Update local state immediately for instant responsive UI
+    setEmployees(prev => prev.map(emp => {
+      if (emp.id === sourceEmp.id) {
+        return {
+          ...emp,
+          status: transferModalData.isAbsenceTrigger ? 'Absent' : emp.status,
+          assignedTables: []
+        };
+      }
+      if (emp.id === selectedBackupEmpId) {
+        const combined = Array.from(new Set([...(emp.assignedTables || []), ...tablesToTransfer])).sort((a, b) => a - b);
+        return { ...emp, assignedTables: combined };
+      }
+      return emp;
+    }));
+
     if (onReassignAllTables) {
       onReassignAllTables(sourceEmp.id, selectedBackupEmpId, transferModalData.isAbsenceTrigger);
-    } else {
-      setEmployees(prev => prev.map(emp => {
-        if (emp.id === sourceEmp.id) {
-          return {
-            ...emp,
-            status: transferModalData.isAbsenceTrigger ? 'Absent' : emp.status,
-            assignedTables: []
-          };
-        }
-        if (emp.id === selectedBackupEmpId) {
-          const combined = Array.from(new Set([...(emp.assignedTables || []), ...tablesToTransfer])).sort((a, b) => a - b);
-          return { ...emp, assignedTables: combined };
-        }
-        return emp;
-      }));
     }
+
+    // Preserve the root originalOwnerId in tableCustody!
+    setTableCustody(prev => {
+      const updated = { ...prev };
+      tablesToTransfer.forEach(tblNum => {
+        const rootOwner = updated[tblNum]?.originalOwnerId || getDefaultOwnerForTable(tblNum) || sourceEmp.id;
+        const trail = updated[tblNum]?.delegationTrail || [rootOwner];
+        updated[tblNum] = {
+          tableNumber: tblNum,
+          originalOwnerId: rootOwner,
+          delegationTrail: [...trail, backupEmp.id]
+        };
+      });
+      return updated;
+    });
 
     if (rerouteActiveAlerts) {
       setAlerts(prev => prev.map(alert => {
@@ -599,10 +1086,14 @@ export default function EmployeesModule({
 
     setTransferModalData(null);
     showToast(
-      `Re-linked ${tablesToTransfer.length} tables (T${tablesToTransfer.join(', T')}) from ${sourceEmp.name} to ${backupEmp.name}!`,
-      'success'
+      `Transferred ${tablesToTransfer.length} tables (T${tablesToTransfer.join(', T')}) from ${sourceEmp.name} to ${backupEmp.name}!`,
+      'success',
+      {
+        label: 'Undo',
+        onClick: handleUndo
+      }
     );
-  }, [transferModalData, selectedBackupEmpId, rerouteActiveAlerts, onReassignAllTables, employees, showToast]);
+  }, [transferModalData, selectedBackupEmpId, rerouteActiveAlerts, onReassignAllTables, employees, pushUndoSnapshot, showToast, handleUndo]);
 
   const handleNudgeEmployee = useCallback((employeeId, alertId = null) => {
     setEmployees(prev =>
@@ -720,6 +1211,8 @@ export default function EmployeesModule({
       return;
     }
 
+    pushUndoSnapshot(editingEmployee ? `Updated ${formData.name.trim()}` : `Registered ${formData.name.trim()}`);
+
     if (editingEmployee) {
       setEmployees(prev =>
         prev.map(emp => {
@@ -744,7 +1237,10 @@ export default function EmployeesModule({
           return emp;
         })
       );
-      showToast(`Employee "${formData.name.trim()}" profile updated!`, 'success');
+      showToast(`Employee "${formData.name.trim()}" profile updated!`, 'success', {
+        label: 'Undo',
+        onClick: handleUndo
+      });
     } else {
       const initials = formData.name
         .trim()
@@ -783,7 +1279,23 @@ export default function EmployeesModule({
         return [...cleaned, newEmp];
       });
 
-      showToast(`Employee "${formData.name.trim()}" successfully registered!`, 'success');
+      // Register new tables in custody
+      setTableCustody(prev => {
+        const updated = { ...prev };
+        formData.assignedTables.forEach(t => {
+          updated[t] = {
+            tableNumber: t,
+            originalOwnerId: newId,
+            delegationTrail: [newId]
+          };
+        });
+        return updated;
+      });
+
+      showToast(`Employee "${formData.name.trim()}" successfully registered!`, 'success', {
+        label: 'Undo',
+        onClick: handleUndo
+      });
     }
 
     setIsAddEditModalOpen(false);
@@ -794,8 +1306,12 @@ export default function EmployeesModule({
     if (!emp) return;
 
     if (window.confirm(`Are you sure you want to remove Employee ${emp.name}? Their assigned tables will be unassigned.`)) {
+      pushUndoSnapshot(`Removed Employee ${emp.name}`);
       setEmployees(prev => prev.filter(e => e.id !== employeeId));
-      showToast(`Employee ${emp.name} removed from active roster`, 'info');
+      showToast(`Employee ${emp.name} removed from active roster`, 'info', {
+        label: 'Undo',
+        onClick: handleUndo
+      });
     }
   };
 
@@ -805,7 +1321,6 @@ export default function EmployeesModule({
     }
   };
 
-  // Helper to render avatar based on type or initials
   const renderAvatar = (emp) => {
     if (emp.name === 'Rakib Ahmed' || emp.avatarType === 'orange') {
       return (
@@ -847,36 +1362,56 @@ export default function EmployeesModule({
       className={`w-full min-h-screen bg-[#0B0F19] text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6 antialiased selection:bg-[#F59E0B] selection:text-slate-950 relative ${className}`}
       style={{ backgroundColor: '#0B0F19' }}
     >
-      {/* Toast Notification Container */}
+      {/* Toast Notification Container with Undo Support & Anti-Premature Closing */}
       {toastMessage && (
-        <div className="fixed bottom-6 left-6 z-50 animate-fadeIn">
+        <div
+          className="fixed bottom-6 left-6 z-50 animate-fadeIn"
+          onMouseEnter={handleToastMouseEnter}
+          onMouseLeave={handleToastMouseLeave}
+        >
           <div
             className={`flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-2xl backdrop-blur-md text-xs font-semibold text-white ${
               toastMessage.type === 'success'
-                ? 'bg-emerald-950/95 border-emerald-500/50'
+                ? 'bg-emerald-950/95 border-emerald-500/60 shadow-emerald-950/50'
                 : toastMessage.type === 'warning'
-                ? 'bg-amber-950/95 border-amber-500/50'
+                ? 'bg-amber-950/95 border-amber-500/60 shadow-amber-950/50'
                 : toastMessage.type === 'error'
-                ? 'bg-rose-950/95 border-rose-500/50'
-                : 'bg-[#131926] border-[#1E293B] text-slate-200'
+                ? 'bg-rose-950/95 border-rose-500/60 shadow-rose-950/50'
+                : 'bg-[#131926]/95 border-[#2A384C] text-slate-100 shadow-slate-950/60'
             }`}
           >
             {toastMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
             {toastMessage.type === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
             {toastMessage.type === 'error' && <X className="w-4 h-4 text-rose-400 shrink-0" />}
             {toastMessage.type === 'info' && <Zap className="w-4 h-4 text-[#F59E0B] shrink-0" />}
-            <span>{toastMessage.text}</span>
+            <span className="leading-tight">{toastMessage.text}</span>
+            {toastMessage.action && (
+              <button
+                type="button"
+                onClick={() => {
+                  toastMessage.action.onClick();
+                  // Note: Do not call setToastMessage(null) here so handleUndo's feedback toast is preserved!
+                }}
+                className="ml-2 px-3 py-1.5 rounded-xl bg-[#F59E0B] hover:bg-amber-400 text-slate-950 font-black text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md active:scale-95 shrink-0"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-slate-950" />
+                <span>[ ↺ {toastMessage.action.label || 'Undo'} ]</span>
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => setToastMessage(null)}
-              className="p-1 hover:bg-white/10 rounded-lg ml-2 cursor-pointer transition"
+              onClick={() => {
+                if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+                setToastMessage(null);
+              }}
+              className="p-1 hover:bg-white/10 rounded-lg ml-1 text-slate-400 hover:text-white cursor-pointer transition shrink-0"
+              title="Dismiss notification"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       )}
-
 
       {/* =========================================================================
           2. HERO CARD SECTION
@@ -899,6 +1434,30 @@ export default function EmployeesModule({
 
         {/* Right Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Prominent Instant Undo Button (Shows whenever undoStack has items) */}
+          {undoStack.length > 0 && (
+            <button
+              type="button"
+              onClick={handleUndo}
+              className="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/50 hover:border-amber-400 text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-md ring-1 ring-amber-500/30"
+              title={`Undo: ${undoStack[0].description} (Cmd+Z / Ctrl+Z)`}
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-[#F59E0B]" />
+              <span>↺ Undo ({undoStack.length})</span>
+            </button>
+          )}
+
+          {/* Batch Rollback to Shift Roster (Outlined / Emerald accent) */}
+          <button
+            type="button"
+            onClick={handleRollbackAllToShiftRoster}
+            className="px-3.5 py-2 rounded-xl bg-[#131926] hover:bg-emerald-950/30 text-emerald-300 border border-emerald-500/50 hover:border-emerald-400 text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
+            title="Batch reset: Rollback all table delegations to original shift roster owners venue-wide"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Rollback All to Roster</span>
+          </button>
+
           {/* Outlined Auto-Balance Button */}
           <button
             type="button"
@@ -907,7 +1466,7 @@ export default function EmployeesModule({
             title="Auto-balance tables across active employees (Requires PIN 808080)"
           >
             <Sparkles className="w-3.5 h-3.5 text-[#F59E0B]" />
-            <span>✨ Auto-Balance Tables</span>
+            <span>Auto-Balance Tables</span>
           </button>
 
           {/* Secondary Simulate Alert Button */}
@@ -1015,7 +1574,7 @@ export default function EmployeesModule({
           ========================================================================= */}
       <section className="bg-[#131926] rounded-2xl border border-[#1E293B] px-4 pt-3 pb-0 shadow-sm">
         <div className="flex flex-wrap items-center gap-6 border-b border-[#1E293B] overflow-x-auto">
-          {/* Tab 1: Employee Directory & Roster 5 */}
+          {/* Tab 1: Employee Directory & Roster */}
           <button
             type="button"
             onClick={() => setActiveTab('roster')}
@@ -1039,7 +1598,7 @@ export default function EmployeesModule({
             )}
           </button>
 
-          {/* Tab 2: Dining Room Table Coverage (Tables 1-12) 12/12 */}
+          {/* Tab 2: Dining Room Table Coverage */}
           <button
             type="button"
             onClick={() => setActiveTab('tables')}
@@ -1063,7 +1622,7 @@ export default function EmployeesModule({
             )}
           </button>
 
-          {/* Tab 3: Live Call Routing & Kitchen Dispatch 4 */}
+          {/* Tab 3: Live Call Routing & Kitchen Dispatch */}
           <button
             type="button"
             onClick={() => setActiveTab('dispatch')}
@@ -1095,7 +1654,7 @@ export default function EmployeesModule({
       <section className="bg-[#131926] rounded-2xl border border-[#1E293B] p-3 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Left: Pill-shaped status filters */}
         <div className="flex items-center gap-1.5 overflow-x-auto text-xs py-1">
-          {/* All (5) */}
+          {/* All */}
           <button
             type="button"
             onClick={() => setStatusFilter('all')}
@@ -1108,7 +1667,7 @@ export default function EmployeesModule({
             All ({employees.length})
           </button>
 
-          {/* Active (5) */}
+          {/* Active */}
           <button
             type="button"
             onClick={() => setStatusFilter('Active')}
@@ -1119,10 +1678,10 @@ export default function EmployeesModule({
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-            <span>• Active ({summaryMetrics.activeOnDuty})</span>
+            <span>Active ({summaryMetrics.activeOnDuty})</span>
           </button>
 
-          {/* Busy (0) */}
+          {/* Busy */}
           <button
             type="button"
             onClick={() => setStatusFilter('Busy')}
@@ -1133,10 +1692,10 @@ export default function EmployeesModule({
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-            <span>• Busy ({summaryMetrics.currentlyBusy})</span>
+            <span>Busy ({summaryMetrics.currentlyBusy})</span>
           </button>
 
-          {/* On Break (0) */}
+          {/* On Break */}
           <button
             type="button"
             onClick={() => setStatusFilter('On Break')}
@@ -1147,10 +1706,10 @@ export default function EmployeesModule({
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
-            <span>• On Break ({summaryMetrics.onBreak})</span>
+            <span>On Break ({summaryMetrics.onBreak})</span>
           </button>
 
-          {/* Absent (0) */}
+          {/* Absent */}
           <button
             type="button"
             onClick={() => setStatusFilter('Absent')}
@@ -1161,7 +1720,7 @@ export default function EmployeesModule({
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
-            <span>• Absent ({summaryMetrics.absent})</span>
+            <span>Absent ({summaryMetrics.absent})</span>
           </button>
         </div>
 
@@ -1203,6 +1762,21 @@ export default function EmployeesModule({
               {filteredEmployees.map(emp => {
                 const assignedCount = (emp.assignedTables || []).length;
 
+                // Tables originally belonging to emp
+                const originalTables = Object.keys(tableCustody)
+                  .map(Number)
+                  .filter(tblNum => tableCustody[tblNum]?.originalOwnerId === emp.id);
+
+                // Tables delegated away (belong to emp, but currently held by someone else)
+                const delegatedAwayTables = originalTables.filter(
+                  t => !(emp.assignedTables || []).includes(t)
+                );
+
+                // Tables currently held by emp that belong to someone else (borrowed)
+                const borrowedTables = (emp.assignedTables || []).filter(
+                  t => tableCustody[t]?.originalOwnerId && tableCustody[t]?.originalOwnerId !== emp.id
+                );
+
                 return (
                   <div
                     key={emp.id}
@@ -1243,15 +1817,28 @@ export default function EmployeesModule({
                           <span className="text-[10px] text-slate-400 absolute right-2 pointer-events-none">▾</span>
                         </div>
 
+                        {/* Dedicated Rollback / Reclaim Button if tables are delegated away */}
+                        {delegatedAwayTables.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRollbackEmployeeTables(emp.id)}
+                            className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 hover:border-emerald-400 text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs active:scale-95"
+                            title={`Rollback / Reclaim ${delegatedAwayTables.length} tables (T${delegatedAwayTables.join(', T')}) currently covered by backup staff`}
+                          >
+                            <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>↺ Rollback ({delegatedAwayTables.length})</span>
+                          </button>
+                        )}
+
                         {/* ⇄ Transfer orange outlined button */}
                         <button
                           type="button"
                           onClick={() => handleOpenTransferModal(emp)}
-                          className="px-2.5 py-1.5 rounded-xl bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40 text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
+                          className="px-2.5 py-1.5 rounded-xl bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40 hover:border-[#F59E0B]/70 text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs active:scale-95"
                           title={`Transfer all ${assignedCount} tables to backup employee`}
                         >
                           <ArrowRightLeft className="w-3.5 h-3.5 text-[#F59E0B]" />
-                          <span>Transfer</span>
+                          <span>⇄ Transfer</span>
                         </button>
 
                         {/* Tiny Action Icons: ⚡, ✏️, 🗑️ */}
@@ -1289,36 +1876,77 @@ export default function EmployeesModule({
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                           <Table className="w-3.5 h-3.5 text-[#F59E0B]" />
-                          Assigned Tables ({assignedCount})
+                          <span>Assigned Tables ({assignedCount})</span>
+                          {borrowedTables.length > 0 && (
+                            <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.2 rounded-md">
+                              {borrowedTables.length} covering
+                            </span>
+                          )}
+                          {delegatedAwayTables.length > 0 && (
+                            <span className="text-[10px] text-emerald-300 font-bold bg-emerald-950/40 border border-emerald-500/30 px-1.5 py-0.2 rounded-md">
+                              {delegatedAwayTables.length} delegated
+                            </span>
+                          )}
                         </span>
                         <span className="text-[10px] text-slate-400">
-                          Click pill to toggle assignment
+                          Click pill to toggle / reclaim
                         </span>
                       </div>
 
                       {/* 12 Pill-shaped Table Grid: Numbers T1 to T12 */}
                       <div className="flex flex-wrap items-center gap-1.5">
                         {allTableNumbers.map(tblNum => {
-                          const isAssigned = (emp.assignedTables || []).includes(tblNum);
+                          const isHeld = (emp.assignedTables || []).includes(tblNum);
+                          const origOwnerId = tableCustody[tblNum]?.originalOwnerId;
+                          const isOwnTable = origOwnerId === emp.id;
+                          const isBorrowed = isHeld && !isOwnTable;
+                          const isDelegatedAway = !isHeld && isOwnTable;
+                          const currentHolder = isDelegatedAway
+                            ? employees.find(e => (e.assignedTables || []).includes(tblNum))
+                            : null;
+                          const originalOwnerEmp = isBorrowed
+                            ? employees.find(e => e.id === origOwnerId)
+                            : null;
 
                           return (
                             <button
                               key={tblNum}
                               type="button"
-                              onClick={() => handleToggleTableAssignment(emp.id, tblNum)}
+                              onClick={() => {
+                                handleToggleTableAssignment(emp.id, tblNum);
+                              }}
                               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                                isAssigned
+                                isHeld && isOwnTable
                                   ? 'bg-[#F59E0B] text-slate-950 shadow-sm border border-[#F59E0B]'
+                                  : isBorrowed
+                                  ? 'bg-amber-500/20 text-[#F59E0B] border border-amber-500/60 shadow-sm'
+                                  : isDelegatedAway
+                                  ? 'bg-emerald-950/30 text-emerald-300 border-dashed border border-emerald-500/60 hover:bg-emerald-900/40'
                                   : 'bg-[#0B0F19] text-slate-400 border border-[#1E293B] hover:border-slate-600 hover:text-slate-200'
                               }`}
                               title={
-                                isAssigned
-                                  ? `Table ${tblNum} is currently assigned to ${emp.name}. Click to unassign.`
+                                isHeld && isOwnTable
+                                  ? `Table ${tblNum} is assigned to ${emp.name}. Click to unassign.`
+                                  : isBorrowed
+                                  ? `Table ${tblNum} is covering for ${originalOwnerEmp?.name || 'Staff'}. Click to reassign.`
+                                  : isDelegatedAway
+                                  ? `Table ${tblNum} belongs to ${emp.name}, currently covered by ${currentHolder?.name || 'Staff'}. Click to reclaim!`
                                   : `Click to assign Table ${tblNum} to ${emp.name}.`
                               }
                             >
                               <span>T{tblNum}</span>
-                              {isAssigned && <Check className="w-3 h-3 text-slate-950" strokeWidth={3} />}
+                              {isHeld && isOwnTable && <Check className="w-3 h-3 text-slate-950" strokeWidth={3} />}
+                              {isBorrowed && (
+                                <>
+                                  <span className="text-[10px] text-amber-300 font-black">⇄</span>
+                                  <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-amber-500/25 border border-amber-500/40 text-amber-300 whitespace-nowrap">
+                                    Covering for {originalOwnerEmp?.name?.split(' ')[0] || 'Staff'}
+                                  </span>
+                                </>
+                              )}
+                              {isDelegatedAway && (
+                                <span className="text-xs font-black text-emerald-400 leading-none">↩</span>
+                              )}
                             </button>
                           );
                         })}
@@ -1370,6 +1998,16 @@ export default function EmployeesModule({
             <div className="flex items-center gap-3">
               <button
                 type="button"
+                onClick={handleRollbackAllToShiftRoster}
+                className="px-3.5 py-2 rounded-xl bg-[#0B0F19] hover:bg-[#1E293B] text-slate-200 border border-[#2A384C] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
+                title="Rollback all table delegations to original shift roster owners"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Rollback All to Roster</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={requestAutoBalanceTables}
                 className="px-3.5 py-2 rounded-xl bg-[#0B0F19] hover:bg-[#1E293B] text-slate-200 border border-[#2A384C] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
                 title="Auto-balance tables across staff (Requires PIN 808080)"
@@ -1394,6 +2032,9 @@ export default function EmployeesModule({
             {allTableNumbers.map(tableNum => {
               const assignedEmp = tableToEmployeeMap[tableNum];
               const isAssigned = !!assignedEmp;
+              const origOwnerId = tableCustody[tableNum]?.originalOwnerId;
+              const origOwnerEmp = employees.find(e => e.id === origOwnerId);
+              const isCovering = isAssigned && origOwnerId && origOwnerId !== assignedEmp.id;
 
               return (
                 <div
@@ -1409,7 +2050,11 @@ export default function EmployeesModule({
                     <span className="text-sm font-bold text-white">
                       Table {tableNum}
                     </span>
-                    {isAssigned ? (
+                    {isCovering ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-[#F59E0B] border border-amber-500/40">
+                        Covering for {origOwnerEmp?.name?.split(' ')[0] || 'Staff'}
+                      </span>
+                    ) : isAssigned ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/70 text-emerald-300 border border-emerald-500/40">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                         Assigned
@@ -1984,7 +2629,7 @@ export default function EmployeesModule({
                   <h3 className="text-base font-bold text-white">
                     {transferModalData.isAbsenceTrigger ? 'Employee Absence Transfer' : 'Quick Table Transfer'}
                   </h3>
-                  <p className="text-[11px] text-slate-400">Floor Coverage Backup Handler</p>
+                  <p className="text-[11px] text-slate-400">Floor Coverage Lineage Delegation</p>
                 </div>
               </div>
               <button
@@ -1997,6 +2642,17 @@ export default function EmployeesModule({
             </div>
 
             <div className="space-y-4 text-xs text-slate-300">
+              {/* Delegation Lineage Preserved Notice */}
+              <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs flex items-start gap-2.5 shadow-sm">
+                <RotateCcw className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="font-bold text-emerald-200 block">Shift Delegation Lineage Preserved</span>
+                  <span className="text-[11px] text-emerald-300/80 leading-relaxed block">
+                    Original shift roster assignments remain permanently recorded in table custody. Any transferred tables can be reclaimed at any time via 1-click single-staff Rollback or batch shift reset.
+                  </span>
+                </div>
+              </div>
+
               <p className="leading-relaxed">
                 Employee <strong className="text-white">{transferModalData.sourceEmployee.name}</strong> is{' '}
                 {transferModalData.isAbsenceTrigger ? (
