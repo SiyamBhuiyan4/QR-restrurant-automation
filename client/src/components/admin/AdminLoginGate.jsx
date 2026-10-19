@@ -6,7 +6,6 @@ import {
   EyeOff,
   AlertCircle,
   ArrowRight,
-  ArrowLeft,
   KeyRound,
   CheckCircle2
 } from 'lucide-react';
@@ -75,12 +74,6 @@ export default function AdminLoginGate({ onLoginSuccess }) {
     handleValidate(pin);
   };
 
-  const handleBackToCustomer = () => {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/?table=1';
-    }
-  };
-
   return (
     <div
       className="admin-root flex flex-col items-center justify-center min-h-screen w-full px-4 py-8 select-none"
@@ -89,22 +82,6 @@ export default function AdminLoginGate({ onLoginSuccess }) {
         fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"
       }}
     >
-      {/* Top Navigation Bar: Back to Customer View */}
-      <div className="w-full max-w-md flex items-center justify-between mb-6">
-        <button
-          type="button"
-          onClick={handleBackToCustomer}
-          className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer group"
-        >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          <span>Exit to Customer Menu</span>
-        </button>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-[11px] font-bold text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-[#FF5A26] animate-pulse" />
-          <span>Secured Console</span>
-        </div>
-      </div>
-
       {/* Main Login Card */}
       <div
         className={`w-full max-w-md rounded-3xl border transition-all duration-300 relative overflow-hidden ${
