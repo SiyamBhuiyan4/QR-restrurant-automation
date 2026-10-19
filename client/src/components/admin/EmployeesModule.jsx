@@ -1324,43 +1324,51 @@ export default function EmployeesModule({
   const renderAvatar = (emp) => {
     if (emp.name === 'Rakib Ahmed' || emp.avatarType === 'orange') {
       return (
-        <div className="w-11 h-11 rounded-full bg-[#F59E0B] text-slate-950 font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 text-slate-950 shadow-lg shadow-orange-500/20 font-bold text-base flex items-center justify-center shrink-0">
           {emp.initials || 'RA'}
         </div>
       );
     }
     if (emp.name === 'Hasan Mahmud' || emp.avatarType === 'blue') {
       return (
-        <div className="w-11 h-11 rounded-full bg-blue-600 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 text-white shadow-lg shadow-cyan-500/20 font-bold text-base flex items-center justify-center shrink-0">
           {emp.initials || 'HM'}
         </div>
       );
     }
     if (emp.name === 'Priya Sen' || emp.avatarType === 'purple') {
       return (
-        <div className="w-11 h-11 rounded-full bg-purple-600 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white shadow-lg shadow-purple-500/20 font-bold text-base flex items-center justify-center shrink-0">
           {emp.initials || 'PS'}
         </div>
       );
     }
     if (emp.name === 'Tanvir Rahman' || emp.avatarType === 'amber') {
       return (
-        <div className="w-11 h-11 rounded-full bg-amber-600 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-bold text-base flex items-center justify-center shrink-0">
           {emp.initials || 'TR'}
         </div>
       );
     }
     return (
-      <div className="w-11 h-11 rounded-full bg-rose-600 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
+      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-400 to-pink-600 text-white shadow-lg shadow-rose-500/20 font-bold text-base flex items-center justify-center shrink-0">
         {emp.initials || 'SI'}
       </div>
     );
   };
 
+  const getShiftColor = (emp) => {
+    if (emp.name === 'Rakib Ahmed' || emp.avatarType === 'orange') return 'text-amber-400/90';
+    if (emp.name === 'Hasan Mahmud' || emp.avatarType === 'blue') return 'text-cyan-400/90';
+    if (emp.name === 'Priya Sen' || emp.avatarType === 'purple') return 'text-purple-400/90';
+    if (emp.name === 'Tanvir Rahman' || emp.avatarType === 'amber') return 'text-amber-400/90';
+    return 'text-rose-400/90';
+  };
+
   return (
     <div
-      className={`w-full min-h-screen bg-[#0B0F19] text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6 antialiased selection:bg-[#F59E0B] selection:text-slate-950 relative ${className}`}
-      style={{ backgroundColor: '#0B0F19' }}
+      className={`w-full min-h-screen bg-[#080B11] text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6 antialiased selection:bg-[#F59E0B] selection:text-slate-950 relative ${className}`}
+      style={{ backgroundColor: '#080B11' }}
     >
       {/* Toast Notification Container with Undo Support & Anti-Premature Closing */}
       {toastMessage && (
@@ -1395,7 +1403,7 @@ export default function EmployeesModule({
                 className="ml-2 px-3 py-1.5 rounded-xl bg-[#F59E0B] hover:bg-amber-400 text-slate-950 font-black text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md active:scale-95 shrink-0"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-slate-950" />
-                <span>[ ↺ {toastMessage.action.label || 'Undo'} ]</span>
+                <span>[ {toastMessage.action.label || 'Undo'} ]</span>
               </button>
             )}
             <button
@@ -1414,79 +1422,121 @@ export default function EmployeesModule({
       )}
 
       {/* =========================================================================
+          1. TOP NAVBAR
+          ========================================================================= */}
+      <nav className="w-full bg-[#111726]/85 backdrop-blur-md border border-white/[0.07] rounded-[14px] px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+        {/* Left: Pulsing emerald dot + Title + Muted Subtitle */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          <h1 className="text-sm sm:text-base font-bold text-white tracking-tight">
+            Employee Roster &amp; Shifts
+          </h1>
+          <span className="text-xs text-slate-400 hidden sm:inline">
+            • Duty Allocation &amp; Shift Management (Employee Hub)
+          </span>
+        </div>
+
+        {/* Right: Switch to Kitchen KDS + Launch /employee */}
+        <div className="flex items-center gap-2.5 self-end sm:self-auto">
+          <button
+            type="button"
+            onClick={() => {
+              if (onSwitchToKds) {
+                onSwitchToKds();
+              } else if (typeof window !== 'undefined') {
+                window.location.assign('/employee?tab=kitchen');
+              }
+            }}
+            className="text-xs font-semibold text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-[#161F32] hover:bg-[#1E293B] border border-slate-700/60 transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+          >
+            <span>Switch to Kitchen KDS ➔</span>
+          </button>
+
+          <a
+            href="/employee?tab=roster"
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs font-semibold text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-[#161F32] hover:bg-[#1E293B] border border-slate-700/60 transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+          >
+            <span>Launch /employee ↗</span>
+          </a>
+        </div>
+      </nav>
+
+      {/* =========================================================================
           2. HERO CARD SECTION
           ========================================================================= */}
-      <section className="bg-[#131926] rounded-2xl border border-[#1E293B] p-5 sm:p-6 shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-        {/* Left: User Icon + Title + Muted Subtitle */}
+      <section className="bg-[#111726]/85 backdrop-blur-md border border-white/[0.07] rounded-[14px] p-5 sm:p-6 shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+        {/* Left: Orange-tinted Icon Box + Title + Muted Subtitle */}
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#F59E0B]/20 via-[#1E293B] to-blue-500/20 border border-[#F59E0B]/30 flex items-center justify-center text-[#F59E0B] shrink-0 shadow-sm">
-            <Users className="w-6 h-6 text-[#F59E0B]" />
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500/20 via-[#1E293B] to-orange-500/20 border border-amber-500/30 flex items-center justify-center text-[#F59E0B] shrink-0 shadow-sm shadow-orange-500/10">
+            <Users className="w-5 h-5 text-[#F59E0B]" />
           </div>
           <div>
             <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
               Employee Hub
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="max-w-md text-slate-400 text-xs sm:text-sm mt-0.5">
               Staff roster, dining room table assignments, and real-time dispatch routing
             </p>
           </div>
         </div>
 
         {/* Right Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center justify-end gap-2.5 max-w-xl">
           {/* Prominent Instant Undo Button (Shows whenever undoStack has items) */}
           {undoStack.length > 0 && (
             <button
               type="button"
               onClick={handleUndo}
-              className="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/50 hover:border-amber-400 text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-md ring-1 ring-amber-500/30"
+              className="h-[38px] px-3.5 flex items-center gap-2 rounded-xl text-xs font-semibold border border-amber-500/40 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 transition active:scale-95 cursor-pointer shadow-sm"
               title={`Undo: ${undoStack[0].description} (Cmd+Z / Ctrl+Z)`}
             >
-              <RotateCcw className="w-3.5 h-3.5 text-[#F59E0B]" />
-              <span>↺ Undo ({undoStack.length})</span>
+              <RotateCcw className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>Undo ({undoStack.length})</span>
             </button>
           )}
 
-          {/* Batch Rollback to Shift Roster (Outlined / Emerald accent) */}
+          {/* Batch Rollback to Shift Roster (Emerald outline) */}
           <button
             type="button"
             onClick={handleRollbackAllToShiftRoster}
-            className="px-3.5 py-2 rounded-xl bg-[#131926] hover:bg-emerald-950/30 text-emerald-300 border border-emerald-500/50 hover:border-emerald-400 text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
+            className="h-[38px] px-3.5 flex items-center gap-2 rounded-xl text-xs font-semibold border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition active:scale-95 cursor-pointer shadow-sm"
             title="Batch reset: Rollback all table delegations to original shift roster owners venue-wide"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
+            <RotateCcw className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>Rollback All to Roster</span>
           </button>
 
-          {/* Outlined Auto-Balance Button */}
+          {/* Outlined Auto-Balance Button (Subtle slate/gold outline) */}
           <button
             type="button"
             onClick={requestAutoBalanceTables}
-            className="px-3.5 py-2 rounded-xl bg-[#131926] hover:bg-[#1E293B] text-slate-200 border border-[#2A384C] hover:border-[#F59E0B]/60 text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
+            className="h-[38px] px-3.5 flex items-center gap-2 rounded-xl text-xs font-semibold border border-slate-700 text-slate-200 hover:border-amber-500/40 hover:text-white bg-[#111726]/80 transition active:scale-95 cursor-pointer shadow-sm"
             title="Auto-balance tables across active employees (Requires PIN 808080)"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#F59E0B]" />
+            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
             <span>Auto-Balance Tables</span>
           </button>
 
-          {/* Secondary Simulate Alert Button */}
+          {/* Secondary Simulate Alert Button (Subtle slate outline) */}
           <button
             type="button"
             onClick={handleSimulateNewAlert}
-            className="px-3.5 py-2 rounded-xl bg-[#131926] hover:bg-[#1E293B] text-slate-200 border border-[#2A384C] hover:border-amber-400 text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
+            className="h-[38px] px-3.5 flex items-center gap-2 rounded-xl text-xs font-semibold border border-slate-700 text-slate-200 hover:border-slate-500 hover:text-white bg-[#111726]/80 transition active:scale-95 cursor-pointer shadow-sm"
             title="Simulate incoming customer call or kitchen alert"
           >
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
-            <span>⚡ Simulate Alert</span>
+            <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>Simulate Alert</span>
           </button>
 
           {/* Vibrant Solid Orange + Add Employee Button */}
           <button
             type="button"
             onClick={handleOpenAddModal}
-            className="px-4 py-2 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-slate-950 text-xs font-black transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-md shadow-[#F59E0B]/20"
+            className="h-[38px] px-3.5 flex items-center gap-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold shadow-lg shadow-orange-500/20 hover:from-amber-400 hover:to-orange-400 active:scale-95 transition cursor-pointer"
           >
-            <UserPlus className="w-4 h-4 text-slate-950" />
+            <UserPlus className="w-4 h-4 text-white shrink-0" />
             <span>+ Add Employee</span>
           </button>
         </div>
@@ -1495,10 +1545,11 @@ export default function EmployeesModule({
       {/* =========================================================================
           3. METRICS ROW (4 Cards Side-by-Side)
           ========================================================================= */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Employees */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-[#131926] border border-[#1E293B] flex items-center justify-between shadow-sm">
-          <div>
+        <div className="relative overflow-hidden p-5 rounded-[14px] bg-[#111726]/85 backdrop-blur-md border border-white/[0.07] flex items-center justify-between shadow-md">
+          <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-blue-500/10 blur-2xl" />
+          <div className="relative z-10">
             <span className="text-xs font-medium text-slate-400 block">Total Employees</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl sm:text-3xl font-extrabold text-white">
@@ -1507,39 +1558,41 @@ export default function EmployeesModule({
             </div>
             <span className="text-xs text-slate-400 block mt-0.5">Registered</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-[#1E293B] border border-[#2A384C] text-slate-300 flex items-center justify-center shrink-0">
+          <div className="relative z-10 w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-300 flex items-center justify-center shrink-0">
             <Users className="w-5 h-5 text-slate-300" />
           </div>
         </div>
 
         {/* Card 2: Active On-Duty */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-[#131926] border border-[#1E293B] flex items-center justify-between shadow-sm">
-          <div>
+        <div className="relative overflow-hidden p-5 rounded-[14px] bg-[#111726]/85 backdrop-blur-md border border-white/[0.07] flex items-center justify-between shadow-md">
+          <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-emerald-500/15 blur-2xl" />
+          <div className="relative z-10">
             <span className="text-xs font-medium text-slate-400 block">Active On-Duty</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl sm:text-3xl font-extrabold text-emerald-400">
                 {summaryMetrics.activeOnDuty}
               </span>
             </div>
-            <div className="flex items-center gap-1 text-xs text-emerald-400 font-semibold mt-0.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold mt-0.5">
               <span>Floor Ready</span>
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+          <div className="relative z-10 w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
           </div>
         </div>
 
         {/* Card 3: Tables Covered */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-[#131926] border border-[#1E293B] flex items-center justify-between shadow-sm">
-          <div>
+        <div className="relative overflow-hidden p-5 rounded-[14px] bg-[#111726]/85 backdrop-blur-md border border-white/[0.07] flex items-center justify-between shadow-md">
+          <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-emerald-500/15 blur-2xl" />
+          <div className="relative z-10">
             <span className="text-xs font-medium text-slate-400 block">Tables Covered</span>
-            <div className="flex items-baseline gap-2 mt-1">
+            <div className="flex items-baseline mt-1">
               <span className="text-2xl sm:text-3xl font-extrabold text-white">
                 {summaryMetrics.tablesCovered}/{summaryMetrics.totalTables}
               </span>
-              <span className="text-sm font-bold text-emerald-400">
+              <span className="text-sm font-bold text-emerald-400 ml-1.5">
                 ({summaryMetrics.coveragePercentage}%)
               </span>
             </div>
@@ -1547,14 +1600,15 @@ export default function EmployeesModule({
               {summaryMetrics.tablesCovered} of {summaryMetrics.totalTables} Tables
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+          <div className="relative z-10 w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
             <Table className="w-5 h-5 text-emerald-400" />
           </div>
         </div>
 
         {/* Card 4: Avg Response */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-[#131926] border border-[#1E293B] flex items-center justify-between shadow-sm">
-          <div>
+        <div className="relative overflow-hidden p-5 rounded-[14px] bg-[#111726]/85 backdrop-blur-md border border-white/[0.07] flex items-center justify-between shadow-md">
+          <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-amber-500/15 blur-2xl" />
+          <div className="relative z-10">
             <span className="text-xs font-medium text-slate-400 block">Avg Response</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl sm:text-3xl font-extrabold text-[#F59E0B]">
@@ -1563,8 +1617,8 @@ export default function EmployeesModule({
             </div>
             <span className="text-xs text-slate-400 block mt-0.5">Telemetry</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-[#F59E0B] flex items-center justify-center shrink-0">
-            <Clock className="w-5 h-5 text-[#F59E0B]" />
+          <div className="relative z-10 w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-amber-400" />
           </div>
         </div>
       </section>
@@ -1572,29 +1626,31 @@ export default function EmployeesModule({
       {/* =========================================================================
           4. SECTION NAVIGATION/TABS
           ========================================================================= */}
-      <section className="bg-[#131926] rounded-2xl border border-[#1E293B] px-4 pt-3 pb-0 shadow-sm">
-        <div className="flex flex-wrap items-center gap-6 border-b border-[#1E293B] overflow-x-auto">
+      <section className="bg-[#111726]/85 backdrop-blur-md rounded-[14px] border border-white/[0.07] px-4 pt-3 pb-0 shadow-md">
+        <div className="flex flex-wrap items-center gap-6 border-b border-slate-800 px-2 overflow-x-auto">
           {/* Tab 1: Employee Directory & Roster */}
           <button
             type="button"
             onClick={() => setActiveTab('roster')}
             className={`pb-3 text-xs font-bold transition flex items-center gap-2 cursor-pointer relative shrink-0 ${
               activeTab === 'roster'
-                ? 'text-[#F59E0B]'
+                ? 'text-amber-400'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Users className="w-4 h-4" />
             <span>Employee Directory &amp; Roster</span>
-            <span className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
-              activeTab === 'roster'
-                ? 'bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40'
-                : 'bg-[#1E293B] text-slate-400'
-            }`}>
+            <span
+              className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
+                activeTab === 'roster'
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  : 'bg-slate-800/80 text-slate-400 border border-slate-700/50'
+              }`}
+            >
               {employees.length}
             </span>
             {activeTab === 'roster' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F59E0B] rounded-t-full shadow-sm" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-t-full shadow-sm" />
             )}
           </button>
 
@@ -1604,21 +1660,23 @@ export default function EmployeesModule({
             onClick={() => setActiveTab('tables')}
             className={`pb-3 text-xs font-bold transition flex items-center gap-2 cursor-pointer relative shrink-0 ${
               activeTab === 'tables'
-                ? 'text-[#F59E0B]'
+                ? 'text-amber-400'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Table className="w-4 h-4" />
             <span>Dining Room Table Coverage (Tables 1-12)</span>
-            <span className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
-              activeTab === 'tables'
-                ? 'bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40'
-                : 'bg-[#1E293B] text-slate-400'
-            }`}>
+            <span
+              className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
+                activeTab === 'tables'
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  : 'bg-slate-800/80 text-slate-400 border border-slate-700/50'
+              }`}
+            >
               {summaryMetrics.tablesCovered}/12
             </span>
             {activeTab === 'tables' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F59E0B] rounded-t-full shadow-sm" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-t-full shadow-sm" />
             )}
           </button>
 
@@ -1628,21 +1686,23 @@ export default function EmployeesModule({
             onClick={() => setActiveTab('dispatch')}
             className={`pb-3 text-xs font-bold transition flex items-center gap-2 cursor-pointer relative shrink-0 ${
               activeTab === 'dispatch'
-                ? 'text-[#F59E0B]'
+                ? 'text-amber-400'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <BellRing className="w-4 h-4" />
             <span>Live Call Routing &amp; Kitchen Dispatch</span>
-            <span className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
-              activeTab === 'dispatch'
-                ? 'bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40'
-                : 'bg-[#1E293B] text-slate-400'
-            }`}>
+            <span
+              className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
+                activeTab === 'dispatch'
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  : 'bg-slate-800/80 text-slate-400 border border-slate-700/50'
+              }`}
+            >
               {alerts.length}
             </span>
             {activeTab === 'dispatch' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F59E0B] rounded-t-full shadow-sm" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-t-full shadow-sm" />
             )}
           </button>
         </div>
@@ -1651,17 +1711,17 @@ export default function EmployeesModule({
       {/* =========================================================================
           5. FILTER & SEARCH BAR
           ========================================================================= */}
-      <section className="bg-[#131926] rounded-2xl border border-[#1E293B] p-3 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Left: Pill-shaped status filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto text-xs py-1">
+      <section className="bg-[#111726]/90 backdrop-blur-md rounded-[14px] border border-slate-800/80 p-3 shadow-md flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        {/* Left Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto text-xs py-1 scrollbar-none">
           {/* All */}
           <button
             type="button"
             onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1.5 rounded-full font-bold transition cursor-pointer shrink-0 ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer shrink-0 ${
               statusFilter === 'all'
-                ? 'bg-[#F59E0B] text-slate-950 shadow-sm'
-                : 'bg-[#1E293B]/70 hover:bg-[#1E293B] text-slate-300 border border-[#2A384C]'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-orange-500/20'
+                : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-white border border-slate-700/60 font-medium'
             }`}
           >
             All ({employees.length})
@@ -1671,10 +1731,10 @@ export default function EmployeesModule({
           <button
             type="button"
             onClick={() => setStatusFilter('Active')}
-            className={`px-3 py-1.5 rounded-full font-bold transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
               statusFilter === 'Active'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-[#1E293B]/70 hover:bg-[#1E293B] text-slate-300 hover:text-emerald-400 border border-[#2A384C]'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/60 shadow-md shadow-emerald-500/20 font-semibold'
+                : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-emerald-400 border border-slate-700/60'
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
@@ -1685,10 +1745,10 @@ export default function EmployeesModule({
           <button
             type="button"
             onClick={() => setStatusFilter('Busy')}
-            className={`px-3 py-1.5 rounded-full font-bold transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
               statusFilter === 'Busy'
-                ? 'bg-amber-600 text-white shadow-sm'
-                : 'bg-[#1E293B]/70 hover:bg-[#1E293B] text-slate-300 hover:text-amber-400 border border-[#2A384C]'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-md shadow-amber-500/20 font-semibold'
+                : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-amber-400 border border-slate-700/60'
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
@@ -1699,10 +1759,10 @@ export default function EmployeesModule({
           <button
             type="button"
             onClick={() => setStatusFilter('On Break')}
-            className={`px-3 py-1.5 rounded-full font-bold transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
               statusFilter === 'On Break'
-                ? 'bg-slate-700 text-white shadow-sm'
-                : 'bg-[#1E293B]/70 hover:bg-[#1E293B] text-slate-300 hover:text-slate-100 border border-[#2A384C]'
+                ? 'bg-slate-700/60 text-slate-200 border border-slate-500/60 shadow-md shadow-slate-500/20 font-semibold'
+                : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-slate-100 border border-slate-700/60'
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
@@ -1713,10 +1773,10 @@ export default function EmployeesModule({
           <button
             type="button"
             onClick={() => setStatusFilter('Absent')}
-            className={`px-3 py-1.5 rounded-full font-bold transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
               statusFilter === 'Absent'
-                ? 'bg-rose-900/80 text-rose-200 border border-rose-500/50 shadow-sm'
-                : 'bg-[#1E293B]/70 hover:bg-[#1E293B] text-slate-300 hover:text-rose-400 border border-[#2A384C]'
+                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/60 shadow-md shadow-rose-500/20 font-semibold'
+                : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-rose-400 border border-slate-700/60'
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
@@ -1725,20 +1785,20 @@ export default function EmployeesModule({
         </div>
 
         {/* Right: Search Input */}
-        <div className="relative md:w-80">
+        <div className="relative w-full md:w-72">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
-            placeholder="🔍 Search employee, role, table..."
+            placeholder="Search employee, role, table..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-[#0B0F19] border border-[#2A384C] text-xs text-white pl-9 pr-8 py-2 rounded-xl placeholder:text-slate-500 focus:outline-none focus:border-[#F59E0B] transition"
+            className="w-full bg-[#0B0F19] border border-slate-800 rounded-lg pl-9 pr-8 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500/60 transition"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition p-0.5 rounded cursor-pointer"
             >
               <X className="w-3 h-3" />
             </button>
@@ -1758,7 +1818,7 @@ export default function EmployeesModule({
               <p className="text-xs text-slate-400 mt-1">Try clearing your search query or switching filters</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {filteredEmployees.map(emp => {
                 const assignedCount = (emp.assignedTables || []).length;
 
@@ -1777,43 +1837,51 @@ export default function EmployeesModule({
                   t => tableCustody[t]?.originalOwnerId && tableCustody[t]?.originalOwnerId !== emp.id
                 );
 
+                const statusClasses = emp.status === 'Active'
+                  ? { border: 'border-emerald-500/30 hover:border-emerald-500/50', text: 'text-emerald-400', dot: 'bg-emerald-400' }
+                  : emp.status === 'Busy'
+                  ? { border: 'border-amber-500/30 hover:border-amber-500/50', text: 'text-amber-400', dot: 'bg-amber-400' }
+                  : emp.status === 'On Break'
+                  ? { border: 'border-slate-500/30 hover:border-slate-500/50', text: 'text-slate-300', dot: 'bg-slate-400' }
+                  : { border: 'border-rose-500/30 hover:border-rose-500/50', text: 'text-rose-400', dot: 'bg-rose-400' };
+
                 return (
                   <div
                     key={emp.id}
-                    className="bg-[#131926] rounded-2xl border border-[#1E293B] p-5 shadow-sm hover:border-[#2A384C] transition duration-150 flex flex-col justify-between space-y-4"
+                    className="bg-[#111726]/85 backdrop-blur-md border border-white/[0.07] rounded-[14px] p-5 shadow-lg hover:border-white/10 transition-colors flex flex-col justify-between space-y-4"
                   >
                     {/* Header: Avatar, Name, Role, Shift + Inline Right Actions */}
-                    <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#1E293B]">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         {renderAvatar(emp)}
                         <div>
-                          <h4 className="font-bold text-white text-base">
+                          <h4 className="text-base font-semibold text-white tracking-tight">
                             {emp.name}
                           </h4>
-                          <p className="text-xs text-slate-300 font-medium">
+                          <p className="text-xs text-slate-400 font-medium">
                             {emp.role}
                           </p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
+                          <p className={`text-xs font-medium mt-0.5 ${getShiftColor(emp)}`}>
                             {emp.shift}
                           </p>
                         </div>
                       </div>
 
-                      {/* Dropdown & Actions (inline right) */}
+                      {/* Right Controls (single-row flex items-center gap-1.5 shrink-0 flex-wrap justify-end) */}
                       <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                        {/* Status Dropdown with green dot */}
+                        {/* Compact "Active" dropdown pill */}
                         <div className="relative inline-flex items-center">
                           <select
                             value={emp.status}
                             onChange={e => handleChangeEmployeeStatus(emp.id, e.target.value)}
-                            className="appearance-none text-xs font-bold rounded-xl pl-6 pr-6 py-1.5 bg-[#0B0F19] text-emerald-400 border border-emerald-500/30 focus:outline-none cursor-pointer hover:border-emerald-500/50 transition"
+                            className={`appearance-none bg-[#0B0F19] border ${statusClasses.border} ${statusClasses.text} text-xs font-semibold pl-6 pr-6 py-1.5 rounded-lg cursor-pointer focus:outline-none transition`}
                           >
-                            <option value="Active" className="bg-[#131926] text-emerald-400">Active</option>
-                            <option value="Busy" className="bg-[#131926] text-amber-400">Busy</option>
-                            <option value="On Break" className="bg-[#131926] text-slate-400">On Break</option>
-                            <option value="Absent" className="bg-[#131926] text-rose-400">Absent</option>
+                            <option value="Active" className="bg-[#111726] text-emerald-400">Active</option>
+                            <option value="Busy" className="bg-[#111726] text-amber-400">Busy</option>
+                            <option value="On Break" className="bg-[#111726] text-slate-400">On Break</option>
+                            <option value="Absent" className="bg-[#111726] text-rose-400">Absent</option>
                           </select>
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 absolute left-2 pointer-events-none" />
+                          <span className={`w-1.5 h-1.5 rounded-full ${statusClasses.dot} absolute left-2.5 pointer-events-none`} />
                           <span className="text-[10px] text-slate-400 absolute right-2 pointer-events-none">▾</span>
                         </div>
 
@@ -1822,30 +1890,30 @@ export default function EmployeesModule({
                           <button
                             type="button"
                             onClick={() => handleRollbackEmployeeTables(emp.id)}
-                            className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 hover:border-emerald-400 text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs active:scale-95"
+                            className="border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1 cursor-pointer transition active:scale-95"
                             title={`Rollback / Reclaim ${delegatedAwayTables.length} tables (T${delegatedAwayTables.join(', T')}) currently covered by backup staff`}
                           >
                             <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
-                            <span>↺ Rollback ({delegatedAwayTables.length})</span>
+                            <span>Rollback ({delegatedAwayTables.length})</span>
                           </button>
                         )}
 
-                        {/* ⇄ Transfer orange outlined button */}
+                        {/* Transfer button */}
                         <button
                           type="button"
                           onClick={() => handleOpenTransferModal(emp)}
-                          className="px-2.5 py-1.5 rounded-xl bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40 hover:border-[#F59E0B]/70 text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs active:scale-95"
+                          className="border border-amber-500/40 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition active:scale-95"
                           title={`Transfer all ${assignedCount} tables to backup employee`}
                         >
-                          <ArrowRightLeft className="w-3.5 h-3.5 text-[#F59E0B]" />
-                          <span>⇄ Transfer</span>
+                          <ArrowRightLeft className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Transfer</span>
                         </button>
 
-                        {/* Tiny Action Icons: ⚡, ✏️, 🗑️ */}
+                        {/* 3 square 32x32px icon buttons with clean borders */}
                         <button
                           type="button"
                           onClick={() => handleNudgeEmployee(emp.id)}
-                          className="p-1.5 rounded-lg bg-[#0B0F19] hover:bg-[#F59E0B]/20 text-slate-300 hover:text-[#F59E0B] border border-[#1E293B] hover:border-[#F59E0B]/40 transition cursor-pointer"
+                          className="w-8 h-8 rounded-lg bg-[#0B0F19] hover:bg-amber-500/10 border border-slate-800 hover:border-amber-500/40 text-amber-400 flex items-center justify-center transition cursor-pointer"
                           title="Send instant floor nudge"
                         >
                           <Zap className="w-3.5 h-3.5 text-amber-400" />
@@ -1854,7 +1922,7 @@ export default function EmployeesModule({
                         <button
                           type="button"
                           onClick={() => handleOpenEditModal(emp)}
-                          className="p-1.5 rounded-lg bg-[#0B0F19] hover:bg-slate-800 text-slate-300 hover:text-white border border-[#1E293B] hover:border-slate-600 transition cursor-pointer"
+                          className="w-8 h-8 rounded-lg bg-[#0B0F19] hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 flex items-center justify-center transition cursor-pointer"
                           title="Edit Employee profile"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -1863,7 +1931,7 @@ export default function EmployeesModule({
                         <button
                           type="button"
                           onClick={() => handleDeleteEmployee(emp.id)}
-                          className="p-1.5 rounded-lg bg-[#0B0F19] hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 border border-[#1E293B] hover:border-rose-500/40 transition cursor-pointer"
+                          className="w-8 h-8 rounded-lg bg-[#0B0F19] hover:bg-rose-500/10 border border-slate-800 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 flex items-center justify-center transition cursor-pointer"
                           title="Remove Employee"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1871,30 +1939,30 @@ export default function EmployeesModule({
                       </div>
                     </div>
 
-                    {/* Assigned Tables Row & 12 Pill Grid */}
-                    <div className="space-y-2">
+                    {/* Assigned Tables Section */}
+                    <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                          <Table className="w-3.5 h-3.5 text-[#F59E0B]" />
+                          <Table className="w-3.5 h-3.5 text-amber-400" />
                           <span>Assigned Tables ({assignedCount})</span>
                           {borrowedTables.length > 0 && (
-                            <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.2 rounded-md">
+                            <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded-md">
                               {borrowedTables.length} covering
                             </span>
                           )}
                           {delegatedAwayTables.length > 0 && (
-                            <span className="text-[10px] text-emerald-300 font-bold bg-emerald-950/40 border border-emerald-500/30 px-1.5 py-0.2 rounded-md">
+                            <span className="text-[10px] text-emerald-300 font-bold bg-emerald-950/40 border border-emerald-500/30 px-1.5 py-0.5 rounded-md">
                               {delegatedAwayTables.length} delegated
                             </span>
                           )}
                         </span>
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[11px] text-slate-400 font-medium">
                           Click pill to toggle / reclaim
                         </span>
                       </div>
 
-                      {/* 12 Pill-shaped Table Grid: Numbers T1 to T12 */}
-                      <div className="flex flex-wrap items-center gap-1.5">
+                      {/* Table Pills (T1 to T12) */}
+                      <div className="flex flex-wrap items-center gap-2">
                         {allTableNumbers.map(tblNum => {
                           const isHeld = (emp.assignedTables || []).includes(tblNum);
                           const origOwnerId = tableCustody[tblNum]?.originalOwnerId;
@@ -1915,14 +1983,14 @@ export default function EmployeesModule({
                               onClick={() => {
                                 handleToggleTableAssignment(emp.id, tblNum);
                               }}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                              className={`font-bold text-xs px-2.5 py-1 rounded-lg flex items-center gap-1 transition cursor-pointer active:scale-95 ${
                                 isHeld && isOwnTable
-                                  ? 'bg-[#F59E0B] text-slate-950 shadow-sm border border-[#F59E0B]'
+                                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm shadow-orange-500/20 border border-orange-400/30'
                                   : isBorrowed
-                                  ? 'bg-amber-500/20 text-[#F59E0B] border border-amber-500/60 shadow-sm'
+                                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/60'
                                   : isDelegatedAway
-                                  ? 'bg-emerald-950/30 text-emerald-300 border-dashed border border-emerald-500/60 hover:bg-emerald-900/40'
-                                  : 'bg-[#0B0F19] text-slate-400 border border-[#1E293B] hover:border-slate-600 hover:text-slate-200'
+                                  ? 'bg-emerald-950/30 text-emerald-300 border border-dashed border-emerald-500/60 hover:bg-emerald-900/40'
+                                  : 'bg-[#1A2234] border border-slate-700/70 text-slate-400 hover:text-slate-200 hover:border-slate-600'
                               }`}
                               title={
                                 isHeld && isOwnTable
@@ -1934,18 +2002,14 @@ export default function EmployeesModule({
                                   : `Click to assign Table ${tblNum} to ${emp.name}.`
                               }
                             >
+                              {isHeld && isOwnTable && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                              {isBorrowed && <ArrowRightLeft className="w-3 h-3 text-amber-400" />}
+                              {isDelegatedAway && <RotateCcw className="w-3 h-3 text-emerald-400" />}
                               <span>T{tblNum}</span>
-                              {isHeld && isOwnTable && <Check className="w-3 h-3 text-slate-950" strokeWidth={3} />}
                               {isBorrowed && (
-                                <>
-                                  <span className="text-[10px] text-amber-300 font-black">⇄</span>
-                                  <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-amber-500/25 border border-amber-500/40 text-amber-300 whitespace-nowrap">
-                                    Covering for {originalOwnerEmp?.name?.split(' ')[0] || 'Staff'}
-                                  </span>
-                                </>
-                              )}
-                              {isDelegatedAway && (
-                                <span className="text-xs font-black text-emerald-400 leading-none">↩</span>
+                                <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500/25 border border-amber-500/40 text-amber-300 whitespace-nowrap">
+                                  Covering for {originalOwnerEmp?.name?.split(' ')[0] || 'Staff'}
+                                </span>
                               )}
                             </button>
                           );
@@ -1953,20 +2017,12 @@ export default function EmployeesModule({
                       </div>
                     </div>
 
-                    {/* Bottom Row: Flat grey chips labeled "Pickups -", "Requests -", "Avg Resp -", "On-Time -" */}
-                    <div className="pt-3 border-t border-[#1E293B] grid grid-cols-4 gap-2 text-center text-xs">
-                      <div className="py-2 px-1 rounded-xl bg-[#0B0F19] border border-[#1E293B] text-slate-400 text-[11px] font-medium truncate">
-                        Pickups -
-                      </div>
-                      <div className="py-2 px-1 rounded-xl bg-[#0B0F19] border border-[#1E293B] text-slate-400 text-[11px] font-medium truncate">
-                        Requests -
-                      </div>
-                      <div className="py-2 px-1 rounded-xl bg-[#0B0F19] border border-[#1E293B] text-slate-400 text-[11px] font-medium truncate">
-                        Avg Resp -
-                      </div>
-                      <div className="py-2 px-1 rounded-xl bg-[#0B0F19] border border-[#1E293B] text-slate-400 text-[11px] font-medium truncate">
-                        On-Time -
-                      </div>
+                    {/* Card Footer Telemetry Bar (Fix clipped ovals) */}
+                    <div className="grid grid-cols-4 divide-x divide-slate-800/80 border-t border-slate-800/80 bg-[#0B0F19]/60 -mx-5 -mb-5 rounded-b-[14px] py-2.5 text-center text-xs text-slate-400 font-medium">
+                      <div>Pickups &mdash;</div>
+                      <div>Requests &mdash;</div>
+                      <div>Avg Resp &mdash;</div>
+                      <div>On-Time &mdash;</div>
                     </div>
                   </div>
                 );
@@ -1980,9 +2036,9 @@ export default function EmployeesModule({
           TAB B: DINING ROOM TABLE COVERAGE (TABLES 1-12)
           ========================================================================= */}
       {activeTab === 'tables' && (
-        <section className="bg-[#131926] rounded-2xl border border-[#1E293B] p-5 shadow-sm space-y-4 animate-fadeIn">
+        <section className="bg-[#111726]/95 backdrop-blur-md rounded-2xl border border-white/[0.07] p-5 sm:p-6 shadow-sm space-y-5 animate-fadeIn">
           {/* Subheader */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#1E293B]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.07]">
             <div className="flex items-center gap-2.5">
               <Table className="w-4 h-4 text-emerald-400" />
               <div>
@@ -1995,11 +2051,11 @@ export default function EmployeesModule({
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={handleRollbackAllToShiftRoster}
-                className="px-3.5 py-2 rounded-xl bg-[#0B0F19] hover:bg-[#1E293B] text-slate-200 border border-[#2A384C] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
+                className="h-[38px] px-3.5 rounded-xl border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
                 title="Rollback all table delegations to original shift roster owners"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
@@ -2009,10 +2065,10 @@ export default function EmployeesModule({
               <button
                 type="button"
                 onClick={requestAutoBalanceTables}
-                className="px-3.5 py-2 rounded-xl bg-[#0B0F19] hover:bg-[#1E293B] text-slate-200 border border-[#2A384C] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
+                className="h-[38px] px-3.5 rounded-xl border border-slate-700 text-slate-200 hover:border-amber-500/40 hover:text-white bg-[#0B0F19] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
                 title="Auto-balance tables across staff (Requires PIN 808080)"
               >
-                <Sparkles className="w-3.5 h-3.5 text-[#F59E0B]" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>Auto-Balance Tables</span>
               </button>
 
@@ -2021,7 +2077,7 @@ export default function EmployeesModule({
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" /> Assigned
                 </span>
                 <span className="flex items-center gap-1.5 text-slate-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#0B0F19] border border-[#1E293B]" /> Unassigned
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#0B0F19] border border-white/[0.07]" /> Unassigned
                 </span>
               </div>
             </div>
@@ -2041,8 +2097,8 @@ export default function EmployeesModule({
                   key={tableNum}
                   className={`p-4 rounded-xl border transition-all duration-150 flex flex-col justify-between space-y-3 ${
                     isAssigned
-                      ? 'bg-[#0B0F19] border-[#1E293B] hover:border-[#2A384C]'
-                      : 'bg-[#0B0F19]/50 border-dashed border-[#1E293B] hover:border-slate-700'
+                      ? 'bg-[#0B0F19] border-white/[0.07] hover:border-white/[0.15]'
+                      : 'bg-[#0B0F19]/40 border-dashed border-white/[0.07] hover:border-slate-700'
                   }`}
                 >
                   {/* Top: Table Number & Status Badge */}
@@ -2096,7 +2152,7 @@ export default function EmployeesModule({
                   </div>
 
                   {/* Bottom: Inline Reassignment Dropdown with PIN Lock */}
-                  <div className="pt-2 border-t border-[#1E293B]">
+                  <div className="pt-2 border-t border-white/[0.07]">
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-[10px] text-slate-400 font-medium block">
                         Assigned Employee:
@@ -2117,13 +2173,13 @@ export default function EmployeesModule({
                           requestDirectTableReassign(tableNum, newEmpId);
                         }
                       }}
-                      className="w-full bg-[#131926] border border-[#2A384C] text-xs text-slate-200 rounded-xl py-1.5 px-2.5 focus:outline-none focus:border-[#F59E0B] cursor-pointer"
+                      className="w-full bg-[#131926] border border-white/[0.07] text-xs text-slate-200 rounded-xl py-1.5 px-2.5 focus:outline-none focus:border-amber-500 cursor-pointer"
                     >
-                      <option value="" disabled className="bg-[#131926] text-slate-500">
+                      <option value="" disabled className="bg-[#111726] text-slate-500">
                         Assign Employee...
                       </option>
                       {employees.map(emp => (
-                        <option key={emp.id} value={emp.id} className="bg-[#131926] text-white">
+                        <option key={emp.id} value={emp.id} className="bg-[#111726] text-white">
                           {emp.name} ({emp.status})
                         </option>
                       ))}
@@ -2140,9 +2196,9 @@ export default function EmployeesModule({
           TAB C: LIVE CALL ROUTING & KITCHEN DISPATCH
           ========================================================================= */}
       {activeTab === 'dispatch' && (
-        <section className="bg-[#131926] rounded-2xl border border-[#1E293B] p-5 shadow-sm space-y-4 animate-fadeIn">
+        <section className="bg-[#111726]/95 backdrop-blur-md rounded-2xl border border-white/[0.07] p-5 sm:p-6 shadow-sm space-y-5 animate-fadeIn">
           {/* Dispatch Subheader */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#1E293B]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.07]">
             <div className="flex items-center gap-2.5">
               <BellRing className="w-4 h-4 text-amber-400" />
               <div>
@@ -2155,14 +2211,14 @@ export default function EmployeesModule({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {/* Event Filter Pills */}
-              <div className="flex items-center gap-1 bg-[#0B0F19] p-1 rounded-xl border border-[#1E293B] text-xs">
+              <div className="flex items-center gap-1 bg-[#0B0F19] p-1 rounded-xl border border-white/[0.07] text-xs">
                 <button
                   type="button"
                   onClick={() => setAlertFilter('all')}
                   className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
-                    alertFilter === 'all' ? 'bg-[#F59E0B] text-slate-950' : 'text-slate-400 hover:text-white'
+                    alertFilter === 'all' ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   All ({alerts.length})
@@ -2171,7 +2227,7 @@ export default function EmployeesModule({
                   type="button"
                   onClick={() => setAlertFilter('active')}
                   className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
-                    alertFilter === 'active' ? 'bg-[#F59E0B] text-slate-950' : 'text-slate-400 hover:text-white'
+                    alertFilter === 'active' ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   Active ({alerts.filter(a => a.status !== 'Completed' && a.status !== 'Acknowledged').length})
@@ -2180,7 +2236,7 @@ export default function EmployeesModule({
                   type="button"
                   onClick={() => setAlertFilter('resolved')}
                   className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
-                    alertFilter === 'resolved' ? 'bg-[#F59E0B] text-slate-950' : 'text-slate-400 hover:text-white'
+                    alertFilter === 'resolved' ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   Resolved ({alerts.filter(a => a.status === 'Completed' || a.status === 'Acknowledged').length})
@@ -2190,9 +2246,9 @@ export default function EmployeesModule({
               <button
                 type="button"
                 onClick={handleSimulateNewAlert}
-                className="px-3 py-1.5 rounded-xl bg-[#0B0F19] hover:bg-[#1E293B] text-slate-200 border border-[#2A384C] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+                className="h-[38px] px-3.5 rounded-xl bg-[#0B0F19] hover:bg-[#1E293B] text-slate-200 border border-white/[0.07] hover:border-amber-500/40 text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
               >
-                <Zap className="w-3.5 h-3.5 text-[#F59E0B]" />
+                <Zap className="w-3.5 h-3.5 text-amber-400" />
                 <span>Simulate Call</span>
               </button>
             </div>
@@ -2217,16 +2273,16 @@ export default function EmployeesModule({
                     key={alert.id}
                     className={`p-4 rounded-xl border transition-all duration-150 bg-[#0B0F19] space-y-3 ${
                       isResolved
-                        ? 'border-[#1E293B] opacity-75'
+                        ? 'border-white/[0.07] opacity-75'
                         : alert.urgency === 'high'
                         ? 'border-rose-500/40'
                         : isKitchen
                         ? 'border-amber-500/40'
-                        : 'border-[#1E293B]'
+                        : 'border-white/[0.07]'
                     }`}
                   >
                     {/* Event Header */}
-                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#1E293B]">
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/[0.07]">
                       <div className="flex items-center gap-2">
                         <span
                           className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
@@ -2251,7 +2307,7 @@ export default function EmployeesModule({
 
                     {/* Routing Banner & Event Description */}
                     <div className="space-y-2">
-                      <div className="p-2.5 rounded-lg bg-[#131926] border border-[#1E293B] text-xs font-semibold text-slate-200 flex items-center gap-1.5 flex-wrap">
+                      <div className="p-2.5 rounded-lg bg-[#131926] border border-white/[0.07] text-xs font-semibold text-slate-200 flex items-center gap-1.5 flex-wrap">
                         <span className="text-amber-300">
                           Table {alert.tableNumber} {isKitchen ? 'Food Ready in Kitchen' : 'called for assistance'}
                         </span>
@@ -2290,12 +2346,12 @@ export default function EmployeesModule({
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="pt-2 border-t border-[#1E293B] flex flex-wrap items-center justify-between gap-2">
+                    <div className="pt-2 border-t border-white/[0.07] flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => handleNudgeEmployee(alert.assignedEmployeeId, alert.id)}
-                          className="px-2.5 py-1.5 rounded-lg bg-[#131926] hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition active:scale-95 cursor-pointer border border-amber-500/40 flex items-center gap-1"
+                          className="h-[34px] px-3 rounded-lg bg-[#131926] hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition active:scale-95 cursor-pointer border border-amber-500/40 flex items-center gap-1.5 shadow-sm"
                           title="Send instant priority nudge to Employee"
                         >
                           <Zap className="w-3 h-3 text-amber-400" />
@@ -2307,7 +2363,7 @@ export default function EmployeesModule({
                         <button
                           type="button"
                           onClick={() => setReassignAlertTarget(alert)}
-                          className="px-2.5 py-1.5 rounded-lg bg-[#131926] hover:bg-slate-800 text-slate-200 text-xs font-bold transition active:scale-95 cursor-pointer border border-[#2A384C] flex items-center gap-1"
+                          className="h-[34px] px-3 rounded-lg bg-[#131926] hover:bg-[#1E293B] text-slate-200 text-xs font-bold transition active:scale-95 cursor-pointer border border-white/[0.07] hover:border-white/[0.15] flex items-center gap-1.5 shadow-sm"
                           title="Reassign to another Employee"
                         >
                           <RotateCcw className="w-3 h-3 text-slate-400" />
@@ -2319,7 +2375,7 @@ export default function EmployeesModule({
                         <button
                           type="button"
                           onClick={() => handleAcknowledgeAlert(alert.id)}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-1 shrink-0"
+                          className="h-[34px] px-3.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-1.5 shrink-0 shadow-sm shadow-emerald-600/20"
                           title="Acknowledge as Admin"
                         >
                           <CheckCheck className="w-3.5 h-3.5" />
@@ -2339,11 +2395,11 @@ export default function EmployeesModule({
           7. FLOATING ACTION: Outline "🧭 Switch Role ⌃" Button
           ========================================================================= */}
       {!hasGlobalSwitcher && (
-        <div className="fixed bottom-6 right-6 z-40">
+        <div className="fixed bottom-5 right-5 z-50">
           <button
             type="button"
             onClick={handleToggleRoleDock}
-            className="px-3.5 py-2 rounded-full bg-[#131926]/95 hover:bg-[#1E293B] text-slate-200 border border-[#2A384C] hover:border-[#F59E0B]/60 shadow-2xl backdrop-blur-md text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center gap-2"
+            className="bg-[#111726]/95 backdrop-blur-md border border-amber-500/30 shadow-2xl rounded-full px-4 py-2 text-xs font-semibold text-slate-200 hover:text-white hover:border-amber-500/60 flex items-center gap-2 cursor-pointer transition active:scale-95 shadow-amber-500/10"
             title="Quick switch between Customer, Employee, Waiter, and Admin views"
           >
             <Compass className="w-4 h-4 text-[#F59E0B]" />
@@ -2358,12 +2414,12 @@ export default function EmployeesModule({
           ========================================================================= */}
       {isAddEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#131926] border border-[#1E293B] rounded-3xl w-full max-w-lg shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto text-slate-100">
+          <div className="bg-[#111726]/95 backdrop-blur-md border border-white/[0.07] rounded-2xl w-full max-w-lg shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto text-slate-100">
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-[#1E293B]">
+            <div className="flex items-center justify-between pb-4 border-b border-white/[0.07]">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#0B0F19] border border-[#1E293B] flex items-center justify-center text-[#F59E0B]">
-                  <UserPlus className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-[#F59E0B]">
+                  <UserPlus className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-bold text-white">
@@ -2377,9 +2433,9 @@ export default function EmployeesModule({
               <button
                 type="button"
                 onClick={() => setIsAddEditModalOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white cursor-pointer transition"
+                className="w-8 h-8 rounded-xl bg-[#131926] hover:bg-[#1E293B] text-slate-400 hover:text-white border border-white/[0.07] flex items-center justify-center transition cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -2395,7 +2451,7 @@ export default function EmployeesModule({
                   placeholder="e.g. Farhan Tariq"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-[#0B0F19] border border-[#2A384C] text-white text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-[#F59E0B] transition"
+                  className="w-full bg-[#0B0F19] border border-white/[0.07] text-white text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-amber-500 transition"
                 />
               </div>
 
@@ -2407,11 +2463,11 @@ export default function EmployeesModule({
                   <select
                     value={formData.role}
                     onChange={e => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full bg-[#0B0F19] border border-[#2A384C] text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#F59E0B] cursor-pointer"
+                    className="w-full bg-[#0B0F19] border border-white/[0.07] text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-500 cursor-pointer"
                   >
-                    <option value="Floor Specialist" className="bg-[#131926]">Floor Specialist</option>
-                    <option value="Senior Host" className="bg-[#131926]">Senior Host</option>
-                    <option value="Operations Lead" className="bg-[#131926]">Operations Lead</option>
+                    <option value="Floor Specialist" className="bg-[#111726]">Floor Specialist</option>
+                    <option value="Senior Host" className="bg-[#111726]">Senior Host</option>
+                    <option value="Operations Lead" className="bg-[#111726]">Operations Lead</option>
                   </select>
                 </div>
 
@@ -2422,11 +2478,11 @@ export default function EmployeesModule({
                   <select
                     value={formData.shift}
                     onChange={e => setFormData({ ...formData, shift: e.target.value })}
-                    className="w-full bg-[#0B0F19] border border-[#2A384C] text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#F59E0B] cursor-pointer"
+                    className="w-full bg-[#0B0F19] border border-white/[0.07] text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-500 cursor-pointer"
                   >
-                    <option value="Morning Shift (08:00 - 16:00)" className="bg-[#131926]">Morning Shift (08:00 - 16:00)</option>
-                    <option value="Mid Shift (12:00 - 20:00)" className="bg-[#131926]">Mid Shift (12:00 - 20:00)</option>
-                    <option value="Evening Shift (16:00 - 00:00)" className="bg-[#131926]">Evening Shift (16:00 - 00:00)</option>
+                    <option value="Morning Shift (08:00 - 16:00)" className="bg-[#111726]">Morning Shift (08:00 - 16:00)</option>
+                    <option value="Mid Shift (12:00 - 20:00)" className="bg-[#111726]">Mid Shift (12:00 - 20:00)</option>
+                    <option value="Evening Shift (16:00 - 00:00)" className="bg-[#111726]">Evening Shift (16:00 - 00:00)</option>
                   </select>
                 </div>
               </div>
@@ -2448,7 +2504,7 @@ export default function EmployeesModule({
                             : statusOption === 'Busy'
                             ? 'bg-amber-600 text-white border-amber-500 shadow-sm'
                             : 'bg-slate-700 text-white border-slate-600 shadow-sm'
-                          : 'bg-[#0B0F19] text-slate-400 border-[#1E293B] hover:text-white'
+                          : 'bg-[#0B0F19] text-slate-400 border-white/[0.07] hover:text-white'
                       }`}
                     >
                       {statusOption}
@@ -2467,7 +2523,7 @@ export default function EmployeesModule({
                     placeholder="+880 1700-000000"
                     value={formData.phone}
                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full bg-[#0B0F19] border border-[#2A384C] text-white text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-[#F59E0B] transition"
+                    className="w-full bg-[#0B0F19] border border-white/[0.07] text-white text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-amber-500 transition"
                   />
                 </div>
                 <div>
@@ -2479,7 +2535,7 @@ export default function EmployeesModule({
                     placeholder="staff@smartdine.internal"
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-[#0B0F19] border border-[#2A384C] text-white text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-[#F59E0B] transition"
+                    className="w-full bg-[#0B0F19] border border-white/[0.07] text-white text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-amber-500 transition"
                   />
                 </div>
               </div>
@@ -2488,7 +2544,7 @@ export default function EmployeesModule({
                 <label className="block text-xs font-bold text-slate-300 mb-1.5">
                   Assigned Tables
                 </label>
-                <div className="flex flex-wrap items-center gap-1.5 p-3 rounded-xl bg-[#0B0F19] border border-[#1E293B]">
+                <div className="flex flex-wrap items-center gap-1.5 p-3 rounded-xl bg-[#0B0F19] border border-white/[0.07]">
                   {allTableNumbers.map(tblNum => {
                     const isSelected = formData.assignedTables.includes(tblNum);
                     return (
@@ -2503,8 +2559,8 @@ export default function EmployeesModule({
                         }}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
                           isSelected
-                            ? 'bg-[#F59E0B] text-slate-950 shadow-sm'
-                            : 'bg-[#131926] text-slate-400 border border-[#2A384C] hover:text-white'
+                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-sm'
+                            : 'bg-[#131926] text-slate-400 border border-white/[0.07] hover:text-white'
                         }`}
                       >
                         <span>T{tblNum}</span>
@@ -2515,17 +2571,17 @@ export default function EmployeesModule({
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#1E293B] flex items-center justify-end gap-2.5">
+              <div className="pt-4 border-t border-white/[0.07] flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsAddEditModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-[#0B0F19] hover:bg-slate-800 text-slate-300 border border-[#2A384C] text-xs font-bold transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#131926] hover:bg-[#1E293B] text-slate-300 hover:text-white border border-white/[0.07] text-xs font-bold transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-slate-950 text-xs font-black shadow-sm transition active:scale-95 cursor-pointer flex items-center gap-2"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95 cursor-pointer flex items-center gap-2"
                 >
                   <Check className="w-4 h-4 text-slate-950" />
                   <span>{editingEmployee ? 'Save Changes' : 'Register Employee'}</span>
@@ -2541,8 +2597,8 @@ export default function EmployeesModule({
           ========================================================================= */}
       {reassignAlertTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#131926] border border-[#1E293B] rounded-3xl w-full max-w-md shadow-2xl p-6 relative text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-[#1E293B]">
+          <div className="bg-[#111726]/95 backdrop-blur-md border border-white/[0.07] rounded-2xl w-full max-w-md shadow-2xl p-6 relative text-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
               <div className="flex items-center gap-2">
                 <RotateCcw className="w-4 h-4 text-[#F59E0B]" />
                 <h3 className="text-base font-bold text-white">
@@ -2552,7 +2608,7 @@ export default function EmployeesModule({
               <button
                 type="button"
                 onClick={() => setReassignAlertTarget(null)}
-                className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white"
+                className="w-8 h-8 rounded-xl bg-[#131926] hover:bg-[#1E293B] text-slate-400 hover:text-white border border-white/[0.07] flex items-center justify-center transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2574,8 +2630,8 @@ export default function EmployeesModule({
                   onClick={() => handleReassignAlert(reassignAlertTarget.id, emp.id)}
                   className={`w-full p-3 rounded-xl border flex items-center justify-between text-left transition cursor-pointer ${
                     reassignAlertTarget.assignedEmployeeId === emp.id
-                      ? 'bg-[#0B0F19] border-[#F59E0B]/50 text-white'
-                      : 'bg-[#0B0F19] border-[#1E293B] hover:border-[#F59E0B]/50 text-slate-200'
+                      ? 'bg-[#0B0F19] border-amber-500/50 text-white'
+                      : 'bg-[#0B0F19] border-white/[0.07] hover:border-amber-500/40 text-slate-200'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -2605,7 +2661,7 @@ export default function EmployeesModule({
               <button
                 type="button"
                 onClick={() => setReassignAlertTarget(null)}
-                className="px-4 py-2 rounded-xl bg-[#0B0F19] hover:bg-slate-800 text-slate-300 border border-[#2A384C] text-xs font-bold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#131926] hover:bg-[#1E293B] text-slate-300 hover:text-white border border-white/[0.07] text-xs font-bold cursor-pointer transition"
               >
                 Cancel
               </button>
@@ -2619,10 +2675,10 @@ export default function EmployeesModule({
           ========================================================================= */}
       {transferModalData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#131926] border border-[#1E293B] rounded-3xl w-full max-w-md shadow-2xl p-6 relative text-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#1E293B]">
+          <div className="bg-[#111726]/95 backdrop-blur-md border border-white/[0.07] rounded-2xl w-full max-w-md shadow-2xl p-6 relative text-slate-100 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#F59E0B]/15 border border-[#F59E0B]/30 flex items-center justify-center text-[#F59E0B]">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-[#F59E0B]">
                   <ArrowRightLeft className="w-4 h-4" />
                 </div>
                 <div>
@@ -2635,7 +2691,7 @@ export default function EmployeesModule({
               <button
                 type="button"
                 onClick={() => setTransferModalData(null)}
-                className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white cursor-pointer"
+                className="w-8 h-8 rounded-xl bg-[#131926] hover:bg-[#1E293B] text-slate-400 hover:text-white border border-white/[0.07] flex items-center justify-center transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2669,7 +2725,7 @@ export default function EmployeesModule({
                 </span>
                 <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                   {(transferModalData.sourceEmployee.assignedTables || []).map(t => (
-                    <span key={t} className="px-2.5 py-1 rounded-lg bg-[#F59E0B]/15 border border-[#F59E0B]/30 text-[#F59E0B] font-bold">
+                    <span key={t} className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[#F59E0B] font-bold">
                       Table {t}
                     </span>
                   ))}
@@ -2681,17 +2737,18 @@ export default function EmployeesModule({
                   Select Active Backup Employee:
                 </label>
                 {activeBackupEmployees.length === 0 ? (
-                  <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs">
-                    ⚠️ No active backup employees available on the floor.
+                  <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <span>No active backup employees available on the floor.</span>
                   </div>
                 ) : (
                   <select
                     value={selectedBackupEmpId}
                     onChange={e => setSelectedBackupEmpId(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-[#2A384C] text-xs text-white rounded-xl py-2 px-3 focus:outline-none focus:border-[#F59E0B] cursor-pointer"
+                    className="w-full bg-[#0B0F19] border border-white/[0.07] text-xs text-white rounded-xl py-2 px-3 focus:outline-none focus:border-amber-500 cursor-pointer"
                   >
                     {activeBackupEmployees.map(emp => (
-                      <option key={emp.id} value={emp.id} className="bg-[#131926] text-white">
+                      <option key={emp.id} value={emp.id} className="bg-[#111726] text-white">
                         {emp.name} ({emp.status}) — currently has {emp.assignedTables?.length || 0} tables
                       </option>
                     ))}
@@ -2704,17 +2761,17 @@ export default function EmployeesModule({
                   type="checkbox"
                   checked={rerouteActiveAlerts}
                   onChange={e => setRerouteActiveAlerts(e.target.checked)}
-                  className="rounded border-[#2A384C] text-[#F59E0B] focus:ring-0 cursor-pointer"
+                  className="rounded border-white/[0.07] text-[#F59E0B] focus:ring-0 cursor-pointer bg-[#0B0F19]"
                 />
                 <span>Also reroute pending call &amp; kitchen alerts to backup employee</span>
               </label>
             </div>
 
-            <div className="pt-3 border-t border-[#1E293B] flex items-center justify-end gap-2">
+            <div className="pt-3 border-t border-white/[0.07] flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setTransferModalData(null)}
-                className="px-4 py-2 rounded-xl bg-[#0B0F19] hover:bg-slate-800 text-slate-300 border border-[#2A384C] text-xs font-bold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#131926] hover:bg-[#1E293B] text-slate-300 hover:text-white border border-white/[0.07] text-xs font-bold cursor-pointer transition"
               >
                 Cancel
               </button>
@@ -2722,7 +2779,7 @@ export default function EmployeesModule({
                 type="button"
                 disabled={!selectedBackupEmpId || activeBackupEmployees.length === 0}
                 onClick={handleConfirmTransfer}
-                className="px-4 py-2 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] disabled:opacity-50 text-slate-950 text-xs font-black transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-50 text-slate-950 text-xs font-black transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20 cursor-pointer"
               >
                 <Check className="w-3.5 h-3.5 text-slate-950" />
                 <span>Confirm Transfer</span>

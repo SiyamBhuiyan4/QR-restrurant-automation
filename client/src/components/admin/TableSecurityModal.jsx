@@ -113,20 +113,20 @@ export default function TableSecurityModal({
       aria-modal="true"
       aria-labelledby="security-modal-title"
     >
-      <div className="bg-[#0f172a] border border-[#334155] w-full max-w-md rounded-3xl p-6 shadow-2xl shadow-black relative text-[#f8fafc] space-y-5 animate-scaleUp">
+      <div className="bg-[#111726]/95 backdrop-blur-md border border-white/[0.07] w-full max-w-md rounded-2xl p-6 shadow-2xl shadow-black relative text-[#f8fafc] space-y-5 animate-scaleUp">
         
         {/* Top Header Bar */}
-        <div className="flex items-start justify-between gap-3 border-b border-[#334155] pb-4">
+        <div className="flex items-start justify-between gap-3 border-b border-white/[0.07] pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0 shadow-inner">
+            <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0 shadow-inner">
               <Lock className="w-5 h-5 text-amber-400" />
             </div>
             <div>
               <h2
                 id="security-modal-title"
-                className="text-lg font-black tracking-tight text-[#f8fafc] flex items-center gap-2"
+                className="text-lg font-black tracking-tight text-white flex items-center gap-2"
               >
-                🔒 Admin Authorization Required
+                Admin Authorization Required
               </h2>
               {actionTitle && (
                 <p className="text-xs font-semibold text-amber-400/90 tracking-wide mt-0.5">
@@ -139,7 +139,7 @@ export default function TableSecurityModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-zinc-400 hover:text-[#f8fafc] border border-[#334155] flex items-center justify-center transition cursor-pointer shrink-0"
+            className="w-8 h-8 rounded-xl bg-[#131926] hover:bg-[#1E293B] text-slate-400 hover:text-white border border-white/[0.07] flex items-center justify-center transition cursor-pointer shrink-0"
             aria-label="Close authorization modal"
           >
             <X className="w-4 h-4" />
@@ -147,15 +147,15 @@ export default function TableSecurityModal({
         </div>
 
         {/* Change Description Card */}
-        <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-4 space-y-2">
-          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+        <div className="bg-[#0B0F19] border border-white/[0.07] rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
             <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
             <span>Pending Operation Details</span>
           </div>
-          <p className="text-sm font-medium text-[#f8fafc] leading-relaxed break-words">
+          <p className="text-sm font-medium text-slate-200 leading-relaxed break-words">
             {actionDescription}
           </p>
-          <div className="text-[11px] text-zinc-400 flex items-center gap-1.5 pt-1">
+          <div className="text-[11px] text-slate-400 flex items-center gap-1.5 pt-1">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
             <span>{actionNotice || 'Critical change: table inventory & live routing will update immediately.'}</span>
           </div>
@@ -166,7 +166,7 @@ export default function TableSecurityModal({
           <div>
             <label
               htmlFor="admin-security-pin"
-              className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2"
+              className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2"
             >
               <span className="flex items-center gap-1.5">
                 <KeyRound className="w-3.5 h-3.5 text-emerald-400" />
@@ -186,18 +186,18 @@ export default function TableSecurityModal({
                 }}
                 placeholder="Enter Admin PIN / Password"
                 autoComplete="off"
-                className={`w-full bg-[#1e293b] border ${
+                className={`w-full bg-[#0B0F19] border ${
                   errorMessage
                     ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20'
-                    : 'border-[#334155] focus:border-[#FF5A26] focus:ring-[#FF5A26]/20'
-                } rounded-xl py-3 pl-4 pr-12 text-sm text-[#f8fafc] placeholder-zinc-500 outline-none focus:ring-2 transition font-mono`}
+                    : 'border-white/[0.07] focus:border-amber-500 focus:ring-amber-500/20'
+                } rounded-xl py-3 pl-4 pr-12 text-sm text-white placeholder-slate-500 outline-none focus:ring-2 transition font-mono`}
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition p-1"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition p-1"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
@@ -231,7 +231,7 @@ export default function TableSecurityModal({
               type="button"
               onClick={onClose}
               disabled={isSuccess}
-              className="px-4 py-2.5 rounded-xl border border-[#334155] bg-[#1e293b] hover:bg-[#334155] text-zinc-300 hover:text-white text-xs font-bold transition cursor-pointer disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl border border-white/[0.07] bg-[#131926] hover:bg-[#1E293B] text-slate-300 hover:text-white text-xs font-bold transition cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
@@ -239,11 +239,11 @@ export default function TableSecurityModal({
             <button
               type="submit"
               disabled={isSuccess}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#ff7a45] hover:from-[#ff6b3d] hover:to-[#ff8c5a] text-white text-xs font-bold shadow-lg shadow-[#FF5A26]/25 transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
             >
               {isSuccess ? (
                 <>
-                  <ShieldCheck className="w-4 h-4 text-white" />
+                  <ShieldCheck className="w-4 h-4 text-slate-950" />
                   <span>Authorized</span>
                 </>
               ) : (
