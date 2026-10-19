@@ -695,7 +695,7 @@ export default function KitchenDisplay({
                   <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">
                     {pendingOrders.length} New
                   </span>
-                  <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300">
+                  <span className="px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300">
                     {preparingOrders.length} Cooking
                   </span>
                   <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
@@ -899,15 +899,15 @@ export default function KitchenDisplay({
             </div>
 
             {/* COLUMN 2: IN KITCHEN (PREPARING) */}
-            <div className={`flex flex-col bg-slate-950/60 rounded-2xl border border-sky-500/30 overflow-hidden shadow-lg ${isEmbedded ? 'min-h-[420px]' : 'min-h-[500px]'}`}>
-              <div className="p-3 bg-sky-500/15 border-b border-sky-500/30 flex items-center justify-between">
+            <div className={`flex flex-col bg-slate-950/60 rounded-2xl border border-orange-500/30 overflow-hidden shadow-lg ${isEmbedded ? 'min-h-[420px]' : 'min-h-[500px]'}`}>
+              <div className="p-3 bg-orange-500/15 border-b border-orange-500/30 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-sky-400 animate-bounce" />
-                  <h2 className="font-black text-sm sm:text-base tracking-wide uppercase text-sky-300">
+                  <Flame className="w-4 h-4 text-orange-400 animate-bounce" />
+                  <h2 className="font-black text-sm sm:text-base tracking-wide uppercase text-orange-300">
                     In Kitchen
                   </h2>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-sky-500 text-slate-950 font-black text-xs font-mono">
+                <span className="px-2.5 py-0.5 rounded-full bg-orange-500 text-slate-950 font-black text-xs font-mono">
                   {preparingOrders.length}
                 </span>
               </div>
@@ -1037,12 +1037,12 @@ export default function KitchenDisplay({
                 onClick={() => setActiveTab('preparing')}
                 className={`px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer ${
                   activeTab === 'preparing'
-                    ? 'bg-sky-500 text-slate-950 shadow-md font-black'
+                    ? 'bg-orange-500 text-slate-950 shadow-md font-black'
                     : 'bg-slate-900 text-slate-400 hover:text-white'
                 }`}
               >
                 <span>In Kitchen</span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-sky-500/20 text-sky-300">
+                <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-orange-500/20 text-orange-300">
                   {preparingOrders.length}
                 </span>
               </button>

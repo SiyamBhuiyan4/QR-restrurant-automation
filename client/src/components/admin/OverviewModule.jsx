@@ -707,8 +707,8 @@ export default function OverviewModule({
       case 'preparing':
         return {
           label: 'Preparing',
-          pillClass: 'bg-indigo-950/70 text-indigo-300 border-indigo-800',
-          dotClass: 'bg-indigo-500 animate-pulse'
+          pillClass: 'bg-emerald-950/70 text-emerald-300 border-emerald-800',
+          dotClass: 'bg-emerald-500 animate-pulse'
         };
       default:
         return {
@@ -726,8 +726,8 @@ export default function OverviewModule({
     >
       {/* Toast Notification */}
       {exportNotice && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-slate-900 text-white shadow-2xl border border-indigo-500/40 animate-fade-up">
-          <CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" />
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-slate-900 text-white shadow-2xl border border-emerald-500/40 animate-fade-up">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
           <span className="text-xs font-semibold">{exportNotice}</span>
         </div>
       )}
@@ -740,7 +740,7 @@ export default function OverviewModule({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-sm">
+              <div className="w-9 h-9 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-sm">
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
@@ -756,8 +756,8 @@ export default function OverviewModule({
 
           {/* Calendar Toggle & Active Preset Pill */}
           <div className="flex items-center gap-2 self-start lg:self-auto">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-800">
-              <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               {activePreset === 'custom' ? 'Custom Range' : activePreset.replace('_', ' ').toUpperCase()}
             </span>
             <button
@@ -766,7 +766,7 @@ export default function OverviewModule({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#1e293b] hover:bg-[#334155] text-slate-200 border border-[#334155] transition cursor-pointer"
               title="Toggle Calendar Visibility"
             >
-              <CalendarIcon className="w-3.5 h-3.5 text-indigo-400" />
+              <CalendarIcon className="w-3.5 h-3.5 text-amber-400" />
               <span>{isCalendarOpen ? 'Hide Calendar' : 'Show Calendar'}</span>
             </button>
           </div>
@@ -775,7 +775,7 @@ export default function OverviewModule({
         {/* Active Date Range Display Banner */}
         <div className="bg-[#1e293b]/70 border border-[#334155] rounded-2xl px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-300 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center text-emerald-300 shrink-0">
               <CalendarIcon className="w-4 h-4" />
             </div>
             <div>
@@ -783,7 +783,7 @@ export default function OverviewModule({
                 <span className="text-xs uppercase font-extrabold tracking-wider text-slate-400">
                   Active Date Range:
                 </span>
-                <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[11px] font-bold">
+                <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[11px] font-bold">
                   {daysCount} {daysCount === 1 ? 'Day' : 'Days'} Selected
                 </span>
               </div>
@@ -830,7 +830,7 @@ export default function OverviewModule({
                   onClick={() => handleSelectPreset(preset.key)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-black'
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-black'
                       : 'text-slate-300 hover:text-white hover:bg-[#1e293b]'
                   }`}
                 >
@@ -851,7 +851,7 @@ export default function OverviewModule({
                 type="date"
                 value={startDateStr}
                 onChange={(e) => setStartDateStr(e.target.value)}
-                className="bg-[#1e293b] text-[#f8fafc] border border-[#334155] rounded-xl px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-indigo-500 [color-scheme:dark]"
+                className="bg-[#1e293b] text-[#f8fafc] border border-[#334155] rounded-xl px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-emerald-500 [color-scheme:dark]"
               />
             </div>
             <div className="flex items-center gap-1.5">
@@ -860,12 +860,12 @@ export default function OverviewModule({
                 type="date"
                 value={endDateStr}
                 onChange={(e) => setEndDateStr(e.target.value)}
-                className="bg-[#1e293b] text-[#f8fafc] border border-[#334155] rounded-xl px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-indigo-500 [color-scheme:dark]"
+                className="bg-[#1e293b] text-[#f8fafc] border border-[#334155] rounded-xl px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-emerald-500 [color-scheme:dark]"
               />
             </div>
             <button
               type="submit"
-              className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black shadow-md shadow-indigo-600/30 transition cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-md shadow-emerald-600/30 transition cursor-pointer"
             >
               Apply Range
             </button>
@@ -887,9 +887,9 @@ export default function OverviewModule({
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             
             {/* KPI 1: Total Sales (Orders Count) */}
-            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-indigo-500/50 transition-all group min-w-0 overflow-hidden">
+            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-emerald-500/50 transition-all group min-w-0 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
                   <ShoppingBag className="w-5 h-5" />
                 </div>
                 <div
@@ -926,9 +926,9 @@ export default function OverviewModule({
             </div>
 
             {/* KPI 2: Total Revenue */}
-            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-indigo-500/50 transition-all group min-w-0 overflow-hidden">
+            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-amber-500/50 transition-all group min-w-0 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shrink-0">
                   <DollarSign className="w-5 h-5" />
                 </div>
                 <div
@@ -965,12 +965,12 @@ export default function OverviewModule({
             </div>
 
             {/* KPI 3: Net Profit */}
-            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-indigo-500/50 transition-all group min-w-0 overflow-hidden">
+            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-emerald-500/50 transition-all group min-w-0 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
                   <TrendingUp className="w-5 h-5" />
                 </div>
-                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border bg-indigo-950/70 text-indigo-400 border-indigo-800 shrink-0">
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[11px] font-black border bg-emerald-950/70 text-emerald-400 border-emerald-800 shrink-0">
                   <span>{currentMetrics.grossMarginPercent}% margin</span>
                 </div>
               </div>
@@ -993,9 +993,9 @@ export default function OverviewModule({
             </div>
 
             {/* KPI 4: Average Order Value (AOV) */}
-            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-indigo-500/50 transition-all group min-w-0 overflow-hidden">
+            <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-amber-500/50 transition-all group min-w-0 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shrink-0">
                   <BarChart3 className="w-5 h-5" />
                 </div>
                 <div
@@ -1061,7 +1061,7 @@ export default function OverviewModule({
                   onClick={() => setChartMetric('revenue')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     chartMetric === 'revenue'
-                      ? 'bg-indigo-600 text-white shadow-sm font-black'
+                      ? 'bg-emerald-600 text-white shadow-sm font-black'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -1072,7 +1072,7 @@ export default function OverviewModule({
                   onClick={() => setChartMetric('orders')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     chartMetric === 'orders'
-                      ? 'bg-indigo-600 text-white shadow-sm font-black'
+                      ? 'bg-emerald-600 text-white shadow-sm font-black'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -1087,10 +1087,10 @@ export default function OverviewModule({
               {/* Floating Tooltip */}
               {hoveredDataPoint && (
                 <div
-                  className="absolute pointer-events-none z-30 transform -translate-x-1/2 -translate-y-full -top-3 bg-slate-900 text-white px-3.5 py-2.5 rounded-2xl shadow-2xl border border-indigo-500/50 text-left transition-all"
+                  className="absolute pointer-events-none z-30 transform -translate-x-1/2 -translate-y-full -top-3 bg-slate-900 text-white px-3.5 py-2.5 rounded-2xl shadow-2xl border border-emerald-500/50 text-left transition-all"
                   style={{ left: `${tooltipPos.x}px` }}
                 >
-                  <p className="text-[11px] font-bold text-indigo-300">
+                  <p className="text-[11px] font-bold text-emerald-300">
                     {hoveredDataPoint.fullLabel || hoveredDataPoint.label}
                   </p>
                   <div className="mt-1 space-y-0.5">
@@ -1101,7 +1101,7 @@ export default function OverviewModule({
                       Orders: {hoveredDataPoint.orders} • AOV: ${hoveredDataPoint.aov.toFixed(2)}
                     </p>
                   </div>
-                  <div className="w-2.5 h-2.5 bg-slate-900 border-r border-b border-indigo-500/50 transform rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2" />
+                  <div className="w-2.5 h-2.5 bg-slate-900 border-r border-b border-emerald-500/50 transform rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2" />
                 </div>
               )}
 
@@ -1112,14 +1112,14 @@ export default function OverviewModule({
                 <defs>
                   {/* Area Fill Gradient */}
                   <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.0" />
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
                   </linearGradient>
 
                   {/* Bar Fill Gradient */}
                   <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6366f1" stopOpacity="0.85" />
-                    <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.3" />
+                    <stop offset="0%" stopColor="#34d399" stopOpacity="0.85" />
+                    <stop offset="100%" stopColor="#059669" stopOpacity="0.3" />
                   </linearGradient>
                 </defs>
 
@@ -1161,7 +1161,7 @@ export default function OverviewModule({
                       width={barW}
                       height={barH}
                       rx="3"
-                      fill={isHovered ? '#4f46e5' : 'url(#barGradient)'}
+                      fill={isHovered ? '#10b981' : 'url(#barGradient)'}
                       className="transition-all duration-200 cursor-pointer opacity-80 hover:opacity-100"
                       onMouseEnter={(e) => {
                         const rect = e.currentTarget.ownerSVGElement.getBoundingClientRect();
@@ -1187,7 +1187,7 @@ export default function OverviewModule({
                   <path
                     d={chartGeometry.pathLine}
                     fill="none"
-                    stroke="#4f46e5"
+                    stroke="#10b981"
                     strokeWidth="3.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -1209,7 +1209,7 @@ export default function OverviewModule({
                         cy={pt.y}
                         r={isHovered ? 7 : 4}
                         fill="#ffffff"
-                        stroke="#4f46e5"
+                        stroke="#10b981"
                         strokeWidth={isHovered ? 3.5 : 2}
                         className="transition-all duration-150 cursor-pointer"
                         onMouseEnter={(e) => {
@@ -1227,7 +1227,7 @@ export default function OverviewModule({
                           textAnchor="middle"
                           className={`text-[10px] transition-colors ${
                             isHovered
-                              ? 'font-bold fill-indigo-400'
+                              ? 'font-bold fill-emerald-400'
                               : 'font-medium fill-slate-400'
                           }`}
                         >
@@ -1290,7 +1290,7 @@ export default function OverviewModule({
                 type="button"
                 onClick={handleExportCSV}
                 disabled={isExporting}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-indigo-950/70 border border-indigo-800 text-indigo-300 font-bold text-xs hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all duration-200 cursor-pointer shadow-xs"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-emerald-950/70 border border-emerald-800 text-emerald-300 font-bold text-xs hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-200 cursor-pointer shadow-xs"
               >
                 <Download className="w-4 h-4" />
                 <span>{isExporting ? 'Generating...' : 'Export CSV Report'}</span>
@@ -1343,7 +1343,7 @@ export default function OverviewModule({
               {/* Calendar Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4 text-indigo-400" />
+                  <CalendarIcon className="w-4 h-4 text-emerald-400" />
                   <h3 className="text-sm font-black text-[#f8fafc]">
                     {currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   </h3>
@@ -1402,7 +1402,7 @@ export default function OverviewModule({
 
                   let cellStyle = 'h-8.5 w-full text-xs font-semibold flex items-center justify-center transition-all cursor-pointer relative ';
                   if (isBoundary) {
-                    cellStyle += 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/40 z-10 ';
+                    cellStyle += 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/40 z-10 ';
                     if (isStart && isEnd) {
                       cellStyle += 'rounded-xl ';
                     } else if (isStart) {
@@ -1411,7 +1411,7 @@ export default function OverviewModule({
                       cellStyle += 'rounded-r-xl rounded-l-none ';
                     }
                   } else if (isIntermediate) {
-                    cellStyle += 'bg-indigo-600/25 text-indigo-200 border-y border-indigo-500/40 rounded-none ';
+                    cellStyle += 'bg-emerald-600/25 text-emerald-200 border-y border-emerald-500/40 rounded-none ';
                   } else if (cell.isCurrentMonth) {
                     cellStyle += 'text-[#f8fafc] hover:bg-[#1e293b] rounded-xl ';
                   } else {
@@ -1433,7 +1433,7 @@ export default function OverviewModule({
                     >
                       <span>{cell.dayNumber}</span>
                       {isToday && !isBoundary && !isIntermediate && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 absolute bottom-1" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 absolute bottom-1" />
                       )}
                     </button>
                   );
@@ -1459,7 +1459,7 @@ export default function OverviewModule({
                   <button
                     type="button"
                     onClick={() => handleSelectPreset('today')}
-                    className="text-indigo-400 font-bold hover:underline cursor-pointer"
+                    className="text-emerald-400 font-bold hover:underline cursor-pointer"
                   >
                     Reset to Today
                   </button>
@@ -1469,13 +1469,13 @@ export default function OverviewModule({
           ) : (
             <div className="bg-[#111827] border border-[#334155] rounded-3xl p-4 text-[#f8fafc] flex items-center justify-between shadow-lg">
               <div className="flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-indigo-400" />
+                <CalendarIcon className="w-4 h-4 text-emerald-400" />
                 <span className="text-xs font-bold text-slate-300">Side Calendar Collapsed</span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsCalendarOpen(true)}
-                className="text-xs text-indigo-400 font-bold hover:underline cursor-pointer"
+                className="text-xs text-emerald-400 font-bold hover:underline cursor-pointer"
               >
                 Show Calendar
               </button>
@@ -1491,7 +1491,7 @@ export default function OverviewModule({
                   Currently Running Orders
                 </h3>
               </div>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-950/70 text-indigo-300 border border-indigo-800">
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-950/70 text-emerald-300 border border-emerald-800">
                 {runningOrders.length} active
               </span>
             </div>
@@ -1514,7 +1514,7 @@ export default function OverviewModule({
                   return (
                     <div
                       key={ord.id}
-                      className="p-3 rounded-2xl bg-[#1e293b] border border-[#334155] hover:border-indigo-500/60 transition group"
+                      className="p-3 rounded-2xl bg-[#1e293b] border border-[#334155] hover:border-emerald-500/60 transition group"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
@@ -1539,7 +1539,7 @@ export default function OverviewModule({
                               console.log(`Navigating to table #${ord.tableNumber}`);
                             }
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition cursor-pointer"
                           title={`View Table #${ord.tableNumber} in Live Tables`}
                         >
                           <span>View Table</span>

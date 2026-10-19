@@ -899,12 +899,12 @@ export default function EmployeesModule({
                 <span className="text-xl sm:text-2xl font-bold text-[#f8fafc]">
                   {summaryMetrics.tablesCovered}/{summaryMetrics.totalTables}
                 </span>
-                <span className="text-[10px] text-blue-400 font-semibold">
+                <span className="text-[10px] text-emerald-400 font-semibold">
                   ({summaryMetrics.coveragePercentage}%)
                 </span>
               </div>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
               <Table className="w-4 h-4" />
             </div>
           </div>
@@ -954,7 +954,7 @@ export default function EmployeesModule({
                   : 'text-slate-400 hover:text-slate-200 hover:bg-[#1e293b]/40'
               }`}
             >
-              <Table className="w-3.5 h-3.5 text-blue-400" />
+              <Table className="w-3.5 h-3.5 text-emerald-400" />
               <span>Dining Room Table Coverage (Tables 1–12)</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#111827] text-slate-300 font-medium border border-[#334155]">
                 {summaryMetrics.tablesCovered}/12
@@ -1260,7 +1260,7 @@ export default function EmployeesModule({
           {/* Subheader with Auto-Balance Button & Coverage Info */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#334155]">
             <div className="flex items-center gap-2.5">
-              <Table className="w-4 h-4 text-blue-400" />
+              <Table className="w-4 h-4 text-emerald-400" />
               <div>
                 <h3 className="font-bold text-[#f8fafc] text-base">
                   Dining Room Table Coverage (Tables 1–{totalVenueTables})
@@ -1483,7 +1483,7 @@ export default function EmployeesModule({
                           className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
                             isKitchen
                               ? 'bg-orange-500/20 text-[#FF7A45] border border-orange-500/30'
-                              : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                           }`}
                         >
                           {isKitchen ? <ChefHat className="w-3 h-3" /> : <BellRing className="w-3 h-3" />}
@@ -1540,7 +1540,7 @@ export default function EmployeesModule({
                             isResolved
                               ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-500/40'
                               : alert.status === 'In Transit'
-                              ? 'bg-blue-950/70 text-blue-300 border border-blue-500/40'
+                              ? 'bg-amber-950/70 text-amber-300 border border-amber-500/40'
                               : 'bg-amber-950/70 text-amber-300 border border-amber-500/40'
                           }`}
                         >

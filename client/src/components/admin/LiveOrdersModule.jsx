@@ -72,14 +72,14 @@ export default function LiveOrdersModule({
       case KITCHEN_STAGE.PREPARING:
         return {
           label: 'Cooking in Kitchen',
-          className: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
+          className: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
           nextStage: KITCHEN_STAGE.READY_PICKUP,
           nextLabel: 'Mark Food Ready'
         };
       case KITCHEN_STAGE.READY_PICKUP:
         return {
           label: 'Ready for Pickup',
-          className: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+          className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20',
           nextStage: KITCHEN_STAGE.SERVED,
           nextLabel: 'Confirm Served'
         };
@@ -101,7 +101,7 @@ export default function LiveOrdersModule({
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500">
             <span>Total Active Tickets</span>
-            <ShoppingBag className="w-4 h-4 text-indigo-500" />
+            <ShoppingBag className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-2xl sm:text-3xl font-black mt-2 text-slate-900 dark:text-white">
             {orders.length}
@@ -131,9 +131,9 @@ export default function LiveOrdersModule({
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500">
             <span>Delivered Today</span>
-            <CheckCircle2 className="w-4 h-4 text-blue-500" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           </div>
-          <div className="text-2xl sm:text-3xl font-black mt-2 text-blue-500">
+          <div className="text-2xl sm:text-3xl font-black mt-2 text-emerald-600 dark:text-emerald-400">
             {counts.served + 18}
           </div>
         </div>
@@ -156,7 +156,7 @@ export default function LiveOrdersModule({
               onClick={() => setStatusFilter(tab.id)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                 statusFilter === tab.id
-                  ? 'bg-indigo-600 text-white shadow-xs'
+                  ? 'bg-emerald-600 text-white shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
@@ -173,7 +173,7 @@ export default function LiveOrdersModule({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by table or dish..."
-            className="w-full pl-9 pr-3 py-1.5 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:border-indigo-500"
+            className="w-full pl-9 pr-3 py-1.5 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:border-emerald-500"
           />
         </div>
       </div>
@@ -199,7 +199,7 @@ export default function LiveOrdersModule({
                   {/* Header: Table, Order Number, Time */}
                   <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-2">
-                      <span className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black text-xs flex items-center justify-center border border-indigo-200 dark:border-indigo-800">
+                      <span className="w-8 h-8 rounded-xl bg-amber-400/15 dark:bg-amber-400/15 text-amber-600 dark:text-amber-400 font-black text-xs flex items-center justify-center border border-amber-400/30">
                         T{order.tableNumber}
                       </span>
                       <div>
@@ -231,7 +231,7 @@ export default function LiveOrdersModule({
                     {order.items?.map((item, idx) => (
                       <div key={idx} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                          <span className="font-black text-indigo-600 dark:text-indigo-400">{item.quantity}x</span>
+                          <span className="font-black text-emerald-600 dark:text-emerald-400">{item.quantity}x</span>
                           <span className="font-medium truncate max-w-[170px]">{item.name}</span>
                         </div>
                         <span className="font-bold text-slate-900 dark:text-white">
@@ -245,7 +245,7 @@ export default function LiveOrdersModule({
                   {order.voiceNoteUrl && (
                     <div className="my-3">
                       <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 mb-1">
-                        <Volume2 className="w-3.5 h-3.5 text-indigo-500" />
+                        <Volume2 className="w-3.5 h-3.5 text-amber-500" />
                         <span>Customer Voice Note:</span>
                       </div>
                       <AudioPlayer url={order.voiceNoteUrl} />
@@ -266,7 +266,7 @@ export default function LiveOrdersModule({
                     <button
                       type="button"
                       onClick={() => onAdvanceStage(order.id, badge.nextStage)}
-                      className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
+                      className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
                     >
                       <span>{badge.nextLabel}</span>
                       <ChevronRight className="w-3.5 h-3.5" />

@@ -152,12 +152,12 @@ export default function AdminSidebar({
               onClick={() => onSelectTab(item.id)}
               className={`flex-1 flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150 outline-none cursor-pointer ${
                 isActive
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
               }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover/item:text-indigo-400'}`} />
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover/item:text-emerald-400'}`} />
                 <span className="truncate">{item.label}</span>
               </div>
 
@@ -171,7 +171,7 @@ export default function AdminSidebar({
                       : item.badgeColor === 'rose'
                       ? 'bg-rose-500/15 text-rose-400 border border-rose-500/20'
                       : item.badgeColor === 'indigo'
-                      ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/20'
+                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
                       : 'bg-slate-800 text-slate-300'
                   } ${item.pulse ? 'animate-pulse' : ''}`}
                 >
@@ -187,7 +187,7 @@ export default function AdminSidebar({
                 target="_blank"
                 rel="noreferrer"
                 title={`Open ${item.label} in new window`}
-                className="opacity-0 group-hover/item:opacity-100 p-1.5 text-slate-400 hover:text-indigo-400 transition-opacity ml-1 rounded-lg"
+                className="opacity-0 group-hover/item:opacity-100 p-1.5 text-slate-400 hover:text-emerald-400 transition-opacity ml-1 rounded-lg"
               >
                 <ExternalLink className="w-3 h-3" />
               </a>
@@ -225,13 +225,13 @@ export default function AdminSidebar({
           onClick={() => onSelectTab('overview')}
           className="flex items-center gap-2.5 cursor-pointer"
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/30 shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-emerald-600/30 shrink-0">
             <Sparkles className="w-4 h-4" />
           </div>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="font-black text-sm tracking-tight text-white">SmartDine</span>
-              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-indigo-500/15 text-indigo-400 border border-indigo-500/20">
+              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-amber-400/15 text-amber-300 border border-amber-400/30">
                 Admin
               </span>
             </div>
@@ -260,7 +260,7 @@ export default function AdminSidebar({
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           <span>System Online • 60 FPS</span>
         </div>
-        <span className="text-[10px] font-bold text-indigo-400">v2.4 SaaS</span>
+        <span className="text-[10px] font-bold text-amber-400">v2.4 SaaS</span>
       </div>
     </aside>
   );

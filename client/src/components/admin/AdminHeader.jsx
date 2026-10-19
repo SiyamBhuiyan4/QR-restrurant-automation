@@ -198,7 +198,7 @@ export default function AdminHeader({
           <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400">
             <span>Admin</span>
             <ChevronRight className="w-3 h-3 text-slate-500" />
-            <span className="text-indigo-400">{currentMeta.breadcrumb}</span>
+            <span className="text-amber-400 font-bold">{currentMeta.breadcrumb}</span>
           </div>
           <h1 className="text-base sm:text-lg font-black tracking-tight text-white leading-tight whitespace-nowrap">
             {currentMeta.title}
@@ -218,7 +218,7 @@ export default function AdminHeader({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search orders, tables, staff... (⌘K)"
-          className="w-full pl-9 pr-8 py-2 rounded-xl text-xs font-medium border border-slate-700 bg-slate-900 text-white placeholder-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          className="w-full pl-9 pr-8 py-2 rounded-xl text-xs font-medium border border-slate-700 bg-slate-900 text-white placeholder-slate-400 outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
         />
         {searchQuery && (
           <button
@@ -259,7 +259,7 @@ export default function AdminHeader({
           }`}
           title="Refresh dashboard data"
         >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-indigo-500' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-emerald-500' : ''}`} />
         </button>
 
         {/* Dark/Light Theme Toggle */}
@@ -305,7 +305,7 @@ export default function AdminHeader({
             }`}>
               <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-3">
                 <div className="flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-indigo-500" />
+                  <Bell className="w-4 h-4 text-amber-400" />
                   <span className="font-black text-sm">Real-Time Alerts</span>
                 </div>
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-500">
@@ -361,7 +361,7 @@ export default function AdminHeader({
             }`}
             title="Admin Manager Profile"
           >
-            <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white font-black text-xs flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white font-black text-xs flex items-center justify-center">
               AD
             </div>
             <div className="hidden sm:flex flex-col text-left">

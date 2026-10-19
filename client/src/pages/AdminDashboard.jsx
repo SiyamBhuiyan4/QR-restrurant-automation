@@ -609,7 +609,7 @@ export default function AdminDashboard({ className = '' }) {
             <div className="space-y-3 animate-fadeIn">
               <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="font-bold text-slate-200">Employee Roster &amp; Shifts</span>
                   <span className="text-slate-500">•</span>
                   <span className="text-slate-400">Duty Allocation &amp; Shift Management (Employee Hub)</span>
@@ -626,7 +626,7 @@ export default function AdminDashboard({ className = '' }) {
                     href="/employee?tab=roster"
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-bold transition"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold transition"
                   >
                     <span>Launch /employee</span>
                     <ExternalLink className="w-3 h-3" />

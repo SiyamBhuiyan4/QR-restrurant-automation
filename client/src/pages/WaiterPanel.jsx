@@ -724,20 +724,20 @@ export default function WaiterPanel() {
   ]);
 
   return (
-    <div className="staff-root min-h-screen bg-neutral-900 text-neutral-100 flex flex-col font-sans select-none">
+    <div className="staff-root min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col font-sans select-none">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 bg-neutral-900/95 backdrop-blur-md border-b border-neutral-800 px-4 py-3 sm:px-6 shadow-sm">
+      <header className="sticky top-0 z-30 bg-[#0b0f19]/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 sm:px-6 shadow-sm">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* Left: Branding & Role Identity */}
           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
             <div className="flex items-center gap-3">
               <div
-                className={`w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-600 flex items-center justify-center text-neutral-950 shadow-lg shadow-orange-500/20 transition-transform ${
+                className={`w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 via-amber-500 to-amber-600 flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/20 transition-transform ${
                   isChimeAnimating ? 'scale-110 ring-4 ring-amber-400' : ''
                 }`}
               >
                 <BellRing
-                  className={`w-5 h-5 text-neutral-950 ${
+                  className={`w-5 h-5 text-slate-950 ${
                     isChimeAnimating ? 'animate-wiggle text-white' : ''
                   }`}
                 />
@@ -747,24 +747,24 @@ export default function WaiterPanel() {
                   <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
                     On-Field Waiter Console
                   </h1>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/40">
                     On-Field Floor Service
                   </span>
                 </div>
-                <p className="text-xs text-neutral-300 font-medium">
+                <p className="text-xs text-slate-300 font-medium">
                   Real-Time Table Service, Assistance Requests &amp; Order Delivery
                 </p>
               </div>
             </div>
 
             {/* Socket Status indicator for mobile */}
-            <div className="sm:hidden flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-800 text-[11px] font-semibold border border-neutral-700">
+            <div className="sm:hidden flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-[11px] font-semibold border border-slate-700">
               <span
                 className={`w-2 h-2 rounded-full ${
                   isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
                 }`}
               />
-              <span className="text-neutral-200">{isConnected ? 'Live' : 'Offline'}</span>
+              <span className="text-slate-200">{isConnected ? 'Live' : 'Offline'}</span>
             </div>
           </div>
 
@@ -775,23 +775,23 @@ export default function WaiterPanel() {
               <label htmlFor="employee-filter-select" className="sr-only">
                 Filter by Floor Employee
               </label>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 border border-neutral-700 text-xs font-semibold text-neutral-200 hover:border-neutral-600">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 hover:border-slate-600">
                 <User className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                 <select
                   id="employee-filter-select"
                   aria-label="Filter by Floor Employee"
                   value={activeEmployeeFilter}
                   onChange={(e) => setActiveEmployeeFilter(e.target.value)}
-                  className="bg-transparent text-xs font-semibold text-neutral-200 focus:outline-none cursor-pointer pr-1"
+                  className="bg-transparent text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer pr-1"
                 >
-                  <option value="all" className="bg-neutral-800 text-neutral-100">
+                  <option value="all" className="bg-slate-800 text-slate-100">
                     All Active Employees (Full Floor)
                   </option>
                   {employeeRoster.map((st) => (
                     <option
                       key={st.id}
                       value={st.id}
-                      className="bg-neutral-800 text-neutral-100"
+                      className="bg-slate-800 text-slate-100"
                     >
                       {st.name} (Tables {st.tables.join(', ') || 'None'})
                     </option>
@@ -808,7 +808,7 @@ export default function WaiterPanel() {
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition active:scale-95 cursor-pointer ${
                   isExclusiveEmployeeMode
                     ? 'bg-emerald-600/30 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/20'
-                    : 'bg-neutral-800 text-neutral-300 border-neutral-700 hover:bg-neutral-700'
+                    : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
                 }`}
                 title="Filter console exclusively for my assigned tables"
               >
@@ -821,10 +821,10 @@ export default function WaiterPanel() {
             <button
               type="button"
               onClick={() => setIsAssignmentsModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold border border-neutral-700 transition active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition active:scale-95 cursor-pointer"
               title="View and reassign table zones among floor employees"
             >
-              <Users className="w-3.5 h-3.5 text-sky-400" />
+              <Users className="w-3.5 h-3.5 text-amber-400" />
               <span className="hidden sm:inline">Table Assignments</span>
             </button>
 
@@ -864,7 +864,7 @@ export default function WaiterPanel() {
               onClick={() => setIsMuted((prev) => !prev)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition active:scale-95 cursor-pointer ${
                 isMuted
-                  ? 'bg-neutral-800 text-neutral-300 border-neutral-700 hover:bg-neutral-700'
+                  ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
                   : 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
               }`}
               title={
@@ -875,7 +875,7 @@ export default function WaiterPanel() {
             >
               {isMuted ? (
                 <>
-                  <VolumeX className="w-3.5 h-3.5 text-neutral-400" />
+                  <VolumeX className="w-3.5 h-3.5 text-slate-400" />
                   <span>Muted</span>
                 </>
               ) : (
@@ -890,7 +890,7 @@ export default function WaiterPanel() {
             <button
               type="button"
               onClick={triggerChime}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold border border-neutral-700 transition active:scale-95 cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition active:scale-95 cursor-pointer ${
                 isChimeAnimating ? 'ring-2 ring-amber-400 text-amber-300' : ''
               }`}
               title="Test Web Audio desk calling chime"
@@ -904,7 +904,7 @@ export default function WaiterPanel() {
               type="button"
               onClick={fetchCalls}
               disabled={isLoading}
-              className="p-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 transition active:scale-95 cursor-pointer disabled:opacity-50"
+              className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition active:scale-95 cursor-pointer disabled:opacity-50"
               title="Refresh requests"
             >
               <RefreshCw
@@ -920,7 +920,7 @@ export default function WaiterPanel() {
         <div
           className={`text-white px-4 py-2.5 shadow-xl flex items-center justify-between text-xs sm:text-sm font-semibold animate-slide-up border-b ${
             bannerAlert.isTargetedToMe
-              ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 border-emerald-400/40 ring-2 ring-emerald-400/30'
+              ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 border-emerald-400/40 ring-2 ring-emerald-400/30'
               : 'bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 border-white/20'
           }`}
         >
@@ -958,12 +958,12 @@ export default function WaiterPanel() {
         {/* Floor KPI Stats Cards */}
         <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {/* Card 1: Active Requests */}
-          <div className="bg-neutral-800 border border-neutral-700 rounded-2xl p-4 flex items-center gap-3.5 shadow-md">
+          <div className="bg-[#0f172a] border border-slate-700 rounded-2xl p-4 flex items-center gap-3.5 shadow-md">
             <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
               <BellRing className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[11px] text-neutral-300 font-bold uppercase tracking-wider">
+              <p className="text-[11px] text-slate-300 font-bold uppercase tracking-wider">
                 Active Requests
               </p>
               <p className="text-2xl font-black text-white mt-0.5">
@@ -977,25 +977,25 @@ export default function WaiterPanel() {
             className={`border rounded-2xl p-4 flex items-center gap-3.5 shadow-md transition-all ${
               stats.urgentCount > 0
                 ? 'bg-rose-950/80 border-2 border-rose-500 text-rose-100 animate-pulse'
-                : 'bg-neutral-800 border border-neutral-700 text-neutral-300'
+                : 'bg-[#0f172a] border border-slate-700 text-slate-300'
             }`}
           >
             <div
               className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
                 stats.urgentCount > 0
                   ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/40'
-                  : 'bg-neutral-700 text-neutral-300'
+                  : 'bg-slate-700 text-slate-300'
               }`}
             >
               <Flame className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-300">
                 Urgent (&gt; 3 min)
               </p>
               <p
                 className={`text-2xl font-black mt-0.5 ${
-                  stats.urgentCount > 0 ? 'text-rose-300' : 'text-neutral-200'
+                  stats.urgentCount > 0 ? 'text-rose-300' : 'text-slate-200'
                 }`}
               >
                 {stats.urgentCount}
@@ -1004,12 +1004,12 @@ export default function WaiterPanel() {
           </div>
 
           {/* Card 3: Being Attended */}
-          <div className="bg-neutral-800 border border-neutral-700 rounded-2xl p-4 flex items-center gap-3.5 shadow-md">
-            <div className="w-12 h-12 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+          <div className="bg-[#0f172a] border border-slate-700 rounded-2xl p-4 flex items-center gap-3.5 shadow-md">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
               <UserCheck className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[11px] text-neutral-300 font-bold uppercase tracking-wider">
+              <p className="text-[11px] text-slate-300 font-bold uppercase tracking-wider">
                 In Progress
               </p>
               <p className="text-2xl font-black text-white mt-0.5">
@@ -1019,12 +1019,12 @@ export default function WaiterPanel() {
           </div>
 
           {/* Card 4: Max Wait Time */}
-          <div className="bg-neutral-800 border border-neutral-700 rounded-2xl p-4 flex items-center gap-3.5 shadow-md">
-            <div className="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+          <div className="bg-[#0f172a] border border-slate-700 rounded-2xl p-4 flex items-center gap-3.5 shadow-md">
+            <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
               <Clock className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[11px] text-neutral-300 font-bold uppercase tracking-wider">
+              <p className="text-[11px] text-slate-300 font-bold uppercase tracking-wider">
                 Longest Wait
               </p>
               <p className="text-2xl font-black text-white mt-0.5">
@@ -1035,7 +1035,7 @@ export default function WaiterPanel() {
         </section>
 
         {/* Filter Bar, Active Employee Scope & Table Search */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-neutral-800/80 p-2.5 rounded-2xl border border-neutral-700">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#0f172a]/80 p-2.5 rounded-2xl border border-slate-700">
           {/* Filter Tabs */}
           <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
             <button
@@ -1043,8 +1043,8 @@ export default function WaiterPanel() {
               onClick={() => setActiveTab('all')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer ${
                 activeTab === 'all'
-                  ? 'bg-amber-500 text-neutral-950 shadow-md shadow-amber-500/30'
-                  : 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700 border border-neutral-700'
+                  ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/30 font-black'
+                  : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'
               }`}
             >
               All Requests ({calls.length})
@@ -1056,8 +1056,8 @@ export default function WaiterPanel() {
                 onClick={() => setActiveTab('my-tables')}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                   activeTab === 'my-tables'
-                    ? 'bg-emerald-500 text-neutral-950 shadow-md shadow-emerald-500/30'
-                    : 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700 border border-neutral-700'
+                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30 font-black'
+                    : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'
                 }`}
               >
                 <User className="w-3.5 h-3.5" />
@@ -1073,7 +1073,7 @@ export default function WaiterPanel() {
                   ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
                   : stats.urgentCount > 0
                   ? 'bg-rose-950/80 text-rose-200 hover:bg-rose-900/80 border border-rose-700'
-                  : 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700 border border-neutral-700'
+                  : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'
               }`}
             >
               <Flame className="w-3.5 h-3.5 text-rose-400" />
@@ -1085,8 +1085,8 @@ export default function WaiterPanel() {
               onClick={() => setActiveTab('acknowledged')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer ${
                 activeTab === 'acknowledged'
-                  ? 'bg-sky-500 text-neutral-950 shadow-md shadow-sky-500/30'
-                  : 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700 border border-neutral-700'
+                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30 font-black'
+                  : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'
               }`}
             >
               In Progress ({stats.acknowledgedCount})
@@ -1097,8 +1097,8 @@ export default function WaiterPanel() {
               onClick={() => setActiveTab('history')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer ${
                 activeTab === 'history'
-                  ? 'bg-neutral-100 text-neutral-950 shadow-md'
-                  : 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700 border border-neutral-700'
+                  ? 'bg-slate-100 text-slate-950 shadow-md'
+                  : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'
               }`}
             >
               Resolved Today ({resolvedHistory.length})
@@ -1107,19 +1107,19 @@ export default function WaiterPanel() {
 
           {/* Quick Table / Employee Search Input */}
           <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search table, reason, employee..."
               value={tableSearch}
               onChange={(e) => setTableSearch(e.target.value)}
-              className="w-full pl-9 pr-7 py-1.5 bg-neutral-950 border border-neutral-700 rounded-xl text-xs text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
+              className="w-full pl-9 pr-7 py-1.5 bg-[#0b0f19] border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
             />
             {tableSearch && (
               <button
                 type="button"
                 onClick={() => setTableSearch('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white text-xs font-bold"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold"
               >
                 ✕
               </button>
@@ -1132,14 +1132,14 @@ export default function WaiterPanel() {
           /* RESOLVED HISTORY LIST */
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-extrabold uppercase tracking-wider text-neutral-300">
+              <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-300">
                 Recently Resolved Today ({resolvedHistory.length})
               </h2>
               {resolvedHistory.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setResolvedHistory([])}
-                  className="text-xs text-neutral-400 hover:text-neutral-200 underline cursor-pointer font-semibold"
+                  className="text-xs text-slate-400 hover:text-slate-200 underline cursor-pointer font-semibold"
                 >
                   Clear History
                 </button>
@@ -1147,9 +1147,9 @@ export default function WaiterPanel() {
             </div>
 
             {resolvedHistory.length === 0 ? (
-              <div className="text-center py-12 bg-neutral-800 border border-neutral-700 rounded-2xl">
+              <div className="text-center py-12 bg-[#0f172a] border border-slate-700 rounded-2xl">
                 <CheckCircle2 className="w-10 h-10 text-emerald-500/60 mx-auto mb-2" />
-                <p className="text-neutral-200 text-sm font-bold">
+                <p className="text-slate-200 text-sm font-bold">
                   No resolved assistance requests yet this session.
                 </p>
               </div>
@@ -1161,22 +1161,22 @@ export default function WaiterPanel() {
                   return (
                     <div
                       key={'hist-' + item.id}
-                      className="p-4 rounded-2xl bg-neutral-800 border border-neutral-700 shadow-md"
+                      className="p-4 rounded-2xl bg-[#0f172a] border border-slate-700 shadow-md"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-neutral-700 text-white">
+                        <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950">
                           Table {tbl}
                         </span>
                         <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
                           <CheckCheck className="w-3.5 h-3.5" /> Resolved
                         </span>
                       </div>
-                      <p className="text-sm font-bold text-neutral-100 mt-2 truncate">
+                      <p className="text-sm font-bold text-slate-100 mt-2 truncate">
                         {item.reason}
                       </p>
-                      <div className="mt-2 pt-2 border-t border-neutral-700/60 flex items-center justify-between text-[11px] text-neutral-300">
+                      <div className="mt-2 pt-2 border-t border-slate-700/60 flex items-center justify-between text-[11px] text-slate-300">
                         <span>Employee: {assigned?.name || 'General Employee Pool'}</span>
-                        <span className="text-neutral-400">Completed</span>
+                        <span className="text-slate-400">Completed</span>
                       </div>
                     </div>
                   );
@@ -1189,7 +1189,7 @@ export default function WaiterPanel() {
           <div>
             {filteredCalls.length === 0 ? (
               /* Calming Empty State */
-              <div className="staff-empty text-center py-16 px-4 bg-neutral-800/60 border border-dashed border-neutral-700 rounded-3xl space-y-4">
+              <div className="staff-empty text-center py-16 px-4 bg-[#0f172a]/60 border border-dashed border-slate-700 rounded-3xl space-y-4">
                 <div className="w-20 h-20 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center ring-8 ring-emerald-500/10">
                   <CheckCircle2 className="w-10 h-10" />
                 </div>
@@ -1197,12 +1197,12 @@ export default function WaiterPanel() {
                   <h3 className="text-xl font-black text-white">
                     All Tables Attended To!
                   </h3>
-                  <p className="text-xs sm:text-sm text-neutral-300 max-w-md mx-auto mt-1">
+                  <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto mt-1">
                     No pending assistance requests right now. The employee console chime
                     will automatically sound when a guest calls for service.
                   </p>
                 </div>
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-900 border border-neutral-700 text-xs text-neutral-200">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0b0f19] border border-slate-700 text-xs text-slate-200">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -1240,11 +1240,11 @@ export default function WaiterPanel() {
                   } else if (isAcknowledged) {
                     // Acknowledged attending state
                     cardStyles +=
-                      'bg-neutral-800 border-2 border-sky-500/80 ring-2 ring-sky-500/20 text-neutral-100';
+                      'bg-[#0f172a] border-2 border-emerald-500/80 ring-2 ring-emerald-500/20 text-slate-100';
                   } else {
                     // Normal active state
                     cardStyles +=
-                      'bg-neutral-800 border border-neutral-700 hover:border-neutral-600 text-neutral-100';
+                      'bg-[#0f172a] border border-slate-700 hover:border-slate-600 text-slate-100';
                   }
 
                   return (
@@ -1258,7 +1258,7 @@ export default function WaiterPanel() {
                               className={`text-sm font-black px-3.5 py-1 rounded-2xl shadow-sm tracking-tight ${
                                 isUrgent
                                   ? 'bg-rose-500 text-white shadow-rose-950/60'
-                                  : 'bg-amber-500 text-neutral-950'
+                                  : 'bg-amber-400 text-slate-950 font-black'
                               }`}
                             >
                               TABLE {tableNum}
@@ -1277,7 +1277,7 @@ export default function WaiterPanel() {
                             className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-xl border ${
                               isUrgent
                                 ? 'bg-rose-900/90 text-rose-100 border-rose-600'
-                                : 'bg-neutral-900 text-neutral-200 border-neutral-700'
+                                : 'bg-[#0b0f19] text-slate-200 border-slate-700'
                             }`}
                             title={`Call placed at ${call.created_at || 'unknown'}`}
                           >
@@ -1293,7 +1293,7 @@ export default function WaiterPanel() {
                               ? 'bg-rose-950/90 border-rose-500 text-rose-200 shadow-sm animate-pulse'
                               : isAssignedToMe
                               ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200'
-                              : 'bg-neutral-900/90 border-neutral-700/80 text-neutral-300'
+                              : 'bg-[#0b0f19]/90 border-slate-700/80 text-slate-300'
                           }`}
                         >
                           {isUrgent ? (
@@ -1310,17 +1310,17 @@ export default function WaiterPanel() {
                         </div>
 
                         {/* Assigned Employee Tag / Quick Reassignment */}
-                        <div className="flex items-center justify-between gap-2 mb-3 px-3 py-1.5 rounded-xl bg-neutral-900/80 border border-neutral-700/80 text-xs">
+                        <div className="flex items-center justify-between gap-2 mb-3 px-3 py-1.5 rounded-xl bg-[#0b0f19]/80 border border-slate-700/80 text-xs">
                           <div className="flex items-center gap-2">
                             <div
                               className={`w-5 h-5 rounded-full bg-gradient-to-tr ${
-                                effectiveEmployee?.color || 'from-neutral-600 to-neutral-700'
+                                effectiveEmployee?.color || 'from-slate-600 to-slate-700'
                               } flex items-center justify-center text-[10px] font-black text-white shrink-0`}
                             >
                               {effectiveEmployee?.initials || 'FE'}
                             </div>
                             <div className="truncate">
-                              <span className="text-neutral-400 text-[10px] uppercase font-bold block leading-none">
+                              <span className="text-slate-400 text-[10px] uppercase font-bold block leading-none">
                                 Assigned Employee
                               </span>
                               <span className="text-white font-extrabold truncate">
@@ -1339,16 +1339,16 @@ export default function WaiterPanel() {
                               aria-label="Assign Employee"
                               value={effectiveEmployee?.id || ''}
                               onChange={(e) => handleAssignCall(call.id, e.target.value)}
-                              className="bg-neutral-800 text-[11px] font-bold text-neutral-200 border border-neutral-600 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                              className="bg-slate-800 text-[11px] font-bold text-slate-200 border border-slate-600 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer"
                             >
-                              <option value="" disabled className="bg-neutral-800 text-neutral-300">
+                              <option value="" disabled className="bg-slate-800 text-slate-300">
                                 Reassign Employee...
                               </option>
                               {employeeRoster.map((st) => (
                                 <option
                                   key={st.id}
                                   value={st.id}
-                                  className="bg-neutral-800 text-neutral-100"
+                                  className="bg-slate-800 text-slate-100"
                                 >
                                   {st.name}
                                 </option>
@@ -1358,15 +1358,15 @@ export default function WaiterPanel() {
                         </div>
 
                         {/* Request Reason & Customer Notes */}
-                        <div className="my-3 p-3.5 rounded-2xl bg-neutral-900/90 border border-neutral-700/80">
-                          <p className="text-[11px] uppercase font-extrabold tracking-wider text-neutral-400 mb-1">
+                        <div className="my-3 p-3.5 rounded-2xl bg-[#0b0f19]/90 border border-slate-700/80">
+                          <p className="text-[11px] uppercase font-extrabold tracking-wider text-slate-400 mb-1">
                             Requested Service
                           </p>
                           <p className="text-base font-black text-white leading-snug">
                             {call.reason || 'Floor Employee Assistance'}
                           </p>
                           {call.custom_message && (
-                            <p className="mt-2 text-xs text-neutral-200 bg-neutral-800 border border-neutral-700 p-2.5 rounded-xl font-medium">
+                            <p className="mt-2 text-xs text-slate-200 bg-slate-800 border border-slate-700 p-2.5 rounded-xl font-medium">
                               "{call.custom_message}"
                             </p>
                           )}
@@ -1374,8 +1374,8 @@ export default function WaiterPanel() {
 
                         {/* Acknowledged Status Pill */}
                         {isAcknowledged && (
-                          <div className="mb-3 px-3 py-1.5 rounded-xl bg-sky-950 border border-sky-400/60 text-sky-200 text-xs font-bold flex items-center gap-2">
-                            <UserCheck className="w-4 h-4 text-sky-400 shrink-0" />
+                          <div className="mb-3 px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-500/60 text-emerald-200 text-xs font-bold flex items-center gap-2">
+                            <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                             <span>
                               Attending:{' '}
                               <strong className="text-white">
@@ -1388,7 +1388,7 @@ export default function WaiterPanel() {
                       </div>
 
                       {/* Action Buttons: Acknowledge & Done / Resolved */}
-                      <div className="pt-3 border-t border-neutral-700/80 flex items-center gap-2">
+                      <div className="pt-3 border-t border-slate-700/80 flex items-center gap-2">
                         {/* Acknowledge Button */}
                         <button
                           type="button"
@@ -1396,18 +1396,18 @@ export default function WaiterPanel() {
                           disabled={isAcknowledged}
                           className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-black transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-default ${
                             isAcknowledged
-                              ? 'bg-sky-950 text-sky-300 border border-sky-600/60'
-                              : 'bg-neutral-700 hover:bg-neutral-600 text-white border border-neutral-600'
+                              ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-600/60'
+                              : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
                           }`}
                         >
                           {isAcknowledged ? (
                             <>
-                              <Check className="w-3.5 h-3.5 text-sky-400" />
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
                               <span>Attending</span>
                             </>
                           ) : (
                             <>
-                              <UserCheck className="w-3.5 h-3.5 text-sky-400" />
+                              <UserCheck className="w-3.5 h-3.5 text-amber-400" />
                               <span>Acknowledge</span>
                             </>
                           )}
@@ -1435,21 +1435,21 @@ export default function WaiterPanel() {
       {/* Table Assignments Management Modal */}
       {isAssignmentsModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-neutral-900 border border-neutral-700 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
+          <div className="bg-[#0b0f19] border border-slate-700 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div>
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
-                  <Users className="w-5 h-5 text-sky-400" />
+                  <Users className="w-5 h-5 text-amber-400" />
                   Floor Table Assignments Matrix
                 </h3>
-                <p className="text-xs text-neutral-400">
+                <p className="text-xs text-slate-400">
                   Assign tables to dedicated floor employees for instant dispatch
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsAssignmentsModalOpen(false)}
-                className="w-8 h-8 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 flex items-center justify-center cursor-pointer font-bold"
+                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center cursor-pointer font-bold"
               >
                 ✕
               </button>
@@ -1467,7 +1467,7 @@ export default function WaiterPanel() {
                 return (
                   <div
                     key={'assign-tbl-' + tblNum}
-                    className="p-3.5 rounded-2xl bg-neutral-800 border border-neutral-700 space-y-2"
+                    className="p-3.5 rounded-2xl bg-[#0f172a] border border-slate-700 space-y-2"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-black text-white">
@@ -1481,7 +1481,7 @@ export default function WaiterPanel() {
                     </div>
 
                     <div>
-                      <label htmlFor={`modal-assign-table-${tblNum}`} className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
+                      <label htmlFor={`modal-assign-table-${tblNum}`} className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
                         Assigned Employee
                       </label>
                       <select
@@ -1489,16 +1489,16 @@ export default function WaiterPanel() {
                         aria-label={`Assigned Employee for Table ${tblNum}`}
                         value={assigned?.id || ''}
                         onChange={(e) => handleReassignTable(tblNum, e.target.value)}
-                        className="w-full bg-neutral-900 border border-neutral-700 text-xs font-bold text-neutral-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                        className="w-full bg-[#0b0f19] border border-slate-700 text-xs font-bold text-slate-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer"
                       >
-                        <option value="" disabled className="bg-neutral-900 text-neutral-400">
+                        <option value="" disabled className="bg-[#0b0f19] text-slate-400">
                           Select employee...
                         </option>
                         {employeeRoster.map((st) => (
                           <option
                             key={st.id}
                             value={st.id}
-                            className="bg-neutral-900 text-neutral-100"
+                            className="bg-[#0b0f19] text-slate-100"
                           >
                             {st.name}
                           </option>
@@ -1510,11 +1510,11 @@ export default function WaiterPanel() {
               })}
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-neutral-800">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
               <button
                 type="button"
                 onClick={() => setIsAssignmentsModalOpen(false)}
-                className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-neutral-950 font-black text-xs cursor-pointer shadow-md"
+                className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs cursor-pointer shadow-md"
               >
                 Done
               </button>
@@ -1524,8 +1524,8 @@ export default function WaiterPanel() {
       )}
 
       {/* Footer Navigation Bar */}
-      <footer className="bg-neutral-900 border-t border-neutral-800 px-4 py-3 mt-auto">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-400 gap-2">
+      <footer className="bg-[#0b0f19] border-t border-slate-800 px-4 py-3 mt-auto">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
           <div className="flex items-center gap-2">
             <span>Floor Employee Console &bull; Employee Assistance Hub &bull; Offline-First</span>
           </div>
@@ -1534,21 +1534,21 @@ export default function WaiterPanel() {
           <div className="flex items-center gap-4">
             <a
               href="/"
-              className="text-neutral-400 hover:text-amber-400 transition flex items-center gap-1 font-semibold"
+              className="text-slate-400 hover:text-amber-400 transition flex items-center gap-1 font-semibold"
             >
               <span>Customer View</span>
               <ExternalLink className="w-3 h-3" />
             </a>
             <a
               href="/employee?tab=kitchen"
-              className="text-neutral-400 hover:text-amber-400 transition flex items-center gap-1 font-semibold"
+              className="text-slate-400 hover:text-amber-400 transition flex items-center gap-1 font-semibold"
             >
               <span>Employee View (Kitchen &amp; Staff)</span>
               <ExternalLink className="w-3 h-3" />
             </a>
             <a
               href="/admin"
-              className="text-neutral-400 hover:text-amber-400 transition flex items-center gap-1 font-semibold"
+              className="text-slate-400 hover:text-amber-400 transition flex items-center gap-1 font-semibold"
             >
               <span>Admin Dashboard</span>
               <ExternalLink className="w-3 h-3" />

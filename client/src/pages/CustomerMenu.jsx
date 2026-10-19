@@ -1363,7 +1363,7 @@ export default function CustomerMenu({
         <section id="menu-food-grid" className="w-full max-w-7xl pt-4 sm:pt-6 pb-12 scroll-mt-24">
           {/* Section Divider & Heading */}
           <div className="text-center mb-7">
-            <div className="inline-flex items-center gap-3 text-sky-400 text-xs font-bold tracking-[0.22em] uppercase mb-2">
+            <div className="inline-flex items-center gap-3 text-amber-400 text-xs font-bold tracking-[0.22em] uppercase mb-2">
               <span className="opacity-60">✦ ─────</span>
               <span>À LA CARTE SELECTION</span>
               <span className="opacity-60">───── ✦</span>
@@ -1371,7 +1371,7 @@ export default function CustomerMenu({
             <h2 className="text-2xl sm:text-4xl font-normal text-white tracking-tight [font-family:Playfair_Display,Georgia,serif]">
               Chef's Culinary Creations
             </h2>
-            <p className="text-xs sm:text-sm text-sky-200/70 max-w-md mx-auto mt-2 font-normal">
+            <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto mt-2 font-normal">
               Freshly prepared to order. Tap any dish for 360° views and culinary details, or add directly to your dining order.
             </p>
           </div>
@@ -1394,14 +1394,14 @@ export default function CustomerMenu({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search dishes, ingredients..."
-                className="w-full pl-9 pr-9 py-2 text-xs sm:text-sm rounded-full bg-[#032038]/70 border border-sky-400/35 text-slate-100 placeholder-sky-200/50 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 transition shadow-inner"
+                className="w-full pl-9 pr-9 py-2 text-xs sm:text-sm rounded-full bg-slate-900/80 border border-slate-700/80 text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition shadow-inner"
               />
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-sky-400" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400" />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-200/60 hover:text-white cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -1415,7 +1415,7 @@ export default function CustomerMenu({
                 className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
                   vegOnlyFilter
                     ? 'bg-emerald-600 text-white shadow-md'
-                    : 'bg-[#032038]/60 text-sky-100 border border-sky-400/30 hover:border-sky-400'
+                    : 'bg-slate-800/80 text-slate-200 border border-slate-700 hover:border-emerald-500/50'
                 }`}
               >
                 <Leaf className="w-3.5 h-3.5" />
@@ -1428,7 +1428,7 @@ export default function CustomerMenu({
                 className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
                   spicyFilter
                     ? 'bg-rose-600 text-white shadow-md'
-                    : 'bg-[#032038]/60 text-sky-100 border border-sky-400/30 hover:border-sky-400'
+                    : 'bg-slate-800/80 text-slate-200 border border-slate-700 hover:border-emerald-500/50'
                 }`}
               >
                 <Flame className="w-3.5 h-3.5" />
@@ -1443,7 +1443,7 @@ export default function CustomerMenu({
                     setVegOnlyFilter(false);
                     setSpicyFilter(false);
                   }}
-                  className="text-xs text-sky-300 hover:text-white font-semibold underline underline-offset-2 ml-1 cursor-pointer"
+                  className="text-xs text-amber-400 hover:text-amber-300 font-semibold underline underline-offset-2 ml-1 cursor-pointer"
                 >
                   Reset
                 </button>
@@ -1459,17 +1459,17 @@ export default function CustomerMenu({
                 {categorizedSections.map((section) => (
                   <div key={section.categoryKey} id={`cat-section-${section.categoryKey}`} className="space-y-4 scroll-mt-28">
                     {/* Category Title Banner */}
-                    <div className="flex items-center justify-between pb-3 border-b border-sky-400/25">
+                    <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
                       <div className="flex items-center gap-3">
                         <span className="text-xl sm:text-2xl">{section.icon}</span>
                         <div>
-                          <h3 className="text-lg sm:text-2xl font-normal text-sky-200 tracking-tight [font-family:Playfair_Display,Georgia,serif]">
+                          <h3 className="text-lg sm:text-2xl font-normal text-white tracking-tight [font-family:Playfair_Display,Georgia,serif]">
                             {section.title}
                           </h3>
-                          <p className="text-xs text-sky-200/60">{section.subtitle}</p>
+                          <p className="text-xs text-slate-400">{section.subtitle}</p>
                         </div>
                       </div>
-                      <span className="text-xs font-bold text-sky-300 bg-[#032038] border border-sky-400/40 px-2.5 py-0.5 rounded-full">
+                      <span className="text-xs font-bold text-amber-400 bg-slate-900/80 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
                         {section.items.length} {section.items.length === 1 ? 'dish' : 'dishes'}
                       </span>
                     </div>
@@ -1501,11 +1501,11 @@ export default function CustomerMenu({
             ) : (
               // Filtered / Searched Single Grid
               <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-sky-400/25">
-                  <h3 className="text-lg sm:text-2xl font-normal text-sky-200 tracking-tight [font-family:Playfair_Display,Georgia,serif]">
+                <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
+                  <h3 className="text-lg sm:text-2xl font-normal text-white tracking-tight [font-family:Playfair_Display,Georgia,serif]">
                     {selectedCategory === 'All' ? 'Search Results' : (getCategoryMetadata(selectedCategory).title || selectedCategory)}
                   </h3>
-                  <span className="text-xs font-bold text-sky-300 bg-[#032038] border border-sky-400/40 px-2.5 py-0.5 rounded-full">
+                  <span className="text-xs font-bold text-amber-400 bg-slate-900/80 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
                     {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'}
                   </span>
                 </div>
@@ -1534,14 +1534,14 @@ export default function CustomerMenu({
             )
           ) : (
             /* Empty State */
-            <div className="bg-[#032038]/70 rounded-3xl border border-sky-500/30 p-8 sm:p-12 text-center max-w-md mx-auto my-10 shadow-lg">
-              <div className="w-16 h-16 rounded-2xl bg-sky-500/15 text-sky-400 mx-auto flex items-center justify-center mb-3.5 border border-sky-400/30">
+            <div className="bg-slate-900/80 rounded-3xl border border-slate-800 p-8 sm:p-12 text-center max-w-md mx-auto my-10 shadow-lg">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 text-emerald-400 mx-auto flex items-center justify-center mb-3.5 border border-emerald-500/30">
                 <UtensilsCrossed className="w-8 h-8 stroke-[1.8]" />
               </div>
-              <h3 className="font-normal text-sky-200 text-xl mb-1 [font-family:Playfair_Display,Georgia,serif]">
+              <h3 className="font-normal text-white text-xl mb-1 [font-family:Playfair_Display,Georgia,serif]">
                 No matching dishes found
               </h3>
-              <p className="text-xs sm:text-sm text-sky-200/70 mb-5 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-400 mb-5 leading-relaxed">
                 Try adjusting your search query or reset dietary filters to view all chef-crafted menu choices.
               </p>
               <button
@@ -1552,7 +1552,7 @@ export default function CustomerMenu({
                   setSpicyFilter(false);
                   setSelectedCategory('All');
                 }}
-                className="min-h-11 px-5 py-2.5 bg-sky-400 hover:bg-sky-300 text-[#021424] rounded-full text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer"
+                className="min-h-11 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer"
               >
                 Reset All Filters
               </button>

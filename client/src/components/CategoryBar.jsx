@@ -119,7 +119,7 @@ export default function CategoryBar({
 
   return (
     <div
-      className={`relative w-full bg-[#021424]/20 border-b border-sky-400/20 py-2.5 ${className}`}
+      className={`relative w-full bg-[#0b0f19]/70 backdrop-blur-md border-b border-emerald-500/20 py-2.5 ${className}`}
     >
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 relative flex items-center min-w-0">
 
@@ -127,7 +127,7 @@ export default function CategoryBar({
         <button
           type="button"
           onClick={() => scrollByAmount(-220)}
-          className="hidden md:flex items-center justify-center w-11 h-11 rounded-full bg-[#032038] border border-sky-400/40 shadow-md text-sky-200 hover:text-[#021424] hover:bg-sky-400 hover:border-sky-300 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 mr-1.5 z-10 cursor-pointer"
+          className="hidden md:flex items-center justify-center w-11 h-11 rounded-full bg-slate-800/90 border border-emerald-500/30 shadow-md text-emerald-400 hover:text-white hover:bg-emerald-600 hover:border-emerald-500 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 mr-1.5 z-10 cursor-pointer"
           aria-label="Scroll left"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -143,7 +143,7 @@ export default function CategoryBar({
           {indicator && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute left-0 top-0 rounded-full border-[1.5px] border-sky-400 bg-gradient-to-r from-[#0369a1]/80 to-[#0284c7]/80 shadow-[0_0_14px_rgba(56,189,248,0.4)] transition-[transform,width,height] duration-300 ease-out motion-reduce:transition-none"
+              className="pointer-events-none absolute left-0 top-0 rounded-full border-[1.5px] border-emerald-400 bg-gradient-to-r from-emerald-600 to-teal-600 shadow-[0_0_14px_rgba(16,185,129,0.45)] transition-[transform,width,height] duration-300 ease-out motion-reduce:transition-none"
               style={{
                 width: indicator.width,
                 height: indicator.height,
@@ -176,10 +176,10 @@ export default function CategoryBar({
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => onSelectCategory && onSelectCategory(categoryId)}
-                className={`group relative z-10 inline-flex items-center gap-2 h-11 min-h-11 px-3.5 sm:px-4 rounded-full text-xs sm:text-sm font-semibold tracking-tight text-slate-100 [text-shadow:0_1px_3px_rgba(2,20,36,0.95)] transition-[color,background-color,border-color,transform] duration-300 ease-out shrink-0 select-none cursor-pointer active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${
+                className={`group relative z-10 inline-flex items-center gap-2 h-11 min-h-11 px-3.5 sm:px-4 rounded-full text-xs sm:text-sm font-semibold tracking-tight text-slate-100 [text-shadow:0_1px_3px_rgba(0,0,0,0.85)] transition-[color,background-color,border-color,transform] duration-300 ease-out shrink-0 select-none cursor-pointer active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${
                   isSelected
                     ? 'border border-transparent text-white font-bold'
-                    : 'bg-[#032038]/35 hover:bg-[#073b61]/60 border border-sky-300/55 hover:border-sky-300/80 hover:-translate-y-px motion-reduce:hover:translate-y-0 text-sky-100'
+                    : 'bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 hover:-translate-y-px motion-reduce:hover:translate-y-0 text-slate-200'
                 }`}
               >
                 <span className="text-base leading-none transition-transform duration-200 group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100">
@@ -191,8 +191,8 @@ export default function CategoryBar({
 
                 {count !== undefined && (
                   <span
-                    className={`ml-0.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold font-mono leading-none bg-sky-400 text-[#021424] transition-colors duration-300 ${
-                      isSelected ? 'shadow-[0_0_8px_rgba(56,189,248,0.6)]' : 'group-hover:bg-sky-300'
+                    className={`ml-0.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold font-mono leading-none transition-colors duration-300 ${
+                      isSelected ? 'bg-amber-400 text-slate-950 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-slate-700 text-slate-300 group-hover:bg-emerald-500/20 group-hover:text-emerald-300'
                     }`}
                   >
                     {count}
@@ -207,7 +207,7 @@ export default function CategoryBar({
         <button
           type="button"
           onClick={() => scrollByAmount(220)}
-          className="hidden md:flex items-center justify-center w-11 h-11 rounded-full bg-[#032038] border border-sky-400/40 shadow-md text-sky-200 hover:text-[#021424] hover:bg-sky-400 hover:border-sky-300 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 ml-1.5 z-10 cursor-pointer"
+          className="hidden md:flex items-center justify-center w-11 h-11 rounded-full bg-slate-800/90 border border-emerald-500/30 shadow-md text-emerald-400 hover:text-white hover:bg-emerald-600 hover:border-emerald-500 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 ml-1.5 z-10 cursor-pointer"
           aria-label="Scroll right"
         >
           <ChevronRight className="w-4 h-4" />

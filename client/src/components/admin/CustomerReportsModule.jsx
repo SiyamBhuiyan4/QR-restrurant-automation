@@ -1008,8 +1008,8 @@ export default function CustomerReportsModule({ className = '' }) {
                       )}
 
                       {!isCritical && !isModerate && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider bg-blue-500/15 border border-blue-500/40 text-blue-300">
-                          <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/40 text-emerald-300">
+                          <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
                           <span>General Note</span>
                         </span>
                       )}

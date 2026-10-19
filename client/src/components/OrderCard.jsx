@@ -115,7 +115,7 @@ export default function OrderCard({
       return 'border-emerald-500 ring-1 ring-emerald-500/40 shadow-lg shadow-emerald-950/30';
     }
     if (status === 'preparing' || status === 'cooking' || status === 'in_kitchen') {
-      return 'border-sky-500 shadow-md shadow-sky-950/30';
+      return 'border-orange-500 shadow-md shadow-orange-950/30';
     }
     return 'border-slate-700/80 hover:border-slate-600';
   };
@@ -126,7 +126,7 @@ export default function OrderCard({
       return {
         nextStatus: 'preparing',
         label: '👨‍🍳 Start Preparing',
-        colorClass: 'bg-sky-500 hover:bg-sky-400 active:bg-sky-600 text-slate-950 ring-2 ring-sky-400/40'
+        colorClass: 'bg-orange-500 hover:bg-orange-400 active:bg-orange-600 text-slate-950 ring-2 ring-orange-400/40 font-black'
       };
     }
     if (status === 'preparing' || status === 'cooking' || status === 'in_kitchen' || status === 'in-progress') {
@@ -220,8 +220,8 @@ export default function OrderCard({
               </span>
             )}
             {(status === 'preparing' || status === 'cooking' || status === 'in_kitchen') && (
-              <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/40 inline-flex items-center gap-1">
-                <Flame className="w-3 h-3 text-sky-400 animate-bounce" />
+              <span className="px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-300 border border-orange-500/40 inline-flex items-center gap-1">
+                <Flame className="w-3 h-3 text-orange-400 animate-bounce" />
                 Cooking
               </span>
             )}

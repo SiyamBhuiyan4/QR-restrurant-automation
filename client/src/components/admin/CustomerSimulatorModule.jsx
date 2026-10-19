@@ -44,7 +44,7 @@ export default function CustomerSimulatorModule({ className = '' }) {
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Left: Info */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
             <Smartphone className="w-5 h-5" />
           </div>
           <div>
@@ -66,7 +66,7 @@ export default function CustomerSimulatorModule({ className = '' }) {
           <select
             value={selectedTable}
             onChange={(e) => setSelectedTable(Number(e.target.value))}
-            className="px-3 py-1.5 rounded-xl text-xs font-black border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:border-indigo-500"
+            className="px-3 py-1.5 rounded-xl text-xs font-black border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:border-emerald-500"
           >
             {Array.from({ length: 12 }, (_, i) => i + 1).map(num => (
               <option key={num} value={num}>Table #{num}</option>
@@ -82,7 +82,7 @@ export default function CustomerSimulatorModule({ className = '' }) {
               onClick={() => setDeviceMode('mobile')}
               className={`p-1.5 rounded-lg transition ${
                 deviceMode === 'mobile'
-                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                  ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'
               }`}
               title="Mobile View (iPhone)"
@@ -94,7 +94,7 @@ export default function CustomerSimulatorModule({ className = '' }) {
               onClick={() => setDeviceMode('tablet')}
               className={`p-1.5 rounded-lg transition ${
                 deviceMode === 'tablet'
-                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                  ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'
               }`}
               title="Tablet View (iPad)"
@@ -106,7 +106,7 @@ export default function CustomerSimulatorModule({ className = '' }) {
               onClick={() => setDeviceMode('desktop')}
               className={`p-1.5 rounded-lg transition ${
                 deviceMode === 'desktop'
-                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                  ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'
               }`}
               title="Full Width Responsive"
@@ -128,7 +128,7 @@ export default function CustomerSimulatorModule({ className = '' }) {
             href={`/?table=${selectedTable}`}
             target="_blank"
             rel="noreferrer"
-            className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
+            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
             title="Open in standalone tab"
           >
             <span>Pop Out</span>
