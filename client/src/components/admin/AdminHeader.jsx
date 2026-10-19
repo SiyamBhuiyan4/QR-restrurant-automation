@@ -228,56 +228,19 @@ export default function AdminHeader({
 
       {/* RIGHT CONTROLS */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        {/* Dynamic Floor Tables Stepper & Quick Add (Always Visible on all tabs) */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 shadow-lg shadow-amber-500/10 text-xs">
+        {/* Dynamic Floor Tables Count Badge (Navigates to Live Tables) */}
+        <button
+          type="button"
+          onClick={() => onSelectTab('tables')}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border-2 border-amber-500/40 shadow-lg shadow-amber-500/10 text-xs transition cursor-pointer"
+          title="Click to view and manage Live Tables"
+        >
           <UtensilsCrossed className="w-4 h-4 text-amber-400 shrink-0" />
           <span className="font-extrabold text-amber-300 hidden min-[480px]:inline">Tables:</span>
-          
-          <button
-            type="button"
-            onClick={() => onRemoveTable ? onRemoveTable() : onSetTableCount?.(tableCount - 1)}
-            disabled={tableCount <= 1}
-            className="w-7 h-7 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white font-black text-sm flex items-center justify-center border border-slate-700 cursor-pointer transition active:scale-95"
-            title="Remove/Decrease 1 table"
-          >
-            -
-          </button>
-          
-          <span
-            className="font-black text-white bg-slate-900 border border-amber-500/40 px-2 py-0.5 rounded-lg min-w-[28px] text-center cursor-pointer hover:underline text-xs"
-            onClick={() => onSelectTab('tables')}
-            title="Click to view Live Tables"
-          >
+          <span className="font-black text-white bg-slate-900 border border-amber-500/40 px-2 py-0.5 rounded-lg min-w-[28px] text-center text-xs">
             {tableCount}
           </span>
-          
-          <button
-            type="button"
-            onClick={() => onAddTable ? onAddTable() : onSetTableCount?.(tableCount + 1)}
-            disabled={tableCount >= 60}
-            className="w-7 h-7 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white font-black text-sm flex items-center justify-center border border-slate-700 cursor-pointer transition active:scale-95"
-            title="Add/Increase 1 table"
-          >
-            +
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (onAddTable) {
-                onAddTable();
-              } else if (onSetTableCount) {
-                onSetTableCount(tableCount + 1);
-              }
-              onSelectTab('tables');
-            }}
-            className="ml-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:brightness-110 text-white font-black text-xs shadow-md shadow-[#FF5A26]/30 flex items-center gap-1.5 cursor-pointer transition active:scale-95"
-            title="Add a new table to the floor"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>+ Add Table</span>
-          </button>
-        </div>
+        </button>
 
         {/* Refresh Button */}
         <button

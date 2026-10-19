@@ -760,75 +760,80 @@ export default function LiveTablesModule({
           </div>
         </div>
 
-        {/* Action Controls */}
+        {/* Action Controls: Direct Write & Protected by PIN 808080 */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Quick Stepper */}
-          <div className="flex items-center bg-black/40 backdrop-blur-md border border-white/30 px-3.5 py-2 rounded-2xl shadow-inner">
-            <span className="text-xs font-black text-orange-200 mr-2 uppercase tracking-wider">Tables:</span>
-            <button
-              type="button"
-              onClick={() => handleRemoveSpecificTable(tables.length)}
-              disabled={tables.length <= 1}
-              className="w-8 h-8 rounded-xl bg-white/20 hover:bg-white/30 disabled:opacity-30 text-white font-black text-lg flex items-center justify-center transition active:scale-95 cursor-pointer"
-              title="Remove/Decrease 1 table"
-            >
-              −
-            </button>
+          {/* Direct Write Input (NO + / - Stepper) */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              requestTableCountChange(customTableCount);
+            }}
+            className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-white/30 px-3.5 py-2 rounded-2xl shadow-inner"
+          >
+            <label htmlFor="hero-table-count-input" className="text-xs font-black text-orange-200 uppercase tracking-wider whitespace-nowrap">
+              Tables:
+            </label>
             <input
+              id="hero-table-count-input"
               type="number"
               min="1"
               max="60"
-              value={tables.length}
-              onChange={(e) => handleTableCountChange(e.target.value)}
-              className="w-12 text-center bg-black/30 text-white font-black text-sm py-1 mx-1.5 rounded-lg border border-white/20 focus:outline-none"
-              title="Type exact table count"
+              value={customTableCount}
+              onChange={(e) => setCustomTableCount(e.target.value)}
+              placeholder={String(tables.length)}
+              className="w-16 text-center bg-black/40 text-white font-black text-sm py-1.5 px-2 rounded-xl border border-white/30 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition"
+              title="Type desired total table count (1-60)"
             />
             <button
-              type="button"
-              onClick={() => handleAddNewTable({ seats: 4, zone: 'Main Hall' })}
-              disabled={tables.length >= 60}
-              className="w-8 h-8 rounded-xl bg-white/20 hover:bg-white/30 disabled:opacity-30 text-white font-black text-lg flex items-center justify-center transition active:scale-95 cursor-pointer"
-              title="Add/Increase 1 table"
+              type="submit"
+              className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-orange-50 text-orange-600 font-black text-xs shadow-md transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+              title="Apply desired table count (Requires PIN 808080)"
             >
-              +
+              <Lock className="w-3.5 h-3.5" />
+              <span>Apply</span>
             </button>
-          </div>
+          </form>
 
-          {/* Presets */}
+          {/* Presets (Protected by PIN 808080) */}
           <div className="hidden sm:flex items-center gap-1 bg-black/30 backdrop-blur-md border border-white/20 p-1 rounded-2xl">
-            {[8, 10, 12, 15, 20, 24].map((cnt) => (
+            {[8, 10, 12, 16, 20, 24].map((cnt) => (
               <button
                 key={cnt}
                 type="button"
-                onClick={() => handleTableCountChange(cnt)}
+                onClick={() => {
+                  setCustomTableCount(String(cnt));
+                  requestTableCountChange(cnt);
+                }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
                   tables.length === cnt
                     ? 'bg-white text-orange-600 shadow-md font-black'
                     : 'text-orange-100 hover:text-white hover:bg-white/10'
                 }`}
+                title={`Set to ${cnt} tables (Requires PIN 808080)`}
               >
                 {cnt}
               </button>
             ))}
           </div>
 
-          {/* Big White Add Table Button */}
+          {/* Big White Add Table Button (Protected by PIN 808080) */}
           <button
             type="button"
-            onClick={() => setIsAddTableModalOpen(true)}
+            onClick={() => requestAddNewTable()}
             className="px-5 py-2.5 rounded-2xl bg-white hover:bg-orange-50 text-orange-600 font-black text-xs sm:text-sm shadow-xl shadow-black/20 flex items-center gap-2 transition active:scale-95 cursor-pointer"
+            title="Commission new table (Requires PIN 808080)"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>+ Add Table</span>
           </button>
 
-          {/* Remove Last Table Button */}
+          {/* Remove Last Table Button (Protected by PIN 808080) */}
           <button
             type="button"
-            onClick={() => handleRemoveSpecificTable(tables.length)}
+            onClick={requestRemoveLastTable}
             disabled={tables.length <= 1}
             className="px-4 py-2.5 rounded-2xl bg-black/40 hover:bg-black/60 disabled:opacity-30 border border-white/20 text-white font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer flex items-center gap-1.5"
-            title="Remove highest numbered table"
+            title="Remove highest numbered table (Requires PIN 808080)"
           >
             <Trash2 className="w-4 h-4 text-red-300" />
             <span>- Remove Last</span>
@@ -928,92 +933,6 @@ export default function LiveTablesModule({
               </button>
             </div>
 
-            {/* Direct Add Table Button in Top Filter Row */}
-            <button
-              type="button"
-              onClick={() => setIsAddTableModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:brightness-110 text-white font-black text-xs shadow-md shadow-[#FF5A26]/30 flex items-center gap-1.5 transition active:scale-95 cursor-pointer shrink-0"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>+ Add Table</span>
-            </button>
-          </div>
-        </div>
-
-        {/* =======================================================================
-            PROMINENT DYNAMIC TABLE CONTROLS BAR (Rule 1: Add & Remove Tables)
-            ======================================================================= */}
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] border border-[#334155] shadow-xl flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FF5A26] to-amber-500 flex items-center justify-center text-white shadow-md shadow-[#FF5A26]/30 shrink-0">
-              <Grid3X3 className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-wider text-amber-400">
-                  Floor Table Controls &amp; Scaling
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                  {tables.length} Total Tables
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 font-medium mt-0.5">
-                Scale restaurant tables dynamically &bull; Real-time sync across Diner QR stickers &amp; Employee handsets
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Quick Table Count Stepper */}
-            <div className="flex items-center gap-2 bg-[#0b0f19] border border-[#334155] px-3 py-1.5 rounded-xl shadow-inner">
-              <span className="text-xs font-bold text-slate-300">Total:</span>
-              <button
-                type="button"
-                onClick={() => handleRemoveSpecificTable(tables.length)}
-                disabled={tables.length <= 1}
-                className="w-7 h-7 rounded-lg bg-[#1e293b] hover:bg-slate-700 disabled:opacity-30 text-white font-black text-sm flex items-center justify-center border border-[#334155] cursor-pointer transition active:scale-95"
-                title="Decrease/Remove 1 table"
-              >
-                -
-              </button>
-              <input
-                type="number"
-                min="1"
-                max="60"
-                value={tables.length}
-                onChange={(e) => handleTableCountChange(e.target.value)}
-                className="w-11 text-center bg-[#0f172a] text-amber-300 font-black text-xs py-1 rounded border border-[#334155] focus:outline-none"
-                title="Type exact number of tables (1-60)"
-              />
-              <button
-                type="button"
-                onClick={() => handleAddNewTable({ seats: 4, zone: 'Main Hall' })}
-                disabled={tables.length >= 60}
-                className="w-7 h-7 rounded-lg bg-[#1e293b] hover:bg-slate-700 disabled:opacity-30 text-white font-black text-sm flex items-center justify-center border border-[#334155] cursor-pointer transition active:scale-95"
-                title="Increase/Add 1 table"
-              >
-                +
-              </button>
-            </div>
-
-            {/* Quick Presets */}
-            <div className="hidden sm:flex items-center gap-1 bg-[#0b0f19] border border-[#334155] p-1 rounded-xl">
-              {[8, 10, 12, 15, 20, 24].map(cnt => (
-                <button
-                  key={cnt}
-                  type="button"
-                  onClick={() => handleTableCountChange(cnt)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                    tables.length === cnt
-                      ? 'bg-[#FF5A26] text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white hover:bg-[#1e293b]'
-                  }`}
-                >
-                  {cnt}
-                </button>
-              ))}
-            </div>
-
             {/* Auto-Balance Tables Button */}
             {onAutoBalanceTables && (
               <button
@@ -1022,136 +941,22 @@ export default function LiveTablesModule({
                   onAutoBalanceTables();
                   triggerToast('Tables balanced evenly across all active floor employees!', 'success');
                 }}
-                className="px-3 py-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 border border-[#334155] cursor-pointer active:scale-95"
+                className="px-3 py-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 border border-[#334155] cursor-pointer active:scale-95 shrink-0"
                 title="Distribute tables evenly across active employees"
               >
                 <span>⚖️ Balance Staff</span>
               </button>
             )}
 
-            {/* Primary Action Button: + Add Table */}
+            {/* Direct Add Table Button in Top Filter Row (Protected by PIN 808080) */}
             <button
               type="button"
-              onClick={() => setIsAddTableModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF5A26] via-orange-500 to-amber-500 hover:from-[#e04f20] hover:to-amber-400 text-white font-black text-xs shadow-md shadow-[#FF5A26]/30 flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+              onClick={() => requestAddNewTable()}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:brightness-110 text-white font-black text-xs shadow-md shadow-[#FF5A26]/30 flex items-center gap-1.5 transition active:scale-95 cursor-pointer shrink-0"
+              title="Add table (Requires PIN 808080)"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               <span>+ Add Table</span>
-            </button>
-
-            {/* Remove Last Table Action Button */}
-            <button
-              type="button"
-              onClick={() => handleRemoveSpecificTable(tables.length)}
-              disabled={tables.length <= 1}
-              className="px-3.5 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 disabled:opacity-40 text-rose-300 border border-rose-500/30 font-bold text-xs transition active:scale-95 cursor-pointer flex items-center gap-1.5"
-              title="Remove the highest numbered table"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>- Remove Last</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Row 2: Floor Table Capacity & Security Authorization Controls */}
-        <div className="pt-4 border-t border-[#334155] flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-[#0b0f19]/70 p-3.5 sm:p-4 rounded-2xl border border-[#1e293b]">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                <Lock className="w-4 h-4 text-amber-400" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-[#f8fafc] tracking-tight">
-                    Floor Capacity
-                  </span>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-md">
-                    PIN 808080
-                  </span>
-                </div>
-                <span className="text-[11px] text-zinc-400 font-medium block mt-0.5">
-                  Type table count &bull; Authorize changes with Admin PIN
-                </span>
-              </div>
-            </div>
-
-            {/* Direct Input & Apply Button */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                requestTableCountChange(customTableCount);
-              }}
-              className="flex items-center gap-2 pl-0 sm:pl-3 sm:border-l border-[#334155]"
-            >
-              <div className="relative flex items-center">
-                <input
-                  type="number"
-                  min="1"
-                  max="50"
-                  value={customTableCount}
-                  onChange={(e) => setCustomTableCount(e.target.value)}
-                  placeholder="Count"
-                  className="w-20 pl-3 pr-2 py-1.5 rounded-xl bg-[#1e293b] border border-[#334155] text-xs font-black text-[#f8fafc] text-center focus:outline-none focus:border-[#FF5A26] transition shadow-inner font-mono"
-                  aria-label="Direct floor table count input"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:from-[#ff6b3d] hover:to-[#ff8c5a] text-white text-xs font-black shadow-md shadow-[#FF5A26]/25 transition cursor-pointer flex items-center gap-1.5 active:scale-95"
-              >
-                <span>Apply Count</span>
-              </button>
-            </form>
-          </div>
-
-          {/* Quick Presets & Add/Remove Actions (All Protected by 808080 PIN) */}
-          <div className="flex items-center gap-2 flex-wrap xl:justify-end">
-            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider hidden sm:inline">
-              Presets:
-            </span>
-            <div className="flex items-center gap-1 bg-[#1e293b] p-1 rounded-xl border border-[#334155]">
-              {[8, 10, 12, 16, 20, 24].map((preset) => {
-                const isActive = tables.length === preset;
-                return (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => {
-                      setCustomTableCount(preset.toString());
-                      requestTableCountChange(preset);
-                    }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer ${
-                      isActive
-                        ? 'bg-[#FF5A26] text-white shadow-sm ring-1 ring-[#FF7A45]'
-                        : 'text-zinc-400 hover:text-[#f8fafc] hover:bg-[#334155]'
-                    }`}
-                  >
-                    {preset}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* + Add Table Button */}
-            <button
-              type="button"
-              onClick={requestAddNewTable}
-              className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 hover:text-emerald-300 text-xs font-black transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Add Table</span>
-            </button>
-
-            {/* - Remove Last Button */}
-            <button
-              type="button"
-              onClick={requestRemoveLastTable}
-              disabled={tables.length <= 1}
-              className="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 hover:text-rose-300 text-xs font-black transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs active:scale-95"
-            >
-              <Minus className="w-3.5 h-3.5" />
-              <span>- Remove Last</span>
             </button>
           </div>
         </div>
@@ -1928,13 +1733,13 @@ export default function LiveTablesModule({
               </div>
             </div>
 
-            {/* Modal Actions */}
+            {/* Modal Actions (Protected by PIN 808080) */}
             <div className="pt-2 border-t border-[#334155] flex flex-col sm:flex-row items-center justify-between gap-2.5">
               <button
                 type="button"
-                onClick={() => handleAddNewTable({ seats: 4, zone: 'Main Hall', assignedEmployeeId: null })}
+                onClick={() => requestAddNewTable({ seats: 4, zone: 'Main Hall', assignedEmployeeId: null })}
                 className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-amber-300 border border-[#334155] text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                title="Quickly add default 4-seat table"
+                title="Quickly add default 4-seat table (Requires PIN 808080)"
               >
                 <span>⚡ Quick Add (4-Seat)</span>
               </button>
@@ -1949,7 +1754,7 @@ export default function LiveTablesModule({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleAddNewTable()}
+                  onClick={() => requestAddNewTable()}
                   className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A26] via-orange-500 to-amber-500 hover:from-[#e04f20] hover:to-amber-400 text-white text-xs font-black shadow-lg shadow-[#FF5A26]/30 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
