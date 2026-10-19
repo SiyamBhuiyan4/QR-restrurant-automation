@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { NetworkProvider } from './context/NetworkContext';
 import { SocketProvider } from './context/SocketContext';
+import { RestaurantProvider } from './context/RestaurantContext';
 import { CartProvider } from './context/CartContext';
 
 // Pages
@@ -173,7 +174,7 @@ function AppRouter() {
         return <AdminDashboard />;
       case 'qr':
         return (
-          <div className="min-h-screen bg-slate-50 p-4 sm:p-8">
+          <div className="min-h-screen bg-[#0b0f19] text-[#f8fafc] p-4 sm:p-8">
             <div className="max-w-7xl mx-auto">
               <QRBatchGenerator />
             </div>
@@ -188,7 +189,7 @@ function AppRouter() {
   const navItems = [
     { id: 'customer', label: 'Customer Menu', path: '/?table=1', icon: UtensilsCrossed, badge: 'Diner' },
     { id: 'kds', label: 'Kitchen KDS', path: '/kds', icon: ChefHat, badge: 'Kitchen' },
-    { id: 'waiter', label: 'Floor Staff Console', path: '/waiter', icon: ConciergeBell, badge: 'Floor' },
+    { id: 'waiter', label: 'Floor Employee Console', path: '/waiter', icon: ConciergeBell, badge: 'Floor' },
     { id: 'admin', label: 'Admin Portal', path: '/admin', icon: ShieldCheck, badge: 'Manager' },
     { id: 'qr', label: 'Table QR Generator', path: '/qr', icon: QrCode, badge: 'Stickers' },
   ];
@@ -303,9 +304,11 @@ export default function App() {
     <ErrorBoundary>
       <NetworkProvider>
         <SocketProvider>
-          <CartProvider>
-            <AppRouter />
-          </CartProvider>
+          <RestaurantProvider>
+            <CartProvider>
+              <AppRouter />
+            </CartProvider>
+          </RestaurantProvider>
         </SocketProvider>
       </NetworkProvider>
     </ErrorBoundary>

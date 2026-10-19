@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
+import { useRestaurant } from '../context/RestaurantContext';
 import Navbar from '../components/Navbar';
 import CategoryBar from '../components/CategoryBar';
 import CartDrawer from '../components/CartDrawer';
@@ -668,6 +669,12 @@ export default function CustomerMenu({
   // 0. Layout View Mode ('showcase' for 1-by-1 alternating editorial, 'grid' for 2-column compact modern, 'list' for horizontal rows)
   const [activeScrollCategory, setActiveScrollCategory] = useState('All');
 
+  // Restaurant Context for table and employee routing
+  let restaurant = null;
+  try {
+    restaurant = useRestaurant();
+  } catch (_) {}
+
   // 1. Fixed Table Detection & Locking (No automatic table selection modal)
   const [tableNumber, setTableNumber] = useState('');
   const [isTableLocked, setIsTableLocked] = useState(false);
@@ -1188,9 +1195,12 @@ export default function CustomerMenu({
     return { totalCount, subtotal, tax, total, items };
   }, [cart]);
 
-  // Handle Waiter Called from Navbar
+  // Handle Assistance Called from Navbar
   const handleWaiterCalled = (reason, table) => {
-    showToast(`🛎️ Waiter called for Table ${table || tableNumber || 'your table'} (${reason})`);
+    const finalTable = table || tableNumber || '1';
+    const assignedEmp = restaurant?.getAssignedEmployeeForTable?.(finalTable);
+    const assignedName = assignedEmp ? assignedEmp.name : 'Floor Specialist';
+    showToast(`🛎️ Table #${finalTable} requested assistance -> Routed to assigned employee: ${assignedName}`);
   };
 
   // Submit Order handler

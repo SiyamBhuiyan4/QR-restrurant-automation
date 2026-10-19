@@ -32,7 +32,11 @@ import {
   ShieldCheck,
   MapPin,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  Grid3X3,
+  Trash2,
+  Plus,
+  PlusCircle
 } from 'lucide-react';
 
 import {
@@ -179,6 +183,12 @@ export default function LiveTablesModule({
   employees: propEmployees,
   orders: propOrders,
   customerNotes: propCustomerNotes,
+  tableCount: propTableCount,
+  onTableCountChange,
+  onAddTable,
+  onRemoveTable,
+  onAutoBalanceTables,
+  onAssignEmployee,
   onUpdateTableStatus,
   onAdvanceOrderStage,
   onNotifyEmployee,
@@ -255,6 +265,10 @@ export default function LiveTablesModule({
   const [selectedOrderModal, setSelectedOrderModal] = useState(null);
   const [activeIssueModal, setActiveIssueModal] = useState(null);
   const [activeEmployeeDropdownTableId, setActiveEmployeeDropdownTableId] = useState(null);
+  const [isAddTableModalOpen, setIsAddTableModalOpen] = useState(false);
+  const [newTableSeats, setNewTableSeats] = useState(4);
+  const [newTableZone, setNewTableZone] = useState('Main Hall');
+  const [newTableAssignedEmpId, setNewTableAssignedEmpId] = useState('');
 
   // Temporary Toast Feedback
   const [notificationToast, setNotificationToast] = useState(null);
@@ -466,31 +480,117 @@ export default function LiveTablesModule({
     }
   }, [triggerToast, onResetTable]);
 
-  // Reassign Employee to a Table
+  // Dynamic Table Count Scaling (Rule 1)
+  const handleTableCountChange = useCallback((newCount) => {
+    const target = Math.max(1, Math.min(60, parseInt(newCount, 10) || 1));
+    if (onTableCountChange) {
+      onTableCountChange(target);
+    } else {
+      setTables(prev => {
+        if (target === prev.length) return prev;
+        if (target > prev.length) {
+          const added = [];
+          const locations = [TABLE_LOCATION.MAIN_HALL, TABLE_LOCATION.WINDOW, TABLE_LOCATION.PATIO];
+          const capacities = [2, 4, 4, 6, 8];
+          for (let i = prev.length + 1; i <= target; i++) {
+            added.push({
+              id: i,
+              tableNumber: i,
+              name: `Table ${i}`,
+              status: TABLE_STATUS.AVAILABLE,
+              assignedEmployeeId: null,
+              currentOrderId: null,
+              capacity: capacities[(i - 1) % capacities.length],
+              seats: capacities[(i - 1) % capacities.length],
+              location: locations[(i - 1) % locations.length]
+            });
+          }
+          return [...prev, ...added];
+        }
+        return prev.slice(0, target);
+      });
+    }
+    triggerToast(`Total tables updated to ${target}`, 'info');
+  }, [onTableCountChange, triggerToast]);
+
+  // 1-Click / Custom Add New Table (Rule 1)
+  const handleAddNewTable = useCallback((customConfig = null) => {
+    playChimeSound();
+    const config = customConfig || {
+      seats: newTableSeats,
+      zone: newTableZone,
+      assignedEmployeeId: newTableAssignedEmpId || null
+    };
+
+    if (onAddTable) {
+      onAddTable(config);
+    } else if (onTableCountChange) {
+      onTableCountChange(tables.length + 1);
+    } else {
+      const nextNum = tables.length + 1;
+      setTables(prev => [
+        ...prev,
+        {
+          id: nextNum,
+          tableNumber: nextNum,
+          name: `Table ${nextNum}`,
+          status: TABLE_STATUS.AVAILABLE,
+          assignedEmployeeId: config.assignedEmployeeId || null,
+          currentOrderId: null,
+          capacity: config.seats || 4,
+          seats: config.seats || 4,
+          location: config.zone || 'Main Hall',
+          zone: config.zone || 'Main Hall',
+          activeCall: false
+        }
+      ]);
+    }
+
+    setIsAddTableModalOpen(false);
+    triggerToast(`Table ${tables.length + 1} added to floor matrix! Total: ${tables.length + 1}`, 'success');
+  }, [newTableSeats, newTableZone, newTableAssignedEmpId, onAddTable, onTableCountChange, tables.length, triggerToast]);
+
+  // Remove Table (Rule 1: Decrement / Delete Table)
+  const handleRemoveSpecificTable = useCallback((tableNumber) => {
+    const tbl = tables.find(t => t.tableNumber === tableNumber);
+    if (tbl && (tbl.status === TABLE_STATUS.ORDER_RUNNING || tbl.status === TABLE_STATUS.READY_IN_KITCHEN)) {
+      triggerToast(`Cannot remove Table ${tableNumber} while an order is active in kitchen!`, 'error');
+      return;
+    }
+
+    playChimeSound();
+    if (onRemoveTable) {
+      onRemoveTable(tableNumber);
+    } else if (onTableCountChange) {
+      onTableCountChange(tables.length - 1);
+    } else {
+      setTables(prev => {
+        const filtered = prev.filter(t => t.tableNumber !== tableNumber);
+        return filtered.map((t, idx) => ({ ...t, id: idx + 1, tableNumber: idx + 1, name: `Table ${idx + 1}` }));
+      });
+    }
+
+    triggerToast(`Table ${tableNumber} removed from floor matrix.`, 'info');
+  }, [tables, onRemoveTable, onTableCountChange, triggerToast]);
+
+  // Reassign Employee to a Table (Rule 2)
   const handleReassignEmployee = useCallback((tableNumber, newEmployeeId) => {
     playChimeSound();
-    const newEmp = employees.find(e => e.id === Number(newEmployeeId));
-    const empName = newEmp ? newEmp.name : 'Employee';
+    const empId = newEmployeeId ? String(newEmployeeId) : null;
+    const newEmp = employees.find(e => String(e.id) === empId || (e.numericId && String(e.numericId) === empId));
+    const empName = newEmp ? newEmp.name : (empId ? 'Employee' : 'Unassigned');
 
-    setTables(prev => prev.map(t => (t.tableNumber === tableNumber ? { ...t, assignedEmployeeId: Number(newEmployeeId) } : t)));
+    setTables(prev => prev.map(t => (t.tableNumber === tableNumber ? { ...t, assignedEmployeeId: empId } : t)));
+    setOrders(prev => prev.map(o => (o.tableNumber === tableNumber ? { ...o, assignedEmployeeId: empId } : o)));
 
-    // Also update active order if any
-    setOrders(prev => prev.map(o => (o.tableNumber === tableNumber ? { ...o, assignedEmployeeId: Number(newEmployeeId) } : o)));
-
-    // Update employees assignedTableIds
-    setEmployees(prev => prev.map(e => {
-      const assigned = new Set(e.assignedTableIds || []);
-      if (e.id === Number(newEmployeeId)) {
-        assigned.add(tableNumber);
-      } else {
-        assigned.delete(tableNumber);
-      }
-      return { ...e, assignedTableIds: Array.from(assigned) };
-    }));
+    // Bubble to parent shared context handler
+    if (onAssignEmployee) {
+      onAssignEmployee(tableNumber, empId);
+    }
 
     setActiveEmployeeDropdownTableId(null);
     triggerToast(`Table ${tableNumber} assigned to ${empName}`, 'success');
-  }, [employees, triggerToast]);
+  }, [employees, onAssignEmployee, triggerToast]);
 
   // Resolve Customer Assistance / Issue
   const handleResolveIssue = useCallback((noteId, tableNumber, resolutionMemo) => {
@@ -552,6 +652,105 @@ export default function LiveTablesModule({
     <div className="space-y-6">
       
       {/* =======================================================================
+          HERO BANNER: DYNAMIC FLOOR CAPACITY & TABLE MANAGER (VERY TOP OF PAGE)
+          ======================================================================= */}
+      <div className="bg-gradient-to-r from-orange-600 via-[#FF5A26] to-amber-500 rounded-3xl p-5 sm:p-6 shadow-2xl shadow-orange-950/40 border border-orange-400/40 flex flex-col xl:flex-row xl:items-center justify-between gap-5 text-white">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner shrink-0 border border-white/30">
+            <Grid3X3 className="w-8 h-8 text-white stroke-[2.5]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white drop-shadow-sm">
+                Floor Capacity &amp; Table Scaling
+              </h2>
+              <span className="bg-black/30 backdrop-blur-sm text-white px-3.5 py-1 rounded-full text-xs font-black border border-white/30 tracking-wide">
+                {tables.length} Total Tables
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-orange-100 font-medium mt-1">
+              Add or remove tables dynamically &bull; Real-time sync across Diner QR stickers &amp; Employee handsets
+            </p>
+          </div>
+        </div>
+
+        {/* Action Controls */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Quick Stepper */}
+          <div className="flex items-center bg-black/40 backdrop-blur-md border border-white/30 px-3.5 py-2 rounded-2xl shadow-inner">
+            <span className="text-xs font-black text-orange-200 mr-2 uppercase tracking-wider">Tables:</span>
+            <button
+              type="button"
+              onClick={() => handleRemoveSpecificTable(tables.length)}
+              disabled={tables.length <= 1}
+              className="w-8 h-8 rounded-xl bg-white/20 hover:bg-white/30 disabled:opacity-30 text-white font-black text-lg flex items-center justify-center transition active:scale-95 cursor-pointer"
+              title="Remove/Decrease 1 table"
+            >
+              −
+            </button>
+            <input
+              type="number"
+              min="1"
+              max="60"
+              value={tables.length}
+              onChange={(e) => handleTableCountChange(e.target.value)}
+              className="w-12 text-center bg-black/30 text-white font-black text-sm py-1 mx-1.5 rounded-lg border border-white/20 focus:outline-none"
+              title="Type exact table count"
+            />
+            <button
+              type="button"
+              onClick={() => handleAddNewTable({ seats: 4, zone: 'Main Hall' })}
+              disabled={tables.length >= 60}
+              className="w-8 h-8 rounded-xl bg-white/20 hover:bg-white/30 disabled:opacity-30 text-white font-black text-lg flex items-center justify-center transition active:scale-95 cursor-pointer"
+              title="Add/Increase 1 table"
+            >
+              +
+            </button>
+          </div>
+
+          {/* Presets */}
+          <div className="hidden sm:flex items-center gap-1 bg-black/30 backdrop-blur-md border border-white/20 p-1 rounded-2xl">
+            {[8, 10, 12, 15, 20, 24].map((cnt) => (
+              <button
+                key={cnt}
+                type="button"
+                onClick={() => handleTableCountChange(cnt)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
+                  tables.length === cnt
+                    ? 'bg-white text-orange-600 shadow-md font-black'
+                    : 'text-orange-100 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {cnt}
+              </button>
+            ))}
+          </div>
+
+          {/* Big White Add Table Button */}
+          <button
+            type="button"
+            onClick={() => setIsAddTableModalOpen(true)}
+            className="px-5 py-2.5 rounded-2xl bg-white hover:bg-orange-50 text-orange-600 font-black text-xs sm:text-sm shadow-xl shadow-black/20 flex items-center gap-2 transition active:scale-95 cursor-pointer"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>+ Add Table</span>
+          </button>
+
+          {/* Remove Last Table Button */}
+          <button
+            type="button"
+            onClick={() => handleRemoveSpecificTable(tables.length)}
+            disabled={tables.length <= 1}
+            className="px-4 py-2.5 rounded-2xl bg-black/40 hover:bg-black/60 disabled:opacity-30 border border-white/20 text-white font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+            title="Remove highest numbered table"
+          >
+            <Trash2 className="w-4 h-4 text-red-300" />
+            <span>- Remove Last</span>
+          </button>
+        </div>
+      </div>
+
+      {/* =======================================================================
           TOP TELEMETRY & FILTER CONTROLS BAR
           ======================================================================= */}
       <div className="bg-[#111827] backdrop-blur-2xl rounded-3xl border border-[#334155] p-5 shadow-2xl shadow-black/40 space-y-5">
@@ -572,7 +771,7 @@ export default function LiveTablesModule({
                 </span>
               </div>
               <p className="text-xs text-zinc-400 font-medium mt-1">
-                Real-time 12-table dining grid &bull; 4-stage kitchen pipeline &bull; Instant Employee dispatch
+                Real-time {tables.length}-table floor matrix &bull; 4-stage kitchen pipeline &bull; Instant Employee dispatch
               </p>
             </div>
           </div>
@@ -608,7 +807,7 @@ export default function LiveTablesModule({
                 onChange={(e) => setZoneFilter(e.target.value)}
                 className="bg-transparent text-xs text-[#f8fafc] font-semibold focus:outline-none cursor-pointer"
               >
-                <option value="all" className="bg-[#111827] text-[#f8fafc]">All Zones (12)</option>
+                <option value="all" className="bg-[#111827] text-[#f8fafc]">All Zones ({tables.length})</option>
                 <option value="Main Hall" className="bg-[#111827] text-[#f8fafc]">Main Hall</option>
                 <option value="Patio" className="bg-[#111827] text-[#f8fafc]">Patio</option>
                 <option value="Window" className="bg-[#111827] text-[#f8fafc]">Window</option>
@@ -642,6 +841,129 @@ export default function LiveTablesModule({
                 <Filter className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Direct Add Table Button in Top Filter Row */}
+            <button
+              type="button"
+              onClick={() => setIsAddTableModalOpen(true)}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:brightness-110 text-white font-black text-xs shadow-md shadow-[#FF5A26]/30 flex items-center gap-1.5 transition active:scale-95 cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>+ Add Table</span>
+            </button>
+          </div>
+        </div>
+
+        {/* =======================================================================
+            PROMINENT DYNAMIC TABLE CONTROLS BAR (Rule 1: Add & Remove Tables)
+            ======================================================================= */}
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] border border-[#334155] shadow-xl flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FF5A26] to-amber-500 flex items-center justify-center text-white shadow-md shadow-[#FF5A26]/30 shrink-0">
+              <Grid3X3 className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-amber-400">
+                  Floor Table Controls &amp; Scaling
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  {tables.length} Total Tables
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 font-medium mt-0.5">
+                Scale restaurant tables dynamically &bull; Real-time sync across Diner QR stickers &amp; Employee handsets
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Quick Table Count Stepper */}
+            <div className="flex items-center gap-2 bg-[#0b0f19] border border-[#334155] px-3 py-1.5 rounded-xl shadow-inner">
+              <span className="text-xs font-bold text-slate-300">Total:</span>
+              <button
+                type="button"
+                onClick={() => handleRemoveSpecificTable(tables.length)}
+                disabled={tables.length <= 1}
+                className="w-7 h-7 rounded-lg bg-[#1e293b] hover:bg-slate-700 disabled:opacity-30 text-white font-black text-sm flex items-center justify-center border border-[#334155] cursor-pointer transition active:scale-95"
+                title="Decrease/Remove 1 table"
+              >
+                -
+              </button>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={tables.length}
+                onChange={(e) => handleTableCountChange(e.target.value)}
+                className="w-11 text-center bg-[#0f172a] text-amber-300 font-black text-xs py-1 rounded border border-[#334155] focus:outline-none"
+                title="Type exact number of tables (1-60)"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddNewTable({ seats: 4, zone: 'Main Hall' })}
+                disabled={tables.length >= 60}
+                className="w-7 h-7 rounded-lg bg-[#1e293b] hover:bg-slate-700 disabled:opacity-30 text-white font-black text-sm flex items-center justify-center border border-[#334155] cursor-pointer transition active:scale-95"
+                title="Increase/Add 1 table"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="hidden sm:flex items-center gap-1 bg-[#0b0f19] border border-[#334155] p-1 rounded-xl">
+              {[8, 10, 12, 15, 20, 24].map(cnt => (
+                <button
+                  key={cnt}
+                  type="button"
+                  onClick={() => handleTableCountChange(cnt)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    tables.length === cnt
+                      ? 'bg-[#FF5A26] text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white hover:bg-[#1e293b]'
+                  }`}
+                >
+                  {cnt}
+                </button>
+              ))}
+            </div>
+
+            {/* Auto-Balance Tables Button */}
+            {onAutoBalanceTables && (
+              <button
+                type="button"
+                onClick={() => {
+                  onAutoBalanceTables();
+                  triggerToast('Tables balanced evenly across all active floor employees!', 'success');
+                }}
+                className="px-3 py-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 border border-[#334155] cursor-pointer active:scale-95"
+                title="Distribute tables evenly across active employees"
+              >
+                <span>⚖️ Balance Staff</span>
+              </button>
+            )}
+
+            {/* Primary Action Button: + Add Table */}
+            <button
+              type="button"
+              onClick={() => setIsAddTableModalOpen(true)}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF5A26] via-orange-500 to-amber-500 hover:from-[#e04f20] hover:to-amber-400 text-white font-black text-xs shadow-md shadow-[#FF5A26]/30 flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>+ Add Table</span>
+            </button>
+
+            {/* Remove Last Table Action Button */}
+            <button
+              type="button"
+              onClick={() => handleRemoveSpecificTable(tables.length)}
+              disabled={tables.length <= 1}
+              className="px-3.5 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 disabled:opacity-40 text-rose-300 border border-rose-500/30 font-bold text-xs transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+              title="Remove the highest numbered table"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>- Remove Last</span>
+            </button>
           </div>
         </div>
 
@@ -910,9 +1232,9 @@ export default function LiveTablesModule({
             return (
               <div
                 key={table.id}
-                className={`rounded-3xl border border-[#334155] p-5 transition-all duration-300 backdrop-blur-2xl flex flex-col justify-between relative group overflow-hidden bg-[#111827] ${cardAccentClass}`}
+                className={`rounded-3xl border border-[#334155] p-5 transition-all duration-300 backdrop-blur-2xl flex flex-col justify-between relative group overflow-hidden bg-[#0f172a] ${cardAccentClass}`}
                 style={{
-                  backgroundColor: '#111827',
+                  backgroundColor: '#0f172a',
                   borderColor: '#334155',
                   overflow: 'hidden'
                 }}
@@ -940,117 +1262,74 @@ export default function LiveTablesModule({
                           {table.name}
                         </h3>
                         <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-medium mt-1">
-                          <span>{table.capacity} Seats</span>
+                          <span>{table.capacity || table.seats || 4} Seats</span>
                           <span>&bull;</span>
-                          <span className="text-zinc-300">{table.location}</span>
+                          <span className="text-zinc-300">{table.location || table.zone || 'Main Hall'}</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Visual Status Badge */}
-                    <div className="shrink-0 max-w-full">{statusBadge}</div>
+                    {/* Visual Status Badge & Quick Remove Action */}
+                    <div className="shrink-0 flex items-center gap-1.5">
+                      <div className="shrink-0 max-w-full">{statusBadge}</div>
+                      {table.status === TABLE_STATUS.AVAILABLE && tables.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveSpecificTable(table.tableNumber);
+                          }}
+                          className="w-7 h-7 rounded-lg bg-rose-950/40 hover:bg-rose-900/70 border border-rose-800/40 text-rose-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+                          title={`Delete / Remove Table ${table.tableNumber}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* -----------------------------------------------------------
-                      ASSIGNED EMPLOYEE BADGE (Strictly Employee, NOT Waiter)
+                      ASSIGNED EMPLOYEE SELECTOR (Direct Interactive Dropdown - Rule 2)
                       ----------------------------------------------------------- */}
-                  <div className="relative pt-2 pb-1 border-t border-[#334155]">
+                  <div className="relative pt-2 pb-1 border-t border-[#334155] space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
                         Assigned Employee
                       </span>
-                      
-                      {/* Dropdown toggle to reassign */}
-                      <button
-                        type="button"
-                        onClick={() => setActiveEmployeeDropdownTableId(
-                          activeEmployeeDropdownTableId === table.tableNumber ? null : table.tableNumber
-                        )}
-                        className="text-[10px] text-[#FF7A45] hover:text-[#FF5A26] font-bold flex items-center gap-1 cursor-pointer transition"
-                      >
-                        <span>Change</span>
-                        <ChevronDown className="w-2.5 h-2.5" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-2.5 mt-1.5 p-2 rounded-xl bg-[#1e293b] border border-[#334155]">
-                      {assignedEmp ? (
-                        <>
-                          <div
-                            className="w-7 h-7 rounded-lg text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm"
-                            style={{ backgroundColor: assignedEmp.avatarColor || '#FF5A26' }}
-                          >
-                            {assignedEmp.initials || assignedEmp.avatar?.initials || 'EM'}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-xs font-bold text-[#f8fafc] whitespace-normal break-words">
-                                {assignedEmp.name}
-                              </span>
-                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                assignedEmp.status === EMPLOYEE_STATUS.ACTIVE ? 'bg-emerald-400' :
-                                assignedEmp.status === EMPLOYEE_STATUS.BUSY ? 'bg-amber-400' : 'bg-zinc-500'
-                              }`} />
-                            </div>
-                            <p className="text-[10px] text-zinc-400 whitespace-normal break-words">
-                              {assignedEmp.role}
-                            </p>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex items-center justify-between w-full text-xs text-zinc-500 italic py-0.5">
-                          <span>Unassigned</span>
-                          <button
-                            type="button"
-                            onClick={() => setActiveEmployeeDropdownTableId(table.tableNumber)}
-                            className="text-[10px] text-[#FF7A45] font-bold not-italic hover:underline"
-                          >
-                            + Assign Employee
-                          </button>
-                        </div>
+                      {assignedEmp && (
+                        <span className="text-[10px] font-bold text-slate-400 truncate max-w-[130px]">
+                          {assignedEmp.role}
+                        </span>
                       )}
                     </div>
 
-                    {/* Interactive Employee Reassign Selector Dropdown */}
-                    {activeEmployeeDropdownTableId === table.tableNumber && (
-                      <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-[#1e293b] border border-[#334155] rounded-2xl p-2 shadow-2xl shadow-black space-y-1 animate-scaleUp">
-                        <div className="flex items-center justify-between px-2 py-1 text-[10px] font-black uppercase tracking-wider text-zinc-400 border-b border-[#334155]">
-                          <span>Assign Employee</span>
-                          <button
-                            type="button"
-                            onClick={() => setActiveEmployeeDropdownTableId(null)}
-                            className="text-zinc-500 hover:text-white"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                        <div className="max-h-40 overflow-y-auto space-y-1 pt-1">
-                          {employees.map(emp => (
-                            <button
-                              key={emp.id}
-                              type="button"
-                              onClick={() => handleReassignEmployee(table.tableNumber, emp.id)}
-                              className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition cursor-pointer ${
-                                table.assignedEmployeeId === emp.id
-                                  ? 'bg-[#FF5A26]/20 text-[#f8fafc] border border-[#FF5A26]/40'
-                                  : 'hover:bg-[#334155] text-zinc-300'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span
-                                  className="w-5 h-5 rounded-md text-[10px] font-black text-white flex items-center justify-center shrink-0"
-                                  style={{ backgroundColor: emp.avatarColor || '#FF5A26' }}
-                                >
-                                  {emp.initials}
-                                </span>
-                                <span className="font-bold whitespace-normal">{emp.name}</span>
-                              </div>
-                              <span className="text-[10px] text-zinc-400">{emp.role.split(' ')[0]}</span>
-                            </button>
-                          ))}
-                        </div>
+                    <div className="flex items-center gap-2 p-1.5 rounded-xl bg-[#1e293b] border border-[#334155]">
+                      <div
+                        className="w-7 h-7 rounded-lg text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm"
+                        style={{ backgroundColor: assignedEmp?.avatarColor || assignedEmp?.color || '#FF5A26' }}
+                      >
+                        {assignedEmp?.initials || assignedEmp?.avatar?.initials || 'FE'}
                       </div>
-                    )}
+                      
+                      <select
+                        aria-label={`Assigned Employee for Table ${table.tableNumber}`}
+                        value={table.assignedEmployeeId ? String(table.assignedEmployeeId) : ''}
+                        onChange={(e) => {
+                          const val = e.target.value ? e.target.value : null;
+                          handleReassignEmployee(table.tableNumber, val);
+                        }}
+                        className="flex-1 bg-transparent text-xs font-bold text-[#f8fafc] focus:outline-none cursor-pointer py-1 truncate"
+                      >
+                        <option value="" className="bg-[#0f172a] text-zinc-400">
+                          -- Unassigned (Floor Pool) --
+                        </option>
+                        {employees.map(emp => (
+                          <option key={emp.id} value={emp.id} className="bg-[#0f172a] text-[#f8fafc]">
+                            {emp.name} ({emp.role?.split(' ')[0] || 'Staff'}) {emp.status === 'Active' || emp.status === 'active' ? '• Active' : `• ${emp.status}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   {/* -----------------------------------------------------------
@@ -1313,14 +1592,27 @@ export default function LiveTablesModule({
 
                     {/* Table Reset shortcut if already clean */}
                     {table.status === TABLE_STATUS.AVAILABLE && (
-                      <button
-                        type="button"
-                        onClick={() => triggerToast(`Table ${table.tableNumber} is ready. Guest QR code active.`, 'info')}
-                        className="flex-1 py-1.5 px-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-emerald-300 text-xs font-bold transition border border-[#334155] flex items-center justify-center gap-1"
-                      >
-                        <Users className="w-3.5 h-3.5" />
-                        <span>Seat Table</span>
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => triggerToast(`Table ${table.tableNumber} is ready. Guest QR code active.`, 'info')}
+                          className="flex-1 py-1.5 px-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-emerald-300 text-xs font-bold transition border border-[#334155] flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <Users className="w-3.5 h-3.5" />
+                          <span>Seat Table</span>
+                        </button>
+                        {tables.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSpecificTable(table.tableNumber)}
+                            className="py-1.5 px-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/70 text-rose-300 hover:text-white text-xs font-bold transition border border-rose-800/40 flex items-center justify-center gap-1 cursor-pointer"
+                            title={`Remove Table ${table.tableNumber}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Remove</span>
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
 
@@ -1329,6 +1621,148 @@ export default function LiveTablesModule({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* =======================================================================
+          MODAL: ADD NEW TABLE (Dynamic Table Scaling - Rule 1)
+          ======================================================================= */}
+      {isAddTableModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-[#111827] border border-[#334155] w-full max-w-lg rounded-3xl p-6 shadow-2xl shadow-black space-y-5 animate-scaleUp">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-[#334155]">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#FF5A26] to-amber-500 text-white flex items-center justify-center shadow-lg shadow-[#FF5A26]/30">
+                  <Grid3X3 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-[#f8fafc] tracking-tight">
+                    Add New Table to Floor
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Will be created as <span className="text-[#FF7A45] font-bold">Table #{tables.length + 1}</span> with printable QR code
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAddTableModalOpen(false)}
+                className="w-8 h-8 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-zinc-400 hover:text-[#f8fafc] border border-[#334155] flex items-center justify-center transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Form Fields */}
+            <div className="space-y-4">
+              {/* Seating Capacity */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-300 flex items-center justify-between">
+                  <span>Seating Capacity</span>
+                  <span className="text-[#FF7A45] font-black">{newTableSeats} Seats</span>
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[2, 4, 6, 8].map((seats) => (
+                    <button
+                      key={seats}
+                      type="button"
+                      onClick={() => setNewTableSeats(seats)}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border cursor-pointer ${
+                        newTableSeats === seats
+                          ? 'bg-[#FF5A26] border-[#FF5A26] text-white shadow-md shadow-[#FF5A26]/30'
+                          : 'bg-[#1e293b] border-[#334155] text-zinc-300 hover:text-white hover:bg-[#334155]'
+                      }`}
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      <span>{seats} Seats</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dining Zone */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-300">Dining Zone / Location</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'Main Hall', label: 'Main Hall' },
+                    { id: 'Window', label: 'Window Side' },
+                    { id: 'Patio', label: 'Patio Terrace' }
+                  ].map((zone) => (
+                    <button
+                      key={zone.id}
+                      type="button"
+                      onClick={() => setNewTableZone(zone.id)}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 border cursor-pointer ${
+                        newTableZone === zone.id
+                          ? 'bg-amber-500 border-amber-500 text-slate-950 font-black shadow-md'
+                          : 'bg-[#1e293b] border-[#334155] text-zinc-300 hover:text-white hover:bg-[#334155]'
+                      }`}
+                    >
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>{zone.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Assigned Floor Employee */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-300">Assign Dedicated Floor Employee</label>
+                <select
+                  value={newTableAssignedEmpId}
+                  onChange={(e) => setNewTableAssignedEmpId(e.target.value)}
+                  className="w-full py-2.5 px-3 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] font-semibold focus:outline-none focus:border-[#FF5A26] cursor-pointer"
+                >
+                  <option value="" className="bg-[#111827] text-zinc-400">-- None (Unassigned / Auto-balance later) --</option>
+                  {employees
+                    .filter(emp => emp.status === EMPLOYEE_STATUS.ACTIVE)
+                    .map(emp => (
+                      <option key={emp.id} value={emp.id} className="bg-[#111827] text-[#f8fafc]">
+                        {emp.name} &bull; {emp.role}
+                      </option>
+                    ))}
+                </select>
+                <p className="text-[11px] text-zinc-400">
+                  Guest calls from this table will route directly to this employee's handset.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="pt-2 border-t border-[#334155] flex flex-col sm:flex-row items-center justify-between gap-2.5">
+              <button
+                type="button"
+                onClick={() => handleAddNewTable({ seats: 4, zone: 'Main Hall', assignedEmployeeId: null })}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-amber-300 border border-[#334155] text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                title="Quickly add default 4-seat table"
+              >
+                <span>⚡ Quick Add (4-Seat)</span>
+              </button>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setIsAddTableModalOpen(false)}
+                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-transparent hover:bg-[#1e293b] text-zinc-400 hover:text-zinc-200 border border-[#334155] text-xs font-bold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddNewTable()}
+                  className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A26] via-orange-500 to-amber-500 hover:from-[#e04f20] hover:to-amber-400 text-white text-xs font-black shadow-lg shadow-[#FF5A26]/30 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>Confirm &amp; Add Table</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
         </div>
       )}
 

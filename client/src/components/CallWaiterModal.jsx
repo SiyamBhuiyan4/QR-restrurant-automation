@@ -12,6 +12,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
+import { useRestaurant } from '../context/RestaurantContext';
 import { useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { sendWaiterCallToTelegramChannel } from '../services/telegramClient';
@@ -49,10 +50,10 @@ export const PRESET_REASONS = [
   },
   {
     id: 'staff',
-    label: '🙋 Staff Assistance',
-    short: 'Staff Assistance',
+    label: '🙋 Employee Assistance',
+    short: 'Employee Assistance',
     icon: '🙋',
-    desc: 'Speak directly with your waiter'
+    desc: 'Speak directly with your assigned employee'
   }
 ];
 
@@ -78,6 +79,12 @@ export default function CallWaiterModal({
     createConvexCall = useMutation(api.waiter.createCall);
   } catch (_) {}
 
+  // Restaurant Context for dynamic table & employee routing
+  let restaurant = null;
+  try {
+    restaurant = useRestaurant();
+  } catch (_) {}
+
   // Optional socket helper
   let socketHelpers = null;
   try {
@@ -85,6 +92,9 @@ export default function CallWaiterModal({
   } catch {
     socketHelpers = null;
   }
+
+  // Look up assigned employee for current table
+  const assignedEmployee = restaurant?.getAssignedEmployeeForTable?.(tableNumber);
 
   // Detect table number on open
   useEffect(() => {
@@ -176,6 +186,8 @@ export default function CallWaiterModal({
       ? `${targetReason.label} — "${customMessage.trim()}"`
       : targetReason.label;
 
+    const assignedEmp = restaurant?.getAssignedEmployeeForTable?.(finalTable) || assignedEmployee;
+
     const payload = {
       table_number: finalTable,
       tableNumber: finalTable,
@@ -184,7 +196,11 @@ export default function CallWaiterModal({
       type: targetReason.short,
       custom_message: customMessage.trim(),
       message: customMessage.trim(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      assignedEmployeeId: assignedEmp ? assignedEmp.id : null,
+      assignedEmployeeName: assignedEmp ? assignedEmp.name : 'Floor Specialist',
+      assignedEmployeeRole: assignedEmp ? assignedEmp.role : 'Floor Specialist',
+      routingDetail: `Table #${finalTable} requested assistance -> Routed to assigned employee: ${assignedEmp ? assignedEmp.name : 'Floor Specialist'}`
     };
 
     setIsSubmitting(true);
@@ -223,6 +239,11 @@ export default function CallWaiterModal({
       // Also trigger socket emit if connected as immediate fail-safe
       if (socketHelpers?.socket?.connected) {
         socketHelpers.emit('waiter:call', payload);
+      }
+
+      // Register with Restaurant Context for dynamic state & targeted routing
+      if (restaurant?.registerAssistanceCall) {
+        restaurant.registerAssistanceCall(payload);
       }
 
       setIsConfirmed(true);
@@ -265,6 +286,11 @@ export default function CallWaiterModal({
         }
       }
 
+      // Register locally in Restaurant Context
+      if (restaurant?.registerAssistanceCall) {
+        restaurant.registerAssistanceCall(payload);
+      }
+
       // Show offline confirmation
       setIsOfflineQueued(true);
       setIsConfirmed(true);
@@ -300,12 +326,18 @@ export default function CallWaiterModal({
               <BellRing className="w-6 h-6 text-sky-300 animate-wiggle motion-reduce:animate-none" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold tracking-tight text-white">Call Waiter</h2>
-              <div className="flex items-center gap-2 mt-0.5 text-xs text-sky-200/80 font-medium">
+              <h2 className="text-xl font-extrabold tracking-tight text-white">Call Employee</h2>
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-sky-200/80 font-medium flex-wrap">
                 <span className="bg-[#021424]/60 px-2.5 py-0.5 rounded-full font-bold text-sky-300 border border-sky-400/50">
                   Table {tableNumber || '?'}
                 </span>
-                <span>&bull; Instant Floor Bell</span>
+                {assignedEmployee ? (
+                  <span className="bg-sky-400/20 px-2.5 py-0.5 rounded-full font-semibold text-sky-200 border border-sky-400/40">
+                    Assigned: {assignedEmployee.name}
+                  </span>
+                ) : (
+                  <span>&bull; Instant Floor Assistance</span>
+                )}
               </div>
             </div>
           </div>
@@ -322,10 +354,14 @@ export default function CallWaiterModal({
 
               <div>
                 <h3 className="text-2xl font-black text-white">
-                  Waiter Alerted!
+                  Employee Alerted!
                 </h3>
                 <p className="text-sm font-semibold text-sky-300 mt-1">
-                  Staff has been notified for Table {tableNumber}.
+                  {assignedEmployee ? (
+                    <>Directly routed to your assigned employee: <span className="font-bold text-white">{assignedEmployee.name}</span></>
+                  ) : (
+                    <>Floor team has been notified for Table {tableNumber}.</>
+                  )}
                 </p>
                 <div className="mt-3 p-3 bg-[#021424]/70 rounded-2xl border border-sky-400/30 text-xs text-sky-200/80 inline-block max-w-xs text-left">
                   <span className="font-semibold text-sky-200/70">Requested:</span>{' '}
@@ -477,12 +513,12 @@ export default function CallWaiterModal({
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" />
-                      <span>Ringing Waiter...</span>
+                      <span>Calling Assigned Employee...</span>
                     </>
                   ) : (
                     <>
                       <BellRing className="w-4 h-4" />
-                      <span>Alert Waiter Now</span>
+                      <span>Call Employee Now</span>
                     </>
                   )}
                 </button>

@@ -38,7 +38,8 @@ export default function AdminSidebar({
     assistanceCount = 0,
     pendingReports = 0,
     readyPickups = 0,
-    busyEmployees = 0
+    busyEmployees = 0,
+    tableCount = 12
   } = counts;
 
   // Normalized active tab
@@ -58,7 +59,7 @@ export default function AdminSidebar({
       label: 'Live Tables & Floor',
       shortLabel: 'Tables',
       icon: Grid3X3,
-      badge: activeOrders > 0 ? activeOrders : null,
+      badge: `${tableCount} Tables`,
       badgeColor: 'primary'
     },
     {

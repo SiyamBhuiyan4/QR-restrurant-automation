@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { resolveServerUrl, useSocket } from '../context/SocketContext';
+import { useRestaurant } from '../context/RestaurantContext';
 import { getPendingOrders, getPendingWaiterCalls } from '../db/indexedDb.js';
 
 // Admin Architecture Components
@@ -116,9 +117,24 @@ export default function AdminDashboard({ className = '' }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Central Operational State
-  const [tables, setTables] = useState(() => defaultTables);
-  const [employees, setEmployees] = useState(() => defaultEmployees);
+  // Central Operational State from RestaurantContext
+  const {
+    tableCount,
+    tables,
+    employees,
+    assistanceCalls,
+    setTableCount,
+    addTable,
+    removeTable,
+    setTables,
+    setEmployees,
+    assignTableToEmployee,
+    reassignAllTables,
+    setEmployeeStatus,
+    autoBalanceTables,
+    resolveAssistanceCall
+  } = useRestaurant();
+
   const [liveOrders, setLiveOrders] = useState(() => defaultLiveOrders);
   const [customerNotes, setCustomerNotes] = useState(() => defaultCustomerNotes);
 
@@ -270,12 +286,26 @@ export default function AdminDashboard({ className = '' }) {
   }, [liveOrders]);
 
   const busyEmployeesCount = useMemo(() => {
-    return employees.filter(e => e.status === 'busy').length;
+    return employees.filter(e => e.status === 'busy' || e.status === 'Busy').length;
   }, [employees]);
 
   // Urgent alerts for bell drawer
   const urgentAlerts = useMemo(() => {
     const list = [];
+
+    // Live Customer Assistance Calls routed to assigned employee
+    (assistanceCalls || []).filter(c => c.status === 'pending').forEach(c => {
+      const tblNum = c.tableNumber || c.table_number || c.table;
+      list.push({
+        id: `call-${c.id}`,
+        title: `Table #${tblNum} Requested Assistance`,
+        type: 'assistance',
+        table: tblNum,
+        time: 'Active now',
+        detail: `Routed to assigned employee: ${c.assignedEmployeeName || 'Floor Specialist'} • Reason: ${c.reason || 'Assistance'}`
+      });
+    });
+
     customerNotes.filter(n => n.status === ISSUE_STATUS.NEW && n.severity === 'critical').forEach(n => {
       list.push({
         id: `note-${n.id}`,
@@ -298,7 +328,7 @@ export default function AdminDashboard({ className = '' }) {
       });
     });
     return list;
-  }, [customerNotes, liveOrders]);
+  }, [assistanceCalls, customerNotes, liveOrders]);
 
   return (
     <div
@@ -323,7 +353,8 @@ export default function AdminDashboard({ className = '' }) {
           assistanceCount: assistanceCount,
           pendingReports: pendingReportsCount,
           readyPickups: readyPickupsCount,
-          busyEmployees: busyEmployeesCount
+          busyEmployees: busyEmployeesCount,
+          tableCount: tableCount
         }}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
@@ -342,13 +373,13 @@ export default function AdminDashboard({ className = '' }) {
           2. MASTER CONTENT VIEWPORT (Header + Content)
           ======================================================================= */}
       <div
-        className="flex-1 min-w-0"
+        className="admin-viewport flex-1 min-w-0"
         style={{
           flex: 1,
           marginLeft: '260px',
           width: 'calc(100% - 260px)',
           minWidth: 0,
-          backgroundColor: '#0f172a',
+          backgroundColor: '#0b0f19',
           padding: 0,
           display: 'flex',
           flexDirection: 'column',
@@ -368,10 +399,14 @@ export default function AdminDashboard({ className = '' }) {
           onRefresh={() => fetchDashboardData(false)}
           isRefreshing={isRefreshing}
           onToggleSidebar={() => setIsMobileSidebarOpen(prev => !prev)}
+          tableCount={tableCount}
+          onAddTable={addTable}
+          onRemoveTable={removeTable}
+          onSetTableCount={setTableCount}
         />
 
         {/* Scrollable Dynamic Workspace */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto" style={{ backgroundColor: '#0f172a' }}>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto" style={{ backgroundColor: '#0b0f19' }}>
           {/* TAB 1: OVERVIEW & REVENUE ANALYTICS */}
           {activeTab === 'overview' && (
             <div className="animate-fadeIn">
@@ -392,6 +427,12 @@ export default function AdminDashboard({ className = '' }) {
                 employees={employees}
                 orders={liveOrders}
                 customerNotes={customerNotes}
+                tableCount={tableCount}
+                onTableCountChange={setTableCount}
+                onAddTable={addTable}
+                onRemoveTable={removeTable}
+                onAutoBalanceTables={autoBalanceTables}
+                onAssignEmployee={assignTableToEmployee}
                 onUpdateTableStatus={handleUpdateTableStatus}
                 onAdvanceOrderStage={handleAdvanceOrderStage}
                 onResetTable={(tableNum) => {
@@ -436,14 +477,22 @@ export default function AdminDashboard({ className = '' }) {
           {/* TAB 8: TABLE QR GENERATOR */}
           {activeTab === 'qr' && (
             <div className="animate-fadeIn">
-              <QRBatchGenerator />
+              <QRBatchGenerator tableCount={tableCount} tables={tables} />
             </div>
           )}
 
           {/* TAB 9: EMPLOYEES MANAGEMENT */}
           {activeTab === 'employees' && (
             <div className="animate-fadeIn">
-              <EmployeesModule />
+              <EmployeesModule
+                employees={employees}
+                tables={tables}
+                tableCount={tableCount}
+                onAssignTable={assignTableToEmployee}
+                onReassignAllTables={reassignAllTables}
+                onSetEmployeeStatus={setEmployeeStatus}
+                onAutoBalance={autoBalanceTables}
+              />
             </div>
           )}
 

@@ -32,6 +32,7 @@ export const EMPLOYEE_STATUS = {
   ACTIVE: 'active',
   BUSY: 'busy',
   BREAK: 'break',
+  ABSENT: 'absent',
 };
 
 export const EMPLOYEE_SHIFT = {

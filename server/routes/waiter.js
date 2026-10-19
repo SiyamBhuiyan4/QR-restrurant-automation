@@ -37,22 +37,35 @@ function handleCreateCall(req, res) {
     const rawReason = body.reason || body.type || 'waiter';
     const reason = String(rawReason).trim();
 
-const { sendWaiterCallToTelegram } = require('../telegram');
+    const { sendWaiterCallToTelegram } = require('../telegram');
 
     const callRecord = db.createWaiterCall(tableNumber, reason);
 
+    const assignedEmployeeId = body.assignedEmployeeId || body.assigned_employee_id || null;
+    const assignedEmployeeName = body.assignedEmployeeName || body.assigned_employee_name || null;
+    const assignedEmployeeRole = body.assignedEmployeeRole || body.assigned_employee_role || null;
+    const routingDetail = body.routingDetail || (assignedEmployeeName ? `Table #${tableNumber} requested assistance -> Routed to assigned employee: ${assignedEmployeeName}` : null);
+
+    const enrichedRecord = {
+      ...callRecord,
+      assignedEmployeeId,
+      assignedEmployeeName,
+      assignedEmployeeRole,
+      routingDetail
+    };
+
     // Emit Socket.IO real-time alert for staff & KDS
-    emitSocket(req, 'waiter:call', callRecord);
+    emitSocket(req, 'waiter:call', enrichedRecord);
 
     // Forward waiter alert to Telegram Channel
-    sendWaiterCallToTelegram(callRecord).catch(err => {
+    sendWaiterCallToTelegram(enrichedRecord).catch(err => {
       console.warn('[Telegram waiter alert error]:', err.message);
     });
 
     return res.status(201).json({
       success: true,
-      message: `Waiter requested for Table ${tableNumber} (${reason})`,
-      data: callRecord
+      message: `Employee assistance requested for Table ${tableNumber} (${reason})`,
+      data: enrichedRecord
     });
   } catch (err) {
     console.error('Error creating waiter call:', err);

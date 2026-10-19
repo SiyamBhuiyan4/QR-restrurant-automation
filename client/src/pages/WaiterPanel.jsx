@@ -24,6 +24,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useSocket, useSocketListener } from '../context/SocketContext';
+import { useRestaurant } from '../context/RestaurantContext';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import '../styles/staff.css';
@@ -112,13 +113,13 @@ const bellSynthesizer = new BellAudioSynthesizer();
 const TOTAL_FLOOR_TABLES = 12;
 const ALL_TABLES = Array.from({ length: TOTAL_FLOOR_TABLES }, (_, i) => i + 1);
 
-// Standard Floor Staff Roster
-const DEFAULT_FLOOR_STAFF = [
+// Standard Floor Employee Roster
+const DEFAULT_FLOOR_EMPLOYEES = [
   {
     id: 'emp-1',
     name: 'Hasan Ahmed',
     initials: 'HA',
-    role: 'Floor Specialist',
+    role: 'Floor Employee',
     tables: [1, 2, 3],
     color: 'from-orange-500 to-amber-600',
     zone: 'Zone 1 (Window Side)'
@@ -127,7 +128,7 @@ const DEFAULT_FLOOR_STAFF = [
     id: 'emp-2',
     name: 'Rakib Chowdhury',
     initials: 'RC',
-    role: 'Senior Host & Expediter',
+    role: 'Senior Floor Employee',
     tables: [4, 5, 6],
     color: 'from-blue-500 to-indigo-600',
     zone: 'Zone 2 (Central Floor)'
@@ -136,7 +137,7 @@ const DEFAULT_FLOOR_STAFF = [
     id: 'emp-3',
     name: 'Nusrat Jahan',
     initials: 'NJ',
-    role: 'Senior Service Specialist',
+    role: 'Senior Floor Employee',
     tables: [7, 8, 9],
     color: 'from-emerald-500 to-teal-600',
     zone: 'Zone 3 (Terrace & Booths)'
@@ -145,7 +146,7 @@ const DEFAULT_FLOOR_STAFF = [
     id: 'emp-4',
     name: 'Tanvir Hossain',
     initials: 'TH',
-    role: 'Floor Specialist',
+    role: 'Floor Employee',
     tables: [10, 11, 12],
     color: 'from-purple-500 to-violet-600',
     zone: 'Zone 4 (Private Dining)'
@@ -165,44 +166,90 @@ export default function WaiterPanel() {
     return false;
   });
   const [currentTime, setCurrentTime] = useState(Date.now());
-  const [acknowledgedMap, setAcknowledgedMap] = useState({}); // callId -> { staffName, timestamp }
-  const [callStaffOverrides, setCallStaffOverrides] = useState({}); // callId -> staffId
+  const [acknowledgedMap, setAcknowledgedMap] = useState({}); // callId -> { employeeName, timestamp }
+  const [callEmployeeOverrides, setCallEmployeeOverrides] = useState({}); // callId -> employeeId
   const [bannerAlert, setBannerAlert] = useState(null);
   const [isChimeAnimating, setIsChimeAnimating] = useState(false);
+  const [isExclusiveEmployeeMode, setIsExclusiveEmployeeMode] = useState(false); // Exclusive toggle for assigned tables
 
-  // Table Assignments State
-  const [staffRoster, setStaffRoster] = useState(() => {
+  // Table Assignments State (Floor Employee Roster)
+  const [employeeRoster, setEmployeeRoster] = useState(() => {
     if (typeof localStorage !== 'undefined') {
       try {
-        const saved = localStorage.getItem('smartdine_floor_staff_roster');
+        const saved =
+          localStorage.getItem('smartdine_floor_employee_roster') ||
+          localStorage.getItem('smartdine_floor_staff_roster');
         if (saved) return JSON.parse(saved);
       } catch (_) {}
     }
-    return DEFAULT_FLOOR_STAFF;
+    return DEFAULT_FLOOR_EMPLOYEES;
   });
 
-  const [activeStaffFilter, setActiveStaffFilter] = useState(() => {
+  const [activeEmployeeFilter, setActiveEmployeeFilter] = useState(() => {
     if (typeof localStorage !== 'undefined') {
-      return localStorage.getItem('smartdine_active_staff_id') || 'all';
+      return (
+        localStorage.getItem('smartdine_active_employee_id') ||
+        localStorage.getItem('smartdine_active_staff_id') ||
+        'all'
+      );
     }
     return 'all';
   });
 
   const [isAssignmentsModalOpen, setIsAssignmentsModalOpen] = useState(false);
 
-  // Persist staff roster
-  useEffect(() => {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('smartdine_floor_staff_roster', JSON.stringify(staffRoster));
-    }
-  }, [staffRoster]);
+  // Restaurant Context for dynamic tables and employee coverage
+  let restaurant = null;
+  try {
+    restaurant = useRestaurant();
+  } catch (_) {}
 
-  // Persist active staff filter
+  // Sync employee roster from centralized context
+  useEffect(() => {
+    if (restaurant?.employees && Array.isArray(restaurant.employees) && restaurant.employees.length > 0) {
+      setEmployeeRoster(restaurant.employees.map(e => ({
+        id: e.id,
+        numericId: e.numericId,
+        name: e.name,
+        initials: e.initials,
+        role: e.role,
+        tables: e.assignedTables || e.tables || [],
+        color: e.color || 'from-orange-500 to-amber-600',
+        zone: e.zone,
+        status: e.status
+      })));
+    }
+  }, [restaurant?.employees]);
+
+  // Sync assistance calls from centralized context
+  useEffect(() => {
+    if (restaurant?.assistanceCalls && Array.isArray(restaurant.assistanceCalls)) {
+      setCalls(prev => {
+        const map = new Map();
+        prev.forEach(c => map.set(String(c.id ?? c.tableNumber), c));
+        restaurant.assistanceCalls.forEach(c => map.set(String(c.id ?? c.tableNumber), c));
+        return Array.from(map.values());
+      });
+      setIsLoading(false);
+    }
+  }, [restaurant?.assistanceCalls]);
+
+  const totalFloorTables = restaurant?.tableCount || TOTAL_FLOOR_TABLES;
+  const displayTables = useMemo(() => Array.from({ length: totalFloorTables }, (_, i) => i + 1), [totalFloorTables]);
+
+  // Persist employee roster
   useEffect(() => {
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('smartdine_active_staff_id', activeStaffFilter);
+      localStorage.setItem('smartdine_floor_employee_roster', JSON.stringify(employeeRoster));
     }
-  }, [activeStaffFilter]);
+  }, [employeeRoster]);
+
+  // Persist active employee filter
+  useEffect(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('smartdine_active_employee_id', activeEmployeeFilter);
+    }
+  }, [activeEmployeeFilter]);
 
   // Convex Cloud real-time waiter calls subscription
   let convexCalls = null;
@@ -259,7 +306,7 @@ export default function WaiterPanel() {
         }
       }
     } catch (err) {
-      console.warn('[FloorStaffConsole] Failed to fetch active calls:', err);
+      console.warn('[EmployeeConsole] Failed to fetch active calls:', err);
     } finally {
       setIsLoading(false);
     }
@@ -285,13 +332,13 @@ export default function WaiterPanel() {
   }, []);
 
   // Resolve assigned employee for a given table number
-  const getAssignedStaffForTable = useCallback(
+  const getAssignedEmployeeForTable = useCallback(
     (tbl) => {
       const num = Number(tbl);
       if (!num || isNaN(num)) return null;
-      return staffRoster.find((s) => s.tables && s.tables.includes(num)) || null;
+      return employeeRoster.find((s) => s.tables && s.tables.includes(num)) || null;
     },
-    [staffRoster]
+    [employeeRoster]
   );
 
   // Trigger audio & visual chime
@@ -323,21 +370,28 @@ export default function WaiterPanel() {
         return [formattedCall, ...prev];
       });
 
-      // Sound the calling chime
-      triggerChime();
-
-      // Trigger floating alert banner
       const tableNum =
         formattedCall.table_number ||
         formattedCall.tableNumber ||
         formattedCall.table ||
         '?';
-      const assigned = getAssignedStaffForTable(tableNum);
+      const assigned = getAssignedEmployeeForTable(tableNum);
+      const isTargetedToMe =
+        activeEmployeeFilter !== 'all' && assigned?.id === activeEmployeeFilter;
 
+      // Sound the calling chime (in exclusive employee mode, prioritize assigned employee chime)
+      const shouldChime =
+        !isExclusiveEmployeeMode || isTargetedToMe || activeEmployeeFilter === 'all';
+      if (shouldChime) {
+        triggerChime();
+      }
+
+      // Trigger floating alert banner with explicit urgent routing badge
       setBannerAlert({
         tableNumber: tableNum,
-        reason: formattedCall.reason || 'Floor Assistance Requested',
-        assignedTo: assigned?.name || 'Unassigned',
+        reason: formattedCall.reason || 'Floor Employee Assistance Requested',
+        assignedTo: assigned?.name || 'Unassigned (General Employee Pool)',
+        isTargetedToMe,
         time: Date.now()
       });
 
@@ -345,7 +399,7 @@ export default function WaiterPanel() {
         setBannerAlert(null);
       }, 7000);
     },
-    [triggerChime, getAssignedStaffForTable]
+    [triggerChime, getAssignedEmployeeForTable, activeEmployeeFilter, isExclusiveEmployeeMode]
   );
 
   // Handle incoming real-time resolved event
@@ -380,7 +434,7 @@ export default function WaiterPanel() {
     setAcknowledgedMap((prev) => ({
       ...prev,
       [payload.id]: {
-        staffName: payload.staffName || 'Staff Member',
+        staffName: payload.staffName || payload.employeeName || 'Floor Employee',
         timestamp: Date.now()
       }
     }));
@@ -389,10 +443,11 @@ export default function WaiterPanel() {
   // Handle incoming real-time table assignment sync
   const handleIncomingAssignment = useCallback((payload) => {
     if (!payload) return;
-    if (payload.callId && payload.staffId) {
-      setCallStaffOverrides((prev) => ({
+    const employeeId = payload.employeeId || payload.staffId;
+    if (payload.callId && employeeId) {
+      setCallEmployeeOverrides((prev) => ({
         ...prev,
-        [payload.callId]: payload.staffId
+        [payload.callId]: employeeId
       }));
     }
   }, []);
@@ -407,17 +462,17 @@ export default function WaiterPanel() {
   // Acknowledge a request ("Attending Table")
   const handleAcknowledge = (call) => {
     const callId = call.id;
-    const currentStaff =
-      activeStaffFilter !== 'all'
-        ? staffRoster.find((s) => s.id === activeStaffFilter)
-        : getAssignedStaffForTable(call.table_number || call.tableNumber);
+    const currentEmployee =
+      activeEmployeeFilter !== 'all'
+        ? employeeRoster.find((s) => s.id === activeEmployeeFilter)
+        : getAssignedEmployeeForTable(call.table_number || call.tableNumber);
 
-    const staffName = currentStaff ? currentStaff.name : 'Floor Specialist';
+    const employeeName = currentEmployee ? currentEmployee.name : 'Floor Employee';
 
     setAcknowledgedMap((prev) => ({
       ...prev,
       [callId]: {
-        staffName,
+        staffName: employeeName,
         timestamp: Date.now()
       }
     }));
@@ -425,24 +480,27 @@ export default function WaiterPanel() {
     if (socket?.connected) {
       socket.emit('waiter:acknowledge', {
         id: callId,
-        staffId: currentStaff?.id || null,
-        staffName
+        staffId: currentEmployee?.id || null,
+        employeeId: currentEmployee?.id || null,
+        staffName: employeeName,
+        employeeName
       });
     }
   };
 
-  // Assign request to a specific floor staff member
-  const handleAssignCall = (callId, staffId) => {
-    setCallStaffOverrides((prev) => ({
+  // Assign request to a specific floor employee
+  const handleAssignCall = (callId, employeeId) => {
+    setCallEmployeeOverrides((prev) => ({
       ...prev,
-      [callId]: staffId
+      [callId]: employeeId
     }));
 
     if (socket?.connected) {
       socket.emit('waiter:assigned', {
         id: callId,
         callId,
-        staffId
+        staffId: employeeId,
+        employeeId
       });
     }
   };
@@ -464,6 +522,11 @@ export default function WaiterPanel() {
       delete next[callId];
       return next;
     });
+
+    // Also resolve in Restaurant Context
+    if (restaurant?.resolveAssistanceCall) {
+      restaurant.resolveAssistanceCall(targetCall?.tableNumber || targetCall?.table_number || callId);
+    }
 
     // Broadcast resolve over Socket.IO immediately
     if (socket?.connected) {
@@ -492,22 +555,25 @@ export default function WaiterPanel() {
         });
       }
     } catch (err) {
-      console.warn('[FloorStaffConsole] Resolve endpoint error:', err);
+      console.warn('[EmployeeConsole] Resolve endpoint error:', err);
     }
   };
 
   // Reassign table to employee in the roster
-  const handleReassignTable = (tableNumber, newStaffId) => {
-    setStaffRoster((prev) =>
+  const handleReassignTable = (tableNumber, newEmployeeId) => {
+    if (restaurant?.assignTableToEmployee) {
+      restaurant.assignTableToEmployee(tableNumber, newEmployeeId);
+    }
+    setEmployeeRoster((prev) =>
       prev.map((emp) => {
-        const hasTable = emp.tables.includes(tableNumber);
-        if (emp.id === newStaffId) {
+        const hasTable = (emp.tables || []).includes(tableNumber);
+        if (emp.id === newEmployeeId) {
           if (!hasTable) {
-            return { ...emp, tables: [...emp.tables, tableNumber].sort((a, b) => a - b) };
+            return { ...emp, tables: [...(emp.tables || []), tableNumber].sort((a, b) => a - b) };
           }
           return emp;
         } else if (hasTable) {
-          return { ...emp, tables: emp.tables.filter((t) => t !== tableNumber) };
+          return { ...emp, tables: (emp.tables || []).filter((t) => t !== tableNumber) };
         }
         return emp;
       })
@@ -546,13 +612,13 @@ export default function WaiterPanel() {
     [currentTime]
   );
 
-  // Active user / staff filter details
-  const activeStaffMember = useMemo(() => {
-    if (activeStaffFilter === 'all') return null;
-    return staffRoster.find((s) => s.id === activeStaffFilter) || null;
-  }, [activeStaffFilter, staffRoster]);
+  // Active user / employee filter details
+  const activeEmployee = useMemo(() => {
+    if (activeEmployeeFilter === 'all') return null;
+    return employeeRoster.find((s) => s.id === activeEmployeeFilter) || null;
+  }, [activeEmployeeFilter, employeeRoster]);
 
-  // Filtered calls
+  // Filtered calls: supports targeted call routing and exclusive employee mode
   const filteredCalls = useMemo(() => {
     return calls.filter((call) => {
       const table = String(call.table_number || call.tableNumber || call.table || '');
@@ -560,14 +626,14 @@ export default function WaiterPanel() {
       const reason = String(call.reason || '').toLowerCase();
       const customMsg = String(call.custom_message || '').toLowerCase();
 
-      // Resolve effective assigned staff
-      const overrideStaffId = callStaffOverrides[call.id];
-      const defaultAssigned = getAssignedStaffForTable(tableNum);
-      const effectiveStaff = overrideStaffId
-        ? staffRoster.find((s) => s.id === overrideStaffId)
+      // Resolve effective assigned employee
+      const overrideEmployeeId = callEmployeeOverrides[call.id];
+      const defaultAssigned = getAssignedEmployeeForTable(tableNum);
+      const effectiveEmployee = overrideEmployeeId
+        ? employeeRoster.find((s) => s.id === overrideEmployeeId)
         : defaultAssigned;
 
-      const staffName = effectiveStaff ? effectiveStaff.name.toLowerCase() : '';
+      const employeeName = effectiveEmployee ? effectiveEmployee.name.toLowerCase() : '';
 
       // Search match
       const query = tableSearch.toLowerCase().trim();
@@ -576,32 +642,37 @@ export default function WaiterPanel() {
         table.includes(query) ||
         reason.includes(query) ||
         customMsg.includes(query) ||
-        staffName.includes(query);
+        employeeName.includes(query);
 
       if (!matchesSearch) return false;
 
       const { isUrgent } = getCallMetrics(call);
       const isAck = !!acknowledgedMap[call.id];
 
-      // Staff filter
-      if (activeStaffFilter !== 'all') {
-        const isAssignedToActiveStaff = effectiveStaff && effectiveStaff.id === activeStaffFilter;
-        if (activeTab === 'my-tables' && !isAssignedToActiveStaff) return false;
+      // Employee targeted routing & exclusive filtering
+      if (activeEmployeeFilter !== 'all') {
+        const isAssignedToActiveEmployee =
+          effectiveEmployee && effectiveEmployee.id === activeEmployeeFilter;
+        // In exclusive employee mode OR 'my-tables' tab, show EXCLUSIVELY calls for this employee's tables
+        if ((activeTab === 'my-tables' || isExclusiveEmployeeMode) && !isAssignedToActiveEmployee) {
+          return false;
+        }
       }
 
       if (activeTab === 'urgent') return isUrgent;
       if (activeTab === 'acknowledged') return isAck;
-      return true; // 'all'
+      return true; // 'all' or 'my-tables'
     });
   }, [
     calls,
     tableSearch,
     activeTab,
+    isExclusiveEmployeeMode,
     acknowledgedMap,
-    callStaffOverrides,
-    activeStaffFilter,
-    getAssignedStaffForTable,
-    staffRoster,
+    callEmployeeOverrides,
+    activeEmployeeFilter,
+    getAssignedEmployeeForTable,
+    employeeRoster,
     getCallMetrics
   ]);
 
@@ -618,12 +689,12 @@ export default function WaiterPanel() {
       if (acknowledgedMap[c.id]) acknowledgedCount++;
 
       const tbl = Number(c.table_number || c.tableNumber || c.table);
-      const overrideStaffId = callStaffOverrides[c.id];
-      const assigned = overrideStaffId
-        ? staffRoster.find((s) => s.id === overrideStaffId)
-        : getAssignedStaffForTable(tbl);
+      const overrideEmployeeId = callEmployeeOverrides[c.id];
+      const assigned = overrideEmployeeId
+        ? employeeRoster.find((s) => s.id === overrideEmployeeId)
+        : getAssignedEmployeeForTable(tbl);
 
-      if (activeStaffFilter !== 'all' && assigned?.id === activeStaffFilter) {
+      if (activeEmployeeFilter !== 'all' && assigned?.id === activeEmployeeFilter) {
         myAssignedCount++;
       }
 
@@ -645,10 +716,10 @@ export default function WaiterPanel() {
   }, [
     calls,
     acknowledgedMap,
-    callStaffOverrides,
-    activeStaffFilter,
-    staffRoster,
-    getAssignedStaffForTable,
+    callEmployeeOverrides,
+    activeEmployeeFilter,
+    employeeRoster,
+    getAssignedEmployeeForTable,
     getCallMetrics
   ]);
 
@@ -674,7 +745,7 @@ export default function WaiterPanel() {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
-                    Floor Staff Console
+                    Floor Employee Console
                   </h1>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
                     Employee Assistance Hub
@@ -697,26 +768,26 @@ export default function WaiterPanel() {
             </div>
           </div>
 
-          {/* Right: Staff Selector, Table Assignments, Audio & Controls */}
+          {/* Right: Employee Selector, Table Assignments, Audio & Controls */}
           <div className="flex items-center flex-wrap gap-2 sm:gap-3 w-full sm:w-auto justify-end">
-            {/* Active Staff Filter Selector */}
+            {/* Active Employee Filter Selector */}
             <div className="relative inline-flex items-center">
-              <label htmlFor="staff-filter-select" className="sr-only">
-                Filter by Floor Staff
+              <label htmlFor="employee-filter-select" className="sr-only">
+                Filter by Floor Employee
               </label>
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 border border-neutral-700 text-xs font-semibold text-neutral-200 hover:border-neutral-600">
                 <User className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                 <select
-                  id="staff-filter-select"
-                  aria-label="Filter by Floor Staff"
-                  value={activeStaffFilter}
-                  onChange={(e) => setActiveStaffFilter(e.target.value)}
+                  id="employee-filter-select"
+                  aria-label="Filter by Floor Employee"
+                  value={activeEmployeeFilter}
+                  onChange={(e) => setActiveEmployeeFilter(e.target.value)}
                   className="bg-transparent text-xs font-semibold text-neutral-200 focus:outline-none cursor-pointer pr-1"
                 >
                   <option value="all" className="bg-neutral-800 text-neutral-100">
-                    All Staff (Full Floor)
+                    All Active Employees (Full Floor)
                   </option>
-                  {staffRoster.map((st) => (
+                  {employeeRoster.map((st) => (
                     <option
                       key={st.id}
                       value={st.id}
@@ -729,12 +800,29 @@ export default function WaiterPanel() {
               </div>
             </div>
 
+            {/* Exclusive Mode Button when Employee is selected */}
+            {activeEmployeeFilter !== 'all' && (
+              <button
+                type="button"
+                onClick={() => setIsExclusiveEmployeeMode((prev) => !prev)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition active:scale-95 cursor-pointer ${
+                  isExclusiveEmployeeMode
+                    ? 'bg-emerald-600/30 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/20'
+                    : 'bg-neutral-800 text-neutral-300 border-neutral-700 hover:bg-neutral-700'
+                }`}
+                title="Filter console exclusively for my assigned tables"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{isExclusiveEmployeeMode ? 'Exclusive Mode: ON' : 'Exclusive Mode'}</span>
+              </button>
+            )}
+
             {/* Table Assignments Overview Button */}
             <button
               type="button"
               onClick={() => setIsAssignmentsModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold border border-neutral-700 transition active:scale-95 cursor-pointer"
-              title="View and reassign table zones among floor specialists"
+              title="View and reassign table zones among floor employees"
             >
               <Users className="w-3.5 h-3.5 text-sky-400" />
               <span className="hidden sm:inline">Table Assignments</span>
@@ -827,29 +915,37 @@ export default function WaiterPanel() {
         </div>
       </header>
 
-      {/* Floating Incoming Alert Banner */}
+      {/* Floating Incoming Alert Banner with Urgent Routed Alert Badge */}
       {bannerAlert && (
-        <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 text-white px-4 py-2.5 shadow-xl flex items-center justify-between text-xs sm:text-sm font-semibold animate-slide-up border-b border-white/20">
+        <div
+          className={`text-white px-4 py-2.5 shadow-xl flex items-center justify-between text-xs sm:text-sm font-semibold animate-slide-up border-b ${
+            bannerAlert.isTargetedToMe
+              ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 border-emerald-400/40 ring-2 ring-emerald-400/30'
+              : 'bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 border-white/20'
+          }`}
+        >
           <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xl">🔔</span>
-              <span>
-                <strong className="underline decoration-white/50 text-white font-black">
-                  TABLE {bannerAlert.tableNumber}
-                </strong>{' '}
-                requested employee assistance for:{' '}
-                <span className="font-extrabold text-amber-100">
-                  {bannerAlert.reason}
-                </span>{' '}
-                <span className="text-white/80 font-normal">
-                  (Assigned: {bannerAlert.assignedTo})
+              <span className="inline-flex items-center gap-1.5 flex-wrap">
+                <span className="px-2 py-0.5 rounded-lg bg-black/40 border border-white/30 text-white font-black tracking-wide">
+                  Table #{bannerAlert.tableNumber} requested assistance
                 </span>
+                <span className="text-white/90 font-bold">&rarr;</span>
+                <span className="px-2 py-0.5 rounded-lg bg-white/20 font-black text-amber-100 border border-white/30">
+                  Routed to assigned employee: {bannerAlert.assignedTo}
+                </span>
+                {bannerAlert.reason && (
+                  <span className="text-white/80 font-medium text-xs ml-1">
+                    ({bannerAlert.reason})
+                  </span>
+                )}
               </span>
             </div>
             <button
               type="button"
               onClick={() => setBannerAlert(null)}
-              className="text-white hover:text-amber-200 px-2 py-0.5 rounded cursor-pointer font-black text-sm"
+              className="text-white hover:text-amber-200 px-2 py-0.5 rounded cursor-pointer font-black text-sm shrink-0"
             >
               ✕
             </button>
@@ -938,7 +1034,7 @@ export default function WaiterPanel() {
           </div>
         </section>
 
-        {/* Filter Bar, Active Staff Scope & Table Search */}
+        {/* Filter Bar, Active Employee Scope & Table Search */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-neutral-800/80 p-2.5 rounded-2xl border border-neutral-700">
           {/* Filter Tabs */}
           <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
@@ -954,7 +1050,7 @@ export default function WaiterPanel() {
               All Requests ({calls.length})
             </button>
 
-            {activeStaffFilter !== 'all' && (
+            {activeEmployeeFilter !== 'all' && (
               <button
                 type="button"
                 onClick={() => setActiveTab('my-tables')}
@@ -965,7 +1061,7 @@ export default function WaiterPanel() {
                 }`}
               >
                 <User className="w-3.5 h-3.5" />
-                <span>My Tables ({stats.myAssignedCount})</span>
+                <span>My Assigned Tables ({stats.myAssignedCount})</span>
               </button>
             )}
 
@@ -1009,12 +1105,12 @@ export default function WaiterPanel() {
             </button>
           </div>
 
-          {/* Quick Table / Staff Search Input */}
+          {/* Quick Table / Employee Search Input */}
           <div className="relative w-full sm:w-64">
             <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search table, reason, staff..."
+              placeholder="Search table, reason, employee..."
               value={tableSearch}
               onChange={(e) => setTableSearch(e.target.value)}
               className="w-full pl-9 pr-7 py-1.5 bg-neutral-950 border border-neutral-700 rounded-xl text-xs text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
@@ -1061,7 +1157,7 @@ export default function WaiterPanel() {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {resolvedHistory.map((item) => {
                   const tbl = item.table_number || item.tableNumber || item.table;
-                  const assigned = getAssignedStaffForTable(tbl);
+                  const assigned = getAssignedEmployeeForTable(tbl);
                   return (
                     <div
                       key={'hist-' + item.id}
@@ -1079,7 +1175,7 @@ export default function WaiterPanel() {
                         {item.reason}
                       </p>
                       <div className="mt-2 pt-2 border-t border-neutral-700/60 flex items-center justify-between text-[11px] text-neutral-300">
-                        <span>Staff: {assigned?.name || 'General Floor'}</span>
+                        <span>Employee: {assigned?.name || 'General Employee Pool'}</span>
                         <span className="text-neutral-400">Completed</span>
                       </div>
                     </div>
@@ -1102,7 +1198,7 @@ export default function WaiterPanel() {
                     All Tables Attended To!
                   </h3>
                   <p className="text-xs sm:text-sm text-neutral-300 max-w-md mx-auto mt-1">
-                    No pending assistance requests right now. The floor console chime
+                    No pending assistance requests right now. The employee console chime
                     will automatically sound when a guest calls for service.
                   </p>
                 </div>
@@ -1111,7 +1207,7 @@ export default function WaiterPanel() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
-                  <span>Listening for guest assistance requests across all tables</span>
+                  <span>Listening for guest assistance requests across assigned tables</span>
                 </div>
               </div>
             ) : (
@@ -1123,12 +1219,15 @@ export default function WaiterPanel() {
                   const tableNum =
                     call.table_number || call.tableNumber || call.table || '?';
 
-                  // Assigned staff determination
-                  const overrideStaffId = callStaffOverrides[call.id];
-                  const defaultStaff = getAssignedStaffForTable(tableNum);
-                  const effectiveStaff = overrideStaffId
-                    ? staffRoster.find((s) => s.id === overrideStaffId)
-                    : defaultStaff;
+                  // Assigned employee determination
+                  const overrideEmployeeId = callEmployeeOverrides[call.id];
+                  const defaultEmployee = getAssignedEmployeeForTable(tableNum);
+                  const effectiveEmployee = overrideEmployeeId
+                    ? employeeRoster.find((s) => s.id === overrideEmployeeId)
+                    : defaultEmployee;
+                  const isAssignedToMe =
+                    activeEmployeeFilter !== 'all' &&
+                    effectiveEmployee?.id === activeEmployeeFilter;
 
                   // High-contrast, accessible card styling
                   let cardStyles =
@@ -1187,22 +1286,45 @@ export default function WaiterPanel() {
                           </div>
                         </div>
 
+                        {/* Urgent Alert Badge with Route details */}
+                        <div
+                          className={`mb-3 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border ${
+                            isUrgent
+                              ? 'bg-rose-950/90 border-rose-500 text-rose-200 shadow-sm animate-pulse'
+                              : isAssignedToMe
+                              ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200'
+                              : 'bg-neutral-900/90 border-neutral-700/80 text-neutral-300'
+                          }`}
+                        >
+                          {isUrgent ? (
+                            <Flame className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                          ) : (
+                            <Radio className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          )}
+                          <span className="truncate">
+                            Table #{tableNum} requested assistance &rarr; Routed to assigned employee:{' '}
+                            <strong className="text-white">
+                              {effectiveEmployee?.name || 'Unassigned (General Pool)'}
+                            </strong>
+                          </span>
+                        </div>
+
                         {/* Assigned Employee Tag / Quick Reassignment */}
                         <div className="flex items-center justify-between gap-2 mb-3 px-3 py-1.5 rounded-xl bg-neutral-900/80 border border-neutral-700/80 text-xs">
                           <div className="flex items-center gap-2">
                             <div
                               className={`w-5 h-5 rounded-full bg-gradient-to-tr ${
-                                effectiveStaff?.color || 'from-neutral-600 to-neutral-700'
+                                effectiveEmployee?.color || 'from-neutral-600 to-neutral-700'
                               } flex items-center justify-center text-[10px] font-black text-white shrink-0`}
                             >
-                              {effectiveStaff?.initials || 'FS'}
+                              {effectiveEmployee?.initials || 'FE'}
                             </div>
                             <div className="truncate">
                               <span className="text-neutral-400 text-[10px] uppercase font-bold block leading-none">
-                                Assigned Specialist
+                                Assigned Employee
                               </span>
                               <span className="text-white font-extrabold truncate">
-                                {effectiveStaff?.name || 'Unassigned (General)'}
+                                {effectiveEmployee?.name || 'Unassigned (General Employee Pool)'}
                               </span>
                             </div>
                           </div>
@@ -1210,19 +1332,19 @@ export default function WaiterPanel() {
                           {/* Quick Reassign Dropdown */}
                           <div className="relative">
                             <label htmlFor={`assign-select-${call.id}`} className="sr-only">
-                              Assign Staff
+                              Assign Employee
                             </label>
                             <select
                               id={`assign-select-${call.id}`}
-                              aria-label="Assign Staff"
-                              value={effectiveStaff?.id || ''}
+                              aria-label="Assign Employee"
+                              value={effectiveEmployee?.id || ''}
                               onChange={(e) => handleAssignCall(call.id, e.target.value)}
                               className="bg-neutral-800 text-[11px] font-bold text-neutral-200 border border-neutral-600 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
                             >
                               <option value="" disabled className="bg-neutral-800 text-neutral-300">
-                                Reassign...
+                                Reassign Employee...
                               </option>
-                              {staffRoster.map((st) => (
+                              {employeeRoster.map((st) => (
                                 <option
                                   key={st.id}
                                   value={st.id}
@@ -1241,7 +1363,7 @@ export default function WaiterPanel() {
                             Requested Service
                           </p>
                           <p className="text-base font-black text-white leading-snug">
-                            {call.reason || 'Floor Staff Assistance'}
+                            {call.reason || 'Floor Employee Assistance'}
                           </p>
                           {call.custom_message && (
                             <p className="mt-2 text-xs text-neutral-200 bg-neutral-800 border border-neutral-700 p-2.5 rounded-xl font-medium">
@@ -1257,7 +1379,7 @@ export default function WaiterPanel() {
                             <span>
                               Attending:{' '}
                               <strong className="text-white">
-                                {ackInfo?.staffName || 'Floor Specialist'}
+                                {ackInfo?.staffName || 'Floor Employee'}
                               </strong>{' '}
                               is assisting this table
                             </span>
@@ -1321,7 +1443,7 @@ export default function WaiterPanel() {
                   Floor Table Assignments Matrix
                 </h3>
                 <p className="text-xs text-neutral-400">
-                  Assign tables to dedicated floor specialists for instant dispatch
+                  Assign tables to dedicated floor employees for instant dispatch
                 </p>
               </div>
               <button
@@ -1335,8 +1457,8 @@ export default function WaiterPanel() {
 
             {/* Table Matrix Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {ALL_TABLES.map((tblNum) => {
-                const assigned = getAssignedStaffForTable(tblNum);
+              {displayTables.map((tblNum) => {
+                const assigned = getAssignedEmployeeForTable(tblNum);
                 const hasActiveCall = calls.some(
                   (c) =>
                     Number(c.table_number || c.tableNumber || c.table) === tblNum
@@ -1360,19 +1482,19 @@ export default function WaiterPanel() {
 
                     <div>
                       <label htmlFor={`modal-assign-table-${tblNum}`} className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
-                        Assigned Specialist
+                        Assigned Employee
                       </label>
                       <select
                         id={`modal-assign-table-${tblNum}`}
-                        aria-label={`Assigned Specialist for Table ${tblNum}`}
+                        aria-label={`Assigned Employee for Table ${tblNum}`}
                         value={assigned?.id || ''}
                         onChange={(e) => handleReassignTable(tblNum, e.target.value)}
                         className="w-full bg-neutral-900 border border-neutral-700 text-xs font-bold text-neutral-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
                       >
                         <option value="" disabled className="bg-neutral-900 text-neutral-400">
-                          Select specialist...
+                          Select employee...
                         </option>
-                        {staffRoster.map((st) => (
+                        {employeeRoster.map((st) => (
                           <option
                             key={st.id}
                             value={st.id}
@@ -1405,7 +1527,7 @@ export default function WaiterPanel() {
       <footer className="bg-neutral-900 border-t border-neutral-800 px-4 py-3 mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-400 gap-2">
           <div className="flex items-center gap-2">
-            <span>Floor Staff Console &bull; Employee Assistance Hub &bull; Offline-First</span>
+            <span>Floor Employee Console &bull; Employee Assistance Hub &bull; Offline-First</span>
           </div>
 
           {/* Quick links to sister modules */}

@@ -142,7 +142,7 @@ router.get('/qr', async (req, res) => {
 router.get('/batch-qr', async (req, res) => {
   try {
     const from = Math.max(1, Number(req.query.from) || 1);
-    const to = Math.min(50, Math.max(from, Number(req.query.to) || 10));
+    const to = Math.min(100, Math.max(from, Number(req.query.to) || 10));
     const rawBaseUrl = req.query.baseUrl ? String(req.query.baseUrl).trim() : resolveBaseUrl(req);
     const cleanBaseUrl = rawBaseUrl.replace(/\/+$/, '');
 

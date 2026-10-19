@@ -19,12 +19,25 @@ import {
 import { resolveServerUrl } from '../context/SocketContext';
 import '../styles/admin.css';
 
-export default function QRBatchGenerator({ className = '' }) {
+export default function QRBatchGenerator({ className = '', tableCount: propTableCount, tables: propTables }) {
   // Config inputs
   const [restaurantName, setRestaurantName] = useState('SmartDine Bistro');
   const [tagline, setTagline] = useState('Scan to order from your phone & leave voice notes!');
   const [tableStart, setTableStart] = useState(1);
-  const [tableEnd, setTableEnd] = useState(12);
+  const [tableEnd, setTableEnd] = useState(() => {
+    if (typeof propTableCount === 'number' && propTableCount > 0) return propTableCount;
+    if (Array.isArray(propTables) && propTables.length > 0) return propTables.length;
+    return 12;
+  });
+
+  // Sync tableEnd when propTableCount or tables changes
+  useEffect(() => {
+    if (typeof propTableCount === 'number' && propTableCount > 0) {
+      setTableEnd(propTableCount);
+    } else if (Array.isArray(propTables) && propTables.length > 0) {
+      setTableEnd(propTables.length);
+    }
+  }, [propTableCount, propTables]);
   const [baseUrl, setBaseUrl] = useState('');
   const [detectedLanIp, setDetectedLanIp] = useState('');
   

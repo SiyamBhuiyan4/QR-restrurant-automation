@@ -253,7 +253,7 @@ export default function Navbar({
                 </button>
               )}
 
-              {/* Call Waiter Trigger Button */}
+              {/* Call Assistance Trigger Button */}
               <button
                 type="button"
                 onClick={() => setShowWaiterModal(true)}
@@ -262,19 +262,19 @@ export default function Navbar({
                     ? 'bg-sky-700 text-white border-sky-400/60 shadow-sky-900/40 ring-2 ring-sky-400/50'
                     : 'bg-gradient-to-r from-sky-400 via-sky-500 to-sky-600 text-[#021424] border-transparent shadow-sky-500/30 hover:shadow-sky-500/50'
                 }`}
-                title="Call waiter to your table"
+                title="Request assistance at your table"
               >
                 {waiterCalled ? (
                   <>
                     <CheckCircle2 className="w-4 h-4 text-sky-200 animate-bounce motion-reduce:animate-none" />
-                    <span className="hidden sm:inline">Waiter Called!</span>
+                    <span className="hidden sm:inline">Assistance Requested!</span>
                     <span className="sm:hidden">Called</span>
                   </>
                 ) : (
                   <>
                     <BellRing className="w-4 h-4 text-[#021424]" />
-                    <span className="hidden sm:inline">Call Waiter</span>
-                    <span className="hidden min-[400px]:inline sm:hidden">Waiter</span>
+                    <span className="hidden sm:inline">Call Assistance</span>
+                    <span className="hidden min-[400px]:inline sm:hidden">Assistance</span>
                   </>
                 )}
               </button>

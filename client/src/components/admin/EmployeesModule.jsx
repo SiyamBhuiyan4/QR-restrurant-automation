@@ -21,7 +21,8 @@ import {
   Coffee,
   CheckCheck,
   Table,
-  ArrowRight
+  ArrowRight,
+  ArrowRightLeft
 } from 'lucide-react';
 
 // Total floor tables in the venue
@@ -206,12 +207,32 @@ const SIMULATED_SCENARIOS = [
   }
 ];
 
-export default function EmployeesModule({ className = '' }) {
+export default function EmployeesModule({
+  className = '',
+  employees: propEmployees,
+  tables: propTables,
+  tableCount: propTableCount,
+  onAssignTable,
+  onReassignAllTables,
+  onSetEmployeeStatus,
+  onAutoBalance
+}) {
   // Main State
-  const [employees, setEmployees] = useState(INITIAL_EMPLOYEES);
+  const [employees, setEmployees] = useState(() => {
+    return propEmployees && Array.isArray(propEmployees) && propEmployees.length > 0
+      ? propEmployees
+      : INITIAL_EMPLOYEES;
+  });
+
+  useEffect(() => {
+    if (propEmployees && Array.isArray(propEmployees)) {
+      setEmployees(propEmployees);
+    }
+  }, [propEmployees]);
+
   const [alerts, setAlerts] = useState(INITIAL_ALERTS);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'Active' | 'Busy' | 'On Break'
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'Active' | 'Busy' | 'On Break' | 'Absent / Off-duty'
   const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'tables' | 'dispatch'
   const [alertFilter, setAlertFilter] = useState('all'); // 'all' | 'active' | 'resolved'
 
@@ -219,6 +240,23 @@ export default function EmployeesModule({ className = '' }) {
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null); // null for new employee
   const [reassignAlertTarget, setReassignAlertTarget] = useState(null); // alert being reassigned
+
+  // Employee Absence & Quick Transfer Modal State (Rule 4)
+  const [transferModalData, setTransferModalData] = useState(null); // { sourceEmployee, isAbsenceTrigger: boolean }
+  const [selectedBackupEmpId, setSelectedBackupEmpId] = useState('');
+  const [rerouteActiveAlerts, setRerouteActiveAlerts] = useState(true);
+
+  // Dynamic Venue Table Count & Array (Rule 1)
+  const totalVenueTables = propTableCount || (propTables ? propTables.length : TOTAL_TABLES_COUNT);
+  const allTableNumbers = useMemo(() => Array.from({ length: totalVenueTables }, (_, i) => i + 1), [totalVenueTables]);
+
+  // Active Backup Employee Candidates (Strictly on-duty, excluding absent employee)
+  const activeBackupEmployees = useMemo(() => {
+    if (!transferModalData?.sourceEmployee) return [];
+    return employees.filter(
+      e => e.id !== transferModalData.sourceEmployee.id && (e.status === 'Active' || e.status === 'Busy')
+    );
+  }, [employees, transferModalData]);
 
   // Employee Form State (for Add/Edit Modal)
   const [formData, setFormData] = useState({
@@ -244,15 +282,17 @@ export default function EmployeesModule({ className = '' }) {
   // Summary Metrics
   const summaryMetrics = useMemo(() => {
     const total = employees.length;
-    const onDutyStaff = employees.filter(e => e.status !== 'On Break');
+    const onDutyStaff = employees.filter(e => e.status !== 'On Break' && e.status !== 'Absent / Off-duty');
     const activeOnDuty = onDutyStaff.length;
     const currentlyBusy = employees.filter(e => e.status === 'Busy').length;
 
     // Count unique tables covered
     const coveredTables = new Set();
     employees.forEach(emp => {
-      if (emp.status !== 'On Break') {
-        emp.assignedTables.forEach(t => coveredTables.add(t));
+      if (emp.status !== 'On Break' && emp.status !== 'Absent / Off-duty') {
+        (emp.assignedTables || []).forEach(t => {
+          if (t <= totalVenueTables) coveredTables.add(t);
+        });
       }
     });
 
@@ -269,17 +309,17 @@ export default function EmployeesModule({ className = '' }) {
       activeOnDuty,
       currentlyBusy,
       tablesCovered: coveredTables.size,
-      totalTables: TOTAL_TABLES_COUNT,
-      coveragePercentage: Math.round((coveredTables.size / TOTAL_TABLES_COUNT) * 100),
+      totalTables: totalVenueTables,
+      coveragePercentage: Math.round((coveredTables.size / totalVenueTables) * 100),
       avgResponseTime: `${avgResponseSecs}s`
     };
-  }, [employees]);
+  }, [employees, totalVenueTables]);
 
   // Lookup map: tableNumber -> Assigned Employee
   const tableToEmployeeMap = useMemo(() => {
     const map = {};
     employees.forEach(emp => {
-      emp.assignedTables.forEach(tblNum => {
+      (emp.assignedTables || []).forEach(tblNum => {
         map[tblNum] = emp;
       });
     });
@@ -368,25 +408,35 @@ export default function EmployeesModule({ className = '' }) {
     setEmployees(prev => {
       return prev.map(emp => {
         if (emp.id === newEmployeeId) {
-          const next = emp.assignedTables.includes(tableNumber)
+          const next = (emp.assignedTables || []).includes(tableNumber)
             ? emp.assignedTables
-            : [...emp.assignedTables, tableNumber].sort((a, b) => a - b);
+            : [...(emp.assignedTables || []), tableNumber].sort((a, b) => a - b);
           return { ...emp, assignedTables: next };
         } else {
           return {
             ...emp,
-            assignedTables: emp.assignedTables.filter(t => t !== tableNumber)
+            assignedTables: (emp.assignedTables || []).filter(t => t !== tableNumber)
           };
         }
       });
     });
 
+    if (onAssignTable) {
+      onAssignTable(tableNumber, newEmployeeId);
+    }
+
     const targetEmp = employees.find(e => e.id === newEmployeeId);
     showToast(`Table ${tableNumber} reassigned to ${targetEmp?.name || 'selected Employee'}`, 'success');
-  }, [employees, showToast]);
+  }, [employees, onAssignTable, showToast]);
 
   // 1-Click Auto-Balance Tables evenly across on-duty (Active + Busy) employees
   const handleAutoBalanceTables = useCallback(() => {
+    if (onAutoBalance) {
+      onAutoBalance();
+      showToast(`Auto-balanced tables across on-duty Employees!`, 'success');
+      return;
+    }
+
     const onDutyEmployees = employees.filter(e => e.status === 'Active' || e.status === 'Busy');
     if (onDutyEmployees.length === 0) {
       showToast('No active or busy employees available for floor coverage', 'error');
@@ -398,7 +448,7 @@ export default function EmployeesModule({ className = '' }) {
       assignments[e.id] = [];
     });
 
-    ALL_TABLE_NUMBERS.forEach((tableNum, idx) => {
+    allTableNumbers.forEach((tableNum, idx) => {
       const empIndex = idx % onDutyEmployees.length;
       const targetEmp = onDutyEmployees[empIndex];
       assignments[targetEmp.id].push(tableNum);
@@ -416,14 +466,40 @@ export default function EmployeesModule({ className = '' }) {
       });
     });
 
-    showToast(`Auto-balanced all 12 tables across ${onDutyEmployees.length} on-duty Employees!`, 'success');
+    showToast(`Auto-balanced all ${allTableNumbers.length} tables across ${onDutyEmployees.length} on-duty Employees!`, 'success');
+  }, [employees, allTableNumbers, onAutoBalance, showToast]);
+
+  // ---------------------------------------------------------------------------
+  // EMPLOYEE ABSENCE & BACKUP HANDLER HUB (Rule 4)
+  // ---------------------------------------------------------------------------
+
+  // Open the Backup Handler Modal
+  const handleOpenTransferModal = useCallback((emp) => {
+    if (!emp.assignedTables || emp.assignedTables.length === 0) {
+      showToast(`Employee ${emp.name} currently has no assigned tables to transfer.`, 'info');
+      return;
+    }
+    setTransferModalData({ sourceEmployee: emp, isAbsenceTrigger: false });
+    const defaultBackup = employees.find(e => e.id !== emp.id && (e.status === 'Active' || e.status === 'Busy'));
+    setSelectedBackupEmpId(defaultBackup ? defaultBackup.id : '');
   }, [employees, showToast]);
 
-  // ---------------------------------------------------------------------------
-  // STATUS & NUDGE CONTROLS
-  // ---------------------------------------------------------------------------
-
+  // Intercept Absence status to trigger Quick Transfer Modal (Rule 4)
   const handleChangeEmployeeStatus = useCallback((employeeId, newStatus) => {
+    const targetEmp = employees.find(e => e.id === employeeId);
+    if (!targetEmp) return;
+
+    if (newStatus === 'Absent / Off-duty' && targetEmp.assignedTables?.length > 0) {
+      // Intercept: prompt backup transfer modal
+      setTransferModalData({ sourceEmployee: targetEmp, isAbsenceTrigger: true });
+      const defaultBackup = employees.find(e => e.id !== employeeId && (e.status === 'Active' || e.status === 'Busy'));
+      setSelectedBackupEmpId(defaultBackup ? defaultBackup.id : '');
+      return;
+    }
+
+    if (onSetEmployeeStatus) {
+      onSetEmployeeStatus(employeeId, newStatus);
+    }
     setEmployees(prev =>
       prev.map(emp => {
         if (emp.id === employeeId) {
@@ -432,9 +508,62 @@ export default function EmployeesModule({ className = '' }) {
         return emp;
       })
     );
-    const emp = employees.find(e => e.id === employeeId);
-    showToast(`${emp?.name || 'Employee'} status updated to "${newStatus}"`, 'info');
-  }, [employees, showToast]);
+    showToast(`${targetEmp.name} status updated to "${newStatus}"`, 'info');
+  }, [employees, onSetEmployeeStatus, showToast]);
+
+  // 1-Click "Confirm Transfer" handler
+  const handleConfirmTransfer = useCallback(() => {
+    if (!transferModalData?.sourceEmployee || !selectedBackupEmpId) {
+      showToast('Please select an active backup employee', 'error');
+      return;
+    }
+
+    const sourceEmp = transferModalData.sourceEmployee;
+    const backupEmp = employees.find(e => e.id === selectedBackupEmpId);
+    if (!backupEmp) return;
+
+    const tablesToTransfer = [...(sourceEmp.assignedTables || [])];
+
+    if (onReassignAllTables) {
+      onReassignAllTables(sourceEmp.id, selectedBackupEmpId, transferModalData.isAbsenceTrigger);
+    } else {
+      setEmployees(prev => prev.map(emp => {
+        if (emp.id === sourceEmp.id) {
+          return {
+            ...emp,
+            status: transferModalData.isAbsenceTrigger ? 'Absent / Off-duty' : emp.status,
+            assignedTables: []
+          };
+        }
+        if (emp.id === selectedBackupEmpId) {
+          const combined = Array.from(new Set([...(emp.assignedTables || []), ...tablesToTransfer])).sort((a, b) => a - b);
+          return { ...emp, assignedTables: combined };
+        }
+        return emp;
+      }));
+    }
+
+    // Optionally reroute active alerts
+    if (rerouteActiveAlerts) {
+      setAlerts(prev => prev.map(alert => {
+        if (alert.assignedEmployeeId === sourceEmp.id && alert.status !== 'Completed' && alert.status !== 'Acknowledged') {
+          return {
+            ...alert,
+            assignedEmployeeId: backupEmp.id,
+            assignedEmployeeName: backupEmp.name.split(' ')[0],
+            responseDetails: `Rerouted to backup ${backupEmp.name} (Absence Transfer)`
+          };
+        }
+        return alert;
+      }));
+    }
+
+    setTransferModalData(null);
+    showToast(
+      `Re-linked ${tablesToTransfer.length} tables (T${tablesToTransfer.join(', T')}) from ${sourceEmp.name} to ${backupEmp.name}!`,
+      'success'
+    );
+  }, [transferModalData, selectedBackupEmpId, rerouteActiveAlerts, onReassignAllTables, employees, showToast]);
 
   const handleNudgeEmployee = useCallback((employeeId, alertId = null) => {
     setEmployees(prev =>
@@ -908,6 +1037,18 @@ export default function EmployeesModule({ className = '' }) {
                 <Coffee className="w-3 h-3 text-slate-400" />
                 <span>On Break ({employees.filter(e => e.status === 'On Break').length})</span>
               </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('Absent / Off-duty')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                  statusFilter === 'Absent / Off-duty'
+                    ? 'bg-rose-900/80 text-rose-200 shadow-xs border border-rose-500/40'
+                    : 'text-slate-400 hover:text-rose-300 hover:bg-[#1e293b]'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-rose-400" />
+                <span>Absent ({employees.filter(e => e.status === 'Absent / Off-duty').length})</span>
+              </button>
             </div>
 
             {/* Search Input */}
@@ -984,13 +1125,27 @@ export default function EmployeesModule({ className = '' }) {
                               ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/40'
                               : isBusy
                               ? 'bg-amber-950/70 text-amber-300 border-amber-500/40'
+                              : emp.status === 'Absent / Off-duty'
+                              ? 'bg-rose-950/70 text-rose-300 border-rose-500/40'
                               : 'bg-slate-800 text-slate-300 border-slate-700'
                           }`}
                         >
                           <option value="Active" className="bg-[#111827] text-emerald-300">Active</option>
                           <option value="Busy" className="bg-[#111827] text-amber-300">Busy</option>
                           <option value="On Break" className="bg-[#111827] text-slate-300">On Break</option>
+                          <option value="Absent / Off-duty" className="bg-[#111827] text-rose-300">Absent / Off-duty</option>
                         </select>
+
+                        {/* 1-Click Bulk Transfer Tables Button (Rule 4) */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenTransferModal(emp)}
+                          className="px-2 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                          title={`Transfer all ${emp.assignedTables?.length || 0} tables to backup employee`}
+                        >
+                          <ArrowRightLeft className="w-3.5 h-3.5 text-amber-400" />
+                          <span className="hidden sm:inline">Transfer</span>
+                        </button>
 
                         {/* Nudge Button */}
                         <button
@@ -1037,7 +1192,7 @@ export default function EmployeesModule({ className = '' }) {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-1.5">
-                        {ALL_TABLE_NUMBERS.map(tblNum => {
+                        {allTableNumbers.map(tblNum => {
                           const isAssignedToThis = emp.assignedTables.includes(tblNum);
                           const assignedOther = !isAssignedToThis && tableToEmployeeMap[tblNum];
 
@@ -1107,7 +1262,7 @@ export default function EmployeesModule({ className = '' }) {
               <Table className="w-4 h-4 text-blue-400" />
               <div>
                 <h3 className="font-bold text-[#f8fafc] text-base">
-                  Dining Room Table Coverage (Tables 1–12)
+                  Dining Room Table Coverage (Tables 1–{totalVenueTables})
                 </h3>
                 <p className="text-xs text-slate-400">
                   Floor allocation matrix with inline Employee reassignment and 1-click balance
@@ -1136,9 +1291,9 @@ export default function EmployeesModule({ className = '' }) {
             </div>
           </div>
 
-          {/* 12 Tables Grid: Dedicated, Spacious Layout */}
+          {/* Tables Grid: Dedicated, Spacious Layout */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {ALL_TABLE_NUMBERS.map(tableNum => {
+            {allTableNumbers.map(tableNum => {
               const assignedEmp = tableToEmployeeMap[tableNum];
               const isAssigned = !!assignedEmp;
 
@@ -1583,7 +1738,7 @@ export default function EmployeesModule({ className = '' }) {
                   Assigned Tables
                 </label>
                 <div className="flex flex-wrap items-center gap-1.5 p-3 rounded-xl bg-[#1e293b] border border-[#334155]">
-                  {ALL_TABLE_NUMBERS.map(tblNum => {
+                  {allTableNumbers.map(tblNum => {
                     const isSelected = formData.assignedTables.includes(tblNum);
                     return (
                       <button
@@ -1710,6 +1865,116 @@ export default function EmployeesModule({ className = '' }) {
                 className="px-4 py-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-300 border border-[#334155] text-xs font-bold cursor-pointer"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* =========================================================================
+          EMPLOYEE ABSENCE & QUICK TRANSFER MODAL (THE BACKUP HANDLER - Rule 4)
+          ========================================================================= */}
+      {transferModalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-[#111827] border border-[#334155] rounded-3xl w-full max-w-md shadow-2xl p-6 relative text-[#f8fafc] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#334155]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <ArrowRightLeft className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#f8fafc]">
+                    {transferModalData.isAbsenceTrigger ? 'Employee Absence Transfer' : 'Quick Table Transfer'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">Floor Coverage Backup Handler</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTransferModalData(null)}
+                className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs text-slate-300">
+              <p className="leading-relaxed">
+                Employee <strong className="text-white">{transferModalData.sourceEmployee.name}</strong> is{' '}
+                {transferModalData.isAbsenceTrigger ? (
+                  <span className="text-rose-400 font-bold">Absent / Off-duty</span>
+                ) : (
+                  <span className="text-amber-400 font-bold">transferring tables</span>
+                )}.
+                Transfer all assigned tables to which active backup employee?
+              </p>
+
+              {/* Assigned Tables Badges */}
+              <div>
+                <span className="text-[11px] text-slate-400 block mb-1.5 font-semibold">
+                  Tables to be transferred ({transferModalData.sourceEmployee.assignedTables?.length || 0}):
+                </span>
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                  {(transferModalData.sourceEmployee.assignedTables || []).map(t => (
+                    <span key={t} className="px-2.5 py-1 rounded-lg bg-[#FF5A26]/20 border border-[#FF5A26]/40 text-[#FF7A45] font-bold">
+                      Table {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Active Backup Employee Selector */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-300 mb-1.5">
+                  Select Active Backup Employee:
+                </label>
+                {activeBackupEmployees.length === 0 ? (
+                  <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs">
+                    ⚠️ No active or busy backup employees available on the floor.
+                  </div>
+                ) : (
+                  <select
+                    value={selectedBackupEmpId}
+                    onChange={e => setSelectedBackupEmpId(e.target.value)}
+                    className="w-full bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] rounded-xl py-2 px-3 focus:outline-none focus:border-[#FF5A26] cursor-pointer"
+                  >
+                    {activeBackupEmployees.map(emp => (
+                      <option key={emp.id} value={emp.id} className="bg-[#111827] text-[#f8fafc]">
+                        {emp.name} ({emp.status}) — currently has {emp.assignedTables?.length || 0} tables
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Checkbox: Reroute Active Alerts */}
+              <label className="flex items-center gap-2 text-[11px] text-slate-300 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={rerouteActiveAlerts}
+                  onChange={e => setRerouteActiveAlerts(e.target.checked)}
+                  className="rounded border-[#334155] text-[#FF5A26] focus:ring-0 cursor-pointer"
+                />
+                <span>Also reroute pending call &amp; kitchen alerts to backup employee</span>
+              </label>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-3 border-t border-[#334155] flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setTransferModalData(null)}
+                className="px-4 py-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-300 border border-[#334155] text-xs font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!selectedBackupEmpId || activeBackupEmployees.length === 0}
+                onClick={handleConfirmTransfer}
+                className="px-4 py-2 rounded-xl bg-[#FF5A26] hover:bg-[#e04f20] disabled:opacity-50 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Confirm Transfer</span>
               </button>
             </div>
           </div>

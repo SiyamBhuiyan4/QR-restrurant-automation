@@ -174,14 +174,18 @@ async function sendWaiterCallToTelegram(call) {
 
   const table = call.table_number || call.tableNumber || 'Unknown';
   const reason = call.reason || 'General Assistance';
+  const assigned = call.assignedEmployeeName || call.assigned_employee_name || null;
 
-  let text = `🛎️ <b>WAITER CALL ALERT!</b>\n`;
+  let text = `🛎️ <b>EMPLOYEE ASSISTANCE ALERT!</b>\n`;
   text += `━━━━━━━━━━━━━━━━━━━━━\n`;
   text += `📍 <b>Table:</b> Table ${table}\n`;
+  if (assigned) {
+    text += `👤 <b>Assigned Employee:</b> <b>${assigned}</b>\n`;
+  }
   text += `❓ <b>Request:</b> <b>${reason}</b>\n`;
   text += `⏱️ <b>Time:</b> ${new Date().toLocaleTimeString()}\n`;
   text += `━━━━━━━━━━━━━━━━━━━━━\n`;
-  text += `<i>Please attend to Table ${table} immediately.</i>`;
+  text += `<i>${assigned ? `Routed to assigned employee ${assigned}.` : `Please attend to Table ${table} immediately.`}</i>`;
 
   return await callTelegramApi('sendMessage', {
     chat_id: chatId,
