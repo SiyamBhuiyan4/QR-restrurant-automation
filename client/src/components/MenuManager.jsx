@@ -1141,62 +1141,68 @@ export default function MenuManager({ className = '' }) {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
           {filteredDishes.map((dish) => {
             const isAvailable = Boolean(dish.is_available);
             return (
               <div
                 key={dish.id}
-                className={`group flex flex-col justify-between bg-[#111827] rounded-2xl border transition-all duration-200 overflow-hidden shadow-md hover:border-slate-500 hover:shadow-xl ${
+                className={`group flex flex-col justify-between h-full bg-[#111827] rounded-2xl border transition-all duration-200 overflow-hidden shadow-md hover:border-slate-500 hover:shadow-xl ${
                   !isAvailable ? 'border-rose-900/60 bg-[#111827]/90' : 'border-[#334155]'
                 }`}
               >
-                <div>
-                  {/* Dish Header Image & Tags */}
-                  <div className="relative aspect-16/9 w-full bg-[#1e293b] overflow-hidden">
+                <div className="flex flex-col flex-1">
+                  {/* Dish Header Image & Tags - strictly uniform height and aspect ratio */}
+                  <div className="relative w-full h-48 bg-[#1e293b] overflow-hidden shrink-0">
                     {dish.image_url ? (
                       <img
                         src={dish.image_url}
                         alt={dish.name}
-                        className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-102 ${
+                        className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
                           !isAvailable ? 'grayscale-40 opacity-70' : ''
                         }`}
                         onError={(e) => {
-                          e.target.style.display = 'none';
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.nextElementSibling;
+                          if (fallback) fallback.style.display = 'flex';
                         }}
                       />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-[#1e293b] text-[#94a3b8]">
-                        <ImageIcon className="w-8 h-8 mb-1" />
-                        <span className="text-[11px] font-medium">No Image Provided</span>
-                      </div>
-                    )}
+                    ) : null}
+                    <div
+                      className={`w-full h-full flex flex-col items-center justify-center bg-[#1e293b] text-[#94a3b8] ${
+                        dish.image_url ? 'hidden' : 'flex'
+                      }`}
+                    >
+                      <ImageIcon className="w-8 h-8 mb-1 opacity-60" />
+                      <span className="text-[11px] font-medium text-zinc-400">No Image Provided</span>
+                    </div>
 
                     {/* Top Badges */}
-                    <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 z-10">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0f172a]/90 backdrop-blur-xs text-[#f8fafc] border border-white/10">
+                    <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 z-10 max-w-[70%]">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0f172a]/90 backdrop-blur-xs text-[#f8fafc] border border-white/10 shadow-xs">
                         {dish.category}
                       </span>
                       {Boolean(dish.is_veg) && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-600 text-white shadow-2xs">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-600 text-white shadow-xs">
                           <Leaf className="w-2.5 h-2.5 fill-current" />
                           Veg
                         </span>
                       )}
                       {Boolean(dish.is_spicy) && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-600 text-white shadow-2xs">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-600 text-white shadow-xs">
                           <Flame className="w-2.5 h-2.5 fill-current" />
                           Spicy
                         </span>
                       )}
                       {Boolean(dish.image_url && (dish.image_url.includes('telegram') || dish.image_url.includes('api.telegram.org'))) && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-sky-600 text-white shadow-2xs" title="Photo hosted on Telegram Channel CDN">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-sky-600 text-white shadow-xs" title="Photo hosted on Telegram Channel CDN">
                           <Send className="w-2.5 h-2.5 -rotate-45" />
                           TG Media
                         </span>
                       )}
                       {Boolean(dish.making_video_url || dish.makingVideoUrl) && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-600 text-white shadow-2xs" title="Includes kitchen reel video">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-600 text-white shadow-xs" title="Includes kitchen reel video">
                           <Video className="w-2.5 h-2.5 fill-current" />
                           Reel
                         </span>
@@ -1218,24 +1224,26 @@ export default function MenuManager({ className = '' }) {
                   </div>
 
                   {/* Body Content */}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <h3 className="font-bold text-[#f8fafc] text-base leading-snug line-clamp-1 group-hover:text-amber-400 transition-colors">
-                        {dish.name}
-                      </h3>
-                      <span className="text-base font-extrabold text-[#f8fafc] tracking-tight shrink-0">
-                        ${dish.price.toFixed(2)}
-                      </span>
-                    </div>
+                  <div className="p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <h3 className="font-bold text-[#f8fafc] text-base leading-snug line-clamp-1 group-hover:text-amber-400 transition-colors" title={dish.name}>
+                          {dish.name}
+                        </h3>
+                        <span className="text-base font-extrabold text-[#f8fafc] tracking-tight shrink-0">
+                          ${(Number(dish.price) || 0).toFixed(2)}
+                        </span>
+                      </div>
 
-                    <p className="text-xs text-[#94a3b8] line-clamp-2 leading-relaxed min-h-[32px]">
-                      {dish.description || 'No description provided.'}
-                    </p>
+                      <p className="text-xs text-[#94a3b8] line-clamp-2 leading-relaxed h-9 overflow-hidden">
+                        {dish.description || 'No description provided.'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
                 {/* Footer Controls: Availability Switch + Edit + Delete */}
-                <div className="p-3.5 bg-[#1e293b] border-t border-[#334155] flex items-center justify-between gap-2">
+                <div className="p-3.5 bg-[#1e293b] border-t border-[#334155] flex items-center justify-between gap-2 shrink-0 mt-auto">
                   
                   {/* Availability Toggle Switch */}
                   <div className="flex items-center gap-2">

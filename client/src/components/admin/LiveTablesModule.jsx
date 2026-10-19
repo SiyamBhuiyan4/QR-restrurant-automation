@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   RotateCcw,
   Sparkles,
-  Search,
   Filter,
   Check,
   X,
@@ -262,7 +261,6 @@ export default function LiveTablesModule({
   // UI Filters & View Controls
   // Active Filter: 'all' | 'available' | 'order_running' | 'ready_in_kitchen' | 'need_assistance'
   const [activeFilter, setActiveFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'compact'
 
   // Modals & Active Selections
@@ -516,27 +514,9 @@ export default function LiveTablesModule({
         return false;
       }
 
-      // Search query (table #, customer name, employee name)
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const matchesTableNum = `table ${table.tableNumber}`.includes(q) || String(table.tableNumber) === q;
-        
-        const assignedEmp = employees.find(e => e.id === table.assignedEmployeeId);
-        const matchesEmp = assignedEmp && assignedEmp.name.toLowerCase().includes(q);
-
-        const activeOrder = orders.find(o => o.tableNumber === table.tableNumber && o.id === table.currentOrderId);
-        const matchesOrderNum = activeOrder && activeOrder.orderNumber.toLowerCase().includes(q);
-        const matchesCustomer = activeOrder && activeOrder.customerName.toLowerCase().includes(q);
-        const matchesDish = activeOrder && activeOrder.items.some(i => i.name.toLowerCase().includes(q));
-
-        if (!matchesTableNum && !matchesEmp && !matchesOrderNum && !matchesCustomer && !matchesDish) {
-          return false;
-        }
-      }
-
       return true;
     });
-  }, [tables, activeFilter, searchQuery, employees, orders]);
+  }, [tables, activeFilter]);
 
   // ---------------------------------------------------------------------------
   // HELPER ACCESSORS
@@ -818,27 +798,6 @@ export default function LiveTablesModule({
 
           {/* Quick Search & Filters */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Search Input */}
-            <div className="relative min-w-[220px] flex-1 sm:flex-initial">
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search table, guest, dish..."
-                className="w-full pl-9 pr-8 py-2 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] placeholder-zinc-400 focus:outline-none focus:border-[#FF5A26] transition shadow-inner"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-[#f8fafc]"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
             {/* View Mode Toggle */}
             <div className="flex items-center bg-[#1e293b] p-1 rounded-xl border border-[#334155]">
               <button
@@ -987,14 +946,13 @@ export default function LiveTablesModule({
           </button>
 
           {/* Reset Filters Shortcut */}
-          {(activeFilter !== 'all' || searchQuery) && (
+          {activeFilter !== 'all' && (
             <button
               type="button"
               onClick={() => {
                 setActiveFilter('all');
-                setSearchQuery('');
               }}
-              className="ml-auto text-xs text-zinc-400 hover:text-[#FF7A45] font-semibold flex items-center gap-1 transition"
+              className="ml-auto text-xs text-zinc-400 hover:text-[#FF7A45] font-semibold flex items-center gap-1 transition cursor-pointer"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Reset Filters</span>
@@ -1032,16 +990,14 @@ export default function LiveTablesModule({
           <UtensilsCrossed className="w-10 h-10 mx-auto text-zinc-600" />
           <h3 className="text-base font-bold text-zinc-300">No tables match your current filter</h3>
           <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-            Try adjusting your status pill, clearing the zone selection, or resetting the search query.
+            Try adjusting your status pill filter.
           </p>
           <button
             type="button"
             onClick={() => {
               setActiveFilter('all');
-              setZoneFilter('all');
-              setSearchQuery('');
             }}
-            className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold transition"
+            className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold transition cursor-pointer"
           >
             Show All {tables.length} Tables
           </button>
