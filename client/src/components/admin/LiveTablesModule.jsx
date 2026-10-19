@@ -262,7 +262,6 @@ export default function LiveTablesModule({
   // UI Filters & View Controls
   // Active Filter: 'all' | 'available' | 'order_running' | 'ready_in_kitchen' | 'need_assistance'
   const [activeFilter, setActiveFilter] = useState('all');
-  const [zoneFilter, setZoneFilter] = useState('all'); // 'all' | 'Main Hall' | 'Patio' | 'Window'
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'compact'
 
@@ -517,11 +516,6 @@ export default function LiveTablesModule({
         return false;
       }
 
-      // Zone filter
-      if (zoneFilter !== 'all' && table.location !== zoneFilter) {
-        return false;
-      }
-
       // Search query (table #, customer name, employee name)
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
@@ -542,7 +536,7 @@ export default function LiveTablesModule({
 
       return true;
     });
-  }, [tables, activeFilter, zoneFilter, searchQuery, employees, orders]);
+  }, [tables, activeFilter, searchQuery, employees, orders]);
 
   // ---------------------------------------------------------------------------
   // HELPER ACCESSORS
@@ -845,21 +839,6 @@ export default function LiveTablesModule({
               )}
             </div>
 
-            {/* Zone Filter Dropdown */}
-            <div className="flex items-center gap-1.5 bg-[#1e293b] border border-[#334155] px-3 py-1.5 rounded-xl text-xs text-zinc-300">
-              <MapPin className="w-3.5 h-3.5 text-[#FF5A26]" />
-              <select
-                value={zoneFilter}
-                onChange={(e) => setZoneFilter(e.target.value)}
-                className="bg-transparent text-xs text-[#f8fafc] font-semibold focus:outline-none cursor-pointer"
-              >
-                <option value="all" className="bg-[#111827] text-[#f8fafc]">All Zones ({tables.length})</option>
-                <option value="Main Hall" className="bg-[#111827] text-[#f8fafc]">Main Hall</option>
-                <option value="Patio" className="bg-[#111827] text-[#f8fafc]">Patio</option>
-                <option value="Window" className="bg-[#111827] text-[#f8fafc]">Window</option>
-              </select>
-            </div>
-
             {/* View Mode Toggle */}
             <div className="flex items-center bg-[#1e293b] p-1 rounded-xl border border-[#334155]">
               <button
@@ -1008,12 +987,11 @@ export default function LiveTablesModule({
           </button>
 
           {/* Reset Filters Shortcut */}
-          {(activeFilter !== 'all' || zoneFilter !== 'all' || searchQuery) && (
+          {(activeFilter !== 'all' || searchQuery) && (
             <button
               type="button"
               onClick={() => {
                 setActiveFilter('all');
-                setZoneFilter('all');
                 setSearchQuery('');
               }}
               className="ml-auto text-xs text-zinc-400 hover:text-[#FF7A45] font-semibold flex items-center gap-1 transition"
