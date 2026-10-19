@@ -354,12 +354,15 @@ export default function LiveTablesModule({
       if (typeof onUpdateTables === 'function') {
         onUpdateTables(nextTables);
       }
+      if (typeof onTableCountChange === 'function') {
+        onTableCountChange(nextCount);
+      }
       return nextTables;
     });
 
     setCustomTableCount(nextCount.toString());
     triggerToast(`Admin password authorized. Floor tables updated to ${nextCount}`, 'success');
-  }, [onUpdateTables, triggerToast]);
+  }, [onUpdateTables, onTableCountChange, triggerToast]);
 
   const handleAddNewTable = useCallback(() => {
     let nextCount = 0;
@@ -382,12 +385,15 @@ export default function LiveTablesModule({
       if (typeof onUpdateTables === 'function') {
         onUpdateTables(nextTables);
       }
+      if (typeof onTableCountChange === 'function') {
+        onTableCountChange(nextCount);
+      }
       return nextTables;
     });
 
     setCustomTableCount(nextCount.toString());
     triggerToast(`Admin password authorized. Floor tables updated to ${nextCount}`, 'success');
-  }, [onUpdateTables, triggerToast]);
+  }, [onUpdateTables, onTableCountChange, triggerToast]);
 
   const handleRemoveSpecificTable = useCallback((tableNumber) => {
     let nextCount = 0;
@@ -401,6 +407,9 @@ export default function LiveTablesModule({
       if (typeof onUpdateTables === 'function') {
         onUpdateTables(nextTables);
       }
+      if (typeof onTableCountChange === 'function') {
+        onTableCountChange(nextCount);
+      }
       return nextTables;
     });
 
@@ -408,7 +417,7 @@ export default function LiveTablesModule({
       setCustomTableCount(nextCount.toString());
       triggerToast(`Admin password authorized. Floor tables updated to ${nextCount}`, 'success');
     }
-  }, [onUpdateTables, triggerToast]);
+  }, [onUpdateTables, onTableCountChange, triggerToast]);
 
   // Request handlers that open TableSecurityModal with password 808080 confirmation
   const requestTableCountChange = useCallback((newCount) => {

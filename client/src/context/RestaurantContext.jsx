@@ -133,10 +133,18 @@ export function createTableRecord(tableNumber, assignedEmployeeId = null) {
 export function RestaurantProvider({ children }) {
   const socketContext = useSocket ? useSocket() : null;
 
-  // 1. Total Table Count
+  // 1. Total Table Count (Always dynamically aligned with floor tables)
   const [tableCount, setTableCountState] = useState(() => {
     if (typeof localStorage !== 'undefined') {
       try {
+        const savedTables = localStorage.getItem(STORAGE_KEYS.TABLES);
+        if (savedTables) {
+          const parsed = JSON.parse(savedTables);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const maxNum = parsed.reduce((max, t) => Math.max(max, t.tableNumber || 0), 0);
+            return Math.max(maxNum, parsed.length);
+          }
+        }
         const saved = localStorage.getItem(STORAGE_KEYS.TABLE_COUNT);
         if (saved) {
           const num = parseInt(saved, 10);
@@ -232,6 +240,20 @@ export function RestaurantProvider({ children }) {
   useEffect(() => {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.TABLES, JSON.stringify(tables));
+    }
+    // Automatically ensure tableCount stays locked to actual floor tables count / max number
+    if (Array.isArray(tables) && tables.length > 0) {
+      const maxNum = tables.reduce((max, t) => Math.max(max, t.tableNumber || 0), 0);
+      const effectiveCount = Math.max(maxNum, tables.length);
+      setTableCountState(prev => {
+        if (prev !== effectiveCount) {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(STORAGE_KEYS.TABLE_COUNT, String(effectiveCount));
+          }
+          return effectiveCount;
+        }
+        return prev;
+      });
     }
   }, [tables]);
 
@@ -704,6 +726,25 @@ export function RestaurantProvider({ children }) {
     };
   }, [socketContext, registerAssistanceCall, resolveAssistanceCall]);
 
+  // Central synchronized setTables that keeps tableCount locked in 1:1 parity
+  const setTables = useCallback((updater) => {
+    setTablesState(prevTables => {
+      const nextTables = typeof updater === 'function' ? updater(prevTables) : updater;
+      if (Array.isArray(nextTables)) {
+        const maxNum = nextTables.reduce((max, t) => Math.max(max, t.tableNumber || 0), 0);
+        const calculatedCount = Math.max(maxNum, nextTables.length);
+        setTableCountState(prev => (prev !== calculatedCount ? calculatedCount : prev));
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(STORAGE_KEYS.TABLE_COUNT, String(calculatedCount));
+          localStorage.setItem(STORAGE_KEYS.TABLES, JSON.stringify(nextTables));
+        }
+        broadcastState('TABLE_COUNT_UPDATED', calculatedCount);
+      }
+      broadcastState('TABLES_UPDATED', nextTables);
+      return nextTables;
+    });
+  }, [broadcastState]);
+
   const contextValue = {
     // State
     tableCount,
@@ -718,7 +759,7 @@ export function RestaurantProvider({ children }) {
     setTableCount,
     addTable,
     removeTable,
-    setTables: setTablesState,
+    setTables,
     setEmployees: setEmployeesState,
     assignTableToEmployee,
     reassignAllTables,

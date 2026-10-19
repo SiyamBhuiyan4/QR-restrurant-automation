@@ -157,6 +157,14 @@ export default function AdminDashboard({ className = '' }) {
     resolveAssistanceCall
   } = useRestaurant();
 
+  // Dynamic live floor table capacity (strictly keeps QR generator and staff roster in sync with floor matrix)
+  const effectiveLiveTableCount = useMemo(() => {
+    const fromTables = Array.isArray(tables) && tables.length > 0 
+      ? Math.max(tables.length, tables.reduce((max, t) => Math.max(max, t.tableNumber || 0), 0)) 
+      : 0;
+    return Math.max(fromTables, tableCount || 0, 12);
+  }, [tables, tableCount]);
+
   const [liveOrders, setLiveOrders] = useState(() => defaultLiveOrders);
   const [customerNotes, setCustomerNotes] = useState(() => defaultCustomerNotes);
 
@@ -600,7 +608,7 @@ export default function AdminDashboard({ className = '' }) {
           {/* TAB 8: TABLE QR GENERATOR */}
           {activeTab === 'qr' && (
             <div className="animate-fadeIn">
-              <QRBatchGenerator tableCount={tableCount} tables={tables} />
+              <QRBatchGenerator tableCount={effectiveLiveTableCount} tables={tables} />
             </div>
           )}
 
@@ -610,7 +618,7 @@ export default function AdminDashboard({ className = '' }) {
               <EmployeesModule
                 employees={employees}
                 tables={tables}
-                tableCount={tableCount}
+                tableCount={effectiveLiveTableCount}
                 onAssignTable={assignTableToEmployee}
                 onReassignAllTables={reassignAllTables}
                 onSetEmployeeStatus={setEmployeeStatus}

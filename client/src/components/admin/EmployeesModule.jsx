@@ -359,7 +359,11 @@ export default function EmployeesModule({
   });
 
   // Dynamic Venue Table Count & Array
-  const totalVenueTables = propTableCount || (propTables ? propTables.length : TOTAL_TABLES_COUNT);
+  const totalVenueTables = useMemo(() => {
+    const list = Array.isArray(propTables) && propTables.length > 0 ? propTables : [];
+    const maxFromList = list.reduce((max, t) => Math.max(max, t.tableNumber || 0), 0);
+    return Math.max(maxFromList, list.length, propTableCount || 0, TOTAL_TABLES_COUNT);
+  }, [propTableCount, propTables]);
   const allTableNumbers = useMemo(() => Array.from({ length: totalVenueTables }, (_, i) => i + 1), [totalVenueTables]);
 
   // Active Backup Employee Candidates
@@ -1422,48 +1426,6 @@ export default function EmployeesModule({
       )}
 
       {/* =========================================================================
-          1. TOP NAVBAR
-          ========================================================================= */}
-      <nav className="w-full bg-[#111726]/85 backdrop-blur-md border border-white/[0.07] rounded-[14px] px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
-        {/* Left: Pulsing emerald dot + Title + Muted Subtitle */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-          <h1 className="text-sm sm:text-base font-bold text-white tracking-tight">
-            Employee Roster &amp; Shifts
-          </h1>
-          <span className="text-xs text-slate-400 hidden sm:inline">
-            • Duty Allocation &amp; Shift Management (Employee Hub)
-          </span>
-        </div>
-
-        {/* Right: Switch to Kitchen KDS + Launch /employee */}
-        <div className="flex items-center gap-2.5 self-end sm:self-auto">
-          <button
-            type="button"
-            onClick={() => {
-              if (onSwitchToKds) {
-                onSwitchToKds();
-              } else if (typeof window !== 'undefined') {
-                window.location.assign('/employee?tab=kitchen');
-              }
-            }}
-            className="text-xs font-semibold text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-[#161F32] hover:bg-[#1E293B] border border-slate-700/60 transition cursor-pointer flex items-center gap-1.5 shadow-sm"
-          >
-            <span>Switch to Kitchen KDS ➔</span>
-          </button>
-
-          <a
-            href="/employee?tab=roster"
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs font-semibold text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-[#161F32] hover:bg-[#1E293B] border border-slate-700/60 transition cursor-pointer flex items-center gap-1.5 shadow-sm"
-          >
-            <span>Launch /employee ↗</span>
-          </a>
-        </div>
-      </nav>
-
-      {/* =========================================================================
           2. HERO CARD SECTION
           ========================================================================= */}
       <section className="bg-[#111726]/85 backdrop-blur-md border border-white/[0.07] rounded-[14px] p-5 sm:p-6 shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-5">
@@ -1665,7 +1627,7 @@ export default function EmployeesModule({
             }`}
           >
             <Table className="w-4 h-4" />
-            <span>Dining Room Table Coverage (Tables 1-12)</span>
+            <span>Dining Room Table Coverage (Tables 1–{totalVenueTables})</span>
             <span
               className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
                 activeTab === 'tables'
@@ -1673,7 +1635,7 @@ export default function EmployeesModule({
                   : 'bg-slate-800/80 text-slate-400 border border-slate-700/50'
               }`}
             >
-              {summaryMetrics.tablesCovered}/12
+              {summaryMetrics.tablesCovered}/{totalVenueTables}
             </span>
             {activeTab === 'tables' && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-t-full shadow-sm" />
@@ -1848,94 +1810,103 @@ export default function EmployeesModule({
                 return (
                   <div
                     key={emp.id}
-                    className="bg-[#111726]/85 backdrop-blur-md border border-white/[0.07] rounded-[14px] p-5 shadow-lg hover:border-white/10 transition-colors flex flex-col justify-between space-y-4"
+                    className="bg-[#111726]/85 backdrop-blur-md border border-white/[0.07] rounded-[14px] p-5 shadow-lg hover:border-white/10 transition-colors flex flex-col justify-between space-y-4 overflow-hidden"
                   >
                     {/* Header: Avatar, Name, Role, Shift + Inline Right Actions */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      {/* Left: Avatar + Details (Never squished) */}
+                      <div className="flex items-center gap-3 shrink-0 min-w-0">
                         {renderAvatar(emp)}
-                        <div>
-                          <h4 className="text-base font-semibold text-white tracking-tight">
+                        <div className="min-w-0">
+                          <h4 className="text-base font-semibold text-white tracking-tight whitespace-nowrap">
                             {emp.name}
                           </h4>
-                          <p className="text-xs text-slate-400 font-medium">
+                          <p className="text-xs text-slate-400 font-medium whitespace-nowrap">
                             {emp.role}
                           </p>
-                          <p className={`text-xs font-medium mt-0.5 ${getShiftColor(emp)}`}>
+                          <p className={`text-xs font-medium mt-0.5 whitespace-nowrap ${getShiftColor(emp)}`}>
                             {emp.shift}
                           </p>
                         </div>
                       </div>
 
-                      {/* Right Controls (single-row flex items-center gap-1.5 shrink-0 flex-wrap justify-end) */}
-                      <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                        {/* Compact "Active" dropdown pill */}
-                        <div className="relative inline-flex items-center">
-                          <select
-                            value={emp.status}
-                            onChange={e => handleChangeEmployeeStatus(emp.id, e.target.value)}
-                            className={`appearance-none bg-[#0B0F19] border ${statusClasses.border} ${statusClasses.text} text-xs font-semibold pl-6 pr-6 py-1.5 rounded-lg cursor-pointer focus:outline-none transition`}
-                          >
-                            <option value="Active" className="bg-[#111726] text-emerald-400">Active</option>
-                            <option value="Busy" className="bg-[#111726] text-amber-400">Busy</option>
-                            <option value="On Break" className="bg-[#111726] text-slate-400">On Break</option>
-                            <option value="Absent" className="bg-[#111726] text-rose-400">Absent</option>
-                          </select>
-                          <span className={`w-1.5 h-1.5 rounded-full ${statusClasses.dot} absolute left-2.5 pointer-events-none`} />
-                          <span className="text-[10px] text-slate-400 absolute right-2 pointer-events-none">▾</span>
-                        </div>
+                      {/* Right Controls: Structured 2-tier right-aligned rows with zero overflow */}
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        {/* Tier 1: Primary Status & Quick Transfer */}
+                        <div className="flex items-center gap-1.5 justify-end">
+                          {/* Compact "Active" dropdown pill */}
+                          <div className="relative inline-flex items-center shrink-0">
+                            <select
+                              value={emp.status}
+                              onChange={e => handleChangeEmployeeStatus(emp.id, e.target.value)}
+                              className={`appearance-none bg-[#0B0F19] border ${statusClasses.border} ${statusClasses.text} text-xs font-semibold pl-5 pr-5 py-1 rounded-lg cursor-pointer focus:outline-none transition`}
+                            >
+                              <option value="Active" className="bg-[#111726] text-emerald-400">Active</option>
+                              <option value="Busy" className="bg-[#111726] text-amber-400">Busy</option>
+                              <option value="On Break" className="bg-[#111726] text-slate-400">On Break</option>
+                              <option value="Absent" className="bg-[#111726] text-rose-400">Absent</option>
+                            </select>
+                            <span className={`w-1.5 h-1.5 rounded-full ${statusClasses.dot} absolute left-2 pointer-events-none`} />
+                            <span className="text-[10px] text-slate-400 absolute right-1.5 pointer-events-none">▾</span>
+                          </div>
 
-                        {/* Dedicated Rollback / Reclaim Button if tables are delegated away */}
-                        {delegatedAwayTables.length > 0 && (
+                          {/* Transfer button */}
                           <button
                             type="button"
-                            onClick={() => handleRollbackEmployeeTables(emp.id)}
-                            className="border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1 cursor-pointer transition active:scale-95"
-                            title={`Rollback / Reclaim ${delegatedAwayTables.length} tables (T${delegatedAwayTables.join(', T')}) currently covered by backup staff`}
+                            onClick={() => handleOpenTransferModal(emp)}
+                            className="border border-amber-500/40 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg px-2.5 py-1 text-xs font-semibold flex items-center gap-1 cursor-pointer transition active:scale-95 shrink-0 shadow-xs"
+                            title={`Transfer all ${assignedCount} tables to backup employee`}
                           >
-                            <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
-                            <span>Rollback ({delegatedAwayTables.length})</span>
+                            <ArrowRightLeft className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Transfer</span>
                           </button>
-                        )}
+                        </div>
 
-                        {/* Transfer button */}
-                        <button
-                          type="button"
-                          onClick={() => handleOpenTransferModal(emp)}
-                          className="border border-amber-500/40 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition active:scale-95"
-                          title={`Transfer all ${assignedCount} tables to backup employee`}
-                        >
-                          <ArrowRightLeft className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Transfer</span>
-                        </button>
+                        {/* Tier 2: Rollback Reclaim (if any) + Action Tool Icons */}
+                        <div className="flex items-center gap-1.5 justify-end">
+                          {/* Dedicated Rollback / Reclaim Button if tables are delegated away */}
+                          {delegatedAwayTables.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRollbackEmployeeTables(emp.id)}
+                              className="border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg px-2.5 py-1 text-xs font-semibold flex items-center gap-1 cursor-pointer transition active:scale-95 shrink-0 shadow-xs"
+                              title={`Rollback / Reclaim ${delegatedAwayTables.length} tables (T${delegatedAwayTables.join(', T')}) currently covered by backup staff`}
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Rollback ({delegatedAwayTables.length})</span>
+                            </button>
+                          )}
 
-                        {/* 3 square 32x32px icon buttons with clean borders */}
-                        <button
-                          type="button"
-                          onClick={() => handleNudgeEmployee(emp.id)}
-                          className="w-8 h-8 rounded-lg bg-[#0B0F19] hover:bg-amber-500/10 border border-slate-800 hover:border-amber-500/40 text-amber-400 flex items-center justify-center transition cursor-pointer"
-                          title="Send instant floor nudge"
-                        >
-                          <Zap className="w-3.5 h-3.5 text-amber-400" />
-                        </button>
+                          {/* 3 square icon buttons grouped together */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleNudgeEmployee(emp.id)}
+                              className="w-7 h-7 rounded-lg bg-[#0B0F19] hover:bg-amber-500/10 border border-slate-800 hover:border-amber-500/40 text-amber-400 flex items-center justify-center transition cursor-pointer"
+                              title="Send instant floor nudge"
+                            >
+                              <Zap className="w-3.5 h-3.5 text-amber-400" />
+                            </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditModal(emp)}
-                          className="w-8 h-8 rounded-lg bg-[#0B0F19] hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 flex items-center justify-center transition cursor-pointer"
-                          title="Edit Employee profile"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditModal(emp)}
+                              className="w-7 h-7 rounded-lg bg-[#0B0F19] hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 flex items-center justify-center transition cursor-pointer"
+                              title="Edit Employee profile"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteEmployee(emp.id)}
-                          className="w-8 h-8 rounded-lg bg-[#0B0F19] hover:bg-rose-500/10 border border-slate-800 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 flex items-center justify-center transition cursor-pointer"
-                          title="Remove Employee"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteEmployee(emp.id)}
+                              className="w-7 h-7 rounded-lg bg-[#0B0F19] hover:bg-rose-500/10 border border-slate-800 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 flex items-center justify-center transition cursor-pointer"
+                              title="Remove Employee"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
 

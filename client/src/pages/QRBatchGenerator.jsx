@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import QRCode from 'qrcode';
 import jsPDF from 'jspdf';
 import { 
@@ -25,15 +25,65 @@ export default function QRBatchGenerator({
   tables: propTables 
 }) {
   const restaurantCtx = useRestaurant ? useRestaurant() : null;
+  const [storageTick, setStorageTick] = useState(0);
 
-  // Determine venue assigned table count (e.g. 12)
+  // Cross-tab / external storage synchronization listener
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'smartdine_restaurant_tables' || e.key === 'smartdine_table_count') {
+        setStorageTick(prev => prev + 1);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  // Determine venue assigned table count (strictly locked to exact floor capacity & max table number)
   const venueTableCount = useMemo(() => {
-    if (typeof propTableCount === 'number' && propTableCount > 0) return propTableCount;
-    if (Array.isArray(propTables) && propTables.length > 0) return propTables.length;
-    if (typeof restaurantCtx?.tableCount === 'number' && restaurantCtx.tableCount > 0) return restaurantCtx.tableCount;
-    if (Array.isArray(restaurantCtx?.tables) && restaurantCtx.tables.length > 0) return restaurantCtx.tables.length;
-    return 12;
-  }, [propTableCount, propTables, restaurantCtx?.tableCount, restaurantCtx?.tables]);
+    // 1. Gather all live table objects
+    const tablesList = (Array.isArray(propTables) && propTables.length > 0)
+      ? propTables
+      : (Array.isArray(restaurantCtx?.tables) && restaurantCtx.tables.length > 0)
+      ? restaurantCtx.tables
+      : (() => {
+          if (typeof localStorage !== 'undefined') {
+            try {
+              const saved = localStorage.getItem('smartdine_restaurant_tables');
+              if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+              }
+            } catch (_) {}
+          }
+          return [];
+        })();
+
+    const maxTableFromList = tablesList.reduce((max, t) => Math.max(max, t.tableNumber || 0), 0);
+    const countFromList = tablesList.length;
+
+    // 2. Gather explicit count declarations
+    let localSavedCount = 0;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const savedCount = localStorage.getItem('smartdine_table_count');
+        if (savedCount) localSavedCount = parseInt(savedCount, 10) || 0;
+      } catch (_) {}
+    }
+
+    const explicitPropCount = typeof propTableCount === 'number' && propTableCount > 0 ? propTableCount : 0;
+    const explicitCtxCount = typeof restaurantCtx?.tableCount === 'number' && restaurantCtx.tableCount > 0 ? restaurantCtx.tableCount : 0;
+
+    // 3. True floor maximum across all live sources
+    const maxCalculated = Math.max(
+      maxTableFromList,
+      countFromList,
+      explicitPropCount,
+      explicitCtxCount,
+      localSavedCount
+    );
+
+    return maxCalculated > 0 ? maxCalculated : 12;
+  }, [propTableCount, propTables, restaurantCtx?.tableCount, restaurantCtx?.tables, storageTick]);
 
   // Brand Name
   const [restaurantName, setRestaurantName] = useState('SmartDine Bistro');
@@ -46,13 +96,21 @@ export default function QRBatchGenerator({
   const [tableEnd, setTableEnd] = useState(() => venueTableCount);
 
   // Sync tableEnd when venueTableCount changes
+  const prevVenueCountRef = useRef(venueTableCount);
   useEffect(() => {
+    const prevCount = prevVenueCountRef.current;
+    prevVenueCountRef.current = venueTableCount;
+
     if (selectionMode === 'all') {
       setTableStart(1);
       setTableEnd(venueTableCount);
     } else {
       setTableStart(prev => Math.max(1, Math.min(prev, venueTableCount)));
-      setTableEnd(prev => Math.max(1, Math.min(prev, venueTableCount)));
+      setTableEnd(prev => {
+        // If the user's range was already tracking the max (e.g. at 12), automatically expand to the new max (e.g. 13)
+        if (prev >= prevCount) return venueTableCount;
+        return Math.max(1, Math.min(prev, venueTableCount));
+      });
     }
   }, [venueTableCount, selectionMode]);
 
