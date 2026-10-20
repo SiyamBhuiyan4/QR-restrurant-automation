@@ -708,16 +708,14 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
             {waiters.map(waiter => {
               const waiterCalls = getCallsForWaiter(waiter);
               const assignedTables = (waiter.assignedTables || waiter.tables || []).map(Number).sort((a, b) => a - b);
-              const isPasswordVisible = !!visiblePasswords[waiter.id];
               const username = waiter.username || waiter.accountCode?.toLowerCase() || 'waiter';
-              const password = waiter.password || waiter.passcode || waiter.waiterPin || '1234';
 
               return (
                 <div
                   key={waiter.id}
                   className={`p-5 rounded-3xl border transition shadow-xl flex flex-col justify-between ${
                     waiterCalls.length > 0
-                      ? 'bg-gradient-to-b from-rose-950/40 to-slate-900 border-rose-500/50 ring-2 ring-rose-500/20'
+                      ? 'bg-slate-900/90 border-amber-500/40'
                       : 'bg-slate-900/90 border-white/[0.08] hover:border-slate-700'
                   }`}
                 >
@@ -792,28 +790,8 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
                         {/* Password */}
                         <div className="p-2 rounded-xl bg-slate-900 border border-white/[0.06] flex items-center justify-between">
                           <div>
-                            <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-sans">Password</span>
-                            <span className="font-bold text-emerald-400">
-                              {isPasswordVisible ? password : '••••'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-0.5">
-                            <button
-                              type="button"
-                              onClick={() => togglePasswordVisibility(waiter.id)}
-                              className="text-slate-400 hover:text-white p-1"
-                              title={isPasswordVisible ? 'Hide Password' : 'Show Password'}
-                            >
-                              {isPasswordVisible ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(password, `pass-${waiter.id}`)}
-                              className="text-slate-400 hover:text-white p-1"
-                              title="Copy Password"
-                            >
-                              {copiedKey === `pass-${waiter.id}` ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                            </button>
+                            <p className="text-[9px] font-bold uppercase text-slate-500">Password</p>
+                            <p className="text-slate-500 tracking-widest">••••••••</p>
                           </div>
                         </div>
                       </div>
