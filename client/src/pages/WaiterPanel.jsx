@@ -14,7 +14,8 @@ import {
   ShieldCheck,
   ChevronDown,
   X,
-  Radio
+  Radio,
+  Zap
 } from 'lucide-react';
 import { useSocket, useSocketListener } from '../context/SocketContext';
 import { useRestaurant } from '../context/RestaurantContext';
@@ -146,14 +147,83 @@ const DEFAULT_FLOOR_EMPLOYEES = [
   }
 ];
 
+// Default High-Fidelity Demo Assistance Requests for On-Field Waiter Testing
+export const DEFAULT_DEMO_CALLS = [
+  {
+    id: 'call-demo-1',
+    tableNumber: 4,
+    table_number: 4,
+    table: 4,
+    reason: 'Need Extra Napkins & Cutlery',
+    custom_message: 'Please bring 2 extra forks and paper napkins.',
+    status: 'pending',
+    created_at: new Date(Date.now() - 75 * 1000).toISOString(),
+    createdAt: Date.now() - 75 * 1000,
+  },
+  {
+    id: 'call-demo-2',
+    tableNumber: 2,
+    table_number: 2,
+    table: 2,
+    reason: 'Bill & Payment Request',
+    custom_message: 'Ready to settle the bill via Card / bKash.',
+    status: 'pending',
+    created_at: new Date(Date.now() - 215 * 1000).toISOString(), // > 3 min -> triggers Urgent (> 3 min)
+    createdAt: Date.now() - 215 * 1000,
+  },
+  {
+    id: 'call-demo-3',
+    tableNumber: 7,
+    table_number: 7,
+    table: 7,
+    reason: 'Refill Water & Ice',
+    custom_message: 'Sparkling or normal chilled water.',
+    status: 'pending',
+    created_at: new Date(Date.now() - 130 * 1000).toISOString(),
+    createdAt: Date.now() - 130 * 1000,
+  },
+  {
+    id: 'call-demo-4',
+    tableNumber: 9,
+    table_number: 9,
+    table: 9,
+    reason: 'Food & Allergy Inquiry',
+    custom_message: 'Guest wants to know if the truffle tagliatelle contains peanut traces.',
+    status: 'pending',
+    created_at: new Date(Date.now() - 40 * 1000).toISOString(),
+    createdAt: Date.now() - 40 * 1000,
+  }
+];
+
 export default function WaiterPanel() {
-  const [calls, setCalls] = useState([]);
+  const [calls, setCalls] = useState(() => {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const saved =
+          localStorage.getItem('smartdine_waiter_calls') ||
+          localStorage.getItem('smartdine_active_assistance_calls');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (_) {}
+    }
+    return DEFAULT_DEMO_CALLS;
+  });
   const [resolvedHistory, setResolvedHistory] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'urgent' | 'acknowledged' | 'my-tables' | 'history'
   const [tableSearch, setTableSearch] = useState('');
   const [currentTime, setCurrentTime] = useState(Date.now());
-  const [acknowledgedMap, setAcknowledgedMap] = useState({}); // callId -> { employeeName, timestamp }
+  const [acknowledgedMap, setAcknowledgedMap] = useState(() => {
+    return {
+      'call-demo-3': {
+        staffName: 'Nusrat Jahan',
+        employeeId: 'emp-3',
+        timestamp: Date.now() - 60 * 1000
+      }
+    };
+  }); // callId -> { employeeName, timestamp }
   const [callEmployeeOverrides, setCallEmployeeOverrides] = useState({}); // callId -> employeeId
   const [bannerAlert, setBannerAlert] = useState(null);
   const [isChimeAnimating, setIsChimeAnimating] = useState(false);
@@ -210,7 +280,7 @@ export default function WaiterPanel() {
 
   // Sync assistance calls from centralized context
   useEffect(() => {
-    if (restaurant?.assistanceCalls && Array.isArray(restaurant.assistanceCalls)) {
+    if (restaurant?.assistanceCalls && Array.isArray(restaurant.assistanceCalls) && restaurant.assistanceCalls.length > 0) {
       setCalls(prev => {
         const map = new Map();
         prev.forEach(c => map.set(String(c.id ?? c.tableNumber), c));
@@ -238,6 +308,13 @@ export default function WaiterPanel() {
     }
   }, [activeEmployeeFilter]);
 
+  // Persist active waiter calls
+  useEffect(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('smartdine_waiter_calls', JSON.stringify(calls));
+    }
+  }, [calls]);
+
   // Convex Cloud real-time waiter calls subscription
   let convexCalls = null;
   let resolveConvexCall = null;
@@ -248,7 +325,7 @@ export default function WaiterPanel() {
 
   // Sync Convex calls
   useEffect(() => {
-    if (convexCalls && Array.isArray(convexCalls)) {
+    if (convexCalls && Array.isArray(convexCalls) && convexCalls.length > 0) {
       setCalls(convexCalls.map((c) => ({ ...c, id: c.id ?? c._id })));
       setIsLoading(false);
     }
@@ -268,24 +345,28 @@ export default function WaiterPanel() {
   // Fetch active assistance calls from backend
   const fetchCalls = useCallback(async () => {
     try {
-      setIsLoading(true);
       const res = await fetch('/api/waiter/calls', {
         headers: { Accept: 'application/json' }
       });
       if (res.ok) {
         const json = await res.json();
         const data = Array.isArray(json) ? json : json.data || [];
-        setCalls(data);
+        if (data.length > 0) {
+          setCalls(data);
+        }
       } else {
         // Fallback to /api/waiter
         const fallback = await fetch('/api/waiter');
         if (fallback.ok) {
           const json = await fallback.json();
-          setCalls(Array.isArray(json) ? json : json.data || []);
+          const data = Array.isArray(json) ? json : json.data || [];
+          if (data.length > 0) {
+            setCalls(data);
+          }
         }
       }
     } catch (err) {
-      console.warn('[EmployeeConsole] Failed to fetch active calls:', err);
+      console.warn('[EmployeeConsole] Using local / demo calls:', err);
     } finally {
       setIsLoading(false);
     }
@@ -559,6 +640,122 @@ export default function WaiterPanel() {
     );
   };
 
+  // Simulate an instant incoming live guest assistance call with authentic chime sound
+  const handleSimulateDemoCall = () => {
+    const sampleTables = [1, 3, 5, 6, 8, 10, 11, 12];
+    const sampleReasons = [
+      { reason: 'Table Service Needed', msg: 'Guest has requested a waiter at the table.' },
+      { reason: 'Beverage & Cocktail Reorder', msg: 'Would like another round of mojitos and craft iced tea.' },
+      { reason: 'Cutlery & Condiments', msg: 'Extra chili flakes, garlic oil, and salt shaker needed.' },
+      { reason: 'Dessert Menu Request', msg: 'Ready for dessert and coffee recommendations.' },
+      { reason: 'Bill & Check Split', msg: 'Guest wants bill split between cash and card.' }
+    ];
+
+    const randomTable = sampleTables[Math.floor(Math.random() * sampleTables.length)];
+    const randomItem = sampleReasons[Math.floor(Math.random() * sampleReasons.length)];
+    const newCall = {
+      id: `call-sim-${Date.now()}`,
+      tableNumber: randomTable,
+      table_number: randomTable,
+      table: randomTable,
+      reason: randomItem.reason,
+      custom_message: randomItem.msg,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      createdAt: Date.now()
+    };
+
+    setCalls((prev) => {
+      const next = [newCall, ...prev];
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('smartdine_waiter_calls', JSON.stringify(next));
+      }
+      return next;
+    });
+
+    bellSynthesizer.play();
+    setIsChimeAnimating(true);
+    setTimeout(() => setIsChimeAnimating(false), 2000);
+
+    const assigned = getAssignedEmployeeForTable(randomTable);
+    setBannerAlert({
+      tableNumber: randomTable,
+      reason: randomItem.reason,
+      assignedTo: assigned?.name || 'Floor Team',
+      isTargetedToMe: activeEmployeeFilter === 'all' || assigned?.id === activeEmployeeFilter,
+      time: Date.now()
+    });
+    setTimeout(() => setBannerAlert(null), 7000);
+  };
+
+  // Reset or reload the 4 default demo requests
+  const handleResetDemoCalls = () => {
+    const timestampNow = Date.now();
+    const freshCalls = [
+      {
+        id: `call-demo-1-${timestampNow}`,
+        tableNumber: 4,
+        table_number: 4,
+        table: 4,
+        reason: 'Need Extra Napkins & Cutlery',
+        custom_message: 'Please bring 2 extra forks and paper napkins.',
+        status: 'pending',
+        created_at: new Date(timestampNow - 75 * 1000).toISOString(),
+        createdAt: timestampNow - 75 * 1000,
+      },
+      {
+        id: `call-demo-2-${timestampNow}`,
+        tableNumber: 2,
+        table_number: 2,
+        table: 2,
+        reason: 'Bill & Payment Request',
+        custom_message: 'Ready to settle the bill via Card / bKash.',
+        status: 'pending',
+        created_at: new Date(timestampNow - 215 * 1000).toISOString(), // > 3 min -> triggers Urgent (> 3 min)
+        createdAt: timestampNow - 215 * 1000,
+      },
+      {
+        id: `call-demo-3-${timestampNow}`,
+        tableNumber: 7,
+        table_number: 7,
+        table: 7,
+        reason: 'Refill Water & Ice',
+        custom_message: 'Sparkling or normal chilled water.',
+        status: 'pending',
+        created_at: new Date(timestampNow - 130 * 1000).toISOString(),
+        createdAt: timestampNow - 130 * 1000,
+      },
+      {
+        id: `call-demo-4-${timestampNow}`,
+        tableNumber: 9,
+        table_number: 9,
+        table: 9,
+        reason: 'Food & Allergy Inquiry',
+        custom_message: 'Guest wants to know if the truffle tagliatelle contains peanut traces.',
+        status: 'pending',
+        created_at: new Date(timestampNow - 40 * 1000).toISOString(),
+        createdAt: timestampNow - 40 * 1000,
+      }
+    ];
+
+    setCalls(freshCalls);
+    setAcknowledgedMap({
+      [`call-demo-3-${timestampNow}`]: {
+        staffName: 'Nusrat Jahan',
+        employeeId: 'emp-3',
+        timestamp: timestampNow - 60 * 1000
+      }
+    });
+
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('smartdine_waiter_calls', JSON.stringify(freshCalls));
+    }
+
+    bellSynthesizer.play();
+    setIsChimeAnimating(true);
+    setTimeout(() => setIsChimeAnimating(false), 2000);
+  };
+
   // Calculate elapsed time & check if urgent (> 3 minutes / 180 seconds)
   const getCallMetrics = useCallback(
     (call) => {
@@ -783,6 +980,17 @@ export default function WaiterPanel() {
             >
               <Users className="w-3.5 h-3.5 text-amber-400" />
               <span className="hidden sm:inline">Table Assignments</span>
+            </button>
+
+            {/* Quick Simulate Guest Assistance Call */}
+            <button
+              type="button"
+              onClick={handleSimulateDemoCall}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 text-xs font-bold border border-amber-500/40 hover:border-amber-400 transition active:scale-95 cursor-pointer shadow-sm"
+              title="Simulate an instant customer call with chime audio"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <span>Simulate Call</span>
             </button>
           </div>
         </div>
@@ -1081,6 +1289,17 @@ export default function WaiterPanel() {
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
                   <span>Listening for guest assistance requests across assigned tables</span>
+                </div>
+
+                <div className="pt-2 flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleResetDemoCalls}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer"
+                  >
+                    <Zap className="w-3.5 h-3.5 fill-current" />
+                    <span>Load 4 Demo Requests</span>
+                  </button>
                 </div>
               </div>
             ) : (

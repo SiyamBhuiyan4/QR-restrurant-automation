@@ -174,6 +174,53 @@ export const DEFAULT_CUSTOMER_REPORTS = [
   }
 ];
 
+export const DEFAULT_ASSISTANCE_CALLS = [
+  {
+    id: 'call-demo-1',
+    tableNumber: 4,
+    table_number: 4,
+    table: 4,
+    reason: 'Need Extra Napkins & Cutlery',
+    custom_message: 'Please bring 2 extra forks and paper napkins.',
+    status: 'pending',
+    created_at: new Date(Date.now() - 75 * 1000).toISOString(),
+    createdAt: Date.now() - 75 * 1000,
+  },
+  {
+    id: 'call-demo-2',
+    tableNumber: 2,
+    table_number: 2,
+    table: 2,
+    reason: 'Bill & Payment Request',
+    custom_message: 'Ready to settle the bill via Card / bKash.',
+    status: 'pending',
+    created_at: new Date(Date.now() - 215 * 1000).toISOString(),
+    createdAt: Date.now() - 215 * 1000,
+  },
+  {
+    id: 'call-demo-3',
+    tableNumber: 7,
+    table_number: 7,
+    table: 7,
+    reason: 'Refill Water & Ice',
+    custom_message: 'Sparkling or normal chilled water.',
+    status: 'pending',
+    created_at: new Date(Date.now() - 130 * 1000).toISOString(),
+    createdAt: Date.now() - 130 * 1000,
+  },
+  {
+    id: 'call-demo-4',
+    tableNumber: 9,
+    table_number: 9,
+    table: 9,
+    reason: 'Food & Allergy Inquiry',
+    custom_message: 'Guest wants to know if the truffle tagliatelle contains peanut traces.',
+    status: 'pending',
+    created_at: new Date(Date.now() - 40 * 1000).toISOString(),
+    createdAt: Date.now() - 40 * 1000,
+  }
+];
+
 export function createTableRecord(tableNumber, assignedEmployeeId = null) {
   const locations = [TABLE_LOCATION.MAIN_HALL, TABLE_LOCATION.WINDOW, TABLE_LOCATION.PATIO];
   const capacities = [2, 4, 4, 6, 8];
@@ -273,10 +320,13 @@ export function RestaurantProvider({ children }) {
     if (typeof localStorage !== 'undefined') {
       try {
         const saved = localStorage.getItem(STORAGE_KEYS.CALLS);
-        if (saved) return JSON.parse(saved);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
       } catch (_) {}
     }
-    return [];
+    return DEFAULT_ASSISTANCE_CALLS;
   });
 
   // 5. Customer Reports & Notes
