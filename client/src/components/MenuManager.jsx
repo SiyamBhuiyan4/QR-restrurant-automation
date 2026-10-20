@@ -1035,80 +1035,94 @@ export default function MenuManager({ className = '' }) {
         </div>
       </div>
 
-      {/* Filter and Search Toolbar */}
-      <div className="bg-[#111827] p-4 rounded-2xl border border-[#334155] space-y-3 shadow-md text-[#f8fafc]">
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          {/* Search Input */}
-          <div className="relative w-full sm:flex-1">
-            <Search className="w-4 h-4 text-[#94a3b8] absolute left-3.5 top-1/2 -translate-y-1/2" />
+      {/* 2-Tier Glassmorphic Dark-Mode Menu Filter and Category Toolbar */}
+      <div 
+        className="rounded-[12px] p-3 sm:p-3.5 space-y-2.5 shadow-2xl backdrop-blur-md transition-all text-[#f8fafc]"
+        style={{
+          backgroundColor: '#121724',
+          border: '1px solid rgba(255, 255, 255, 0.08)'
+        }}
+      >
+        {/* TIER 1: Search & Item Filters (Top Row) */}
+        <div className="flex items-center justify-between gap-3 w-full">
+          {/* Left-Side Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="w-4 h-4 text-white/40 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search dishes by name, description, or ingredients..."
-              className="admin-dark-input w-full placeholder-[#64748b]"
+              className="w-full text-xs text-slate-100 placeholder:text-slate-500 font-normal pl-9 pr-8 py-2 rounded-[8px] transition focus:outline-none focus:border-amber-500/60"
               style={{
-                backgroundColor: '#0f172a',
-                color: '#f8fafc',
-                border: '1px solid #334155',
-                padding: '10px 14px',
-                paddingLeft: '38px',
-                paddingRight: '32px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 500
+                backgroundColor: '#080A10',
+                border: '1px solid rgba(255, 255, 255, 0.06)'
               }}
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#f8fafc] text-xs cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs cursor-pointer"
+                title="Clear search"
               >
                 ✕
               </button>
             )}
           </div>
 
-          {/* Quick Dietary / Stock / Media Filter Buttons */}
-          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+          {/* Right-Side Filters (Pill-shaped buttons with 8px radius) */}
+          <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto no-scrollbar">
             {[
-              { id: 'all', label: 'All Items' },
-              { id: 'video', label: '🎥 Has Video' },
-              { id: 'available', label: 'In Stock' },
-              { id: 'unavailable', label: 'Sold Out' },
-              { id: 'veg', label: '🌱 Veg Only' },
-              { id: 'spicy', label: '🌶️ Spicy' }
-            ].map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setFilterType(f.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition cursor-pointer border ${
-                  filterType === f.id
-                    ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
-                    : 'bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8] hover:text-[#f8fafc] border-[#334155]'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+              { id: 'all', label: 'All Items', icon: null },
+              { id: 'video', label: 'Has Video', icon: <Play className="w-3 h-3 fill-rose-400 text-rose-400 shrink-0" /> },
+              { id: 'available', label: 'In Stock', icon: <Check className="w-3 h-3 text-emerald-400 shrink-0 stroke-[2.5]" /> },
+              { id: 'unavailable', label: 'Sold Out', icon: null },
+              { id: 'veg', label: 'Veg Only', icon: <Leaf className="w-3 h-3 text-emerald-400 fill-emerald-400/30 shrink-0" /> },
+              { id: 'spicy', label: 'Spicy', icon: <Flame className="w-3 h-3 text-rose-400 fill-rose-400/30 shrink-0" /> }
+            ].map((f) => {
+              const isActive = filterType === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setFilterType(f.id)}
+                  className={`px-3 py-1.5 rounded-[8px] text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 border active:scale-95 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white border-amber-400/40 shadow-sm shadow-amber-500/25'
+                      : 'bg-[#182030]/90 hover:bg-[#20293D] text-slate-300 hover:text-white border-white/[0.08]'
+                  }`}
+                >
+                  {f.icon}
+                  <span>{f.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Category Horizontal Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-[#334155] no-scrollbar">
+        {/* Thin Divider Line (rgba(255, 255, 255, 0.05)) */}
+        <div 
+          className="w-full h-px" 
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }} 
+        />
+
+        {/* TIER 2: Categories & Admin CTA (Bottom Row) */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full pt-0.5">
+          {/* All Categories Button */}
           <button
             type="button"
             onClick={() => setSelectedCategory('All')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-[8px] text-xs font-semibold whitespace-nowrap transition cursor-pointer shrink-0 border ${
               selectedCategory === 'All'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'bg-[#1e293b] text-[#94a3b8] hover:text-[#f8fafc] hover:bg-[#334155] border border-[#334155]'
+                ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white border-amber-400/40 shadow-sm shadow-amber-500/20'
+                : 'bg-[#182030]/90 text-slate-300 hover:text-white hover:bg-[#20293D] border-white/[0.08]'
             }`}
           >
             All Categories ({dishes.length})
           </button>
+
+          {/* Category Capsules */}
           {availableCategories.map((cat) => {
             const count = dishes.filter(d => d.category.toLowerCase() === cat.toLowerCase()).length;
             const isSelected = selectedCategory.toLowerCase() === cat.toLowerCase();
@@ -1117,15 +1131,15 @@ export default function MenuManager({ className = '' }) {
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-[8px] text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 shrink-0 border ${
                   isSelected
-                    ? 'bg-amber-500 text-white shadow-xs'
-                    : 'bg-[#1e293b] text-[#94a3b8] hover:text-[#f8fafc] hover:bg-[#334155] border border-[#334155]'
+                    ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white border-amber-400/40 shadow-sm shadow-amber-500/20'
+                    : 'bg-[#182030]/90 text-slate-300 hover:text-white hover:bg-[#20293D] border-white/[0.08]'
                 }`}
               >
                 <span>{cat}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  isSelected ? 'bg-amber-600 text-white' : 'bg-[#0f172a] text-[#94a3b8]'
+                <span className={`w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 ${
+                  isSelected ? 'bg-black/35 text-white' : 'bg-[#0B0F19] text-slate-300 border border-white/[0.05]'
                 }`}>
                   {count}
                 </span>
@@ -1133,7 +1147,7 @@ export default function MenuManager({ className = '' }) {
             );
           })}
 
-          {/* Prominent + Add Category Button right on toolbar */}
+          {/* Far-Right Button: + Add Category */}
           <button
             type="button"
             onClick={() => {
@@ -1141,11 +1155,11 @@ export default function MenuManager({ className = '' }) {
               setCategoryError('');
               setIsCategoryModalOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dashed border-amber-500/60 hover:border-amber-400 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 text-xs font-bold transition whitespace-nowrap cursor-pointer shadow-xs active:scale-95 shrink-0"
-            title="Create a new category"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] border border-dashed border-[#F59E0B]/50 hover:border-[#F59E0B] bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 text-[#F59E0B] text-xs font-bold transition whitespace-nowrap cursor-pointer shadow-xs active:scale-95 shrink-0 ml-auto"
+            title="Create a new menu category"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>Add Category</span>
+            <span>+ Add Category</span>
           </button>
         </div>
       </div>
