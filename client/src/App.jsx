@@ -276,8 +276,8 @@ function AppRouter() {
         {renderView()}
       </div>
 
-      {/* QUICK ROLE-SWITCHING FLOATING DOCK */}
-      {(activeView === 'admin' || activeView === 'employee' || activeView === 'waiter') && (
+      {/* QUICK ROLE-SWITCHING FLOATING DOCK (Hidden on Waiter Mobile View) */}
+      {(activeView === 'admin' || activeView === 'employee') && (
         <div
           id="smartdine-global-role-switcher"
           className={`no-print fixed bottom-6 right-6 z-50 ${isModalOpen ? 'hidden' : 'flex'} flex-col items-end pointer-events-none`}

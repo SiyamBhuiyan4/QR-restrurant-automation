@@ -98,7 +98,25 @@ export default function AdminWaiterConsole() {
   // Direct Message Modal / Nudge State
   const [messageTarget, setMessageTarget] = useState(null);
   const [messageText, setMessageText] = useState('');
+  const [inlineMessage, setInlineMessage] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Filter staff messages for active waiter
+  const waiterStaffMessages = useMemo(() => {
+    if (!activeWaiter || !restaurant?.staffMessages || !Array.isArray(restaurant.staffMessages)) {
+      return [];
+    }
+    const empId = activeWaiter.id;
+    const numId = String(activeWaiter.numericId);
+    const user = (activeWaiter.username || '').toLowerCase();
+
+    return restaurant.staffMessages.filter(
+      m =>
+        m.toWaiterId === empId ||
+        String(m.toWaiterId) === numId ||
+        (m.toWaiterId && m.toWaiterId.toLowerCase() === user)
+    );
+  }, [activeWaiter, restaurant?.staffMessages]);
 
   // Convex mutations if available
   let resolveConvexCall = null;
@@ -387,6 +405,14 @@ export default function AdminWaiterConsole() {
     e.preventDefault();
     if (!messageText.trim() || !messageTarget) return;
 
+    if (restaurant?.sendStaffMessage) {
+      restaurant.sendStaffMessage(messageTarget.id, messageText.trim(), {
+        urgent: true,
+        from: 'Admin',
+        fromName: 'Head Desk / Admin'
+      });
+    }
+
     // Send via socket
     if (socket?.connected) {
       socket.emit('waiter:admin_nudge', {
@@ -397,18 +423,34 @@ export default function AdminWaiterConsole() {
       });
     }
 
-    // Broadcast state
-    if (restaurant?.broadcastState) {
-      restaurant.broadcastState('ADMIN_NUDGE', {
-        waiterId: messageTarget.id,
-        message: messageText.trim(),
+    showToast(`Text instruction dispatched to ${messageTarget.name}'s phone!`, 'success');
+    setMessageTarget(null);
+    setMessageText('');
+  };
+
+  const handleSendInlineMessage = (e) => {
+    e.preventDefault();
+    if (!inlineMessage.trim() || !activeWaiter) return;
+
+    if (restaurant?.sendStaffMessage) {
+      restaurant.sendStaffMessage(activeWaiter.id, inlineMessage.trim(), {
+        urgent: true,
+        from: 'Admin',
+        fromName: 'Head Desk / Admin'
+      });
+    }
+
+    if (socket?.connected) {
+      socket.emit('waiter:admin_nudge', {
+        waiterId: activeWaiter.id,
+        waiterName: activeWaiter.name,
+        message: inlineMessage.trim(),
         timestamp: Date.now()
       });
     }
 
-    showToast(`Urgent message dispatched to ${messageTarget.name}'s phone!`, 'success');
-    setMessageTarget(null);
-    setMessageText('');
+    showToast(`Text instruction sent to ${activeWaiter.name}!`, 'success');
+    setInlineMessage('');
   };
 
   return (
@@ -832,7 +874,7 @@ export default function AdminWaiterConsole() {
                       className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
                     >
                       <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Nudge</span>
+                      <span>Text Waiter</span>
                     </button>
 
                     <button
@@ -1146,6 +1188,100 @@ export default function AdminWaiterConsole() {
                 })}
               </div>
             )}
+          </div>
+
+          {/* Direct Text Dispatch & Live Chat Section */}
+          <div className="p-5 rounded-3xl bg-slate-900 border border-white/[0.08] space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white">
+                    Direct Text Dispatch to {activeWaiter.name}'s Phone
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Text instructions appear instantly on {activeWaiter.name}'s mobile screen with sound &amp; vibration alert.
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-bold text-amber-400">
+                {waiterStaffMessages.length} {waiterStaffMessages.length === 1 ? 'Message' : 'Messages'}
+              </span>
+            </div>
+
+            {/* Messages Feed */}
+            {waiterStaffMessages.length === 0 ? (
+              <div className="py-4 text-center text-xs text-slate-400 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">
+                No active text instructions sent to {activeWaiter.name} yet. Type a message below to dispatch!
+              </div>
+            ) : (
+              <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                {waiterStaffMessages.map(msg => (
+                  <div
+                    key={msg.id}
+                    className={`p-3.5 rounded-2xl border transition ${
+                      msg.status === 'acknowledged'
+                        ? 'bg-emerald-950/30 border-emerald-500/30'
+                        : 'bg-[#0B0F19] border-amber-500/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Admin Text Instruction</span>
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {formatCallTime(msg.timestamp, currentTime)}
+                        </span>
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                          msg.status === 'acknowledged'
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse'
+                        }`}>
+                          {msg.status === 'acknowledged' ? '✓ Acknowledged by Waiter' : 'Pending Acknowledgment'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-white font-medium mt-1.5">"{msg.text}"</p>
+
+                    {/* Waiter Replies */}
+                    {msg.replies && msg.replies.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-white/[0.06] space-y-1">
+                        {msg.replies.map((rep, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-[11px] text-emerald-300">
+                            <span className="font-bold">↳ {activeWaiter.name}:</span>
+                            <span className="italic">"{rep.text}"</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Quick Send Input Form */}
+            <form onSubmit={handleSendInlineMessage} className="pt-2 flex items-center gap-2">
+              <input
+                type="text"
+                required
+                placeholder={`Type instruction to send to ${activeWaiter.name}'s phone (e.g. "Table 7 needs water" or "eita koro")...`}
+                value={inlineMessage}
+                onChange={e => setInlineMessage(e.target.value)}
+                className="flex-1 bg-[#0B0F19] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+              />
+              <button
+                type="submit"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black transition active:scale-95 cursor-pointer flex items-center gap-1.5 shrink-0 shadow-md shadow-amber-500/20"
+              >
+                <Send className="w-3.5 h-3.5 text-slate-950" />
+                <span>Send Text</span>
+              </button>
+            </form>
           </div>
         </div>
       )}

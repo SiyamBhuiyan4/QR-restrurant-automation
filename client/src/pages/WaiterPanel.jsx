@@ -3,6 +3,8 @@ import {
   Bell,
   Clock,
   CheckCircle2,
+  Check,
+  Send,
   LogOut,
   Layers,
   Sparkles,
@@ -218,6 +220,10 @@ export default function WaiterPanel() {
 
   // Track notified call keys so vibration & chime only trigger once per new call
   const notifiedCallKeysRef = useRef(new Set());
+  const notifiedMsgKeysRef = useRef(new Set());
+
+  // Waiter quick reply texts map { [messageId]: string }
+  const [replyTexts, setReplyTexts] = useState({});
 
   // Update chime mute state
   useEffect(() => {
@@ -381,6 +387,52 @@ export default function WaiterPanel() {
       return myAssignedTables.includes(tbl);
     });
   }, [calls, myAssignedTables]);
+
+  // Filter messages sent by Admin to this waiter
+  const myStaffMessages = useMemo(() => {
+    if (!currentWaiter) return [];
+    const empId = currentWaiter.id;
+    const numId = String(currentWaiter.numericId);
+    const user = (currentWaiter.username || '').toLowerCase();
+
+    const all = restaurant?.staffMessages && Array.isArray(restaurant.staffMessages)
+      ? restaurant.staffMessages
+      : [];
+
+    return all.filter(m => {
+      if (!m) return false;
+      const targetId = String(m.toWaiterId || '');
+      return targetId === empId || targetId === numId || targetId.toLowerCase() === user;
+    });
+  }, [currentWaiter, restaurant?.staffMessages]);
+
+  // Sound & Vibration alert when Admin sends a new instruction/text to this waiter
+  useEffect(() => {
+    if (!currentWaiter || myStaffMessages.length === 0) return;
+
+    myStaffMessages.forEach(msg => {
+      const msgKey = String(msg.id || msg.timestamp);
+      if (!notifiedMsgKeysRef.current.has(msgKey)) {
+        notifiedMsgKeysRef.current.add(msgKey);
+        triggerCallVibration();
+        chime.play();
+      }
+    });
+  }, [myStaffMessages, currentWaiter]);
+
+  // Real-time listener for incoming Admin texts
+  useSocketListener('waiter:admin_nudge', (msg) => {
+    if (!msg || !currentWaiter) return;
+    const targetId = String(msg.waiterId || msg.toWaiterId || '');
+    const empId = currentWaiter.id;
+    const numId = String(currentWaiter.numericId);
+    const user = (currentWaiter.username || '').toLowerCase();
+
+    if (targetId === empId || targetId === numId || targetId.toLowerCase() === user) {
+      triggerCallVibration();
+      chime.play();
+    }
+  });
 
   // STEP 4: Play 2-Second Chime & Vibrate when a new call arrives for an assigned table
   useEffect(() => {
@@ -746,6 +798,150 @@ export default function WaiterPanel() {
                         Calling
                       </span>
                     )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* =====================================================================
+            2B. ADMIN DISPATCH & INSTRUCTIONS
+            Live text tasks & instructions sent directly from the Admin Panel.
+            ===================================================================== */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-2 px-1">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-emerald-400" />
+              <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-200">
+                Admin Dispatch &amp; Tasks
+              </h2>
+            </div>
+            <span
+              className={`text-xs font-black px-2.5 py-0.5 rounded-full border ${
+                myStaffMessages.filter(m => m.status !== 'acknowledged' && m.status !== 'resolved').length > 0
+                  ? 'bg-amber-950/80 text-amber-300 border-amber-700 animate-pulse'
+                  : 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
+              }`}
+            >
+              {myStaffMessages.filter(m => m.status !== 'acknowledged' && m.status !== 'resolved').length > 0
+                ? `${myStaffMessages.filter(m => m.status !== 'acknowledged' && m.status !== 'resolved').length} Pending`
+                : 'All Clear'}
+            </span>
+          </div>
+
+          {myStaffMessages.length === 0 ? (
+            <div className="py-4 text-center text-xs text-slate-400 bg-slate-900/40 rounded-2xl border border-dashed border-slate-800">
+              No instructions from Admin right now.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {myStaffMessages.map(msg => {
+                const isPending = msg.status !== 'acknowledged' && msg.status !== 'resolved';
+                const replyVal = replyTexts[msg.id] || '';
+
+                return (
+                  <div
+                    key={msg.id}
+                    className={`p-4 sm:p-5 rounded-3xl border transition shadow-xl space-y-3 ${
+                      isPending
+                        ? 'bg-gradient-to-r from-emerald-950/70 via-slate-900 to-slate-900 border-2 border-emerald-500/80 ring-2 ring-emerald-500/20'
+                        : 'bg-slate-900/80 border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {isPending && <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />}
+                        <span className="text-xs font-black text-emerald-400 uppercase tracking-wide flex items-center gap-1.5">
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>💬 Admin: {msg.fromName || 'Head Desk'}</span>
+                        </span>
+                        {isPending && (
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 animate-pulse">
+                            Urgent Task
+                          </span>
+                        )}
+                      </div>
+
+                      <span className="text-xs text-slate-400 font-mono">
+                        {formatCallTime(msg.timestamp, currentTime)}
+                      </span>
+                    </div>
+
+                    {/* Message Text */}
+                    <div className="p-3 rounded-2xl bg-black/40 border border-white/[0.06]">
+                      <p className="text-sm font-bold text-white leading-relaxed">
+                        "{msg.text}"
+                      </p>
+                    </div>
+
+                    {/* Replies if any */}
+                    {msg.replies && msg.replies.length > 0 && (
+                      <div className="space-y-1.5 pl-3 border-l-2 border-emerald-500/40">
+                        {msg.replies.map((rep, idx) => (
+                          <div key={idx} className="text-xs text-emerald-300">
+                            <span className="font-bold">You replied:</span> "{rep.text}"
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Action & Reply Bar */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-white/[0.06]">
+                      {/* Quick Reply Form */}
+                      <div className="flex items-center gap-2 flex-1">
+                        <input
+                          type="text"
+                          placeholder="Reply to Admin (e.g. 'On it!', 'Done!')..."
+                          value={replyVal}
+                          onChange={e => setReplyTexts(prev => ({ ...prev, [msg.id]: e.target.value }))}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (replyVal.trim() && restaurant?.acknowledgeStaffMessage) {
+                                restaurant.acknowledgeStaffMessage(msg.id, replyVal.trim());
+                                setReplyTexts(prev => ({ ...prev, [msg.id]: '' }));
+                              }
+                            }
+                          }}
+                          className="flex-1 bg-[#080B10] border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (replyVal.trim() && restaurant?.acknowledgeStaffMessage) {
+                              restaurant.acknowledgeStaffMessage(msg.id, replyVal.trim());
+                              setReplyTexts(prev => ({ ...prev, [msg.id]: '' }));
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition cursor-pointer"
+                        >
+                          Reply
+                        </button>
+                      </div>
+
+                      {/* Acknowledge Button */}
+                      {isPending ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (restaurant?.acknowledgeStaffMessage) {
+                              restaurant.acknowledgeStaffMessage(msg.id, replyVal.trim() || 'Acknowledged');
+                              setReplyTexts(prev => ({ ...prev, [msg.id]: '' }));
+                            }
+                          }}
+                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black shadow-md shadow-emerald-500/20 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                        >
+                          <Check className="w-4 h-4 text-slate-950" strokeWidth={3} />
+                          <span>Acknowledge / Done</span>
+                        </button>
+                      ) : (
+                        <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <span>Acknowledged &bull; Admin Notified</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}

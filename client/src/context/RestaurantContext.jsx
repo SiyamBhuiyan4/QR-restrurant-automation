@@ -16,7 +16,8 @@ export const STORAGE_KEYS = {
   EMPLOYEES: 'smartdine_restaurant_employees',
   TABLE_COUNT: 'smartdine_table_count',
   CALLS: 'smartdine_active_assistance_calls',
-  REPORTS: 'smartdine_customer_reports_v4'
+  REPORTS: 'smartdine_customer_reports_v4',
+  MESSAGES: 'smartdine_staff_messages'
 };
 
 export const DEFAULT_EMPLOYEE_ROSTER = [
@@ -291,6 +292,33 @@ export const DEFAULT_ASSISTANCE_CALLS = [
     status: 'pending',
     created_at: new Date(Date.now() - 40 * 1000).toISOString(),
     createdAt: Date.now() - 40 * 1000,
+  }
+];
+
+export const DEFAULT_STAFF_MESSAGES = [
+  {
+    id: 'msg-demo-1',
+    from: 'Admin',
+    fromName: 'Head Desk / Admin',
+    toWaiterId: 'emp-2',
+    toWaiterName: 'Hasan Mahmud',
+    text: 'Table 7 has been waiting on appetizers for 15 mins. Please check-in with the kitchen.',
+    timestamp: Date.now() - 5 * 60 * 1000,
+    status: 'pending',
+    urgent: true,
+    replies: []
+  },
+  {
+    id: 'msg-demo-2',
+    from: 'Admin',
+    fromName: 'Head Desk / Admin',
+    toWaiterId: 'emp-1',
+    toWaiterName: 'Rakib Ahmed',
+    text: 'Table 1 requested fresh cutlery & napkins. Please deliver promptly.',
+    timestamp: Date.now() - 8 * 60 * 1000,
+    status: 'pending',
+    urgent: false,
+    replies: []
   }
 ];
 
@@ -651,6 +679,20 @@ export function RestaurantProvider({ children }) {
     return DEFAULT_CUSTOMER_REPORTS;
   });
 
+  // 6. Direct Staff Messages / Dispatches (Admin <-> Waiter Texting)
+  const [staffMessages, setStaffMessagesState] = useState(() => {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEYS.MESSAGES);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (_) {}
+    }
+    return DEFAULT_STAFF_MESSAGES;
+  });
+
   // Broadcast Channel for ultra-fast same-origin cross-tab synchronization
   const broadcastChannel = useMemo(() => {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -721,6 +763,12 @@ export function RestaurantProvider({ children }) {
     }
   }, [customerReports]);
 
+  useEffect(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(staffMessages));
+    }
+  }, [staffMessages]);
+
   // Broadcast state changes across tabs
   const broadcastState = useCallback((type, data) => {
     if (broadcastChannel) {
@@ -758,6 +806,8 @@ export function RestaurantProvider({ children }) {
         setAssistanceCalls(msg.data);
       } else if (msg.type === 'REPORTS_UPDATED') {
         setCustomerReportsState(msg.data);
+      } else if (msg.type === 'MESSAGES_UPDATED' && Array.isArray(msg.data)) {
+        setStaffMessagesState(msg.data);
       }
     };
     broadcastChannel.addEventListener('message', handleMessage);
@@ -787,6 +837,9 @@ export function RestaurantProvider({ children }) {
       }
       if (e.key === STORAGE_KEYS.REPORTS && e.newValue) {
         try { setCustomerReportsState(JSON.parse(e.newValue)); } catch (_) {}
+      }
+      if (e.key === STORAGE_KEYS.MESSAGES && e.newValue) {
+        try { setStaffMessagesState(JSON.parse(e.newValue)); } catch (_) {}
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -1574,6 +1627,82 @@ export function RestaurantProvider({ children }) {
     return customerReports.filter(r => Number(r.table) === tbl);
   }, [customerReports]);
 
+  // ---------------------------------------------------------------------------
+  // DIRECT ADMIN <-> WAITER DISPATCH & MESSAGING
+  // ---------------------------------------------------------------------------
+  const sendStaffMessage = useCallback((toWaiterId, text, options = {}) => {
+    const targetEmp = employees.find(
+      e => e.id === toWaiterId || String(e.numericId) === String(toWaiterId) || (e.username && e.username.toLowerCase() === String(toWaiterId).toLowerCase())
+    );
+    const newMsg = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      from: options.from || 'Admin',
+      fromName: options.fromName || 'Head Desk / Admin',
+      toWaiterId: targetEmp ? targetEmp.id : String(toWaiterId),
+      toWaiterName: targetEmp ? targetEmp.name : 'Floor Specialist',
+      text: text.trim(),
+      timestamp: Date.now(),
+      status: 'pending',
+      urgent: options.urgent !== false,
+      replies: []
+    };
+
+    setStaffMessagesState(prev => {
+      const next = [newMsg, ...prev];
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(next));
+      }
+      broadcastState('MESSAGES_UPDATED', next);
+      return next;
+    });
+
+    if (socketContext?.socket?.connected) {
+      socketContext.socket.emit('waiter:admin_nudge', newMsg);
+    }
+
+    return newMsg;
+  }, [employees, broadcastState, socketContext]);
+
+  const acknowledgeStaffMessage = useCallback((messageId, replyText = '') => {
+    setStaffMessagesState(prev => {
+      const next = prev.map(m => {
+        if (m.id === messageId) {
+          const updatedReplies = replyText.trim()
+            ? [...(m.replies || []), { text: replyText.trim(), timestamp: Date.now(), from: 'Waiter' }]
+            : (m.replies || []);
+          return {
+            ...m,
+            status: 'acknowledged',
+            acknowledgedAt: Date.now(),
+            replies: updatedReplies
+          };
+        }
+        return m;
+      });
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(next));
+      }
+      broadcastState('MESSAGES_UPDATED', next);
+      return next;
+    });
+  }, [broadcastState]);
+
+  const resolveStaffMessage = useCallback((messageId) => {
+    setStaffMessagesState(prev => {
+      const next = prev.map(m => {
+        if (m.id === messageId) {
+          return { ...m, status: 'resolved', resolvedAt: Date.now() };
+        }
+        return m;
+      });
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(next));
+      }
+      broadcastState('MESSAGES_UPDATED', next);
+      return next;
+    });
+  }, [broadcastState]);
+
   const contextValue = {
     // State
     tableCount,
@@ -1581,6 +1710,7 @@ export function RestaurantProvider({ children }) {
     employees,
     assistanceCalls,
     customerReports,
+    staffMessages,
 
     // Lookups
     getAssignedEmployeeForTable,
@@ -1594,6 +1724,11 @@ export function RestaurantProvider({ children }) {
     hireEmployee,
     addEmployee: hireEmployee,
     removeEmployee,
+
+    // Direct Staff Messaging / Dispatch
+    sendStaffMessage,
+    acknowledgeStaffMessage,
+    resolveStaffMessage,
 
     // Actions (Floor & Tables)
     setTableCount,
