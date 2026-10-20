@@ -60,6 +60,28 @@ export default defineSchema({
     .index("by_created_at", ["createdAt"])
     .index("by_table", ["tableNumber"]),
 
+  employees: defineTable({
+    username: v.string(),
+    passwordHash: v.string(),
+    salt: v.string(),
+    role: v.string(),
+    name: v.string(),
+    active: v.boolean(),
+    failedLogins: v.optional(v.number()),
+    lockedUntil: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_username", ["username"]),
+
+  employeeSessions: defineTable({
+    employeeId: v.id("employees"),
+    tokenHash: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_tokenHash", ["tokenHash"])
+    .index("by_employee", ["employeeId"]),
+
   reviews: defineTable({
     dishId: v.string(), // dish identifier or slug
     author: v.string(),
