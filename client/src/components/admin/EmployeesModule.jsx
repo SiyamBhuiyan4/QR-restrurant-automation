@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 
 import { useRestaurant } from '../../context/RestaurantContext';
-import TableSecurityModal from './TableSecurityModal';
+import TableSecurityModal, { TableSecurityModal as PasscodeConfirmDialog } from './TableSecurityModal';
 
 // Storage key for table custody lineage tracking across sessions and days
 const STORAGE_KEY_CUSTODY = 'smartdine_table_custody_v1';
@@ -3110,24 +3110,6 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                   </p>
                 </div>
               </div>
-
-              {/* Action Buttons: Clear History */}
-              <div className="flex items-center gap-2">
-                {activityLogs.length > 0 && clearActivityLogs && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (window.confirm('Are you sure you want to clear the entire employee activity history?')) {
-                        clearActivityLogs();
-                      }
-                    }}
-                    className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold transition cursor-pointer active:scale-95 flex items-center gap-1.5"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Clear History</span>
-                  </button>
-                )}
-              </div>
             </div>
 
             {/* Quick Stats Metric Cards */}
@@ -3344,6 +3326,36 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Danger Zone: Clear History */}
+          {activityLogs.length > 0 && clearActivityLogs && (
+            <div className="mt-8 p-4 rounded-2xl border border-rose-500/40 bg-rose-950/10 space-y-3">
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-rose-400">Danger Zone</h4>
+                <p className="text-xs text-rose-300/80 mt-0.5">
+                  Irreversible action: This permanently erases all staff operational history and audit records.
+                </p>
+              </div>
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSecurityModalState({
+                      isOpen: true,
+                      actionTitle: 'Authorize Clear Activity History',
+                      actionDescription: `Permanently delete all ${activityLogs.length} activity audit log records. This action cannot be reversed.`,
+                      actionNotice: 'Admin PIN verification (808080) required to clear history.',
+                      pendingAction: () => clearActivityLogs()
+                    });
+                  }}
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black transition cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-md shadow-rose-950/50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Clear Entire History</span>
+                </button>
+              </div>
             </div>
           )}
         </section>

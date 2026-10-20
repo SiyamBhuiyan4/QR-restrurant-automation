@@ -1265,16 +1265,6 @@ export default function CustomerReportsModule({
     handleSimulateCustomerRequest();
   }, [handleSimulateCustomerRequest]);
 
-  // 7. Reset to Demo
-  const handleResetDemo = useCallback(() => {
-    if (window.confirm('Reset all customer reports to default demo state?')) {
-      saveReports(INITIAL_REPORTS);
-      setActiveDrawers({});
-      setResolutionDrawers({});
-      showToast('Restored default demo reports', 'info');
-    }
-  }, [saveReports, showToast]);
-
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div
@@ -1373,16 +1363,6 @@ export default function CustomerReportsModule({
             title={muted ? 'Unmute Audio Chimes' : 'Mute Audio Alerts'}
           >
             {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-          </button>
-
-          {/* Reset Demo Button */}
-          <button
-            type="button"
-            onClick={handleResetDemo}
-            className="p-2.5 rounded-xl border border-slate-800 bg-[#111726] hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
-            title="Reset to Default Demo State"
-          >
-            <RotateCcw className="w-4 h-4" />
           </button>
 
           {/* ── Realistic Customer Request Simulation Suite ── */}

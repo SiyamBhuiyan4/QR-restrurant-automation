@@ -35,6 +35,7 @@ import { useRestaurant } from '../../context/RestaurantContext';
 import { useSocket, useSocketListener } from '../../context/SocketContext';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convexApi';
+import TableSecurityModal, { TableSecurityModal as PasscodeConfirmDialog } from './TableSecurityModal';
 
 /**
  * Format relative elapsed time
@@ -382,17 +383,37 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
     setIsModalOpen(false);
   };
 
+  // Security Confirmation Modal State (Requires Admin PIN 808080)
+  const [securityModalState, setSecurityModalState] = useState({
+    isOpen: false,
+    actionTitle: '',
+    actionDescription: '',
+    actionNotice: '',
+    pendingAction: null
+  });
+
   // Delete Waiter Handler
   const handleDeleteWaiter = (waiterId, waiterName) => {
-    if (window.confirm(`Are you sure you want to remove ${waiterName} from the roster?`)) {
-      if (restaurant?.removeEmployee) {
-        restaurant.removeEmployee(waiterId);
-        showToast(`Removed ${waiterName}`, 'info');
-        if (selectedWaiterId === waiterId) {
-          setSelectedWaiterId('all');
-        }
+    if (restaurant?.removeEmployee) {
+      restaurant.removeEmployee(waiterId);
+      showToast(`Removed ${waiterName}`, 'info');
+      if (selectedWaiterId === waiterId) {
+        setSelectedWaiterId('all');
       }
     }
+  };
+
+  const requestDeleteWaiter = (waiterId, waiterName) => {
+    setSecurityModalState({
+      isOpen: true,
+      actionTitle: `Authorize Delete Waiter • ${waiterName}`,
+      actionDescription: `Permanently delete waiter account for ${waiterName} from the roster.`,
+      actionNotice: 'Admin PIN verification (808080) required to delete staff.',
+      pendingAction: () => {
+        setIsModalOpen(false);
+        handleDeleteWaiter(waiterId, waiterName);
+      }
+    });
   };
 
   // Send Direct Message / Nudge to Waiter
@@ -739,7 +760,7 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
                         </div>
                       </div>
 
-                      {/* Edit / Delete Actions */}
+                      {/* Edit Action */}
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
@@ -748,14 +769,6 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
                           title="Edit waiter details & credentials"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteWaiter(waiter.id, waiter.name)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 transition cursor-pointer"
-                          title="Delete waiter"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -1590,21 +1603,35 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
               </div>
 
               {/* Modal Buttons */}
-              <div className="pt-3 border-t border-white/[0.08] flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-bold transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95 cursor-pointer flex items-center gap-1.5"
-                >
-                  <Check className="w-4 h-4 text-slate-950" />
-                  <span>{editingEmployee ? 'Save Changes' : 'Register Waiter'}</span>
-                </button>
+              <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between gap-2">
+                {editingEmployee ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      requestDeleteWaiter(editingEmployee.id, editingEmployee.name);
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete waiter</span>
+                  </button>
+                ) : <div />}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-bold transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Check className="w-4 h-4 text-slate-950" />
+                    <span>{editingEmployee ? 'Save Changes' : 'Register Waiter'}</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -1717,6 +1744,20 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
           </div>
         </div>
       )}
+      {/* Admin PIN Passcode Confirmation Modal */}
+      <TableSecurityModal
+        isOpen={securityModalState.isOpen}
+        onClose={() => setSecurityModalState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={(action) => {
+          if (typeof action === 'function') {
+            action();
+          }
+        }}
+        actionTitle={securityModalState.actionTitle}
+        actionDescription={securityModalState.actionDescription}
+        actionNotice={securityModalState.actionNotice}
+        pendingData={securityModalState.pendingAction}
+      />
     </div>
   );
 }

@@ -726,33 +726,19 @@ export default function AdminHeader({
               <button
                 type="button"
                 onClick={() => {
-                  setIsProfileOpen(false);
-                  handleLockLogout();
+                  if (window.confirm('Sign out of the admin panel?')) {
+                    setIsProfileOpen(false);
+                    handleLockLogout();
+                  }
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl text-rose-500 hover:bg-rose-500/10 transition cursor-pointer"
               >
                 <Lock className="w-3.5 h-3.5" />
-                <span>Lock / Logout</span>
+                <span>Sign out</span>
               </button>
             </div>
           )}
         </div>
-
-        {/* Lock / Logout Button (Next to Profile Badge) */}
-        <button
-          type="button"
-          onClick={handleLockLogout}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 ${
-            isDarkMode
-              ? 'border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300'
-              : 'border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700'
-          }`}
-          title="Lock Admin Session / Logout"
-          aria-label="Lock / Logout"
-        >
-          <Lock className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Lock / Logout</span>
-        </button>
       </div>
     </header>
   );

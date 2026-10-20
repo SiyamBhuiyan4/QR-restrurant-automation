@@ -41,7 +41,7 @@ import {
   Scale
 } from 'lucide-react';
 
-import TableSecurityModal from './TableSecurityModal';
+import TableSecurityModal, { TableSecurityModal as PasscodeConfirmDialog } from './TableSecurityModal';
 
 import {
   TABLE_STATUS,
@@ -1308,18 +1308,9 @@ export default function LiveTablesModule({
                       </div>
                     </div>
 
-                    {/* Visual Status Badge & Protected Remove Table Button */}
+                    {/* Visual Status Badge */}
                     <div className="shrink-0 max-w-full flex items-center gap-1.5">
                       {statusBadge}
-                      <button
-                        type="button"
-                        onClick={() => requestRemoveSpecificTable(table.tableNumber)}
-                        title={`Remove ${table.name} (Requires Admin PIN 808080)`}
-                        aria-label={`Remove Table ${table.tableNumber}`}
-                        className="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700/80 hover:border-rose-500/40 flex items-center justify-center transition cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
                     </div>
                   </div>
 
@@ -1636,15 +1627,18 @@ export default function LiveTablesModule({
                       </button>
                     )}
 
-                    {/* Explicit Remove Table Button (Protected by PIN 808080) */}
+                  </div>
+
+                  {/* Destructive Card Footer Action */}
+                  <div className="flex items-center justify-end pt-1">
                     <button
                       type="button"
                       onClick={() => requestRemoveSpecificTable(table.tableNumber)}
-                      className="py-1.5 px-2.5 rounded-xl bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700/80 hover:border-rose-500/40 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                      className="text-[11px] font-semibold text-rose-500 hover:text-rose-400 hover:underline transition cursor-pointer flex items-center gap-1 bg-transparent border-0 p-0"
                       title={`Remove Table #${table.tableNumber} (Admin PIN 808080)`}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span className="text-[11px]">Remove</span>
+                      <Trash2 className="w-3 h-3" />
+                      <span>Remove table</span>
                     </button>
                   </div>
 
