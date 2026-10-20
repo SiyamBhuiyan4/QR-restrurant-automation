@@ -817,7 +817,7 @@ export default function LiveTablesModule({
       {/* =======================================================================
           TOP TELEMETRY & STATUS FILTER CONTROLS BAR
           ======================================================================= */}
-      <div className="bg-[#111827]/95 backdrop-blur-2xl rounded-3xl border border-slate-700/80 p-5 sm:p-6 shadow-2xl shadow-black/40 space-y-6">
+      <div className="bg-[#111827]/95 backdrop-blur-2xl admin-card border border-slate-700/80 p-5 sm:p-6 space-y-6">
         
         {/* Row 1: Header, Search & View Toggle */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -1285,7 +1285,7 @@ export default function LiveTablesModule({
             return (
               <div
                 key={table.id}
-                className={`rounded-3xl border p-5 transition-all duration-300 backdrop-blur-2xl flex flex-col justify-between relative group overflow-hidden ${cardAccentClass}`}
+                className={`admin-card border p-5 transition-all duration-300 backdrop-blur-2xl flex flex-col justify-between relative group overflow-hidden ${cardAccentClass}`}
               >
                 {/* -----------------------------------------------------------
                     CARD TOP HEADER: Table #, Capacity, Status Badge & Remove
