@@ -2457,7 +2457,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
           TAB 2: WAITER PORTAL ACCOUNTS & PINS (CREDENTIALS MANAGEMENT)
           ========================================================================= */}
       {activeTab === 'waiters' && (
-        <section className="bg-[#111726]/95 backdrop-blur-md rounded-2xl border border-white/[0.07] p-5 sm:p-6 shadow-sm space-y-6 animate-fadeIn">
+        <section className="bg-[#111726]/95 backdrop-blur-md admin-card border border-white/[0.07] p-5 sm:p-6 space-y-6 animate-fadeIn">
           {/* Subheader */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.07]">
             <div className="flex items-center gap-3">
@@ -2731,7 +2731,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
           TAB B: DINING ROOM TABLE COVERAGE (TABLES 1-12)
           ========================================================================= */}
       {activeTab === 'tables' && (
-        <section className="bg-[#111726]/95 backdrop-blur-md rounded-2xl border border-white/[0.07] p-5 sm:p-6 shadow-sm space-y-5 animate-fadeIn">
+        <section className="bg-[#111726]/95 backdrop-blur-md admin-card border border-white/[0.07] p-5 sm:p-6 space-y-5 animate-fadeIn">
           {/* Subheader */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.07]">
             <div className="flex items-center gap-2.5">
@@ -2891,7 +2891,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
           TAB C: LIVE CALL ROUTING & KITCHEN DISPATCH
           ========================================================================= */}
       {activeTab === 'dispatch' && (
-        <section className="bg-[#111726]/95 backdrop-blur-md rounded-2xl border border-white/[0.07] p-5 sm:p-6 shadow-sm space-y-5 animate-fadeIn">
+        <section className="bg-[#111726]/95 backdrop-blur-md admin-card border border-white/[0.07] p-5 sm:p-6 space-y-5 animate-fadeIn">
           {/* Dispatch Subheader */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.07]">
             <div className="flex items-center gap-2.5">
@@ -3092,7 +3092,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
       {activeTab === 'history' && (
         <section className="space-y-5 animate-fadeIn">
           {/* Header Card with Telemetry Stats */}
-          <div className="bg-[#111726]/95 backdrop-blur-md rounded-2xl border border-white/[0.07] p-5 sm:p-6 shadow-sm space-y-5">
+          <div className="bg-[#111726]/95 backdrop-blur-md admin-card border border-white/[0.07] p-5 sm:p-6 space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.07]">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">

@@ -1650,7 +1650,7 @@ export default function CustomerReportsModule({
             return (
               <div
                 key={report.id}
-                className={`rounded-2xl border p-4 sm:p-5 transition-all duration-200 backdrop-blur-md shadow-xl ${
+                className={`admin-card border p-4 sm:p-5 transition-all duration-200 backdrop-blur-md shadow-xl ${
                   isCritical && !isResolved
                     ? 'bg-[#111726]/95 border-rose-500/40 shadow-rose-950/20 ring-1 ring-rose-500/20'
                     : isResolved
