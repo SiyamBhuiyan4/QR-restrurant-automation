@@ -437,19 +437,6 @@ export default function MenuItemCard({
                   </div>
                 )}
 
-                {/* 24/7 Live 360° Video Floating Badge (Top-Left) */}
-                {dishVideo && !videoError && isVideoMode && (
-                  <div className="absolute top-3 left-3 z-20 pointer-events-none">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-black/85 text-emerald-300 backdrop-blur-md shadow-lg border border-emerald-500/30">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                      </span>
-                      <span>🔄 360° Video</span>
-                    </span>
-                  </div>
-                )}
-
                 {/* Sound Toggle Button (Bottom-Right) */}
                 {dishVideo && !videoError && isVideoMode && (
                   <button
@@ -719,19 +706,6 @@ export default function MenuItemCard({
               </span>
             </div>
 
-            {/* 360° Video Live Badge (Top-Right) */}
-            {dishVideo && !videoError && (
-              <div className="absolute top-1 right-1 z-10 pointer-events-none">
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-black/85 text-emerald-300 backdrop-blur-md border border-emerald-500/30 shadow-md">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                  </span>
-                  <span>360°</span>
-                </span>
-              </div>
-            )}
-
             {!isAvailable && (
               <div className="absolute inset-0 bg-neutral-950/75 backdrop-blur-xs flex items-center justify-center z-20">
                 <span className="px-1.5 py-0.5 rounded bg-rose-600 text-white font-extrabold text-[8px] uppercase tracking-wider shadow-md">
@@ -936,19 +910,6 @@ export default function MenuItemCard({
                 </div>
               )}
 
-              {/* 360° Video floating badge over circular dish */}
-              {dishVideo && !videoError && (
-                <div className="absolute top-2 left-2 z-10 pointer-events-none">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-black/75 text-emerald-300 backdrop-blur-md border border-emerald-500/30 shadow-md">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                    </span>
-                    <span>360° Video</span>
-                  </span>
-                </div>
-              )}
-
               {!isAvailable && (
                 <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10">
                   <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[9px] uppercase tracking-wider">
@@ -1141,18 +1102,6 @@ export default function MenuItemCard({
                 </div>
               )}
 
-              {/* 360° Video subtle badge */}
-              {dishVideo && !videoError && (
-                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-extrabold uppercase tracking-wider bg-black/85 text-emerald-300 backdrop-blur-md border border-emerald-500/40 shadow-sm whitespace-nowrap">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                    </span>
-                    <span>360° Video</span>
-                  </span>
-                </div>
-              )}
               <div className="menu-card__vignette" />
 
               {!isAvailable && (

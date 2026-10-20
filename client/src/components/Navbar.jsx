@@ -253,28 +253,28 @@ export default function Navbar({
                 </button>
               )}
 
-              {/* Call Assistance Trigger Button */}
+              {/* Call Waiter Trigger Button */}
               <button
                 type="button"
                 onClick={() => setShowWaiterModal(true)}
-                className={`relative inline-flex items-center justify-center gap-1.5 h-11 min-w-11 px-3 rounded-xl font-bold text-xs sm:text-sm transition-[transform,box-shadow,background-color] duration-200 active:scale-95 shadow-md cursor-pointer border motion-reduce:transition-none motion-reduce:active:scale-100 ${
+                className={`relative inline-flex items-center justify-center gap-1.5 h-11 px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-[transform,box-shadow,background-color] duration-200 active:scale-95 shadow-md cursor-pointer border motion-reduce:transition-none motion-reduce:active:scale-100 shrink-0 ${
                   waiterCalled
                     ? 'bg-emerald-700 text-white border-emerald-400/60 shadow-emerald-900/40 ring-2 ring-emerald-400/50'
                     : 'bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-500 text-slate-950 font-black border-transparent shadow-amber-500/30 hover:shadow-amber-500/50 hover:brightness-105'
                 }`}
-                title="Request assistance at your table"
+                title="Call Waiter to your table"
               >
                 {waiterCalled ? (
                   <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-200 animate-bounce motion-reduce:animate-none" />
-                    <span className="hidden sm:inline">Assistance Requested!</span>
-                    <span className="sm:hidden">Called</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-200 animate-bounce motion-reduce:animate-none shrink-0" />
+                    <span className="hidden sm:inline">Waiter Called!</span>
+                    <span className="sm:hidden font-black">Called</span>
                   </>
                 ) : (
                   <>
-                    <BellRing className="w-4 h-4 text-slate-950" />
-                    <span className="hidden sm:inline">Call Assistance</span>
-                    <span className="hidden min-[400px]:inline sm:hidden">Assistance</span>
+                    <BellRing className="w-4 h-4 text-slate-950 shrink-0" />
+                    <span className="hidden sm:inline">Call Waiter</span>
+                    <span className="sm:hidden font-black">Waiter</span>
                   </>
                 )}
               </button>

@@ -326,7 +326,7 @@ export default function CallWaiterModal({
               <BellRing className="w-6 h-6 text-amber-300 animate-wiggle motion-reduce:animate-none" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold tracking-tight text-white">Call Employee</h2>
+              <h2 className="text-xl font-extrabold tracking-tight text-white">Call Waiter</h2>
               <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-300 font-medium flex-wrap">
                 <span className="bg-[#0b0f19]/80 px-2.5 py-0.5 rounded-full font-bold text-amber-300 border border-amber-500/40">
                   Table {tableNumber || '?'}
@@ -354,13 +354,13 @@ export default function CallWaiterModal({
 
               <div>
                 <h3 className="text-2xl font-black text-white">
-                  Employee Alerted!
+                  Waiter Alerted!
                 </h3>
                 <p className="text-sm font-semibold text-emerald-300 mt-1">
                   {assignedEmployee ? (
-                    <>Directly routed to your assigned employee: <span className="font-bold text-white">{assignedEmployee.name}</span></>
+                    <>Directly routed to your assigned waiter: <span className="font-bold text-white">{assignedEmployee.name}</span></>
                   ) : (
-                    <>Floor team has been notified for Table {tableNumber}.</>
+                    <>Floor waiter team has been notified for Table {tableNumber}.</>
                   )}
                 </p>
                 <div className="mt-3 p-3 bg-[#0b0f19]/80 rounded-2xl border border-emerald-500/30 text-xs text-slate-300 inline-block max-w-xs text-left">
