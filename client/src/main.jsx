@@ -7,7 +7,7 @@ import App from './App.jsx';
 import './index.css';
 import './styles/motion.css';
 
-const LATEST_BUILD_TAG = '2026-10-20.07-clean-suite-v1';
+const LATEST_BUILD_TAG = '2026-10-20.08-food-profile-videos-v1';
 try {
   const currentTag = localStorage.getItem('smartdine_build_tag');
   if (currentTag !== LATEST_BUILD_TAG) {

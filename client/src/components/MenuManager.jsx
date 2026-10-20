@@ -360,7 +360,8 @@ export default function MenuManager({ className = '' }) {
           return false;
         }
       }
-      // Dietary / Availability filters
+      // Dietary / Availability / Media filters
+      if (filterType === 'video' && !dish.making_video_url && !dish.makingVideoUrl) return false;
       if (filterType === 'veg' && !dish.is_veg) return false;
       if (filterType === 'spicy' && !dish.is_spicy) return false;
       if (filterType === 'available' && !dish.is_available) return false;
@@ -1036,10 +1037,11 @@ export default function MenuManager({ className = '' }) {
             )}
           </div>
 
-          {/* Quick Dietary / Stock Filter Buttons */}
+          {/* Quick Dietary / Stock / Media Filter Buttons */}
           <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
             {[
               { id: 'all', label: 'All Items' },
+              { id: 'video', label: '🎥 Has Video' },
               { id: 'available', label: 'In Stock' },
               { id: 'unavailable', label: 'Sold Out' },
               { id: 'veg', label: '🌱 Veg Only' },
@@ -1201,11 +1203,24 @@ export default function MenuManager({ className = '' }) {
                           TG Media
                         </span>
                       )}
-                      {Boolean(dish.making_video_url || dish.makingVideoUrl) && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-600 text-white shadow-xs" title="Includes kitchen reel video">
+                      {Boolean(dish.making_video_url || dish.makingVideoUrl) ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-600 text-white shadow-xs border border-rose-400/40" title="Profile video active: plays on customer view">
                           <Video className="w-2.5 h-2.5 fill-current" />
-                          Reel
+                          Video Active
                         </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEditModal(dish);
+                          }}
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 cursor-pointer transition"
+                          title="Click to add a profile video to this dish"
+                        >
+                          <Video className="w-2.5 h-2.5 text-purple-400" />
+                          + Video
+                        </button>
                       )}
                     </div>
 
@@ -1642,19 +1657,53 @@ export default function MenuManager({ className = '' }) {
                 </div>
 
                 {/* 2. KITCHEN REEL VIDEO SECTION */}
-                <div className="space-y-2 pt-2 border-t border-[#334155]">
-                  <div className="flex items-center justify-between flex-wrap gap-1">
-                    <label className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5">
-                      <Video className="w-3.5 h-3.5 text-purple-400" />
-                      <span>Kitchen Reel / Making Video <span className="text-[10px] text-[#94a3b8] font-normal">(Optional)</span></span>
-                    </label>
+                <div className="space-y-2.5 pt-3 border-t border-[#334155]">
+                  <div className="flex items-center justify-between flex-wrap gap-1.5">
+                    <div>
+                      <label className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5">
+                        <Video className="w-4 h-4 text-rose-400" />
+                        <span>Food Profile Video Reel <span className="text-[10px] text-amber-300 font-semibold">(Plays on Customer View at First Glance)</span></span>
+                      </label>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        MP4, WebM or video link. When set, customers see a realistic looping video right on this dish card!
+                      </p>
+                    </div>
 
                     {(formData.making_video_url?.includes('telegram') || formData.making_video_url?.includes('api.telegram.org')) && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700 animate-fadeIn">
                         <Check className="w-3 h-3 stroke-[3]" />
-                        <span>✅ Hosted on Telegram Channel</span>
+                        <span>Hosted on Telegram Channel</span>
                       </span>
                     )}
+                  </div>
+
+                  {/* Quick Food Video Preset Chips */}
+                  <div className="bg-[#0b0f19] p-2.5 rounded-xl border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                      Quick Sample Food Reels (1-Click Apply):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { label: '👨‍🍳 Chef Wok Fire Reel', url: '/videos/reel-chef.mp4' },
+                        { label: '🥩 Sizzling Ribeye Sizzle', url: '/videos/reel-chef.mp4' },
+                        { label: '🍔 Gourmet Wagyu Burger', url: '/videos/reel-chef.mp4' },
+                        { label: '🍝 Truffle Pasta Plating', url: '/videos/reel-chef.mp4' },
+                        { label: '🍰 Lava Dessert Reveal', url: '/videos/reel-chef.mp4' }
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, making_video_url: preset.url }))}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer border ${
+                            formData.making_video_url === preset.url
+                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/60 shadow-xs'
+                              : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Hidden video file input */}
@@ -1679,7 +1728,7 @@ export default function MenuManager({ className = '' }) {
                       ) : (
                         <Video className="w-3.5 h-3.5" />
                       )}
-                      <span>{uploadingVideo ? 'Uploading to Telegram Channel...' : 'Upload Video to Telegram'}</span>
+                      <span>{uploadingVideo ? 'Uploading Video...' : 'Upload Video File'}</span>
                     </button>
 
                     <div className="relative flex-1">
@@ -1687,7 +1736,7 @@ export default function MenuManager({ className = '' }) {
                         type="url"
                         value={formData.making_video_url}
                         onChange={(e) => setFormData({ ...formData, making_video_url: e.target.value })}
-                        placeholder="Telegram Video CDN URL or .mp4 reel link..."
+                        placeholder="Paste MP4 / WebM video link or select sample clip above..."
                         className="admin-dark-input w-full font-mono placeholder-[#64748b] truncate"
                         style={{
                           backgroundColor: '#0f172a',
@@ -1715,10 +1764,10 @@ export default function MenuManager({ className = '' }) {
 
                   {/* Video Player Preview */}
                   {formData.making_video_url && (
-                    <div className="p-2.5 bg-[#0f172a] rounded-xl border border-[#334155] space-y-1.5">
+                    <div className="p-3 bg-[#0b0f19] rounded-xl border border-rose-500/30 space-y-2">
                       <div className="flex items-center justify-between text-[11px] font-bold text-[#f8fafc]">
-                        <span className="flex items-center gap-1 text-purple-400">
-                          <Play className="w-3 h-3 fill-current" /> Reel Video Preview
+                        <span className="flex items-center gap-1.5 text-rose-400">
+                          <Play className="w-3.5 h-3.5 fill-current" /> Live Profile Video Preview (Customer View)
                         </span>
                         <span className="text-[10px] text-[#94a3b8] font-mono truncate max-w-xs">
                           {formData.making_video_url}
@@ -1727,9 +1776,11 @@ export default function MenuManager({ className = '' }) {
                       <video
                         src={formData.making_video_url}
                         controls
+                        autoPlay
+                        loop
                         muted
                         playsInline
-                        className="w-full max-h-40 rounded-lg bg-black object-contain border border-[#334155]"
+                        className="w-full max-h-48 rounded-lg bg-black object-contain border border-slate-800 shadow-md"
                       />
                     </div>
                   )}

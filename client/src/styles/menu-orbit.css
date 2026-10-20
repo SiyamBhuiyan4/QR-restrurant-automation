@@ -79,6 +79,16 @@
   isolation: isolate;
 }
 
+.menu-show__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: calc(1.5rem - 7px);
+  z-index: 1;
+}
+
 .menu-show__img {
   position: absolute;
   inset: 0;

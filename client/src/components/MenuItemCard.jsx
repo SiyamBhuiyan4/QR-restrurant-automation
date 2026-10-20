@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Plus, 
@@ -16,7 +16,11 @@ import {
   Image as ImageIcon,
   ShoppingBag,
   ArrowRight,
-  Compass
+  Compass,
+  Volume2,
+  VolumeX,
+  Camera,
+  Play
 } from 'lucide-react';
 import '../styles/menu-orbit.css';
 
@@ -65,7 +69,28 @@ export default function MenuItemCard({
   const isVeg = item.isVeg === true || item.veg === true || (Array.isArray(item.tags) && item.tags.some(t => /veg/i.test(t)));
   const isSpicy = item.isSpicy === true || item.spicy === true || (Array.isArray(item.tags) && item.tags.some(t => /spic/i.test(t)));
   const isAvailable = item.isAvailable !== false && item.outOfStock !== true && item.available !== false;
-  const hasVideo = Boolean(item.makingVideoUrl || item.videoUrl);
+  // Direct Food Profile Video support
+  const dishVideo = (item.makingVideoUrl && !item.makingVideoUrl.includes('mixkit.co'))
+    ? item.makingVideoUrl
+    : (item.videoUrl && !item.videoUrl.includes('mixkit.co'))
+      ? item.videoUrl
+      : (item.making_video_url && !item.making_video_url.includes('mixkit.co'))
+        ? item.making_video_url
+        : null;
+
+  const hasVideo = Boolean(dishVideo);
+  const [isVideoMode, setIsVideoMode] = useState(Boolean(dishVideo));
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
+  const [videoError, setVideoError] = useState(false);
+  const showcaseVideoRef = useRef(null);
+
+  useEffect(() => {
+    if (dishVideo) {
+      setIsVideoMode(true);
+      setVideoError(false);
+    }
+  }, [dishVideo]);
+
   const photoCount = Array.isArray(item.images) && item.images.length > 0 ? item.images.length : 4;
 
   const safeDishImage = (item.image && typeof item.image === 'string' && item.image.includes('photo-1604909052743'))
@@ -275,8 +300,21 @@ export default function MenuItemCard({
             onMouseLeave={() => setIsOrbitalHovered(false)}
           >
             <div className="menu-show__frame">
-              <div className="menu-show__photo">
-                {safeDishImage && !imageError ? (
+              <div className="menu-show__photo relative">
+                {dishVideo && isVideoMode && !videoError ? (
+                  <video
+                    ref={showcaseVideoRef}
+                    src={dishVideo}
+                    poster={safeDishImage}
+                    autoPlay
+                    loop
+                    muted={isVideoMuted}
+                    playsInline
+                    preload="metadata"
+                    onError={() => setVideoError(true)}
+                    className="menu-show__video"
+                  />
+                ) : safeDishImage && !imageError ? (
                   angleImages.map((imgUrl, idx) => (
                     <img
                       key={idx}
@@ -300,6 +338,64 @@ export default function MenuItemCard({
                   <div className="menu-show__soldout">
                     <span className="menu-show__soldout-tag">Sold Out</span>
                   </div>
+                )}
+
+                {/* Live Video Reel Floating Badge (Top-Left) */}
+                {dishVideo && !videoError && isVideoMode && (
+                  <div className="absolute top-3 left-3 z-20 pointer-events-none">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-600/90 text-white backdrop-blur-md shadow-lg border border-white/20">
+                      <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                      <span>Live Video</span>
+                    </span>
+                  </div>
+                )}
+
+                {/* Sound Toggle Button (Bottom-Right) */}
+                {dishVideo && !videoError && isVideoMode && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsVideoMuted(prev => !prev);
+                      if (showcaseVideoRef.current) {
+                        showcaseVideoRef.current.muted = !isVideoMuted;
+                      }
+                    }}
+                    className="absolute bottom-3 right-3 z-20 p-2 rounded-full bg-black/80 hover:bg-black text-white backdrop-blur-md border border-white/30 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xl"
+                    title={isVideoMuted ? "Tap to unmute food audio" : "Tap to mute audio"}
+                    aria-label={isVideoMuted ? "Unmute video audio" : "Mute video audio"}
+                  >
+                    {isVideoMuted ? (
+                      <VolumeX className="w-3.5 h-3.5 text-slate-300" />
+                    ) : (
+                      <Volume2 className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                    )}
+                  </button>
+                )}
+
+                {/* Video vs 360° Photo Switcher (Bottom-Left) */}
+                {dishVideo && angleImages.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsVideoMode(prev => !prev);
+                    }}
+                    className="absolute bottom-3 left-3 z-20 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/80 hover:bg-black text-white text-[10px] font-bold backdrop-blur-md border border-white/25 transition active:scale-95 cursor-pointer shadow-xl"
+                    title={isVideoMode ? "Switch to 360° Orbital Photos" : "Switch to Video Reel"}
+                  >
+                    {isVideoMode ? (
+                      <>
+                        <Camera className="w-3 h-3 text-amber-400" />
+                        <span>360° Photo</span>
+                      </>
+                    ) : (
+                      <>
+                        <Video className="w-3 h-3 text-rose-400" />
+                        <span>Food Video</span>
+                      </>
+                    )}
+                  </button>
                 )}
               </div>
             </div>
@@ -475,9 +571,21 @@ export default function MenuItemCard({
             !isAvailable ? 'opacity-65' : 'hover:-translate-y-0.5'
           }`}
         >
-          {/* Left: Compact Image with Aspect-[16/10] */}
+          {/* Left: Compact Image/Video with Aspect-[16/10] */}
           <div className="relative w-24 sm:w-32 aspect-[16/10] rounded-xl overflow-hidden shrink-0 bg-zinc-900">
-            {item.image && !imageError ? (
+            {dishVideo && !videoError ? (
+              <video
+                src={dishVideo}
+                poster={item.image}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                onError={() => setVideoError(true)}
+                className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+              />
+            ) : item.image && !imageError ? (
               <img
                 src={item.image}
                 alt={dishTitle}
@@ -672,10 +780,22 @@ export default function MenuItemCard({
             </div>
           </div>
 
-          {/* Centered Circular Plate / Bowl Image */}
+          {/* Centered Circular Plate / Bowl Image or Video */}
           <div className="plate-card__media">
             <div className="plate-card__dish-circle">
-              {safeDishImage && !imageError ? (
+              {dishVideo && !videoError ? (
+                <video
+                  src={dishVideo}
+                  poster={safeDishImage}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="metadata"
+                  onError={() => setVideoError(true)}
+                  className="plate-card__img object-cover w-full h-full"
+                />
+              ) : safeDishImage && !imageError ? (
                 <img
                   src={safeDishImage}
                   alt={dishTitle}
@@ -849,7 +969,19 @@ export default function MenuItemCard({
           <div className="menu-card__media">
             <div className="menu-card__halo" aria-hidden="true" />
             <div className="menu-card__photo">
-              {item.image && !imageError ? (
+              {dishVideo && !videoError ? (
+                <video
+                  src={dishVideo}
+                  poster={item.image}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="metadata"
+                  onError={() => setVideoError(true)}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : item.image && !imageError ? (
                 <img
                   src={item.image}
                   alt={dishTitle}
