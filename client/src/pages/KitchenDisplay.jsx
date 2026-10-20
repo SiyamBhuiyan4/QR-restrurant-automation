@@ -25,6 +25,7 @@ import SocketContext, { resolveServerUrl } from '../context/SocketContext.jsx';
 import { io } from 'socket.io-client';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
+import { useRestaurant } from '../context/RestaurantContext';
 import '../styles/staff.css';
 
 // Module-scoped AudioContext singleton to prevent context leaks or hitting browser limits
@@ -113,8 +114,10 @@ export default function KitchenDisplay({
   className = '',
   initialTab = 'all',
   initialViewMode = null,
-  onOrderCountChange = null
+  onOrderCountChange = null,
+  currentEmployee = null
 }) {
+  const restaurant = useRestaurant();
   // Socket Context with fallback to standalone socket instance
   const socketCtx = useContext(SocketContext);
   const [standaloneSocket, setStandaloneSocket] = useState(null);
@@ -549,6 +552,30 @@ export default function KitchenDisplay({
         await updateConvexStatus({ orderId, status: nextStatus });
       } catch (_) {}
     }
+
+    // Record action in shared employee audit history
+    try {
+      const activeActor = currentEmployee || (() => {
+        try {
+          const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('smartdine_logged_in_employee') : null;
+          return raw ? JSON.parse(raw) : null;
+        } catch (_) { return null; }
+      })();
+
+      if (restaurant?.recordActivity) {
+        restaurant.recordActivity({
+          actorType: activeActor ? 'employee' : 'admin',
+          actorId: activeActor?.id || 'admin',
+          actorName: activeActor?.name || (isEmbedded ? 'Head Desk / Admin' : 'Kitchen Staff'),
+          actorRole: activeActor?.role || (isEmbedded ? 'Admin' : 'Kitchen Staff'),
+          actorStaffId: activeActor?.staffId || activeActor?.numericId || (isEmbedded ? 'ADMIN' : 'CHEF'),
+          actionType: 'STAGE_ADVANCE',
+          description: `${activeActor?.name || (isEmbedded ? 'Admin' : 'Kitchen Staff')} advanced Order #${String(orderId).slice(-4)} to "${nextStatus.toUpperCase()}"`,
+          target: `Order #${String(orderId).slice(-4)}`,
+          details: `Stage updated to ${stageEquivalent}`
+        });
+      }
+    } catch (_) {}
 
     // Persist to REST API
     try {

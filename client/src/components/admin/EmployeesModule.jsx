@@ -438,8 +438,48 @@ export default function EmployeesModule({
   const [alerts, setAlerts] = useState(INITIAL_ALERTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'Active' | 'Busy' | 'On Break' | 'Absent / Off-duty'
-  const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'waiters' | 'tables' | 'dispatch'
+  const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'waiters' | 'tables' | 'dispatch' | 'history'
   const [alertFilter, setAlertFilter] = useState('all'); // 'all' | 'active' | 'resolved'
+
+  // Employee Activity & Live Audit History State
+  const activityLogs = (restaurantContext?.activityLogs && Array.isArray(restaurantContext.activityLogs))
+    ? restaurantContext.activityLogs
+    : [];
+  const clearActivityLogs = restaurantContext?.clearActivityLogs;
+  const [activityActorFilter, setActivityActorFilter] = useState('all');
+  const [activityActionFilter, setActivityActionFilter] = useState('all');
+  const [activitySearchQuery, setActivitySearchQuery] = useState('');
+
+  // Filtered Activity Logs
+  const filteredActivityLogs = useMemo(() => {
+    return activityLogs.filter(log => {
+      if (activityActorFilter !== 'all') {
+        const actorName = String(log.actorName || '').toLowerCase();
+        const actorId = String(log.actorId || '').toLowerCase();
+        const actorType = String(log.actorType || '').toLowerCase();
+        const filterVal = activityActorFilter.toLowerCase();
+        if (filterVal === 'admin' && actorType !== 'admin') return false;
+        if (filterVal === 'employee' && actorType !== 'employee') return false;
+        if (filterVal !== 'admin' && filterVal !== 'employee') {
+          if (!actorName.includes(filterVal) && !actorId.includes(filterVal)) return false;
+        }
+      }
+      if (activityActionFilter !== 'all' && log.actionType !== activityActionFilter) {
+        return false;
+      }
+      if (activitySearchQuery.trim()) {
+        const q = activitySearchQuery.toLowerCase();
+        const desc = (log.description || '').toLowerCase();
+        const details = (log.details || '').toLowerCase();
+        const target = (log.target || '').toLowerCase();
+        const actorName = (log.actorName || '').toLowerCase();
+        if (!desc.includes(q) && !details.includes(q) && !target.includes(q) && !actorName.includes(q)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [activityLogs, activityActorFilter, activityActionFilter, activitySearchQuery]);
 
   // Revealed PINs map for executive click-to-reveal toggle { [empId]: boolean }
   const [revealedPins, setRevealedPins] = useState({});
@@ -1999,106 +2039,134 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-t-full shadow-sm" />
             )}
           </button>
+
+          {/* Tab 5: Employee Activity & Live Audit History */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('history')}
+            className={`pb-3 text-xs font-bold transition flex items-center gap-2 cursor-pointer relative shrink-0 ${
+              activeTab === 'history'
+                ? 'text-amber-400'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            <span>Employee Activity &amp; Live Audit</span>
+            <span
+              className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
+                activeTab === 'history'
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  : 'bg-slate-800/80 text-slate-400 border border-slate-700/50'
+              }`}
+            >
+              {activityLogs.length}
+            </span>
+            {activeTab === 'history' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-t-full shadow-sm" />
+            )}
+          </button>
         </div>
       </section>
 
       {/* =========================================================================
           5. FILTER & SEARCH BAR
           ========================================================================= */}
-      <section className="bg-[#111726]/90 backdrop-blur-md rounded-[14px] border border-slate-800/80 p-3 shadow-md flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Left Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto text-xs py-1 scrollbar-none">
-          {/* All */}
-          <button
-            type="button"
-            onClick={() => setStatusFilter('all')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer shrink-0 ${
-              statusFilter === 'all'
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-orange-500/20'
-                : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-white border border-slate-700/60 font-medium'
-            }`}
-          >
-            All ({employees.length})
-          </button>
-
-          {/* Active */}
-          <button
-            type="button"
-            onClick={() => setStatusFilter('Active')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
-              statusFilter === 'Active'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/60 shadow-md shadow-emerald-500/20 font-semibold'
-                : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-emerald-400 border border-slate-700/60'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-            <span>Active ({summaryMetrics.activeOnDuty})</span>
-          </button>
-
-          {/* Busy */}
-          <button
-            type="button"
-            onClick={() => setStatusFilter('Busy')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
-              statusFilter === 'Busy'
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-md shadow-amber-500/20 font-semibold'
-                : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-amber-400 border border-slate-700/60'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-            <span>Busy ({summaryMetrics.currentlyBusy})</span>
-          </button>
-
-          {/* On Break */}
-          <button
-            type="button"
-            onClick={() => setStatusFilter('On Break')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
-              statusFilter === 'On Break'
-                ? 'bg-slate-700/60 text-slate-200 border border-slate-500/60 shadow-md shadow-slate-500/20 font-semibold'
-                : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-slate-100 border border-slate-700/60'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
-            <span>On Break ({summaryMetrics.onBreak})</span>
-          </button>
-
-          {/* Absent */}
-          <button
-            type="button"
-            onClick={() => setStatusFilter('Absent')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
-              statusFilter === 'Absent'
-                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/60 shadow-md shadow-rose-500/20 font-semibold'
-                : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-rose-400 border border-slate-700/60'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
-            <span>Absent ({summaryMetrics.absent})</span>
-          </button>
-        </div>
-
-        {/* Right: Search Input */}
-        <div className="relative w-full md:w-72">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search employee, role, table..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-[#0B0F19] border border-slate-800 rounded-lg pl-9 pr-8 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500/60 transition"
-          />
-          {searchQuery && (
+      {activeTab !== 'history' && (
+        <section className="bg-[#111726]/90 backdrop-blur-md rounded-[14px] border border-slate-800/80 p-3 shadow-md flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Left Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto text-xs py-1 scrollbar-none">
+            {/* All */}
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition p-0.5 rounded cursor-pointer"
+              onClick={() => setStatusFilter('all')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer shrink-0 ${
+                statusFilter === 'all'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-orange-500/20'
+                  : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-white border border-slate-700/60 font-medium'
+              }`}
             >
-              <X className="w-3 h-3" />
+              All ({employees.length})
             </button>
-          )}
-        </div>
-      </section>
+
+            {/* Active */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter('Active')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                statusFilter === 'Active'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/60 shadow-md shadow-emerald-500/20 font-semibold'
+                  : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-emerald-400 border border-slate-700/60'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+              <span>Active ({summaryMetrics.activeOnDuty})</span>
+            </button>
+
+            {/* Busy */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter('Busy')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                statusFilter === 'Busy'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-md shadow-amber-500/20 font-semibold'
+                  : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-amber-400 border border-slate-700/60'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+              <span>Busy ({summaryMetrics.currentlyBusy})</span>
+            </button>
+
+            {/* On Break */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter('On Break')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                statusFilter === 'On Break'
+                  ? 'bg-slate-700/60 text-slate-200 border border-slate-500/60 shadow-md shadow-slate-500/20 font-semibold'
+                  : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-slate-100 border border-slate-700/60'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+              <span>On Break ({summaryMetrics.onBreak})</span>
+            </button>
+
+            {/* Absent */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter('Absent')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                statusFilter === 'Absent'
+                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/60 shadow-md shadow-rose-500/20 font-semibold'
+                  : 'bg-[#161F32] hover:bg-[#1E293B] text-slate-300 hover:text-rose-400 border border-slate-700/60'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+              <span>Absent ({summaryMetrics.absent})</span>
+            </button>
+          </div>
+
+          {/* Right: Search Input */}
+          <div className="relative w-full md:w-72">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search employee, role, table..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full bg-[#0B0F19] border border-slate-800 rounded-lg pl-9 pr-8 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500/60 transition"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition p-0.5 rounded cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* =========================================================================
           6. TAB A: EMPLOYEE DIRECTORY & ROSTER (2-Column Grid)
@@ -3008,6 +3076,269 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                           <CheckCheck className="w-3.5 h-3.5" />
                           <span>Acknowledge</span>
                         </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* =========================================================================
+          TAB E: EMPLOYEE ACTIVITY & LIVE AUDIT HISTORY
+          ========================================================================= */}
+      {activeTab === 'history' && (
+        <section className="space-y-5 animate-fadeIn">
+          {/* Header Card with Telemetry Stats */}
+          <div className="bg-[#111726]/95 backdrop-blur-md rounded-2xl border border-white/[0.07] p-5 sm:p-6 shadow-sm space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.07]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base flex items-center gap-2">
+                    <span>Employee Activity &amp; Live Audit History</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      Live Telemetry
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Real-time operational audit log: waiter text dispatches, urgent alerts, kitchen status advancements, and staff logins
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons: Clear History */}
+              <div className="flex items-center gap-2">
+                {activityLogs.length > 0 && clearActivityLogs && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm('Are you sure you want to clear the entire employee activity history?')) {
+                        clearActivityLogs();
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold transition cursor-pointer active:scale-95 flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear History</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Stats Metric Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3.5 rounded-xl bg-[#080B10] border border-slate-800">
+                <p className="text-[10px] font-black uppercase text-slate-400">Total Logged Actions</p>
+                <p className="text-xl font-black text-white mt-1">{activityLogs.length}</p>
+              </div>
+              <div className="p-3.5 rounded-xl bg-[#080B10] border border-slate-800">
+                <p className="text-[10px] font-black uppercase text-sky-400">Waiter Texts Dispatched</p>
+                <p className="text-xl font-black text-sky-300 mt-1">
+                  {activityLogs.filter(a => a.actionType === 'TEXT_WAITER').length}
+                </p>
+              </div>
+              <div className="p-3.5 rounded-xl bg-[#080B10] border border-slate-800">
+                <p className="text-[10px] font-black uppercase text-rose-400">Urgent Alerts Dispatched</p>
+                <p className="text-xl font-black text-rose-300 mt-1">
+                  {activityLogs.filter(a => a.actionType === 'ALERT_WAITER').length}
+                </p>
+              </div>
+              <div className="p-3.5 rounded-xl bg-[#080B10] border border-slate-800">
+                <p className="text-[10px] font-black uppercase text-amber-400">Kitchen Advances &amp; Logins</p>
+                <p className="text-xl font-black text-amber-300 mt-1">
+                  {activityLogs.filter(a => a.actionType === 'STAGE_ADVANCE' || a.actionType === 'LOGIN').length}
+                </p>
+              </div>
+            </div>
+
+            {/* Specialized Filters Bar */}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-3 border-t border-white/[0.07]">
+              {/* Left: Filter by Actor / Role */}
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Actor:</span>
+                <button
+                  type="button"
+                  onClick={() => setActivityActorFilter('all')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                    activityActorFilter === 'all'
+                      ? 'bg-amber-500 text-slate-950 shadow'
+                      : 'bg-[#080B10] text-slate-400 hover:text-white border border-slate-800'
+                  }`}
+                >
+                  All Staff ({activityLogs.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivityActorFilter('admin')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                    activityActorFilter === 'admin'
+                      ? 'bg-emerald-500 text-slate-950 shadow'
+                      : 'bg-[#080B10] text-slate-400 hover:text-white border border-slate-800'
+                  }`}
+                >
+                  🛡️ Admin Only ({activityLogs.filter(a => a.actorType === 'admin').length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivityActorFilter('employee')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                    activityActorFilter === 'employee'
+                      ? 'bg-amber-500 text-slate-950 shadow'
+                      : 'bg-[#080B10] text-slate-400 hover:text-white border border-slate-800'
+                  }`}
+                >
+                  🍳 Kitchen/Staff Only ({activityLogs.filter(a => a.actorType === 'employee').length})
+                </button>
+              </div>
+
+              {/* Center / Right: Filter by Action Type + Search */}
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={activityActionFilter}
+                  onChange={e => setActivityActionFilter(e.target.value)}
+                  className="bg-[#080B10] border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500 cursor-pointer"
+                >
+                  <option value="all">All Action Types</option>
+                  <option value="TEXT_WAITER">💬 Text to Waiter</option>
+                  <option value="ALERT_WAITER">🚨 Urgent Alert</option>
+                  <option value="STAGE_ADVANCE">🍳 Order Stage Advance</option>
+                  <option value="LOGIN">🔑 Employee Hub Login</option>
+                  <option value="RESOLVE_CALL">✅ Customer Call Resolved</option>
+                </select>
+
+                <div className="relative min-w-[200px]">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search action, actor, target..."
+                    value={activitySearchQuery}
+                    onChange={e => setActivitySearchQuery(e.target.value)}
+                    className="w-full bg-[#080B10] border border-slate-800 focus:border-amber-500 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none transition"
+                  />
+                  {activitySearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setActivitySearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Activity Log Cards Feed */}
+          {filteredActivityLogs.length === 0 ? (
+            <div className="bg-[#111726]/90 rounded-2xl border border-dashed border-slate-800 p-12 text-center text-slate-400 space-y-2">
+              <Clock className="w-10 h-10 text-slate-600 mx-auto" />
+              <p className="text-sm font-bold text-white">No activity records match your filter</p>
+              <p className="text-xs text-slate-500">
+                Staff actions will appear here in real time as employees text waiters, advance orders, and log in.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredActivityLogs.map(log => {
+                const isAlert = log.actionType === 'ALERT_WAITER';
+                const isText = log.actionType === 'TEXT_WAITER';
+                const isStage = log.actionType === 'STAGE_ADVANCE';
+                const isLogin = log.actionType === 'LOGIN';
+                const isResolve = log.actionType === 'RESOLVE_CALL';
+
+                const timeStr = log.timestamp
+                  ? new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                  : 'Recent';
+
+                return (
+                  <div
+                    key={log.id}
+                    className={`p-4 sm:p-5 rounded-2xl border transition shadow-lg space-y-3 bg-[#111726]/90 ${
+                      isAlert
+                        ? 'border-rose-500/60 ring-1 ring-rose-500/20'
+                        : isText
+                          ? 'border-sky-500/40'
+                          : isStage
+                            ? 'border-amber-500/40'
+                            : 'border-slate-800'
+                    }`}
+                  >
+                    {/* Top Row: Actor, Action Badge, and Time */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* Actor Badge */}
+                        {log.actorType === 'employee' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm">
+                            <span className="text-sm">🍳</span>
+                            <span>Kitchen Staff:</span>
+                            <span className="text-white font-extrabold">{log.actorName}</span>
+                            {log.actorStaffId && (
+                              <span className="text-amber-400 font-mono text-[10px] bg-amber-950/60 px-1 rounded">
+                                #{log.actorStaffId}
+                              </span>
+                            )}
+                            {log.actorRole && (
+                              <span className="text-amber-200/80 lowercase text-[10px]">
+                                [{log.actorRole}]
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm">
+                            <span className="text-sm">🛡️</span>
+                            <span>Head Desk / Admin</span>
+                          </span>
+                        )}
+
+                        {/* Action Badge */}
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                          isAlert
+                            ? 'bg-rose-500 text-white animate-pulse'
+                            : isText
+                              ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                              : isStage
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                : isLogin
+                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                  : 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
+                        }`}>
+                          {isAlert && '🚨 Urgent Waiter Alert'}
+                          {isText && '💬 Waiter Text Dispatch'}
+                          {isStage && '🍳 Kitchen Stage Advance'}
+                          {isLogin && '🔑 Staff Hub Login'}
+                          {isResolve && '✅ Call Marked Resolved'}
+                          {!isAlert && !isText && !isStage && !isLogin && !isResolve && log.actionType}
+                        </span>
+
+                        {/* Target badge */}
+                        {log.target && (
+                          <span className="text-[10px] font-bold text-slate-400 bg-[#080B10] px-2 py-0.5 rounded border border-slate-800">
+                            Target: <span className="text-slate-200">{log.target}</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
+                        <Clock className="w-3.5 h-3.5 text-slate-500" />
+                        <span>{timeStr}</span>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <div className="p-3 rounded-xl bg-black/40 border border-white/[0.06]">
+                      <p className="text-sm font-bold text-white leading-relaxed">
+                        {log.description}
+                      </p>
+                      {log.details && log.details !== log.description && (
+                        <p className="text-xs text-slate-400 mt-1 italic font-medium">
+                          Details: "{log.details}"
+                        </p>
                       )}
                     </div>
                   </div>

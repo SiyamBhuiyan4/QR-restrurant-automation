@@ -17,8 +17,64 @@ export const STORAGE_KEYS = {
   TABLE_COUNT: 'smartdine_table_count',
   CALLS: 'smartdine_active_assistance_calls',
   REPORTS: 'smartdine_customer_reports_v4',
-  MESSAGES: 'smartdine_staff_messages'
+  MESSAGES: 'smartdine_staff_messages',
+  ACTIVITY: 'smartdine_employee_activity_history'
 };
+
+export const DEFAULT_ACTIVITY_LOGS = [
+  {
+    id: 'act-seed-1',
+    timestamp: Date.now() - 3 * 60 * 1000,
+    actorType: 'employee',
+    actorId: 'emp-6',
+    actorName: 'Kabir Hossain',
+    actorRole: 'Kitchen Chef',
+    actorStaffId: '106',
+    actionType: 'TEXT_WAITER',
+    description: 'Texted waiter Rakib Ahmed: "Table 2 Garlic Butter Ribeye plated & ready for pickup"',
+    target: 'Rakib Ahmed',
+    details: 'Table 2 Garlic Butter Ribeye plated & ready for pickup'
+  },
+  {
+    id: 'act-seed-2',
+    timestamp: Date.now() - 8 * 60 * 1000,
+    actorType: 'admin',
+    actorId: 'admin',
+    actorName: 'Head Desk / Admin',
+    actorRole: 'Admin',
+    actorStaffId: 'ADMIN',
+    actionType: 'ALERT_WAITER',
+    description: 'Sent URGENT ALERT to waiter Hasan Mahmud: "Table 5 customer waiting for bill, please attend!"',
+    target: 'Hasan Mahmud',
+    details: 'Table 5 customer waiting for bill, please attend!'
+  },
+  {
+    id: 'act-seed-3',
+    timestamp: Date.now() - 14 * 60 * 1000,
+    actorType: 'employee',
+    actorId: 'emp-1',
+    actorName: 'Rakib Ahmed',
+    actorRole: 'Floor Specialist',
+    actorStaffId: '101',
+    actionType: 'RESOLVE_CALL',
+    description: 'Resolved customer assistance call on Table 1 (Needs fresh water & napkins)',
+    target: 'Table 1',
+    details: 'Needs fresh water & napkins'
+  },
+  {
+    id: 'act-seed-4',
+    timestamp: Date.now() - 25 * 60 * 1000,
+    actorType: 'employee',
+    actorId: 'emp-6',
+    actorName: 'Kabir Hossain',
+    actorRole: 'Kitchen Chef',
+    actorStaffId: '106',
+    actionType: 'STAGE_ADVANCE',
+    description: 'Advanced Order #104 from Preparing to Ready for Pickup',
+    target: 'Order #104',
+    details: 'Stage: ready_pickup'
+  }
+];
 
 export const DEFAULT_EMPLOYEE_ROSTER = [
   {
@@ -183,6 +239,105 @@ export const DEFAULT_EMPLOYEE_ROSTER = [
     hiredAt: '2026-01-01',
     avgResponseTime: '8s',
     onTimeRate: '100%'
+  },
+  {
+    id: 'emp-6',
+    numericId: 6,
+    staffId: 'Chef #106',
+    name: 'Kabir Hossain',
+    initials: 'KH',
+    role: 'Kitchen Chef',
+    shift: 'Morning Shift (08:00 - 16:00)',
+    shiftTime: '08:00 - 16:00',
+    status: 'Active',
+    username: 'kabir',
+    password: '1234',
+    accountCode: 'CHEF-106',
+    waiterCode: 'CHEF-106',
+    passcode: '1234',
+    pin: '1234',
+    waiterPin: '1234',
+    assignedTables: [],
+    color: 'from-amber-600 to-red-600',
+    avatarBg: 'from-amber-600 to-red-600',
+    avatarColor: '#ea580c',
+    avatar: {
+      initials: 'KH',
+      color: '#ea580c',
+      bg: '#fff7ed'
+    },
+    zone: 'Kitchen Pass & Station',
+    phone: '+880 1711-998877',
+    email: 'kabir.chef@restaurant.local',
+    hiredAt: '2026-01-01',
+    avgResponseTime: '12s',
+    onTimeRate: '100%'
+  },
+  {
+    id: 'emp-7',
+    numericId: 7,
+    staffId: 'Chef #107',
+    name: 'Tariqul Islam',
+    initials: 'TI',
+    role: 'Sous Chef',
+    shift: 'Evening Shift (16:00 - 00:00)',
+    shiftTime: '16:00 - 00:00',
+    status: 'Active',
+    username: 'tariq',
+    password: '1234',
+    accountCode: 'CHEF-107',
+    waiterCode: 'CHEF-107',
+    passcode: '1234',
+    pin: '1234',
+    waiterPin: '1234',
+    assignedTables: [],
+    color: 'from-orange-600 to-amber-700',
+    avatarBg: 'from-orange-600 to-amber-700',
+    avatarColor: '#d97706',
+    avatar: {
+      initials: 'TI',
+      color: '#d97706',
+      bg: '#fef3c7'
+    },
+    zone: 'Hot Line & Grills',
+    phone: '+880 1722-112233',
+    email: 'tariq.sous@restaurant.local',
+    hiredAt: '2026-02-01',
+    avgResponseTime: '10s',
+    onTimeRate: '98%'
+  },
+  {
+    id: 'emp-8',
+    numericId: 8,
+    staffId: 'Cook #108',
+    name: 'Rahim Uddin',
+    initials: 'RU',
+    role: 'Line Cook',
+    shift: 'Mid Shift (12:00 - 20:00)',
+    shiftTime: '12:00 - 20:00',
+    status: 'Active',
+    username: 'rahim',
+    password: '1234',
+    accountCode: 'COOK-108',
+    waiterCode: 'COOK-108',
+    passcode: '1234',
+    pin: '1234',
+    waiterPin: '1234',
+    assignedTables: [],
+    color: 'from-red-600 to-rose-700',
+    avatarBg: 'from-red-600 to-rose-700',
+    avatarColor: '#e11d48',
+    avatar: {
+      initials: 'RU',
+      color: '#e11d48',
+      bg: '#ffe4e6'
+    },
+    zone: 'Appetizers & Prep',
+    phone: '+880 1733-445566',
+    email: 'rahim.cook@restaurant.local',
+    hiredAt: '2026-02-15',
+    avgResponseTime: '14s',
+    onTimeRate: '96%'
   }
 ];
 
@@ -693,6 +848,20 @@ export function RestaurantProvider({ children }) {
     return DEFAULT_STAFF_MESSAGES;
   });
 
+  // 7. Employee Activity & Live Audit History
+  const [activityLogs, setActivityLogsState] = useState(() => {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEYS.ACTIVITY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (_) {}
+    }
+    return DEFAULT_ACTIVITY_LOGS;
+  });
+
   // Broadcast Channel for ultra-fast same-origin cross-tab synchronization
   const broadcastChannel = useMemo(() => {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -808,6 +977,8 @@ export function RestaurantProvider({ children }) {
         setCustomerReportsState(msg.data);
       } else if (msg.type === 'MESSAGES_UPDATED' && Array.isArray(msg.data)) {
         setStaffMessagesState(msg.data);
+      } else if (msg.type === 'ACTIVITY_LOG_UPDATED' && Array.isArray(msg.data)) {
+        setActivityLogsState(msg.data);
       }
     };
     broadcastChannel.addEventListener('message', handleMessage);
@@ -840,6 +1011,9 @@ export function RestaurantProvider({ children }) {
       }
       if (e.key === STORAGE_KEYS.MESSAGES && e.newValue) {
         try { setStaffMessagesState(JSON.parse(e.newValue)); } catch (_) {}
+      }
+      if (e.key === STORAGE_KEYS.ACTIVITY && e.newValue) {
+        try { setActivityLogsState(JSON.parse(e.newValue)); } catch (_) {}
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -1345,6 +1519,17 @@ export function RestaurantProvider({ children }) {
       );
       if (target) {
         resolvedTableNum = Number(target.tableNumber || target.table_number || target.table);
+        recordActivity({
+          actorType: 'employee',
+          actorId: 'waiter',
+          actorName: 'Floor Waiter',
+          actorRole: 'Floor Staff',
+          actorStaffId: 'FLOOR',
+          actionType: 'RESOLVE_CALL',
+          description: `Assistance call at Table ${resolvedTableNum} was resolved`,
+          target: `Table ${resolvedTableNum}`,
+          details: target.reason || target.message || 'Call marked as resolved'
+        });
       }
       const next = prevCalls.filter(
         c =>
@@ -1628,6 +1813,76 @@ export function RestaurantProvider({ children }) {
   }, [customerReports]);
 
   // ---------------------------------------------------------------------------
+  // EMPLOYEE ACTIVITY & AUDIT HISTORY
+  // ---------------------------------------------------------------------------
+  const recordActivity = useCallback((activityPayload) => {
+    if (!activityPayload) return null;
+    const newLog = {
+      id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      timestamp: Date.now(),
+      actorType: activityPayload.actorType || 'employee', // 'admin' | 'employee'
+      actorId: activityPayload.actorId ? String(activityPayload.actorId) : 'unknown',
+      actorName: activityPayload.actorName || 'Staff Member',
+      actorRole: activityPayload.actorRole || 'Floor Specialist',
+      actorStaffId: activityPayload.actorStaffId ? String(activityPayload.actorStaffId) : '101',
+      actionType: activityPayload.actionType || 'TEXT_WAITER', // 'TEXT_WAITER' | 'ALERT_WAITER' | 'STAGE_ADVANCE' | 'RESOLVE_CALL' | 'RESOLVE_REPORT' | 'TABLE_STATUS' | 'LOGIN'
+      description: activityPayload.description || 'Performed an operation',
+      target: activityPayload.target || '',
+      details: activityPayload.details || ''
+    };
+
+    setActivityLogsState(prev => {
+      const next = [newLog, ...prev.slice(0, 199)];
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEYS.ACTIVITY, JSON.stringify(next)); } catch (_) {}
+      }
+      broadcastState('ACTIVITY_LOG_UPDATED', next);
+      return next;
+    });
+
+    if (socketContext?.socket?.connected) {
+      socketContext.socket.emit('employee:activity', newLog);
+    }
+
+    return newLog;
+  }, [broadcastState, socketContext]);
+
+  const clearActivityLogs = useCallback(() => {
+    setActivityLogsState([]);
+    if (typeof localStorage !== 'undefined') {
+      try { localStorage.setItem(STORAGE_KEYS.ACTIVITY, JSON.stringify([])); } catch (_) {}
+    }
+    broadcastState('ACTIVITY_LOG_UPDATED', []);
+  }, [broadcastState]);
+
+  const authenticateEmployee = useCallback((username, password) => {
+    if (!username || !password) return null;
+    const cleanUser = username.trim().toLowerCase();
+    const cleanPass = password.trim();
+
+    const found = employees.find(e => {
+      const u = (e.username || e.accountCode || '').toLowerCase();
+      const p = String(e.password || e.passcode || e.pin || e.waiterPin || '');
+      return u === cleanUser && p === cleanPass;
+    });
+
+    if (found) {
+      recordActivity({
+        actorType: 'employee',
+        actorId: found.id,
+        actorName: found.name,
+        actorRole: found.role || 'Staff',
+        actorStaffId: found.staffId || found.numericId || '101',
+        actionType: 'LOGIN',
+        description: `${found.name} logged into Employee & Kitchen Hub`,
+        target: 'Employee & Kitchen Hub'
+      });
+    }
+
+    return found || null;
+  }, [employees, recordActivity]);
+
+  // ---------------------------------------------------------------------------
   // DIRECT ADMIN <-> WAITER DISPATCH & MESSAGING
   // ---------------------------------------------------------------------------
   const sendStaffMessage = useCallback((toWaiterId, text, options = {}) => {
@@ -1635,10 +1890,20 @@ export function RestaurantProvider({ children }) {
       e => e.id === toWaiterId || String(e.numericId) === String(toWaiterId) || (e.username && e.username.toLowerCase() === String(toWaiterId).toLowerCase())
     );
     const isAlert = options.isAlert === true || options.category === 'alert' || options.type === 'alert';
+    const isEmployee = options.from === 'Employee' || !!options.fromEmployeeId;
+
+    const fromRole = options.fromRole || (isEmployee ? 'Kitchen Staff' : 'Admin');
+    const fromName = options.fromName || (isEmployee ? 'Kitchen Staff' : 'Head Desk / Admin');
+    const fromEmployeeId = options.fromEmployeeId || (isEmployee ? options.employeeId : 'admin');
+    const fromStaffId = options.fromStaffId || options.staffId || (isEmployee ? '101' : 'ADMIN');
+
     const newMsg = {
       id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      from: options.from || 'Admin',
-      fromName: options.fromName || 'Head Desk / Admin',
+      from: isEmployee ? 'Employee' : 'Admin',
+      fromName: fromName,
+      fromRole: fromRole,
+      fromEmployeeId: fromEmployeeId,
+      fromStaffId: fromStaffId,
       toWaiterId: targetEmp ? targetEmp.id : String(toWaiterId),
       toWaiterName: targetEmp ? targetEmp.name : 'Floor Specialist',
       text: text.trim(),
@@ -1660,12 +1925,27 @@ export function RestaurantProvider({ children }) {
       return next;
     });
 
+    // Automatically record this in Activity History
+    recordActivity({
+      actorType: isEmployee ? 'employee' : 'admin',
+      actorId: fromEmployeeId,
+      actorName: fromName,
+      actorRole: fromRole,
+      actorStaffId: fromStaffId,
+      actionType: isAlert ? 'ALERT_WAITER' : 'TEXT_WAITER',
+      description: isAlert
+        ? `${fromName} sent URGENT ALERT to waiter ${targetEmp?.name || toWaiterId}: "${text.trim()}"`
+        : `${fromName} texted waiter ${targetEmp?.name || toWaiterId}: "${text.trim()}"`,
+      target: targetEmp?.name || `Waiter #${toWaiterId}`,
+      details: text.trim()
+    });
+
     if (socketContext?.socket?.connected) {
       socketContext.socket.emit('waiter:admin_nudge', newMsg);
     }
 
     return newMsg;
-  }, [employees, broadcastState, socketContext]);
+  }, [employees, broadcastState, socketContext, recordActivity]);
 
   const acknowledgeStaffMessage = useCallback((messageId, replyText = '') => {
     setStaffMessagesState(prev => {
@@ -1715,6 +1995,7 @@ export function RestaurantProvider({ children }) {
     assistanceCalls,
     customerReports,
     staffMessages,
+    activityLogs,
 
     // Lookups
     getAssignedEmployeeForTable,
@@ -1724,10 +2005,15 @@ export function RestaurantProvider({ children }) {
 
     // Authentication & Staff Credentials
     authenticateWaiter,
+    authenticateEmployee,
     updateEmployeeCredentials,
     hireEmployee,
     addEmployee: hireEmployee,
     removeEmployee,
+
+    // Activity & Audit History
+    recordActivity,
+    clearActivityLogs,
 
     // Direct Staff Messaging / Dispatch
     sendStaffMessage,

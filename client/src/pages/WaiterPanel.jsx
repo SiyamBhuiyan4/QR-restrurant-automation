@@ -981,8 +981,20 @@ export default function WaiterPanel() {
           <div className="flex items-center gap-2.5 min-w-0">
             <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 animate-pulse" />
             <div className="min-w-0">
-              <p className="text-[11px] font-black uppercase text-rose-300 flex items-center gap-1">
-                <span>🚨 Admin Urgent Alert</span>
+              <p className="text-[11px] font-black uppercase text-rose-300 flex items-center gap-1.5 flex-wrap">
+                {activeAlertToast.from === 'Employee' || activeAlertToast.fromEmployeeId ? (
+                  <span className="inline-flex items-center gap-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-md">
+                    <span>🍳 Kitchen Alert:</span>
+                    <span className="text-white font-extrabold">{activeAlertToast.fromName || 'Staff'}</span>
+                    {activeAlertToast.fromStaffId && (
+                      <span className="text-amber-300/80 font-mono">(#{activeAlertToast.fromStaffId})</span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded-md">
+                    <span>🚨 Admin Urgent Alert</span>
+                  </span>
+                )}
               </p>
               <p className="text-xs font-bold text-white truncate">"{activeAlertToast.text}"</p>
             </div>
@@ -1109,18 +1121,37 @@ export default function WaiterPanel() {
                     >
                       {/* Message Header */}
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {isPending && (
                             <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
                               isAlert ? 'bg-rose-400 animate-ping' : 'bg-emerald-400 animate-ping'
                             }`} />
                           )}
-                          <span className={`text-xs font-black uppercase tracking-wide flex items-center gap-1.5 ${
-                            isAlert ? 'text-rose-400' : 'text-emerald-400'
-                          }`}>
-                            {isAlert ? <AlertTriangle className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
-                            <span>{msg.fromName || 'Admin'}</span>
-                          </span>
+
+                          {/* Sender attribution badge: Kitchen Staff vs Admin */}
+                          {msg.from === 'Employee' || (msg.fromEmployeeId && msg.fromEmployeeId !== 'admin') ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm">
+                              <span className="text-sm">🍳</span>
+                              <span>Kitchen Staff:</span>
+                              <span className="text-white font-extrabold">{msg.fromName || 'Staff'}</span>
+                              {msg.fromStaffId && (
+                                <span className="text-amber-400/90 font-mono text-[10px] bg-amber-950/60 px-1 rounded">
+                                  #{msg.fromStaffId}
+                                </span>
+                              )}
+                              {msg.fromRole && (
+                                <span className="text-amber-200/80 lowercase text-[10px]">
+                                  [{msg.fromRole}]
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm">
+                              <span className="text-sm">🛡️</span>
+                              <span>Head Desk / Admin</span>
+                            </span>
+                          )}
+
                           <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                             isAlert
                               ? 'bg-rose-500 text-white animate-pulse'
@@ -1161,7 +1192,7 @@ export default function WaiterPanel() {
                         <div className="flex items-center gap-2 flex-1">
                           <input
                             type="text"
-                            placeholder="Reply to Admin (e.g. 'On it!', 'Done!')..."
+                            placeholder={`Reply to ${msg.from === 'Employee' ? (msg.fromName || 'Kitchen Staff') : 'Admin'} (e.g. 'On it!', 'Done!')...`}
                             value={replyVal}
                             onChange={e => setReplyTexts(prev => ({ ...prev, [msg.id]: e.target.value }))}
                             onKeyDown={e => {

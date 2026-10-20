@@ -162,7 +162,8 @@ export default function AdminDashboard({ className = '' }) {
     reassignAllTables,
     setEmployeeStatus,
     autoBalanceTables,
-    resolveAssistanceCall
+    resolveAssistanceCall,
+    recordActivity
   } = useRestaurant();
 
   // Dynamic live floor table capacity (strictly keeps QR generator and staff roster in sync with floor matrix)
@@ -308,7 +309,21 @@ export default function AdminDashboard({ className = '' }) {
         updateConvexStatus({ orderId: String(orderId), status: nextStage });
       } catch (_) {}
     }
-  }, [liveOrders, updateConvexStatus]);
+
+    if (recordActivity) {
+      recordActivity({
+        actorType: 'admin',
+        actorId: 'admin',
+        actorName: 'Head Desk / Admin',
+        actorRole: 'Admin',
+        actorStaffId: 'ADMIN',
+        actionType: 'STAGE_ADVANCE',
+        description: `Admin advanced Order #${String(orderId).slice(-4)} to "${String(nextStage).toUpperCase()}"`,
+        target: `Order #${String(orderId).slice(-4)}`,
+        details: `Stage set to ${nextStage}`
+      });
+    }
+  }, [liveOrders, updateConvexStatus, recordActivity]);
 
   // Update Table Status
   const handleUpdateTableStatus = useCallback((tableId, newStatus) => {
@@ -552,7 +567,7 @@ export default function AdminDashboard({ className = '' }) {
           {/* TAB: EMPLOYEE VIEW (FULL UNIFIED HUB) */}
           {activeTab === 'employee' && (
             <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
-              <EmployeeView />
+              <EmployeeView isEmbedded={true} />
             </div>
           )}
 

@@ -62,7 +62,7 @@ function generateRandomPin() {
   return String(Math.floor(1000 + Math.random() * 9000));
 }
 
-export default function AdminWaiterConsole() {
+export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeMode = false }) {
   const restaurant = useRestaurant();
   const { socket } = useSocket();
 
@@ -407,13 +407,24 @@ export default function AdminWaiterConsole() {
     if (!messageText.trim() || !messageTarget) return;
 
     const isAlert = modalMessageType === 'alert';
+    const senderFrom = isEmployeeMode ? 'Employee' : 'Admin';
+    const senderName = isEmployeeMode && currentEmployee?.name ? currentEmployee.name : 'Head Desk / Admin';
+    const senderRole = isEmployeeMode && currentEmployee?.role ? currentEmployee.role : 'Admin';
+    const senderEmpId = isEmployeeMode && currentEmployee?.id ? currentEmployee.id : 'admin';
+    const senderStaffId = isEmployeeMode && (currentEmployee?.staffId || currentEmployee?.numericId || currentEmployee?.accountCode)
+      ? String(currentEmployee.staffId || currentEmployee.numericId || currentEmployee.accountCode)
+      : 'ADMIN';
+
     if (restaurant?.sendStaffMessage) {
       restaurant.sendStaffMessage(messageTarget.id, messageText.trim(), {
         urgent: isAlert,
         isAlert: isAlert,
         category: isAlert ? 'alert' : 'normal',
-        from: 'Admin',
-        fromName: 'Head Desk / Admin'
+        from: senderFrom,
+        fromName: senderName,
+        fromRole: senderRole,
+        fromEmployeeId: senderEmpId,
+        fromStaffId: senderStaffId
       });
     }
 
@@ -425,6 +436,11 @@ export default function AdminWaiterConsole() {
         message: messageText.trim(),
         isAlert: isAlert,
         category: isAlert ? 'alert' : 'normal',
+        from: senderFrom,
+        fromName: senderName,
+        fromRole: senderRole,
+        fromEmployeeId: senderEmpId,
+        fromStaffId: senderStaffId,
         timestamp: Date.now()
       });
     }
@@ -445,13 +461,24 @@ export default function AdminWaiterConsole() {
     if (!inlineMessage.trim() || !activeWaiter) return;
 
     const isAlert = inlineMessageType === 'alert';
+    const senderFrom = isEmployeeMode ? 'Employee' : 'Admin';
+    const senderName = isEmployeeMode && currentEmployee?.name ? currentEmployee.name : 'Head Desk / Admin';
+    const senderRole = isEmployeeMode && currentEmployee?.role ? currentEmployee.role : 'Admin';
+    const senderEmpId = isEmployeeMode && currentEmployee?.id ? currentEmployee.id : 'admin';
+    const senderStaffId = isEmployeeMode && (currentEmployee?.staffId || currentEmployee?.numericId || currentEmployee?.accountCode)
+      ? String(currentEmployee.staffId || currentEmployee.numericId || currentEmployee.accountCode)
+      : 'ADMIN';
+
     if (restaurant?.sendStaffMessage) {
       restaurant.sendStaffMessage(activeWaiter.id, inlineMessage.trim(), {
         urgent: isAlert,
         isAlert: isAlert,
         category: isAlert ? 'alert' : 'normal',
-        from: 'Admin',
-        fromName: 'Head Desk / Admin'
+        from: senderFrom,
+        fromName: senderName,
+        fromRole: senderRole,
+        fromEmployeeId: senderEmpId,
+        fromStaffId: senderStaffId
       });
     }
 
@@ -462,6 +489,11 @@ export default function AdminWaiterConsole() {
         message: inlineMessage.trim(),
         isAlert: isAlert,
         category: isAlert ? 'alert' : 'normal',
+        from: senderFrom,
+        fromName: senderName,
+        fromRole: senderRole,
+        fromEmployeeId: senderEmpId,
+        fromStaffId: senderStaffId,
         timestamp: Date.now()
       });
     }
@@ -490,12 +522,18 @@ export default function AdminWaiterConsole() {
               <div>
                 <h1 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
                   <span>On-Field Waiter Console</span>
-                  <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    Admin God-Mode
+                  <span className={`text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                    isEmployeeMode
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  }`}>
+                    {isEmployeeMode ? 'Kitchen Hub Dispatch' : 'Admin God-Mode'}
                   </span>
                 </h1>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Live God-mode oversight across all floor waiters, table custody, and customer assistance calls. Zero login required.
+                  {isEmployeeMode
+                    ? `Kitchen & Staff console active for ${currentEmployee?.name || 'Staff'}. Real-time waiter oversight & pass dispatch.`
+                    : 'Live God-mode oversight across all floor waiters, table custody, and customer assistance calls. Zero login required.'}
                 </p>
               </div>
             </div>
