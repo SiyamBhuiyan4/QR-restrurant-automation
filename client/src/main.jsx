@@ -7,33 +7,26 @@ import App from './App.jsx';
 import './index.css';
 import './styles/motion.css';
 
-const LATEST_BUILD_TAG = '2026-10-20.32-fix-activewaiter-init-error';
+const LATEST_BUILD_TAG = '2026-10-20.33-sync-views-no-suspense';
 
-// Asynchronously purge obsolete caches, service workers, and force clean reload
+// Evict stale caches safely on new builds when online
 (async function checkAndEvictStaleCaches() {
   try {
     const currentTag = localStorage.getItem('smartdine_build_tag');
     if (currentTag !== LATEST_BUILD_TAG) {
-      console.log('[SmartDine] New build detected:', LATEST_BUILD_TAG, 'Purging stale caches...');
-
-      // 1. Delete all CacheStorage entries
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
-      }
-
-      // 2. Unregister existing service workers to ensure immediate fresh fetch
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(registrations.map((r) => r.unregister()));
-      }
-
-      // 3. Mark the build tag only after successful cache eviction
+      console.log('[SmartDine] New build detected:', LATEST_BUILD_TAG);
       localStorage.setItem('smartdine_build_tag', LATEST_BUILD_TAG);
 
-      // 4. Force hard reload from network
-      window.location.reload();
-      return;
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map((r) => r.unregister()));
+        }
+      }
     }
   } catch (err) {
     console.warn('[SmartDine] Cache sync note:', err);
