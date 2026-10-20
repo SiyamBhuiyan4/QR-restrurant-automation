@@ -7,7 +7,7 @@ import App from './App.jsx';
 import './index.css';
 import './styles/motion.css';
 
-const LATEST_BUILD_TAG = '2026-10-20.17-instant-evict-v1';
+const LATEST_BUILD_TAG = '2026-10-20.18-menu-header-minimal-v1';
 
 // Asynchronously purge obsolete caches, service workers, and force clean reload
 (async function checkAndEvictStaleCaches() {

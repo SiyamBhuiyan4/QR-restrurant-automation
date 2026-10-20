@@ -966,51 +966,13 @@ export default function MenuManager({ className = '' }) {
       {/* Top Banner / Actions Bar */}
       <div className="admin-enter bg-[#111827] rounded-2xl border border-[#334155] p-4 sm:p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 text-[#f8fafc]">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-xl sm:text-2xl font-bold text-[#f8fafc] tracking-tight">
-              Menu Management
-            </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              Admin
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center gap-1">
-              <Send className="w-3 h-3 -rotate-45" /> Telegram CDN
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> Convex Cloud DB
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-[#94a3b8] mt-1">
-            Media hosted on Telegram Channel (@Restaurant Media) • Structured text records stored in Convex Cloud Database.
-          </p>
+          <h2 className="text-xl sm:text-2xl font-bold text-[#f8fafc] tracking-tight">
+            Menu Management
+          </h2>
         </div>
 
         {/* Right CTA Actions */}
         <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={loadMenu}
-            disabled={loading}
-            className="p-2.5 rounded-xl border border-[#334155] bg-[#1e293b] hover:bg-[#334155] text-[#f8fafc] transition active:scale-95 cursor-pointer shadow-xs"
-            title="Refresh menu items"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-amber-500' : ''}`} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setNewCategoryData({ name: '', icon: '🍽️', description: '' });
-              setCategoryError('');
-              setIsCategoryModalOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-amber-500/40 bg-[#1e293b] hover:bg-amber-500/15 hover:border-amber-500 text-amber-300 font-semibold text-xs sm:text-sm transition active:scale-95 cursor-pointer shadow-xs"
-            title="Create a new menu category"
-          >
-            <FolderPlus className="w-4 h-4 stroke-[2.2]" />
-            <span>+ Add Category</span>
-          </button>
-
           <button
             type="button"
             onClick={handleOpenAddModal}
@@ -1040,7 +1002,7 @@ export default function MenuManager({ className = '' }) {
       )}
 
       {/* Quick Metrics Bar */}
-      <div className="admin-enter grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4" style={{ '--i': 1 }}>
+      <div className="admin-enter grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4" style={{ '--i': 1 }}>
         <div className="bg-[#111827] p-4 rounded-xl border border-[#334155] shadow-xs">
           <span className="text-xs font-medium text-[#94a3b8]">Total Items</span>
           <div className="text-xl sm:text-2xl font-bold text-[#f8fafc] mt-1">
@@ -1069,15 +1031,6 @@ export default function MenuManager({ className = '' }) {
           </span>
           <div className="text-xl sm:text-2xl font-bold text-[#f8fafc] mt-1">
             {stats.vegCount}
-          </div>
-        </div>
-        <div className="col-span-2 sm:col-span-1 bg-[#111827] p-4 rounded-xl border border-[#334155] shadow-xs">
-          <span className="text-xs font-medium text-sky-400 flex items-center gap-1">
-            <Send className="w-3.5 h-3.5 -rotate-45" /> Telegram CDN
-          </span>
-          <div className="text-xl sm:text-2xl font-bold text-sky-400 mt-1 flex items-baseline gap-1">
-            <span>{stats.tgMediaCount || 0}</span>
-            <span className="text-[10px] text-[#94a3b8] font-normal">hosted</span>
           </div>
         </div>
       </div>
