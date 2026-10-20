@@ -175,7 +175,7 @@ export const mockTables = [
     tableNumber: 1,
     name: 'Table 1',
     status: TABLE_STATUS.ORDER_RUNNING,
-    assignedEmployeeId: 1,
+    assignedEmployeeId: 'emp-042',
     currentOrderId: 'ord-101',
     capacity: 4,
     location: TABLE_LOCATION.MAIN_HALL,
@@ -195,7 +195,7 @@ export const mockTables = [
     tableNumber: 3,
     name: 'Table 3',
     status: TABLE_STATUS.AVAILABLE,
-    assignedEmployeeId: null,
+    assignedEmployeeId: 'emp-042',
     currentOrderId: null,
     capacity: 4,
     location: TABLE_LOCATION.MAIN_HALL,
@@ -205,7 +205,7 @@ export const mockTables = [
     tableNumber: 4,
     name: 'Table 4',
     status: TABLE_STATUS.NEED_ASSISTANCE,
-    assignedEmployeeId: 3,
+    assignedEmployeeId: 'emp-042',
     currentOrderId: null,
     capacity: 6,
     location: TABLE_LOCATION.PATIO,
@@ -299,8 +299,43 @@ export const mockTables = [
 /** @type {Employee[]} */
 export const mockEmployees = [
   {
+    id: 'emp-042',
+    numericId: 42,
+    name: 'Alex M.',
+    staffId: 'Staff #042',
+    username: 'Alex.M / 042',
+    accountCode: 'WAIT-042',
+    passcode: '1001',
+    password: 'dinesync2026',
+    pin: '1001',
+    waiterPin: '1001',
+    initials: 'AM',
+    role: EMPLOYEE_ROLE.FLOOR_SPECIALIST,
+    shift: 'Floor Duty (12:00 - 20:00)',
+    shiftTime: '12:00 - 20:00',
+    status: EMPLOYEE_STATUS.ACTIVE,
+    assignedTables: [1, 3, 4],
+    assignedTableIds: [1, 3, 4],
+    color: 'from-amber-500 to-orange-600',
+    avatarBg: 'from-amber-500 to-orange-600',
+    avatarColor: '#F59E0B',
+    avatar: {
+      initials: 'AM',
+      color: '#F59E0B',
+      bg: '#FFFBEB',
+    },
+    activePickupsCount: 0,
+    avgResponseTimeSec: 45,
+    phone: '+880 1700-000042',
+    email: 'alex.m@restaurant.local',
+    hiredAt: '2026-01-01',
+  },
+  {
     id: 1,
+    numericId: 1,
     name: 'Rakib Ahmed',
+    staffId: 'Staff #101',
+    username: 'rakib.ahmed',
     role: EMPLOYEE_ROLE.FLOOR_SPECIALIST,
     avatar: {
       initials: 'RA',
@@ -310,7 +345,8 @@ export const mockEmployees = [
     initials: 'RA',
     avatarColor: '#3B82F6',
     status: EMPLOYEE_STATUS.BUSY,
-    assignedTableIds: [1, 5],
+    assignedTables: [5],
+    assignedTableIds: [5],
     activePickupsCount: 0,
     avgResponseTimeSec: 85,
     phone: '+880 1712-345001',
@@ -321,7 +357,10 @@ export const mockEmployees = [
   },
   {
     id: 2,
+    numericId: 2,
     name: 'Hasan Mahmud',
+    staffId: 'Staff #102',
+    username: 'hasan.mahmud',
     role: EMPLOYEE_ROLE.SENIOR_HOST,
     avatar: {
       initials: 'HM',
@@ -331,6 +370,7 @@ export const mockEmployees = [
     initials: 'HM',
     avatarColor: '#10B981',
     status: EMPLOYEE_STATUS.ACTIVE,
+    assignedTables: [2, 10],
     assignedTableIds: [2, 10],
     activePickupsCount: 1,
     avgResponseTimeSec: 64,
@@ -342,7 +382,10 @@ export const mockEmployees = [
   },
   {
     id: 3,
+    numericId: 3,
     name: 'Priya Sen',
+    staffId: 'Staff #103',
+    username: 'priya.sen',
     role: EMPLOYEE_ROLE.OPERATIONS_LEAD,
     avatar: {
       initials: 'PS',
@@ -352,7 +395,8 @@ export const mockEmployees = [
     initials: 'PS',
     avatarColor: '#8B5CF6',
     status: EMPLOYEE_STATUS.BUSY,
-    assignedTableIds: [4, 9],
+    assignedTables: [9],
+    assignedTableIds: [9],
     activePickupsCount: 0,
     avgResponseTimeSec: 52,
     phone: '+880 1913-789003',
@@ -363,7 +407,10 @@ export const mockEmployees = [
   },
   {
     id: 4,
+    numericId: 4,
     name: 'Tanvir Rahman',
+    staffId: 'Staff #104',
+    username: 'tanvir.rahman',
     role: EMPLOYEE_ROLE.FLOOR_SPECIALIST,
     avatar: {
       initials: 'TR',
@@ -373,6 +420,7 @@ export const mockEmployees = [
     initials: 'TR',
     avatarColor: '#F59E0B',
     status: EMPLOYEE_STATUS.ACTIVE,
+    assignedTables: [7],
     assignedTableIds: [7],
     activePickupsCount: 1,
     avgResponseTimeSec: 94,
@@ -384,7 +432,10 @@ export const mockEmployees = [
   },
   {
     id: 5,
+    numericId: 5,
     name: 'Sadia Islam',
+    staffId: 'Staff #105',
+    username: 'sadia.islam',
     role: EMPLOYEE_ROLE.SENIOR_HOST,
     avatar: {
       initials: 'SI',
@@ -394,6 +445,7 @@ export const mockEmployees = [
     initials: 'SI',
     avatarColor: '#EC4899',
     status: EMPLOYEE_STATUS.BREAK,
+    assignedTables: [12],
     assignedTableIds: [12],
     activePickupsCount: 0,
     avgResponseTimeSec: 78,
@@ -427,7 +479,7 @@ export const mockLiveOrders = [
     tax: 5.20,
     total: 57.20,
     kitchenFlowStage: KITCHEN_STAGE.PREPARING,
-    assignedEmployeeId: 1,
+    assignedEmployeeId: 'emp-042',
   },
   {
     id: 'ord-102',
@@ -1178,7 +1230,18 @@ export function getTableById(tableId, tables = mockTables) {
  * @returns {Employee|undefined}
  */
 export function getEmployeeById(employeeId, employees = mockEmployees) {
-  return employees.find(e => Number(e.id) === Number(employeeId));
+  if (employeeId == null) return undefined;
+  const idStr = String(employeeId).trim().toLowerCase();
+  return employees.find(e => {
+    if (String(e.id).toLowerCase() === idStr) return true;
+    if (String(e.numericId) === idStr) return true;
+    if (String(e.staffId || '').toLowerCase() === idStr) return true;
+    if (String(e.accountCode || '').toLowerCase() === idStr) return true;
+    if (String(e.username || '').toLowerCase() === idStr) return true;
+    const num = Number(employeeId);
+    if (!isNaN(num) && (Number(e.numericId) === num || Number(e.id) === num)) return true;
+    return false;
+  });
 }
 
 /**
@@ -1209,7 +1272,16 @@ export function getNoteById(noteId, notes = mockCustomerNotes) {
  * @returns {Table[]}
  */
 export function getTablesForEmployee(employeeId, tables = mockTables) {
-  return tables.filter(t => Number(t.assignedEmployeeId) === Number(employeeId));
+  if (employeeId == null) return [];
+  const idStr = String(employeeId).trim().toLowerCase();
+  const num = Number(employeeId);
+  return tables.filter(t => {
+    if (t.assignedEmployeeId == null) return false;
+    const targetStr = String(t.assignedEmployeeId).trim().toLowerCase();
+    if (targetStr === idStr) return true;
+    if (!isNaN(num) && Number(t.assignedEmployeeId) === num) return true;
+    return false;
+  });
 }
 
 /**
@@ -1219,7 +1291,16 @@ export function getTablesForEmployee(employeeId, tables = mockTables) {
  * @returns {LiveOrder[]}
  */
 export function getOrdersForEmployee(employeeId, orders = mockLiveOrders) {
-  return orders.filter(o => Number(o.assignedEmployeeId) === Number(employeeId));
+  if (employeeId == null) return [];
+  const idStr = String(employeeId).trim().toLowerCase();
+  const num = Number(employeeId);
+  return orders.filter(o => {
+    if (o.assignedEmployeeId == null) return false;
+    const targetStr = String(o.assignedEmployeeId).trim().toLowerCase();
+    if (targetStr === idStr) return true;
+    if (!isNaN(num) && Number(o.assignedEmployeeId) === num) return true;
+    return false;
+  });
 }
 
 /**
@@ -1229,7 +1310,186 @@ export function getOrdersForEmployee(employeeId, orders = mockLiveOrders) {
  * @returns {CustomerIssueNote[]}
  */
 export function getNotesForEmployee(employeeId, notes = mockCustomerNotes) {
-  return notes.filter(n => Number(n.assignedEmployeeId) === Number(employeeId));
+  if (employeeId == null) return [];
+  const idStr = String(employeeId).trim().toLowerCase();
+  const num = Number(employeeId);
+  return notes.filter(n => {
+    if (n.assignedEmployeeId == null) return false;
+    const targetStr = String(n.assignedEmployeeId).trim().toLowerCase();
+    if (targetStr === idStr) return true;
+    if (!isNaN(num) && Number(n.assignedEmployeeId) === num) return true;
+    return false;
+  });
+}
+
+/**
+ * Helper to match an employee record against user identifiers
+ * Supports: username ('Alex.M / 042', 'alex'), accountCode ('WAIT-042', '042', '42'),
+ * staffId ('Staff #042'), id ('emp-042'), firstName ('Alex'), name ('Alex M.')
+ */
+export function matchesEmployeeIdentifier(emp, rawInput) {
+  if (!emp || rawInput == null) return false;
+  const input = String(rawInput).trim();
+  const inputLower = input.toLowerCase();
+  const inputCompact = inputLower.replace(/[^a-z0-9]/g, '');
+
+  // 1. Direct exact / case-insensitive matches
+  if (emp.username && String(emp.username).toLowerCase() === inputLower) return true;
+  if (emp.id && String(emp.id).toLowerCase() === inputLower) return true;
+  if (emp.accountCode && String(emp.accountCode).toLowerCase() === inputLower) return true;
+  if (emp.staffId && String(emp.staffId).toLowerCase() === inputLower) return true;
+  if (emp.name && String(emp.name).toLowerCase() === inputLower) return true;
+  if (emp.email && String(emp.email).toLowerCase() === inputLower) return true;
+
+  // 2. Numeric ID comparison (e.g. "42", "042", 42)
+  const inputNum = parseInt(input, 10);
+  if (!isNaN(inputNum)) {
+    if (emp.numericId != null && Number(emp.numericId) === inputNum) return true;
+    if (!isNaN(Number(emp.id)) && Number(emp.id) === inputNum) return true;
+  }
+  if (emp.numericId != null) {
+    const numPad = String(emp.numericId).padStart(3, '0');
+    const numRaw = String(emp.numericId);
+    if (input === numPad || input === numRaw) return true;
+  }
+
+  // 3. Compact normalized match (removes spaces, slashes, dashes, dots, hash)
+  if (inputCompact) {
+    const userCompact = String(emp.username || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (userCompact && (userCompact === inputCompact || (inputCompact.length >= 3 && userCompact.includes(inputCompact)))) {
+      return true;
+    }
+    const staffCompact = String(emp.staffId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (staffCompact && (staffCompact === inputCompact || staffCompact.includes(inputCompact))) {
+      return true;
+    }
+    const codeCompact = String(emp.accountCode || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (codeCompact && codeCompact === inputCompact) {
+      return true;
+    }
+    const idCompact = String(emp.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (idCompact && idCompact === inputCompact) {
+      return true;
+    }
+  }
+
+  // 4. Prefix-agnostic numeric match (e.g. "WAIT-101" vs "101", "WAIT-042" vs "042")
+  const codeNumeric = String(emp.accountCode || '').replace(/^[a-z]+-?/i, '');
+  const idNumeric = String(emp.id || '').replace(/^[a-z]+-?/i, '');
+  const inputDigits = input.replace(/^[a-z]+-?/i, '');
+  if (inputDigits && (codeNumeric === inputDigits || idNumeric === inputDigits)) return true;
+  if (inputDigits && (parseInt(codeNumeric, 10) === parseInt(inputDigits, 10) || parseInt(idNumeric, 10) === parseInt(inputDigits, 10))) return true;
+
+  // 5. First name match (e.g. "alex" matching "Alex M.", "rakib" matching "Rakib Ahmed")
+  const nameParts = String(emp.name || '').toLowerCase().split(/\s+/);
+  if (nameParts.length > 0 && nameParts[0] === inputLower) return true;
+
+  // 6. Username component match (e.g. "alex" matching "Alex.M / 042")
+  if (emp.username) {
+    const userParts = String(emp.username).toLowerCase().split(/[\s./]+/);
+    if (userParts.some(part => part && part === inputLower)) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Helper to match an employee's passcode / password / pin
+ */
+export function matchesEmployeePasscode(emp, rawPass) {
+  if (!emp || rawPass == null) return false;
+  const cleanPass = String(rawPass).trim();
+  if (!cleanPass) return false;
+
+  const validPasscodes = [
+    emp.passcode,
+    emp.password,
+    emp.pin,
+    emp.waiterPin
+  ].filter(Boolean).map(p => String(p).trim());
+
+  return validPasscodes.includes(cleanPass);
+}
+
+/**
+ * Authenticate waiter against roster credentials
+ * Supports identifier ('Alex.M / 042', 'alex', '042', 'WAIT-042', 'emp-042', etc.)
+ * against passcode/password ('dinesync2026' or '1001')
+ * Returns { success: true, employee } and persists to localStorage
+ */
+export function authenticateWaiter(identifier, passcode, employees = mockEmployees) {
+  if (!identifier || passcode == null) {
+    return { success: false, error: 'Invalid ID or PIN' };
+  }
+
+  const cleanPass = String(passcode).trim();
+  if (!cleanPass) {
+    return { success: false, error: 'Invalid ID or PIN' };
+  }
+
+  const employee = employees.find(emp => matchesEmployeeIdentifier(emp, identifier));
+  if (!employee) {
+    return { success: false, error: 'Invalid ID or PIN' };
+  }
+
+  if (!matchesEmployeePasscode(employee, cleanPass)) {
+    return { success: false, error: 'Invalid ID or PIN' };
+  }
+
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const sessionPayload = {
+        ...employee,
+        employeeId: employee.id,
+        tables: (employee.assignedTables || employee.assignedTableIds || employee.tables || []).map(Number),
+        assignedTables: (employee.assignedTables || employee.assignedTableIds || employee.tables || []).map(Number),
+        waiterCode: employee.accountCode || employee.waiterCode,
+        pin: employee.passcode || employee.pin || '1001',
+        waiterPin: employee.passcode || employee.pin || '1001',
+        loginTime: Date.now()
+      };
+      localStorage.setItem('smartdine_waiter_session', JSON.stringify(sessionPayload));
+      localStorage.setItem('smartdine_current_waiter', JSON.stringify(sessionPayload));
+      localStorage.setItem('smartdine_logged_in_waiter', JSON.stringify(sessionPayload));
+      localStorage.setItem('smartdine_active_employee_id', String(employee.id));
+    } catch (_) {}
+  }
+
+  return {
+    success: true,
+    employee
+  };
+}
+
+/**
+ * Get assigned employee for a given table number
+ * Returns Alex M. for tables 1, 3, 4
+ */
+export function getAssignedEmployeeForTable(tableNumber, employees = mockEmployees, tables = mockTables) {
+  const tblNum = Number(tableNumber);
+  if (!tblNum || isNaN(tblNum)) return null;
+
+  // 1. Direct table assignment record check
+  if (Array.isArray(tables)) {
+    const table = tables.find(t => Number(t.tableNumber || t.id) === tblNum);
+    if (table && table.assignedEmployeeId != null) {
+      const emp = employees.find(e =>
+        String(e.id) === String(table.assignedEmployeeId) ||
+        String(e.numericId) === String(table.assignedEmployeeId) ||
+        (e.staffId && String(e.staffId) === String(table.assignedEmployeeId))
+      );
+      if (emp) return emp;
+    }
+  }
+
+  // 2. Check employee assignedTables / assignedTableIds
+  const empByTables = employees.find(e => {
+    const list = e.assignedTables || e.assignedTableIds || e.tables;
+    return Array.isArray(list) && list.map(Number).includes(tblNum);
+  });
+  if (empByTables) return empByTables;
+
+  return null;
 }
 
 /**
@@ -1309,4 +1569,8 @@ export default {
   getNotesForEmployee,
   getEmployeeOperationalSummary,
   formatCurrency,
+  matchesEmployeeIdentifier,
+  matchesEmployeePasscode,
+  authenticateWaiter,
+  getAssignedEmployeeForTable,
 };

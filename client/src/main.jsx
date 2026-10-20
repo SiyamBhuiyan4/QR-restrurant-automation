@@ -7,7 +7,7 @@ import App from './App.jsx';
 import './index.css';
 import './styles/motion.css';
 
-const LATEST_BUILD_TAG = '2026-10-20.22-waiter-login-and-routing-v1';
+const LATEST_BUILD_TAG = '2026-10-20.25-dinesync-staff-16x9-blueprint-v1';
 
 // Asynchronously purge obsolete caches, service workers, and force clean reload
 (async function checkAndEvictStaleCaches() {

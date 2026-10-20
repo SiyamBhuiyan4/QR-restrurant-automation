@@ -29,11 +29,16 @@ import {
   ShieldAlert,
   BadgeCheck
 } from 'lucide-react';
+import DineSyncLoginScreen from '../components/waiter/DineSyncLoginScreen';
 import { useSocket, useSocketListener } from '../context/SocketContext';
 import { useRestaurant, DEFAULT_EMPLOYEE_ROSTER } from '../context/RestaurantContext';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
+import DineSyncStaffBlueprint from '../components/DineSyncStaffBlueprint';
 import '../styles/staff.css';
+
+// Re-export modern DineSync authentication screen for convenience
+export { DineSyncLoginScreen };
 
 /**
  * High-fidelity restaurant desk calling chime synthesizer using Web Audio API.
@@ -321,7 +326,13 @@ export const DEFAULT_DEMO_CALLS = [
  * - Shake animation & red error feedback on incorrect PIN
  * - Audio confirmation chime synthesis on successful login
  */
-export function WaiterLoginScreen({ waiters = DEFAULT_FLOOR_EMPLOYEES, onLoginSuccess, bellSynthesizer }) {
+export function WaiterLoginScreen({
+  waiters = DEFAULT_FLOOR_EMPLOYEES,
+  onLoginSuccess,
+  bellSynthesizer,
+  onOpenBlueprint,
+  onSwitchToDineSync
+}) {
   const [loginMode, setLoginMode] = useState('quick'); // 'quick' | 'account'
   const [selectedWaiter, setSelectedWaiter] = useState(null);
   const [accountIdInput, setAccountIdInput] = useState('');
@@ -501,6 +512,38 @@ export function WaiterLoginScreen({ waiters = DEFAULT_FLOOR_EMPLOYEES, onLoginSu
             </p>
           </div>
         </div>
+
+        {/* DineSync Staff Blueprint Quick Launcher */}
+        {onOpenBlueprint && (
+          <div className="flex items-center justify-center pt-1">
+            <button
+              type="button"
+              onClick={onOpenBlueprint}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 hover:from-amber-500/25 hover:to-orange-500/25 border border-amber-500/40 text-amber-300 text-xs font-black shadow-lg shadow-amber-500/10 transition active:scale-95 cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>DineSync Staff 16:9 Blueprint Showcase</span>
+              <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 ml-1">
+                View
+              </span>
+            </button>
+          </div>
+        )}
+
+        {/* Switch to DineSync Staff Authentication Mode */}
+        {onSwitchToDineSync && (
+          <div className="flex items-center justify-center pt-1">
+            <button
+              type="button"
+              onClick={onSwitchToDineSync}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-black shadow-lg shadow-amber-500/10 transition active:scale-95 cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>Switch to Modern DineSync Staff Login</span>
+              <span className="text-amber-400 font-bold ml-1">➔</span>
+            </button>
+          </div>
+        )}
 
         {/* Dual Mode Switcher Tabs */}
         <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-900/90 border border-slate-800">
@@ -994,6 +1037,56 @@ export function WaiterLoginScreen({ waiters = DEFAULT_FLOOR_EMPLOYEES, onLoginSu
 }
 
 export default function WaiterPanel() {
+  // DineSync View Mode: 'blueprint' (16:9 double-mobile mockup) | 'handheld' (direct mobile) | 'console' (live on-floor console)
+  const [viewMode, setViewMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlMode = params.get('mode') || params.get('view');
+      if (urlMode === 'console' || urlMode === 'legacy' || urlMode === 'live') return 'console';
+      if (urlMode === 'handheld') return 'handheld';
+      if (urlMode === 'blueprint') return 'blueprint';
+      const saved = localStorage.getItem('smartdine_waiter_view_mode');
+      if (saved) return saved;
+    }
+    return 'blueprint';
+  });
+
+  const handleSwitchToConsole = useCallback(() => {
+    setViewMode('console');
+    try {
+      localStorage.setItem('smartdine_waiter_view_mode', 'console');
+      const url = new URL(window.location.href);
+      url.searchParams.set('view', 'console');
+      window.history.replaceState({}, '', url.toString());
+    } catch (_) {}
+  }, []);
+
+  const handleSwitchToBlueprint = useCallback((mode = 'blueprint') => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('smartdine_waiter_view_mode', mode);
+      const url = new URL(window.location.href);
+      url.searchParams.set('view', mode);
+      window.history.replaceState({}, '', url.toString());
+    } catch (_) {}
+  }, []);
+
+  // Modern DineSync Login flavor vs legacy pinpad
+  const [useDineSyncLogin, setUseDineSyncLogin] = useState(() => {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('smartdine_waiter_login_flavor');
+      if (saved === 'legacy') return false;
+    }
+    return true;
+  });
+
+  const handleToggleLoginFlavor = useCallback((flavor) => {
+    setUseDineSyncLogin(flavor === 'dinesync');
+    try {
+      localStorage.setItem('smartdine_waiter_login_flavor', flavor);
+    } catch (_) {}
+  }, []);
+
   // Table Assignments State (Floor Employee Roster)
   const [employeeRoster, setEmployeeRoster] = useState(() => {
     if (typeof localStorage !== 'undefined') {
@@ -1857,14 +1950,39 @@ export default function WaiterPanel() {
   }, [currentWaiter]);
 
   // =========================================================================
+  // DINESYNC STAFF 16:9 BLUEPRINT / HANDHELD VIEW (Primary Mockup Showcase)
+  // =========================================================================
+  if (viewMode === 'blueprint' || viewMode === 'handheld') {
+    return (
+      <DineSyncStaffBlueprint
+        initialDisplayMode={viewMode === 'handheld' ? 'handheld' : 'blueprint'}
+        onSwitchToLegacy={handleSwitchToConsole}
+      />
+    );
+  }
+
+  // =========================================================================
   // LOGIN / AUTHENTICATION GATE VIEW (When !currentWaiter)
   // =========================================================================
   if (!currentWaiter) {
+    if (useDineSyncLogin) {
+      return (
+        <DineSyncLoginScreen
+          waiters={employeeRoster}
+          onLoginSuccess={handleLoginSuccess}
+          bellSynthesizer={bellSynthesizer}
+          onOpenBlueprint={() => handleSwitchToBlueprint('blueprint')}
+          onSwitchToLegacy={() => handleToggleLoginFlavor('legacy')}
+        />
+      );
+    }
     return (
       <WaiterLoginScreen
         waiters={employeeRoster}
         onLoginSuccess={handleLoginSuccess}
         bellSynthesizer={bellSynthesizer}
+        onOpenBlueprint={() => handleSwitchToBlueprint('blueprint')}
+        onSwitchToDineSync={() => handleToggleLoginFlavor('dinesync')}
       />
     );
   }
@@ -1919,6 +2037,17 @@ export default function WaiterPanel() {
 
           {/* Right Action Controls: Simulate, Tables Matrix & Switch Waiter / Logout */}
           <div className="flex items-center flex-wrap gap-2 w-full md:w-auto justify-end">
+            {/* DineSync Staff Blueprint Switcher */}
+            <button
+              type="button"
+              onClick={() => handleSwitchToBlueprint('blueprint')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 hover:from-amber-500/25 hover:to-orange-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold transition active:scale-95 cursor-pointer shadow-sm"
+              title="Showcase DineSync Staff 16:9 Double-Mobile Mockup Blueprint"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>DineSync Blueprint (16:9)</span>
+            </button>
+
             {/* Quick Simulate My Table Call */}
             <button
               type="button"
