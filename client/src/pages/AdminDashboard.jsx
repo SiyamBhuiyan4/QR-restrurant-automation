@@ -558,7 +558,7 @@ export default function AdminDashboard({ className = '' }) {
 
           {/* TAB 4: EMPLOYEE & KITCHEN HUB (KDS) */}
           {activeTab === 'kds' && (
-            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md bg-black">
+            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-white/[0.06] shadow-md bg-[#0A0F1D]">
               <KitchenDisplay isEmbedded={true} />
             </div>
           )}

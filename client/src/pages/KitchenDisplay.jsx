@@ -376,44 +376,126 @@ export default function KitchenDisplay({
       }
       const demoList = [
         {
-          id: 'ord_101',
-          order_number: '101',
-          table_no: '4',
+          id: 'ord_kbbk',
+          order_number: 'KBBK',
+          table_no: '1',
           order_type: 'dine_in',
           status: 'pending',
           kitchenFlowStage: 'placed',
-          created_at: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+          placedTime: '03:06 PM',
+          timeElapsedMinutes: 1285,
+          created_at: new Date(Date.now() - 1285 * 60 * 1000).toISOString(),
           items: [
-            { name: 'Wagyu Beef Burger', quantity: 2, notes: 'Medium rare, no onions', options: ['Brioche Bun', 'Cheddar'] },
-            { name: 'Truffle Parmesan Fries', quantity: 1, notes: 'Extra crispy' }
-          ],
-          notes: 'Customer at table requested prompt preparation.'
-        },
-        {
-          id: 'ord_102',
-          order_number: '102',
-          table_no: '12',
-          order_type: 'dine_in',
-          status: 'preparing',
-          kitchenFlowStage: 'preparing',
-          created_at: new Date(Date.now() - 13 * 60 * 1000).toISOString(), // >10m -> yellow warning
-          voice_note_url: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg',
-          items: [
-            { name: 'Pan-Seared Salmon', quantity: 1, notes: 'Lemon butter sauce on the side' },
-            { name: 'Avocado Quinoa Salad', quantity: 1 }
+            { name: 'The Signature Wagyu Smash', category: 'Signature Burgers', quantity: 1, notes: 'Medium rare, house sauce' },
+            { name: 'Grilled Herb Ribeye Steak', category: 'Prime Steaks', quantity: 1, notes: 'Chef special garlic butter' },
+            { name: 'Creamy Truffle Tagliatelle', category: 'Handmade Pasta', quantity: 1, notes: 'Extra shaved black truffle' }
           ]
         },
         {
-          id: 'ord_103',
-          order_number: '103',
-          table_no: '7',
+          id: 'ord_krsp',
+          order_number: 'KRSP',
+          table_no: '2',
           order_type: 'dine_in',
-          status: 'ready',
-          kitchenFlowStage: 'ready_pickup',
-          created_at: new Date(Date.now() - 22 * 60 * 1000).toISOString(), // >20m -> red critical
+          status: 'pending',
+          kitchenFlowStage: 'placed',
+          placedTime: '03:06 PM',
+          timeElapsedMinutes: 1285,
+          created_at: new Date(Date.now() - 1285 * 60 * 1000).toISOString(),
           items: [
-            { name: 'Wood-Fired Margherita Pizza', quantity: 2, notes: 'Extra fresh basil leaves' },
-            { name: 'House Berry Iced Tea', quantity: 2 }
+            { name: 'The Signature Wagyu Smash', category: 'Signature Burgers', quantity: 1, notes: 'Extra aged cheddar' }
+          ]
+        },
+        {
+          id: 'ord_kmwb',
+          order_number: 'KMWB',
+          table_no: '3',
+          order_type: 'dine_in',
+          status: 'pending',
+          kitchenFlowStage: 'placed',
+          placedTime: '03:06 PM',
+          timeElapsedMinutes: 1285,
+          created_at: new Date(Date.now() - 1285 * 60 * 1000).toISOString(),
+          items: [
+            { name: 'Warm Molten Lava Cake', category: 'Artisan Desserts', quantity: 1, notes: 'Vanilla bean gelato' }
+          ]
+        },
+        {
+          id: 'ord_kd7p',
+          order_number: 'KD7P',
+          table_no: '5',
+          order_type: 'dine_in',
+          status: 'pending',
+          kitchenFlowStage: 'placed',
+          placedTime: '03:06 PM',
+          timeElapsedMinutes: 1285,
+          created_at: new Date(Date.now() - 1285 * 60 * 1000).toISOString(),
+          items: [
+            { name: 'Grilled Herb Ribeye Steak', category: 'Prime Steaks', quantity: 1 },
+            { name: 'Truffle Parmesan Fries', category: 'Artisan Sides', quantity: 1, notes: 'Extra crispy' }
+          ]
+        },
+        {
+          id: 'ord_kpg1',
+          order_number: 'KPG1',
+          table_no: '6',
+          order_type: 'dine_in',
+          status: 'preparing',
+          kitchenFlowStage: 'preparing',
+          created_at: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
+          voice_note_url: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg',
+          items: [
+            { name: 'Pan-Seared Chilean Seabass', category: 'Fresh Catch', quantity: 1, notes: 'Lemon butter emulsion' },
+            { name: 'Wild Mushroom Risotto', category: 'Italian Classics', quantity: 1 }
+          ]
+        },
+        {
+          id: 'ord_kpg2',
+          order_number: 'KPG2',
+          table_no: '8',
+          order_type: 'dine_in',
+          status: 'preparing',
+          kitchenFlowStage: 'preparing',
+          created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+          items: [
+            { name: 'Smoked Beef Brisket', category: 'Smoked Specialties', quantity: 1, notes: 'House BBQ glaze' }
+          ]
+        },
+        {
+          id: 'ord_kpg3',
+          order_number: 'KPG3',
+          table_no: '10',
+          order_type: 'dine_in',
+          status: 'preparing',
+          kitchenFlowStage: 'preparing',
+          created_at: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+          items: [
+            { name: 'Artisanal Margherita Pizza', category: 'Wood-Fired Pizza', quantity: 1, notes: 'Fresh buffalo mozzarella' },
+            { name: 'Caesar Salad', category: 'Fresh Greens', quantity: 1 }
+          ]
+        },
+        {
+          id: 'ord_kpg4',
+          order_number: 'KPG4',
+          table_no: '11',
+          order_type: 'dine_in',
+          status: 'preparing',
+          kitchenFlowStage: 'preparing',
+          created_at: new Date(Date.now() - 9 * 60 * 1000).toISOString(),
+          items: [
+            { name: 'Creamy Truffle Tagliatelle', category: 'Handmade Pasta', quantity: 1, notes: 'Parmigiano Reggiano' }
+          ]
+        },
+        {
+          id: 'ord_kcp1',
+          order_number: 'KCP1',
+          table_no: '4',
+          order_type: 'dine_in',
+          status: 'completed',
+          kitchenFlowStage: 'served',
+          created_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+          items: [
+            { name: 'Balado Sauce Wings', category: 'Starters', quantity: 2 },
+            { name: 'House Mojito', category: 'Beverages', quantity: 2 }
           ]
         }
       ];
@@ -583,16 +665,18 @@ export default function KitchenDisplay({
     <div
       className={`staff-root ${
         isEmbedded ? 'w-full flex-1' : 'min-h-screen'
-      } bg-slate-950 text-slate-100 flex flex-col font-sans select-none antialiased ${className}`}
+      } text-slate-100 flex flex-col font-sans select-none antialiased ${className}`}
+      style={{ backgroundColor: '#0A0F1D', fontFamily: "'Inter', sans-serif" }}
     >
       {/* =========================================================================
           TOP KITCHEN HEADER / TOOLBAR
           ========================================================================= */}
       {showHeader && (
         <header
-          className={`sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 ${
-            isEmbedded ? 'px-3 sm:px-4 py-2 shadow-md' : 'shadow-xl px-4 py-2.5 border-b-2'
+          className={`sticky top-0 z-30 backdrop-blur-md border-b border-white/[0.06] ${
+            isEmbedded ? 'px-3 sm:px-4 py-2 shadow-md' : 'shadow-xl px-4 py-2.5 border-b'
           }`}
+          style={{ backgroundColor: '#0E1424' }}
         >
           <div className="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-2.5 sm:gap-3">
             
@@ -817,7 +901,7 @@ export default function KitchenDisplay({
              ===================================================================== */
           <div className="flex flex-col gap-4 flex-1">
             {/* Category Filter Navigation Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/80 p-2 sm:p-2.5 rounded-2xl border border-slate-800 shadow-md">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0E1424] p-2.5 sm:p-3 rounded-2xl border border-white/[0.06] shadow-md">
               <div className="flex flex-wrap items-center gap-2">
                 {/* 1. All Active */}
                 <button
@@ -825,8 +909,8 @@ export default function KitchenDisplay({
                   onClick={() => setActiveTab('all')}
                   className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
                     activeTab === 'all'
-                      ? 'bg-white text-slate-950 shadow-md shadow-white/10 ring-2 ring-white/30'
-                      : 'bg-slate-950/70 hover:bg-slate-800 text-slate-300 border border-slate-850 hover:text-white'
+                      ? 'bg-white text-slate-950 shadow-md shadow-white/10 ring-2 ring-white/20'
+                      : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 border border-slate-800/80 hover:text-white'
                   }`}
                 >
                   <Layers className={`w-4 h-4 ${activeTab === 'all' ? 'text-slate-950' : 'text-slate-400'}`} />
@@ -848,8 +932,8 @@ export default function KitchenDisplay({
                   onClick={() => setActiveTab('pending')}
                   className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
                     activeTab === 'pending'
-                      ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 ring-2 ring-amber-400/50'
-                      : 'bg-slate-950/70 hover:bg-slate-800 text-slate-300 border border-slate-850 hover:text-amber-300'
+                      ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 ring-2 ring-amber-400/40'
+                      : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 border border-slate-800/80 hover:text-amber-300'
                   }`}
                 >
                   <span className={`w-2 h-2 rounded-full ${activeTab === 'pending' ? 'bg-slate-950' : 'bg-amber-400'} animate-ping`} />
@@ -871,8 +955,8 @@ export default function KitchenDisplay({
                   onClick={() => setActiveTab('preparing')}
                   className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
                     activeTab === 'preparing'
-                      ? 'bg-orange-500 text-slate-950 shadow-md shadow-orange-500/20 ring-2 ring-orange-400/50'
-                      : 'bg-slate-950/70 hover:bg-slate-800 text-slate-300 border border-slate-850 hover:text-orange-300'
+                      ? 'bg-orange-500 text-slate-950 shadow-md shadow-orange-500/20 ring-2 ring-orange-400/40'
+                      : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 border border-slate-800/80 hover:text-orange-300'
                   }`}
                 >
                   <Flame className={`w-4 h-4 ${activeTab === 'preparing' ? 'text-slate-950 animate-bounce' : 'text-orange-400'}`} />
@@ -894,8 +978,8 @@ export default function KitchenDisplay({
                   onClick={() => setActiveTab('ready')}
                   className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
                     activeTab === 'ready'
-                      ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 ring-2 ring-emerald-400/50'
-                      : 'bg-slate-950/70 hover:bg-slate-800 text-slate-300 border border-slate-850 hover:text-emerald-300'
+                      ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 ring-2 ring-emerald-400/40'
+                      : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 border border-slate-800/80 hover:text-emerald-300'
                   }`}
                 >
                   <Sparkles className={`w-4 h-4 ${activeTab === 'ready' ? 'text-slate-950' : 'text-emerald-400'}`} />
@@ -917,8 +1001,8 @@ export default function KitchenDisplay({
                   onClick={() => setActiveTab('completed')}
                   className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
                     activeTab === 'completed'
-                      ? 'bg-slate-700 text-white shadow-md shadow-slate-700/20 ring-2 ring-slate-500/50'
-                      : 'bg-slate-950/70 hover:bg-slate-800 text-slate-300 border border-slate-850 hover:text-slate-100'
+                      ? 'bg-slate-700 text-white shadow-md shadow-slate-700/20 ring-2 ring-slate-500/40'
+                      : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 border border-slate-800/80 hover:text-slate-100'
                   }`}
                 >
                   <CheckCircle2 className={`w-4 h-4 ${activeTab === 'completed' ? 'text-emerald-400' : 'text-slate-400'}`} />
@@ -935,12 +1019,12 @@ export default function KitchenDisplay({
                 </button>
               </div>
 
-              {/* Right Side: Active search filter indicator or view badge */}
-              <div className="flex items-center gap-2 text-xs">
+              {/* Right Indicator: Pulsing emerald dot + "Live Stream" label */}
+              <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-300">
                 {searchQuery && (
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold">
                     <Filter className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Filtered by: &quot;{searchQuery}&quot;</span>
+                    <span>Filtered: &quot;{searchQuery}&quot;</span>
                     <button
                       type="button"
                       onClick={() => setSearchQuery('')}
@@ -951,9 +1035,12 @@ export default function KitchenDisplay({
                     </button>
                   </div>
                 )}
-                <div className="hidden md:flex items-center gap-1.5 text-slate-500 text-xs font-semibold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span>Live Stream</span>
+                <div className="flex items-center gap-2 bg-[#0A0F1D] px-3 py-1.5 rounded-xl border border-white/[0.06]">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-emerald-400 font-bold tracking-wide">Live Stream</span>
                 </div>
               </div>
             </div>
@@ -1021,7 +1108,7 @@ export default function KitchenDisplay({
               }
 
               return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {displayList.map((order) => (
                     <OrderCard
                       key={order.id || order._id}

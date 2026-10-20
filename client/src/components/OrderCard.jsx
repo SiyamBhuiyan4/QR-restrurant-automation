@@ -15,21 +15,14 @@ import AudioPlayer from './AudioPlayer.jsx';
 import '../styles/staff.css';
 
 /**
- * OrderCard Component
+ * OrderCard Component - Bistro Modern KDS Ticket Architecture
  * 
- * High-contrast Kitchen Order Ticket (KOT) designed for kitchen monitors and tablets.
- * 
- * Features:
- * - Table Badge: Large, high-contrast, easily visible from across the kitchen
- * - Order Number & Time placed
- * - Elapsed live timer: Live ticking, color-shifts (normal -> yellow after 10m -> red after 20m)
- * - Dish list: Bold quantity badges, dish names, highlighted custom text notes
- * - Voice Note: Embedded AudioPlayer with prominent customer voice instruction badge
- * - Status transition buttons:
- *    - pending -> "👨‍🍳 Start Preparing"
- *    - preparing -> "✅ Ready for Pickup"
- *    - ready -> "🚀 Mark Served"
- * - Individual line-item check-off for line cooks
+ * - Surface: Horizontal gradient (#0E1424 to #161F33), 16px radius, backdrop blur, 1px solid rgba(255,255,255,0.06)
+ * - Left Accent Strip: 3px vertical border with orange-to-red glowing gradient (#F59E0B to #EF4444)
+ * - Header: Bold editorial serif Table Title, capsule [ 🪑 Dine In ] badge, muted metadata
+ * - Stopwatch & Timer: Single glowing orange stopwatch icon, gradient amber-red overdue text, compact status pill
+ * - Items List: Borderless vertical stack, left-aligned, 32x32px emerald circle badge x1, bold dish title, muted category
+ * - Footer: Bottom-right aligned button with warm amber-to-orange gradient and chef-hat icon
  */
 export default function OrderCard({
   order,
@@ -40,7 +33,7 @@ export default function OrderCard({
   // Extract order fields with resilient fallbacks
   const orderId = order?.id || order?._id || order?.order_id || 'N/A';
   const displayOrderNum = order?.order_number || (typeof orderId === 'string' ? orderId.slice(-4).toUpperCase() : orderId);
-  const tableNumber = order?.table_no ?? order?.tableNumber ?? order?.table ?? (order?.order_type === 'takeaway' ? 'TAKEAWAY' : 'COUNTER');
+  const tableNumber = order?.table_no ?? order?.tableNumber ?? order?.table ?? (order?.order_type === 'takeaway' ? 'Takeaway' : '1');
   const orderType = order?.order_type || order?.type || 'dine_in';
   const items = order?.items || order?.dishes || order?.order_items || [];
   const voiceNoteUrl = order?.voice_note_url || order?.voiceNoteUrl || order?.voice_url || order?.audio_url;
@@ -71,76 +64,57 @@ export default function OrderCard({
     return Date.now();
   }, [order?.created_at, order?.createdAt, order?.timestamp]);
 
-  const [elapsedMinutes, setElapsedMinutes] = useState(0);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [elapsedMinutes, setElapsedMinutes] = useState(() => {
+    if (typeof order?.timeElapsedMinutes === 'number') return order.timeElapsedMinutes;
+    const diffMs = Math.max(0, Date.now() - createdAtTime);
+    return Math.floor(diffMs / 60000);
+  });
 
   useEffect(() => {
     const updateElapsed = () => {
+      if (typeof order?.timeElapsedMinutes === 'number' && !order?.created_at && !order?.createdAt && !order?.timestamp) {
+        setElapsedMinutes(order.timeElapsedMinutes);
+        return;
+      }
       const diffMs = Math.max(0, Date.now() - createdAtTime);
       const totalSec = Math.floor(diffMs / 1000);
       setElapsedMinutes(Math.floor(totalSec / 60));
-      setElapsedSeconds(totalSec % 60);
     };
 
     updateElapsed();
-    const interval = setInterval(updateElapsed, 2000); // Ticks every 2s for live feedback
+    const interval = setInterval(updateElapsed, 3000);
     return () => clearInterval(interval);
-  }, [createdAtTime]);
+  }, [createdAtTime, order?.timeElapsedMinutes, order?.created_at, order?.createdAt, order?.timestamp]);
 
-  // Formatted placed time (e.g. 12:45 PM)
+  // Formatted placed time (e.g. 03:06 PM)
   const placedTimeFormatted = useMemo(() => {
+    if (order?.placedTime) return order.placedTime;
+    if (order?.timePlaced) return order.timePlaced;
     try {
       return new Date(createdAtTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch {
-      return '';
+      return '03:06 PM';
     }
-  }, [createdAtTime]);
-
-  // Timer urgency status: <10m = normal, 10-20m = yellow (warning), >=20m = red (critical)
-  const isUrgentYellow = elapsedMinutes >= 10 && elapsedMinutes < 20 && status !== 'served' && status !== 'completed';
-  const isUrgentRed = elapsedMinutes >= 20 && status !== 'served' && status !== 'completed';
-
-  // Dynamic card border color based on urgency and status
-  const getCardBorderClasses = () => {
-    if (status === 'served' || status === 'completed') {
-      return 'border-slate-800 opacity-75';
-    }
-    if (isUrgentRed) {
-      return 'border-rose-600 ring-2 ring-rose-500/50 shadow-xl shadow-rose-950/40 animate-pulse';
-    }
-    if (isUrgentYellow) {
-      return 'border-amber-500 ring-1 ring-amber-400/40 shadow-lg shadow-amber-950/30';
-    }
-    if (status === 'ready') {
-      return 'border-emerald-500 ring-1 ring-emerald-500/40 shadow-lg shadow-emerald-950/30';
-    }
-    if (status === 'preparing' || status === 'cooking' || status === 'in_kitchen') {
-      return 'border-orange-500 shadow-md shadow-orange-950/30';
-    }
-    return 'border-slate-700/80 hover:border-slate-600';
-  };
+  }, [order?.placedTime, order?.timePlaced, createdAtTime]);
 
   // Determine next status and button text
   const getNextStatusAction = () => {
-    if (status === 'pending' || status === 'received' || status === 'new') {
+    if (status === 'pending' || status === 'received' || status === 'new' || status === 'placed') {
       return {
         nextStatus: 'preparing',
-        label: '👨‍🍳 Start Preparing',
-        colorClass: 'bg-orange-500 hover:bg-orange-400 active:bg-orange-600 text-slate-950 ring-2 ring-orange-400/40 font-black'
+        label: 'Start Preparing →',
       };
     }
     if (status === 'preparing' || status === 'cooking' || status === 'in_kitchen' || status === 'in-progress') {
       return {
         nextStatus: 'ready',
-        label: '✅ Ready for Pickup',
-        colorClass: 'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 ring-2 ring-emerald-400/40 font-black'
+        label: 'Ready for Pickup →',
       };
     }
     if (status === 'ready') {
       return {
         nextStatus: 'served',
-        label: '🚀 Mark Served',
-        colorClass: 'flame-gradient-btn text-white ring-2 ring-[#FF7A45]/40 font-black'
+        label: 'Confirm Served ✓',
       };
     }
     return null;
@@ -153,108 +127,72 @@ export default function OrderCard({
     onStatusChange(orderId, action.nextStatus);
   };
 
+  const isOverdue = elapsedMinutes >= 10 && status !== 'served' && status !== 'completed';
+
   return (
     <div
-      className={`staff-enter staff-card-hover flex flex-col min-w-0 max-w-full bg-slate-900 text-slate-100 rounded-2xl border-2 transition-all duration-200 overflow-hidden ${getCardBorderClasses()} ${className}`}
+      className={`relative flex flex-col min-w-0 max-w-full rounded-[16px] backdrop-blur-md border border-white/[0.06] transition-all duration-200 overflow-hidden shadow-xl hover:border-white/10 ${className}`}
+      style={{
+        background: 'linear-gradient(to right, #0E1424, #161F33)',
+        fontFamily: "'Inter', sans-serif"
+      }}
       data-order-id={orderId}
       data-order-status={status}
     >
-      {/* CARD HEADER */}
-      <div className="p-4 bg-slate-850 border-b border-slate-800 flex flex-col gap-2.5">
-        <div className="flex items-center justify-between gap-2">
-          {/* Large High-Contrast Table Badge */}
-          <div className="flex items-center gap-2">
-            <div className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black tracking-wider text-base sm:text-lg flex items-center gap-1.5 shadow-md">
-              <span>TABLE</span>
-              <span className="text-xl sm:text-2xl font-black">{tableNumber}</span>
-            </div>
+      {/* 1. Left Accent Strip: 3px vertical border with orange-to-red glowing gradient */}
+      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-[#F59E0B] to-[#EF4444] shadow-[0_0_10px_rgba(245,158,11,0.6)] z-10" />
 
-            {/* Order Type Tag */}
-            <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
-              {orderType.replace('_', ' ')}
-            </span>
-          </div>
-
-          {/* Order # and Placed Time */}
-          <div className="text-right">
-            <div className="text-lg font-black font-mono tracking-tight text-white">
-              #{displayOrderNum}
-            </div>
-            {placedTimeFormatted && (
-              <div className="text-[11px] font-mono text-slate-400">
-                {placedTimeFormatted}
-              </div>
-            )}
-          </div>
+      {/* 2. Card Header Row (with subtle bottom border border-white/5) */}
+      <div className="p-4 sm:p-5 border-b border-white/[0.05] flex flex-wrap items-center justify-between gap-3 bg-white/[0.01]">
+        {/* Left: Large white serif "TABLE 1" + outlined capsule badge [ 🪑 Dine In ] + muted order metadata (#KBBK • 03:06 PM) */}
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+          <span
+            className="text-xl sm:text-2xl font-bold text-white tracking-wide uppercase"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+          >
+            TABLE {tableNumber}
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold text-slate-300 border border-white/10 bg-white/[0.03]">
+            <span>🪑</span>
+            <span>{orderType === 'takeaway' ? 'Takeaway' : 'Dine In'}</span>
+          </span>
+          <span className="text-xs text-slate-400 font-mono tracking-wide">
+            #{displayOrderNum} • {placedTimeFormatted}
+          </span>
         </div>
 
-        {/* Elapsed Live Timer & Status Pill */}
-        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-800/80">
-          {/* Live Timer with Urgency Color Transitions */}
-          <div
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold tracking-tight border transition-colors ${
-              isUrgentRed
-                ? 'bg-rose-950 text-rose-200 border-rose-500 animate-pulse'
-                : isUrgentYellow
-                ? 'bg-amber-950 text-amber-300 border-amber-500'
-                : 'bg-emerald-950/80 text-emerald-300 border-emerald-600/60'
-            }`}
-            title={`Order placed ${elapsedMinutes} minutes ago`}
-          >
-            <Clock className={`w-3.5 h-3.5 ${isUrgentRed ? 'text-rose-400 animate-spin' : ''}`} />
-            <span>
-              ⏱️ {elapsedMinutes} min ago
-            </span>
-            {isUrgentRed && (
-              <span className="ml-1 text-[10px] uppercase font-black tracking-wider bg-rose-600 text-white px-1.5 py-0.2 rounded">
-                OVERDUE
-              </span>
-            )}
-          </div>
-
-          {/* Status Badge */}
-          <div className="staff-badge text-xs font-bold uppercase tracking-wide">
-            {status === 'pending' && (
-              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                Pending
-              </span>
-            )}
-            {(status === 'preparing' || status === 'cooking' || status === 'in_kitchen') && (
-              <span className="px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-300 border border-orange-500/40 inline-flex items-center gap-1">
-                <Flame className="w-3 h-3 text-orange-400 animate-bounce" />
-                Cooking
-              </span>
-            )}
-            {status === 'ready' && (
-              <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-emerald-400" />
-                Ready
-              </span>
-            )}
-            {(status === 'served' || status === 'completed') && (
-              <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700">
-                Served ✓
-              </span>
-            )}
-          </div>
+        {/* Right: Single glowing orange stopwatch icon + gradient amber-red text Overdue (1285 min) + compact PENDING pill + small vertical orange-red indicator bar on far right edge */}
+        <div className="flex items-center gap-2 sm:gap-2.5 ml-auto">
+          <Clock className="w-4 h-4 text-[#F59E0B] drop-shadow-[0_0_6px_rgba(245,158,11,0.7)] shrink-0" />
+          <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 bg-clip-text text-transparent font-bold font-mono text-xs whitespace-nowrap">
+            {isOverdue ? `Overdue (${elapsedMinutes} min)` : `${elapsedMinutes} min`}
+          </span>
+          <span className="px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase bg-amber-500/15 text-amber-300 border border-amber-500/30 whitespace-nowrap">
+            {status === 'preparing' || status === 'cooking' || status === 'in_kitchen'
+              ? 'COOKING'
+              : status === 'ready'
+              ? 'READY'
+              : status === 'completed' || status === 'served'
+              ? 'SERVED'
+              : 'PENDING'}
+          </span>
+          <div className="w-1 h-5 rounded-full bg-gradient-to-b from-[#F59E0B] to-[#EF4444] shadow-[0_0_6px_rgba(245,158,11,0.5)] shrink-0" />
         </div>
       </div>
 
-      {/* GENERAL ORDER NOTE / ALLERGY ALERT */}
+      {/* General Order Instruction (if any) */}
       {generalNote && (
-        <div className="mx-3 mt-3 p-2.5 rounded-xl bg-amber-500/15 border-2 border-amber-500/50 flex items-start gap-2 text-amber-200">
-          <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-          <div className="text-xs">
-            <span className="font-extrabold uppercase tracking-wide block text-amber-300">
-              Order Instruction:
-            </span>
-            <span className="font-semibold text-amber-100">{generalNote}</span>
+        <div className="mx-5 mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold uppercase tracking-wider text-[10px] text-amber-300 block">Chef Instruction:</span>
+            <span className="font-medium text-amber-100">{generalNote}</span>
           </div>
         </div>
       )}
 
-      {/* DISH LIST */}
-      <div className="p-4 flex-1 flex flex-col gap-3 overflow-y-auto max-h-[360px]">
+      {/* 3. Order Items List (Borderless vertical stack, gap-4, left-aligned) */}
+      <div className="p-5 flex-1 flex flex-col gap-4 overflow-y-auto max-h-[380px]">
         {items.length === 0 ? (
           <div className="text-slate-500 italic text-sm py-4 text-center">
             No items in this ticket.
@@ -265,56 +203,43 @@ export default function OrderCard({
             const itemName = item?.name || item?.dish_name || item?.title || 'Unknown Item';
             const quantity = item?.quantity || item?.qty || 1;
             const itemNotes = item?.notes || item?.note || item?.special_instructions || item?.customization;
-            const itemOptions = item?.options || item?.variant || item?.extras;
+            const itemCategory = item?.category || item?.categoryName || item?.type || (
+              Array.isArray(item?.options) ? item.options.join(', ') : item?.options
+            );
 
             return (
               <div
                 key={idx}
                 onClick={() => toggleItemCheck(idx)}
-                className={`p-2.5 rounded-xl border transition-all cursor-pointer select-none ${
-                  isChecked
-                    ? 'bg-slate-950/60 border-slate-800 opacity-40 line-through'
-                    : 'bg-slate-800/80 hover:bg-slate-800 border-slate-700/80 shadow-xs'
-                }`}
+                className="flex items-start gap-3.5 group select-none cursor-pointer"
               >
-                <div className="flex items-start gap-2.5">
-                  {/* Quantity Badge */}
-                  <div
-                    className={`shrink-0 px-2.5 py-1 rounded-lg font-black text-base flex items-center justify-center min-w-[36px] shadow-sm ${
-                      isChecked
-                        ? 'bg-slate-700 text-slate-400'
-                        : 'bg-emerald-500 text-slate-950'
-                    }`}
-                  >
-                    x{quantity}
-                  </div>
+                {/* Left Badge: 32x32px circle with thin emerald border (#10B981), dark translucent green fill (bg-emerald-500/10), and centered x1 text */}
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-colors ${
+                    isChecked
+                      ? 'border-slate-700 bg-slate-800 text-slate-400'
+                      : 'border-[#10B981]/50 bg-emerald-500/10 text-emerald-400 shadow-sm shadow-emerald-500/10'
+                  }`}
+                >
+                  <span className="text-xs font-bold font-mono">
+                    {isChecked ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : `x${quantity}`}
+                  </span>
+                </div>
 
-                  {/* Dish Name & Variations */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className={`text-base sm:text-lg font-bold text-white tracking-tight leading-snug ${isChecked ? 'line-through text-slate-400' : ''}`}>
-                        {itemName}
-                      </span>
-                      {isChecked && (
-                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                      )}
+                {/* Right Text: Bold white dish title with smaller muted gray subtitle/category line directly underneath */}
+                <div className="flex-1 min-w-0">
+                  <div className={`text-sm sm:text-base font-semibold text-white tracking-tight leading-snug group-hover:text-amber-200 transition-colors ${isChecked ? 'line-through text-slate-400' : ''}`}>
+                    {itemName}
+                  </div>
+                  <div className="text-xs text-slate-400 font-normal mt-0.5">
+                    {itemCategory || 'Chef Special'}
+                  </div>
+                  {itemNotes && (
+                    <div className="mt-1 text-xs text-amber-300/90 font-medium flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                      <span>Note: {itemNotes}</span>
                     </div>
-
-                    {/* Options / Variants */}
-                    {itemOptions && (
-                      <div className="text-xs text-slate-400 font-medium mt-0.5">
-                        {Array.isArray(itemOptions) ? itemOptions.join(', ') : String(itemOptions)}
-                      </div>
-                    )}
-
-                    {/* Highlighted Custom Text Notes */}
-                    {itemNotes && (
-                      <div className="mt-1.5 p-2 rounded-lg bg-amber-500/20 border border-amber-500/50 text-amber-200 text-xs font-bold flex items-start gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                        <span className="leading-tight">⚠️ Note: {itemNotes}</span>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             );
@@ -322,16 +247,16 @@ export default function OrderCard({
         )}
       </div>
 
-      {/* VOICE NOTE SECTION */}
+      {/* Voice Note (if present) */}
       {voiceNoteUrl && (
-        <div className="px-4 pb-3">
-          <div className="p-3 rounded-xl bg-[#FF5A26]/10 border border-[#FF5A26]/30 shadow-inner">
+        <div className="px-5 pb-3">
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
             <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#FF7A45]">
-                <Mic className="w-4 h-4 text-[#FF5A26] animate-pulse" />
-                🎙️ Customer Voice Instruction
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-300">
+                <Mic className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                Customer Voice Instruction
               </span>
-              <span className="text-[10px] text-[#FF7A45] font-mono font-semibold bg-[#FF5A26]/20 px-2 py-0.5 rounded">
+              <span className="text-[10px] text-amber-300 font-mono font-semibold bg-amber-500/20 px-2 py-0.5 rounded">
                 Audio Note
               </span>
             </div>
@@ -340,29 +265,29 @@ export default function OrderCard({
         </div>
       )}
 
-      {/* CARD FOOTER: STATUS TRANSITION BUTTON */}
-      <div className="p-3 bg-slate-850 border-t border-slate-800">
+      {/* 4. Card Footer Action: Bottom-right aligned button with warm amber-to-orange gradient and chef-hat icon */}
+      <div className="p-4 sm:p-5 border-t border-white/[0.05] flex items-center justify-between gap-3 bg-white/[0.01]">
         {action ? (
           <button
             type="button"
             onClick={handleActionClick}
             disabled={isUpdating}
-            className={`staff-action staff-touch w-full min-h-12 py-3 px-4 rounded-xl font-black text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:brightness-100 ${action.colorClass}`}
+            className="ml-auto inline-flex items-center gap-2 rounded-lg px-5 py-2.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 active:scale-95 transition-all text-[#0A0F1D] font-extrabold text-xs sm:text-sm tracking-wide shadow-lg shadow-orange-500/20 cursor-pointer disabled:opacity-50"
           >
             {isUpdating ? (
-              <div className="flex items-center gap-2 text-slate-900 font-bold">
-                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                <span>Updating Order...</span>
+              <div className="flex items-center gap-2 text-[#0A0F1D] font-bold">
+                <div className="w-4 h-4 border-2 border-[#0A0F1D] border-t-transparent rounded-full animate-spin" />
+                <span>Updating...</span>
               </div>
             ) : (
               <>
+                <ChefHat className="w-4 h-4 text-[#0A0F1D] shrink-0" />
                 <span>{action.label}</span>
-                <ArrowRight className="w-5 h-5 stroke-[2.5]" />
               </>
             )}
           </button>
         ) : (
-          <div className="flex items-center justify-between text-xs text-slate-400 py-1">
+          <div className="ml-auto flex items-center gap-3 text-xs text-slate-400">
             <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold">
               <CheckCircle2 className="w-4 h-4" />
               Order Completed
@@ -371,7 +296,7 @@ export default function OrderCard({
               <button
                 type="button"
                 onClick={() => onStatusChange(orderId, 'ready')}
-                className="staff-touch staff-focus inline-flex items-center px-2 text-xs text-slate-400 hover:text-slate-200 underline cursor-pointer rounded"
+                className="underline hover:text-white cursor-pointer transition text-xs"
               >
                 Reopen Ticket
               </button>
