@@ -117,3 +117,95 @@ export const me = query({
     }
   },
 });
+
+export async function requireAdmin(ctx, token) {
+  // Fail closed until the admin login decision (A or B) is implemented.
+  throw new Error("ADMIN_AUTH_NOT_CONFIGURED");
+}
+
+export const createEmployee = mutation({
+  args: {
+    adminToken: v.string(),
+    username: v.string(),
+    password: v.string(),
+    name: v.string(),
+    role: v.string(),
+  },
+  handler: async (ctx, { adminToken, username, password, name, role }) => {
+    await requireAdmin(ctx, adminToken);
+    const u = username.trim().toLowerCase();
+    if (!u || password.length < 6) throw new Error("INVALID_INPUT");
+    const exists = await ctx.db
+      .query("employees")
+      .withIndex("by_username", (q) => q.eq("username", u))
+      .unique();
+    if (exists) throw new Error("USERNAME_TAKEN");
+    const { salt, passwordHash } = await hashPassword(password);
+    return await ctx.db.insert("employees", {
+      username: u,
+      passwordHash,
+      salt,
+      role,
+      name: name.trim(),
+      active: true,
+      failedLogins: 0,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+export const updateEmployee = mutation({
+  args: {
+    adminToken: v.string(),
+    employeeId: v.id("employees"),
+    name: v.optional(v.string()),
+    role: v.optional(v.string()),
+  },
+  handler: async (ctx, { adminToken, employeeId, name, role }) => {
+    await requireAdmin(ctx, adminToken);
+    const patch = {};
+    if (name !== undefined) patch.name = name.trim();
+    if (role !== undefined) patch.role = role;
+    await ctx.db.patch(employeeId, patch);
+    return null;
+  },
+});
+
+export const deactivateEmployee = mutation({
+  args: { adminToken: v.string(), employeeId: v.id("employees") },
+  handler: async (ctx, { adminToken, employeeId }) => {
+    await requireAdmin(ctx, adminToken);
+    await ctx.db.patch(employeeId, { active: false });
+    const sessions = await ctx.db
+      .query("employeeSessions")
+      .withIndex("by_employee", (q) => q.eq("employeeId", employeeId))
+      .collect();
+    for (const s of sessions) await ctx.db.delete(s._id);
+    return null;
+  },
+});
+
+export const resetEmployeePassword = mutation({
+  args: {
+    adminToken: v.string(),
+    employeeId: v.id("employees"),
+    newPassword: v.string(),
+  },
+  handler: async (ctx, { adminToken, employeeId, newPassword }) => {
+    await requireAdmin(ctx, adminToken);
+    if (newPassword.length < 6) throw new Error("INVALID_INPUT");
+    const { salt, passwordHash } = await hashPassword(newPassword);
+    await ctx.db.patch(employeeId, {
+      salt,
+      passwordHash,
+      failedLogins: 0,
+      lockedUntil: undefined,
+    });
+    const sessions = await ctx.db
+      .query("employeeSessions")
+      .withIndex("by_employee", (q) => q.eq("employeeId", employeeId))
+      .collect();
+    for (const s of sessions) await ctx.db.delete(s._id);
+    return null;
+  },
+});
