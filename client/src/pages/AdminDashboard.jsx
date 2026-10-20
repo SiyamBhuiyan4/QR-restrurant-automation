@@ -57,20 +57,25 @@ import '../styles/admin.css';
  *   10. Customer Reports & Notes (Direct-to-Admin Notes, Staff Dispatching & Audit Log)
  */
 export default function AdminDashboard({ className = '' }) {
-  // Session Authentication State (strictly gated by Master PIN '808080')
+  // Session Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('smartdine_admin_auth') === 'true';
+      const token = sessionStorage.getItem('smartdine_admin_token');
+      return Boolean(token && token.trim());
     }
     return false;
   });
 
+  const adminLogoutMutation = useMutation(api.employeeAuth.adminLogout);
+
   const handleLogout = useCallback(() => {
     if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('smartdine_admin_auth');
+      const t = sessionStorage.getItem('smartdine_admin_token');
+      if (t) adminLogoutMutation({ token: t }).catch(() => {});
+      sessionStorage.removeItem('smartdine_admin_token');
     }
     setIsAuthenticated(false);
-  }, []);
+  }, [adminLogoutMutation]);
 
   // Navigation tab state (supports URL search param '?tab=...')
   const [activeTab, setActiveTab] = useState(() => {

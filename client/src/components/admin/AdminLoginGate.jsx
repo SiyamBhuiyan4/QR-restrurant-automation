@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useMutation } from 'convex/react';
+import { api } from '../../convexApi';
 import {
   Lock,
   Unlock,
@@ -11,11 +13,6 @@ import {
 } from 'lucide-react';
 import '../../styles/admin.css';
 
-/**
- * Master Admin Access Key
- * Strictly required: '808080'
- */
-const MASTER_ADMIN_PIN = '808080';
 const PIN_LENGTH = 6;
 
 /**
@@ -30,31 +27,36 @@ export default function AdminLoginGate({ onLoginSuccess }) {
   const [isShaking, setIsShaking] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const inputRef = useRef(null);
+  const adminLogin = useMutation(api.employeeAuth.adminLogin);
 
   // Autofocus input on initial mount
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  // Validation routine
-  const handleValidate = (candidatePin) => {
+  // Validation routine: checks the PIN on the server
+  const handleValidate = async (candidatePin) => {
     const entered = (candidatePin !== undefined ? candidatePin : pin).trim();
-    if (entered === MASTER_ADMIN_PIN) {
-      setError('');
+    setError('');
+    try {
+      const result = await adminLogin({ pin: entered });
       setIsSuccess(true);
       try {
-        sessionStorage.setItem('smartdine_admin_auth', 'true');
+        sessionStorage.setItem('smartdine_admin_token', result.token);
       } catch (err) {
         console.warn('[AdminLoginGate] sessionStorage write error:', err);
       }
       setTimeout(() => {
-        if (typeof onLoginSuccess === 'function') {
-          onLoginSuccess();
-        }
+        if (typeof onLoginSuccess === 'function') onLoginSuccess();
       }, 400);
-    } else {
+    } catch (err) {
+      const msg = String(err?.message || '');
       setIsShaking(true);
-      setError('Incorrect Admin PIN. Please try again.');
+      setError(
+        msg.includes('LOCKED')
+          ? 'Too many attempts. Try again in 15 minutes.'
+          : 'Incorrect Admin PIN. Please try again.'
+      );
       setPin('');
       setTimeout(() => {
         setIsShaking(false);
