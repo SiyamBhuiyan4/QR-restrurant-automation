@@ -524,14 +524,6 @@ export default function MenuItemCard({
               <span>{item.rating || '4.9'}</span>
               <span className="menu-show__muted">&bull; {item.prepTime || '12 min'}</span>
             </div>
-
-            {/* 360° Video reel badge */}
-            {(hasVideo || item.makingVideoUrl !== undefined) && (
-              <div className="menu-show__reel">
-                <Video className="w-3 h-3 fill-current text-emerald-400" aria-hidden="true" />
-                <span>360° Video</span>
-              </div>
-            )}
           </div>
 
           {/* Details panel */}
@@ -749,15 +741,6 @@ export default function MenuItemCard({
                 <ImageIcon className="w-2.5 h-2.5 text-[#FF7A45]" />
                 <span>{photoCount} photos</span>
               </span>
-              {(hasVideo || item.makingVideoUrl !== undefined) && (
-                <>
-                  <span>&bull;</span>
-                  <span className="inline-flex items-center gap-0.5 text-emerald-400 font-bold">
-                    <Video className="w-2.5 h-2.5 text-emerald-400" />
-                    <span>360° Video</span>
-                  </span>
-                </>
-              )}
             </div>
 
             {itemNote && (
@@ -1053,15 +1036,6 @@ export default function MenuItemCard({
                 <ImageIcon className="w-2.5 h-2.5 text-[#f0d27a]" />
                 <span>{photoCount}</span>
               </span>
-              {(hasVideo || item.makingVideoUrl !== undefined) && (
-                <span
-                  className="menu-chip menu-chip--reel"
-                  title="360° Product Video"
-                >
-                  <Video className="w-2.5 h-2.5 fill-current text-emerald-400" />
-                  <span>360° Video</span>
-                </span>
-              )}
             </div>
           </div>
 
