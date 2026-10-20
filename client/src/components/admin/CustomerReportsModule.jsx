@@ -1314,7 +1314,7 @@ export default function CustomerReportsModule({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
+              <h2 className="admin-section-title text-lg sm:text-xl font-extrabold text-white tracking-tight">
                 {employeeMode ? 'Staff Floor Requests & Notes' : 'Customer Reports & Notes'}
               </h2>
               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-300">

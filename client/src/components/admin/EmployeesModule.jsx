@@ -1781,7 +1781,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
             <Users className="w-5 h-5 text-[#F59E0B]" />
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+            <h2 className="admin-section-title text-xl sm:text-2xl font-extrabold text-white tracking-tight">
               Employee Hub
             </h2>
             <p className="max-w-md text-slate-400 text-xs sm:text-sm mt-0.5">

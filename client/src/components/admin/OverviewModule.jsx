@@ -744,7 +744,7 @@ export default function OverviewModule({
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-black text-[#f8fafc] tracking-tight">
+                <h2 className="admin-section-title text-lg sm:text-xl font-black text-[#f8fafc] tracking-tight">
                   Executive Revenue &amp; Sales Telemetry
                 </h2>
                 <p className="text-xs text-slate-400">

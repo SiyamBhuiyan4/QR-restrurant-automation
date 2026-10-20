@@ -827,7 +827,7 @@ export default function LiveTablesModule({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black text-[#f8fafc] tracking-tight leading-none">
+                <h2 className="admin-section-title text-lg sm:text-xl font-black text-[#f8fafc] tracking-tight leading-none">
                   Live Orders &amp; Table Tracking
                 </h2>
                 <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
