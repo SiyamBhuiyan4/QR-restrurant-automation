@@ -164,11 +164,13 @@ export const FOOD_ANGLE_POOLS = {
  */
 export function resolveDishPhotos(dish) {
   if (!dish) return [];
-  const primary = dish.image || dish.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900';
+  const isVid = (u) => typeof u === 'string' && (/\.(mp4|webm|mov|ogg|m4v)(\?.*)?$/i.test(u) || u.includes('/videos/') || u.includes('sendvideo'));
+  const candidatePrimary = (!isVid(dish.image) ? dish.image : null) || (!isVid(dish.imageUrl) ? dish.imageUrl : null);
+  const primary = candidatePrimary || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900';
   
   let explicitList = [];
   if (Array.isArray(dish.images) && dish.images.length > 0) {
-    explicitList = dish.images.filter((u) => typeof u === 'string' && u.trim().length > 0);
+    explicitList = dish.images.filter((u) => typeof u === 'string' && u.trim().length > 0 && !isVid(u));
   }
 
   // Deduplicate starting with primary + explicitList
@@ -417,7 +419,8 @@ export default function FoodDetailModal({
   }, [dish]);
 
   // Kitchen video reel URL (always fallback to local self-hosted reel-chef.mp4 if mixkit or empty)
-  const rawVideo = dish?.makingVideoUrl || dish?.videoUrl;
+  const isVideoField = (u) => typeof u === 'string' && (/\.(mp4|webm|mov|ogg|m4v)(\?.*)?$/i.test(u) || u.includes('/videos/') || u.includes('sendvideo'));
+  const rawVideo = dish?.makingVideoUrl || dish?.videoUrl || (isVideoField(dish?.image) ? dish?.image : null) || (isVideoField(dish?.imageUrl) ? dish?.imageUrl : null);
   const videoUrl = rawVideo && typeof rawVideo === 'string' && !rawVideo.includes('mixkit.co')
     ? rawVideo
     : '/videos/reel-chef.mp4';

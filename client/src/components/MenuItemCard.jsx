@@ -31,6 +31,30 @@ const prefersReducedMotion = () =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
+ * Robust detection helper for continuous 24/7 360° product video or food profile videos
+ * Detects .mp4, .webm, .mov, telegram sendVideo, cloud video storage, etc.
+ */
+export const isVideoUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  const clean = url.trim().toLowerCase();
+  if (clean.includes('mixkit.co')) return false; // Filter out broken demo placeholders
+  // Video extensions (handles query parameters e.g. .mp4?token=xyz)
+  if (/\.(mp4|webm|mov|ogg|m4v)(\?.*)?$/i.test(clean)) return true;
+  // Common video stream or Telegram video paths
+  if (
+    clean.includes('/videos/') ||
+    clean.includes('/video/') ||
+    clean.includes('sendvideo') ||
+    clean.includes('video_note') ||
+    clean.includes('video/mp4') ||
+    clean.includes('mime_type=video')
+  ) {
+    return true;
+  }
+  return false;
+};
+
+/**
  * Compact, High-Conversion MenuItemCard Component
  * 
  * Features:
@@ -69,14 +93,59 @@ export default function MenuItemCard({
   const isVeg = item.isVeg === true || item.veg === true || (Array.isArray(item.tags) && item.tags.some(t => /veg/i.test(t)));
   const isSpicy = item.isSpicy === true || item.spicy === true || (Array.isArray(item.tags) && item.tags.some(t => /spic/i.test(t)));
   const isAvailable = item.isAvailable !== false && item.outOfStock !== true && item.available !== false;
-  // Direct Food Profile Video support
-  const dishVideo = (item.makingVideoUrl && !item.makingVideoUrl.includes('mixkit.co'))
-    ? item.makingVideoUrl
-    : (item.videoUrl && !item.videoUrl.includes('mixkit.co'))
-      ? item.videoUrl
-      : (item.making_video_url && !item.making_video_url.includes('mixkit.co'))
-        ? item.making_video_url
-        : null;
+  // 1. Direct 360° Food Profile Video & Media URL Resolution
+  const dishVideo = useMemo(() => {
+    // a) Explicit video attributes
+    const explicitCandidates = [
+      item.videoUrl,
+      item.video_url,
+      item.makingVideoUrl,
+      item.making_video_url,
+      item.makingVideo,
+      item.video,
+    ];
+    for (const v of explicitCandidates) {
+      if (v && typeof v === 'string' && !v.includes('mixkit.co') && v.trim().length > 0) {
+        return v.trim();
+      }
+    }
+
+    // b) Main profile picture / profile video upload (user uploaded a 360° video directly as the image)
+    const profileCandidates = [
+      item.image,
+      item.imageUrl,
+      item.image_url,
+    ];
+    for (const img of profileCandidates) {
+      if (img && isVideoUrl(img)) {
+        return img.trim();
+      }
+    }
+
+    // c) Arrays (images or videos)
+    if (Array.isArray(item.images)) {
+      const found = item.images.find(isVideoUrl);
+      if (found) return found.trim();
+    }
+    if (Array.isArray(item.videos) && item.videos.length > 0) {
+      const found = item.videos.find(v => typeof v === 'string' && v.trim().length > 0 && !v.includes('mixkit.co'));
+      if (found) return found.trim();
+    }
+
+    return null;
+  }, [
+    item.videoUrl,
+    item.video_url,
+    item.makingVideoUrl,
+    item.making_video_url,
+    item.makingVideo,
+    item.video,
+    item.image,
+    item.imageUrl,
+    item.image_url,
+    item.images,
+    item.videos,
+  ]);
 
   const hasVideo = Boolean(dishVideo);
   const [isVideoMode, setIsVideoMode] = useState(Boolean(dishVideo));
@@ -91,21 +160,44 @@ export default function MenuItemCard({
     }
   }, [dishVideo]);
 
-  const photoCount = Array.isArray(item.images) && item.images.length > 0 ? item.images.length : 4;
+  // Robust safe static image resolution: avoids putting a video URL into <img> tags
+  const safeDishImage = useMemo(() => {
+    const candidateImages = [
+      !isVideoUrl(item.image) ? item.image : null,
+      !isVideoUrl(item.imageUrl) ? item.imageUrl : null,
+      !isVideoUrl(item.image_url) ? item.image_url : null,
+      Array.isArray(item.images) ? item.images.find(img => !isVideoUrl(img)) : null,
+      item.poster,
+      item.posterUrl,
+      item.thumbnail,
+    ];
 
-  const safeDishImage = (item.image && typeof item.image === 'string' && item.image.includes('photo-1604909052743'))
-    ? 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80'
-    : item.image;
+    let found = candidateImages.find(u => u && typeof u === 'string' && u.trim().length > 0);
+    if (!found) {
+      found = 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80';
+    }
 
-  // 360° Multi-Angle Orbital Camera Photography Array
+    if (found.includes('photo-1604909052743')) {
+      return 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80';
+    }
+    return found;
+  }, [item.image, item.imageUrl, item.image_url, item.images, item.poster, item.posterUrl, item.thumbnail]);
+
+  // 360° Multi-Angle Orbital Camera Photography Array (strictly non-video photos)
   const angleImages = useMemo(() => {
-    let imgs = Array.isArray(item.images) && item.images.length > 0 ? [...item.images] : [];
-    if (safeDishImage && !imgs.includes(safeDishImage)) {
+    let imgs = Array.isArray(item.images) && item.images.length > 0 
+      ? item.images.filter(u => !isVideoUrl(u)) 
+      : [];
+    if (safeDishImage && !isVideoUrl(safeDishImage) && !imgs.includes(safeDishImage)) {
       imgs.unshift(safeDishImage);
     }
     imgs = imgs.map((u) => (typeof u === 'string' && u.includes('photo-1604909052743') ? 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80' : u));
     return imgs.length > 0 ? imgs : [safeDishImage];
   }, [item.images, safeDishImage]);
+
+  const photoCount = Array.isArray(item.images) && item.images.length > 0 
+    ? item.images.filter(u => !isVideoUrl(u)).length 
+    : 4;
 
   const ANGLE_LABELS = ['Front (0°)', 'Right (90°)', 'Top/Back (180°)', 'Left Profile (270°)'];
   const [currentAngleIndex, setCurrentAngleIndex] = useState(0);
@@ -310,7 +402,12 @@ export default function MenuItemCard({
                     loop
                     muted={isVideoMuted}
                     playsInline
-                    preload="metadata"
+                    preload="auto"
+                    onLoadedMetadata={(e) => {
+                      if (e.currentTarget.paused) {
+                        e.currentTarget.play().catch(() => {});
+                      }
+                    }}
                     onError={() => setVideoError(true)}
                     className="menu-show__video"
                   />
@@ -340,12 +437,15 @@ export default function MenuItemCard({
                   </div>
                 )}
 
-                {/* Live Video Reel Floating Badge (Top-Left) */}
+                {/* 24/7 Live 360° Video Floating Badge (Top-Left) */}
                 {dishVideo && !videoError && isVideoMode && (
                   <div className="absolute top-3 left-3 z-20 pointer-events-none">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-600/90 text-white backdrop-blur-md shadow-lg border border-white/20">
-                      <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                      <span>Live Video</span>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-black/85 text-emerald-300 backdrop-blur-md shadow-lg border border-emerald-500/30">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      <span>🔄 360° Video</span>
                     </span>
                   </div>
                 )}
@@ -356,10 +456,13 @@ export default function MenuItemCard({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setIsVideoMuted(prev => !prev);
-                      if (showcaseVideoRef.current) {
-                        showcaseVideoRef.current.muted = !isVideoMuted;
-                      }
+                      setIsVideoMuted(prev => {
+                        const next = !prev;
+                        if (showcaseVideoRef.current) {
+                          showcaseVideoRef.current.muted = next;
+                        }
+                        return next;
+                      });
                     }}
                     className="absolute bottom-3 right-3 z-20 p-2 rounded-full bg-black/80 hover:bg-black text-white backdrop-blur-md border border-white/30 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xl"
                     title={isVideoMuted ? "Tap to unmute food audio" : "Tap to mute audio"}
@@ -382,17 +485,17 @@ export default function MenuItemCard({
                       setIsVideoMode(prev => !prev);
                     }}
                     className="absolute bottom-3 left-3 z-20 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/80 hover:bg-black text-white text-[10px] font-bold backdrop-blur-md border border-white/25 transition active:scale-95 cursor-pointer shadow-xl"
-                    title={isVideoMode ? "Switch to 360° Orbital Photos" : "Switch to Video Reel"}
+                    title={isVideoMode ? "Switch to 360° Photo Orbit" : "Switch to 360° Video"}
                   >
                     {isVideoMode ? (
                       <>
                         <Camera className="w-3 h-3 text-amber-400" />
-                        <span>360° Photo</span>
+                        <span>📷 Photo Orbit</span>
                       </>
                     ) : (
                       <>
-                        <Video className="w-3 h-3 text-rose-400" />
-                        <span>Food Video</span>
+                        <Video className="w-3 h-3 text-emerald-400" />
+                        <span>🎥 360° Video</span>
                       </>
                     )}
                   </button>
@@ -435,11 +538,11 @@ export default function MenuItemCard({
               <span className="menu-show__muted">&bull; {item.prepTime || '12 min'}</span>
             </div>
 
-            {/* Video reel badge */}
+            {/* 360° Video reel badge */}
             {(hasVideo || item.makingVideoUrl !== undefined) && (
               <div className="menu-show__reel">
-                <Video className="w-3 h-3 fill-current" aria-hidden="true" />
-                <span>Video Reel</span>
+                <Video className="w-3 h-3 fill-current text-emerald-400" aria-hidden="true" />
+                <span>360° Video</span>
               </div>
             )}
           </div>
@@ -576,18 +679,23 @@ export default function MenuItemCard({
             {dishVideo && !videoError ? (
               <video
                 src={dishVideo}
-                poster={item.image}
+                poster={safeDishImage}
                 autoPlay
                 loop
                 muted
                 playsInline
-                preload="metadata"
+                preload="auto"
+                onLoadedMetadata={(e) => {
+                  if (e.currentTarget.paused) {
+                    e.currentTarget.play().catch(() => {});
+                  }
+                }}
                 onError={() => setVideoError(true)}
                 className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               />
-            ) : item.image && !imageError ? (
+            ) : safeDishImage && !imageError ? (
               <img
-                src={item.image}
+                src={safeDishImage}
                 alt={dishTitle}
                 onError={() => setImageError(true)}
                 loading="lazy"
@@ -610,6 +718,19 @@ export default function MenuItemCard({
                 <span>{item.rating || '4.9'}</span>
               </span>
             </div>
+
+            {/* 360° Video Live Badge (Top-Right) */}
+            {dishVideo && !videoError && (
+              <div className="absolute top-1 right-1 z-10 pointer-events-none">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-black/85 text-emerald-300 backdrop-blur-md border border-emerald-500/30 shadow-md">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                  </span>
+                  <span>360°</span>
+                </span>
+              </div>
+            )}
 
             {!isAvailable && (
               <div className="absolute inset-0 bg-neutral-950/75 backdrop-blur-xs flex items-center justify-center z-20">
@@ -657,9 +778,9 @@ export default function MenuItemCard({
               {(hasVideo || item.makingVideoUrl !== undefined) && (
                 <>
                   <span>&bull;</span>
-                  <span className="inline-flex items-center gap-0.5 text-[#FF7A45] font-bold">
-                    <Video className="w-2.5 h-2.5 text-[#FF5A26]" />
-                    <span>Reel</span>
+                  <span className="inline-flex items-center gap-0.5 text-emerald-400 font-bold">
+                    <Video className="w-2.5 h-2.5 text-emerald-400" />
+                    <span>360° Video</span>
                   </span>
                 </>
               )}
@@ -791,7 +912,12 @@ export default function MenuItemCard({
                   loop
                   muted
                   playsInline
-                  preload="metadata"
+                  preload="auto"
+                  onLoadedMetadata={(e) => {
+                    if (e.currentTarget.paused) {
+                      e.currentTarget.play().catch(() => {});
+                    }
+                  }}
                   onError={() => setVideoError(true)}
                   className="plate-card__img object-cover w-full h-full"
                 />
@@ -807,6 +933,19 @@ export default function MenuItemCard({
                 <div className="plate-card__fallback">
                   <UtensilsCrossed className="w-6 h-6 stroke-[1.8] text-[#16a34a] mb-1" />
                   <span className="text-[10px] font-bold line-clamp-1">{dishTitle}</span>
+                </div>
+              )}
+
+              {/* 360° Video floating badge over circular dish */}
+              {dishVideo && !videoError && (
+                <div className="absolute top-2 left-2 z-10 pointer-events-none">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-black/75 text-emerald-300 backdrop-blur-md border border-emerald-500/30 shadow-md">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    </span>
+                    <span>360° Video</span>
+                  </span>
                 </div>
               )}
 
@@ -956,10 +1095,10 @@ export default function MenuItemCard({
               {(hasVideo || item.makingVideoUrl !== undefined) && (
                 <span
                   className="menu-chip menu-chip--reel"
-                  title="Kitchen Making Video Reel"
+                  title="360° Product Video"
                 >
-                  <Video className="w-2.5 h-2.5 fill-current" />
-                  <span>Reel</span>
+                  <Video className="w-2.5 h-2.5 fill-current text-emerald-400" />
+                  <span>360° Video</span>
                 </span>
               )}
             </div>
@@ -968,22 +1107,27 @@ export default function MenuItemCard({
           {/* Circular photo frame with a warm gold glow */}
           <div className="menu-card__media">
             <div className="menu-card__halo" aria-hidden="true" />
-            <div className="menu-card__photo">
+            <div className="menu-card__photo relative overflow-hidden rounded-full">
               {dishVideo && !videoError ? (
                 <video
                   src={dishVideo}
-                  poster={item.image}
+                  poster={safeDishImage}
                   autoPlay
                   loop
                   muted
                   playsInline
-                  preload="metadata"
+                  preload="auto"
+                  onLoadedMetadata={(e) => {
+                    if (e.currentTarget.paused) {
+                      e.currentTarget.play().catch(() => {});
+                    }
+                  }}
                   onError={() => setVideoError(true)}
                   className="w-full h-full object-cover rounded-full"
                 />
-              ) : item.image && !imageError ? (
+              ) : safeDishImage && !imageError ? (
                 <img
-                  src={item.image}
+                  src={safeDishImage}
                   alt={dishTitle}
                   onError={() => setImageError(true)}
                   loading="lazy"
@@ -993,6 +1137,19 @@ export default function MenuItemCard({
                   <UtensilsCrossed className="w-5 h-5 stroke-[1.8] text-[#f0d27a] mb-1" />
                   <span className="menu-card__fallback-name">
                     {dishTitle}
+                  </span>
+                </div>
+              )}
+
+              {/* 360° Video subtle badge */}
+              {dishVideo && !videoError && (
+                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-extrabold uppercase tracking-wider bg-black/85 text-emerald-300 backdrop-blur-md border border-emerald-500/40 shadow-sm whitespace-nowrap">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    </span>
+                    <span>360° Video</span>
                   </span>
                 </div>
               )}

@@ -32,6 +32,31 @@ import { resolveServerUrl } from '../context/SocketContext';
 import { getCachedMenu, cacheMenu } from '../db/indexedDb.js';
 import '../styles/admin.css';
 
+// Helper to detect whether a media URL or file points to a video
+export const isVideoUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  const clean = url.trim().toLowerCase();
+  return (
+    clean.includes('.mp4') ||
+    clean.includes('.webm') ||
+    clean.includes('.mov') ||
+    clean.includes('.mkv') ||
+    clean.includes('sendvideo') ||
+    clean.includes('/videos/') ||
+    clean.includes('video/') ||
+    clean.startsWith('data:video')
+  );
+};
+
+// 1-Click 360° Angular Profile Video Preset Clips
+export const PRESET_360_VIDEOS = [
+  { label: '360° Wagyu Smash Burger', url: '/videos/reel-chef.mp4' },
+  { label: '360° Sizzling Ribeye Steak', url: '/videos/reel-chef.mp4' },
+  { label: '360° Truffle Tagliatelle', url: '/videos/reel-chef.mp4' },
+  { label: '360° Molten Lava Dessert', url: '/videos/reel-chef.mp4' },
+  { label: '360° Chef Culinary Fire', url: '/videos/reel-chef.mp4' }
+];
+
 // Initial fallback sample menu in case server is fresh or offline
 const INITIAL_SAMPLE_DISHES = [
   {
@@ -42,7 +67,7 @@ const INITIAL_SAMPLE_DISHES = [
     price: 15.99,
     description: 'Brioche bun, grilled portobello, aged gruyere cheese, black truffle aioli, arugula.',
     image_url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
-    making_video_url: '',
+    making_video_url: '/videos/reel-chef.mp4',
     is_veg: 1,
     is_spicy: 0,
     is_available: 1
@@ -208,6 +233,9 @@ export default function MenuManager({ className = '' }) {
     const isConvexId = typeof item._id === 'string' || (typeof item.id === 'string' && item.id.startsWith('j'));
     const convexId = item._id || (isConvexId ? item.id : item.convexId || null);
 
+    const rawVideo = item.making_video_url || item.makingVideoUrl || item.videoUrl || (isVideoUrl(item.image_url || item.imageUrl || item.image) ? (item.image_url || item.imageUrl || item.image) : '');
+    const rawImage = item.image_url || item.imageUrl || item.image || '';
+
     return {
       id: item.id || item._id,
       convexId,
@@ -217,8 +245,9 @@ export default function MenuManager({ className = '' }) {
       categorySlug: item.categorySlug || (item.category ? item.category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : 'mains'),
       price: typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0,
       description: item.description || '',
-      image_url: item.image_url || item.imageUrl || item.image || '',
-      making_video_url: item.making_video_url || item.makingVideoUrl || '',
+      image_url: rawImage || rawVideo || '',
+      making_video_url: rawVideo || (isVideoUrl(rawImage) ? rawImage : ''),
+      videoUrl: rawVideo || undefined,
       is_veg: item.is_veg === 1 || item.is_veg === true || item.isVeg === true || item.veg === true ? 1 : 0,
       is_spicy: item.is_spicy === 1 || item.is_spicy === true || item.isSpicy === true || item.spicy === true ? 1 : 0,
       is_available: item.is_available === 0 || item.is_available === false || item.isAvailable === false || item.available === false ? 0 : 1
@@ -361,7 +390,7 @@ export default function MenuManager({ className = '' }) {
         }
       }
       // Dietary / Availability / Media filters
-      if (filterType === 'video' && !dish.making_video_url && !dish.makingVideoUrl) return false;
+      if (filterType === 'video' && !dish.making_video_url && !dish.makingVideoUrl && !dish.videoUrl && !isVideoUrl(dish.image_url)) return false;
       if (filterType === 'veg' && !dish.is_veg) return false;
       if (filterType === 'spicy' && !dish.is_spicy) return false;
       if (filterType === 'available' && !dish.is_available) return false;
@@ -415,6 +444,11 @@ export default function MenuManager({ className = '' }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // If a video file was selected via photo button, seamlessly route to video upload
+    if (file.type.startsWith('video/') || file.name.match(/\.(mp4|webm|mov|mkv)$/i)) {
+      return handleVideoUpload(e);
+    }
+
     setUploadingPhoto(true);
     setUploadError('');
     try {
@@ -432,7 +466,7 @@ export default function MenuManager({ className = '' }) {
     }
   };
 
-  // Upload Kitchen Reel Video to Telegram Channel Media CDN
+  // Upload 360° Profile Video to Telegram Channel Media CDN
   const handleVideoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -442,8 +476,13 @@ export default function MenuManager({ className = '' }) {
     try {
       const result = await uploadVideoToTelegram(file);
       if (result.cdnUrl) {
-        setFormData((prev) => ({ ...prev, making_video_url: result.cdnUrl }));
-        triggerSuccess('Kitchen reel hosted on Telegram Channel (@Restaurant Media)! 🎥');
+        // Sync so both image_url and making_video_url recognize the 360° video
+        setFormData((prev) => ({
+          ...prev,
+          making_video_url: result.cdnUrl,
+          image_url: prev.image_url && !isVideoUrl(prev.image_url) ? prev.image_url : result.cdnUrl
+        }));
+        triggerSuccess('360° Profile Video hosted on Telegram Channel (@Restaurant Media)! 🎥');
       }
     } catch (err) {
       console.error('[MenuManager] Telegram video upload failed:', err);
@@ -452,6 +491,35 @@ export default function MenuManager({ className = '' }) {
       setUploadingVideo(false);
       if (e.target) e.target.value = '';
     }
+  };
+
+  // Primary media input change: seamlessly detects if link is video or photo
+  const handlePrimaryMediaUrlChange = (val) => {
+    const isVid = isVideoUrl(val);
+    setFormData((prev) => ({
+      ...prev,
+      image_url: val,
+      making_video_url: isVid ? val : (isVideoUrl(prev.making_video_url) ? '' : prev.making_video_url)
+    }));
+  };
+
+  // Explicit video link input change
+  const handleMakingVideoUrlChange = (val) => {
+    setFormData((prev) => ({
+      ...prev,
+      making_video_url: val,
+      image_url: !prev.image_url || isVideoUrl(prev.image_url) ? (val || prev.image_url) : prev.image_url
+    }));
+  };
+
+  // 1-Click apply 360° angular video preset
+  const handleSelectVideoPreset = (url) => {
+    setFormData((prev) => ({
+      ...prev,
+      making_video_url: url,
+      image_url: prev.image_url && !isVideoUrl(prev.image_url) ? prev.image_url : url
+    }));
+    triggerSuccess('360° Angular Video Reel preset applied! 🔄🎥');
   };
 
   // Toggle item availability immediately (Convex + SQLite + IndexedDB)
@@ -647,13 +715,15 @@ export default function MenuManager({ className = '' }) {
     setEditingDishId(dish.id);
     setIsCreatingInlineCategory(false);
     setInlineCategoryName('');
+    const rawVid = dish.making_video_url || dish.makingVideoUrl || dish.videoUrl || (isVideoUrl(dish.image_url || dish.imageUrl) ? (dish.image_url || dish.imageUrl) : '');
+    const rawImg = dish.image_url || dish.imageUrl || '';
     setFormData({
       name: dish.name || '',
       category: dish.category || 'Mains',
       price: dish.price !== undefined ? String(dish.price) : '',
       description: dish.description || '',
-      image_url: dish.image_url || dish.imageUrl || '',
-      making_video_url: dish.making_video_url || dish.makingVideoUrl || '',
+      image_url: rawImg || rawVid || '',
+      making_video_url: rawVid || '',
       is_veg: Boolean(dish.is_veg),
       is_spicy: Boolean(dish.is_spicy),
       is_available: Boolean(dish.is_available)
@@ -701,6 +771,14 @@ export default function MenuManager({ className = '' }) {
     }
     const categorySlug = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'mains';
 
+    // Synchronize media fields seamlessly
+    const primaryMedia = formData.image_url.trim();
+    const videoMedia = formData.making_video_url.trim();
+    const isPrimaryVideo = isVideoUrl(primaryMedia);
+
+    const finalVideoUrl = videoMedia || (isPrimaryVideo ? primaryMedia : '');
+    const finalImageUrl = primaryMedia || finalVideoUrl;
+
     const payload = {
       name: trimmedName,
       category: categoryName,
@@ -708,9 +786,11 @@ export default function MenuManager({ className = '' }) {
       categorySlug,
       price: Math.round(parsedPrice * 100) / 100,
       description: formData.description.trim(),
-      image_url: formData.image_url.trim(),
-      image: formData.image_url.trim(),
-      making_video_url: formData.making_video_url.trim(),
+      image_url: finalImageUrl,
+      image: finalImageUrl,
+      making_video_url: finalVideoUrl,
+      makingVideoUrl: finalVideoUrl,
+      videoUrl: finalVideoUrl || undefined,
       is_veg: formData.is_veg ? 1 : 0,
       is_spicy: formData.is_spicy ? 1 : 0,
       is_available: formData.is_available ? 1 : 0
@@ -729,9 +809,9 @@ export default function MenuManager({ className = '' }) {
               name: trimmedName,
               description: formData.description.trim(),
               price: Math.round(parsedPrice * 100) / 100,
-              imageUrl: formData.image_url.trim(),
-              images: [formData.image_url.trim()].filter(Boolean),
-              makingVideoUrl: formData.making_video_url.trim() || undefined,
+              imageUrl: finalImageUrl,
+              images: [finalImageUrl].filter(Boolean),
+              makingVideoUrl: finalVideoUrl || undefined,
               isVeg: Boolean(formData.is_veg),
               isSpicy: Boolean(formData.is_spicy),
               isAvailable: Boolean(formData.is_available)
@@ -749,7 +829,7 @@ export default function MenuManager({ className = '' }) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               ...payload,
-              making_video_url: formData.making_video_url.trim(),
+              making_video_url: finalVideoUrl,
               convex_id: convexNewId || undefined
             })
           });
@@ -788,9 +868,9 @@ export default function MenuManager({ className = '' }) {
               name: trimmedName,
               description: formData.description.trim(),
               price: Math.round(parsedPrice * 100) / 100,
-              imageUrl: formData.image_url.trim(),
-              images: [formData.image_url.trim()].filter(Boolean),
-              makingVideoUrl: formData.making_video_url.trim() || undefined,
+              imageUrl: finalImageUrl,
+              images: [finalImageUrl].filter(Boolean),
+              makingVideoUrl: finalVideoUrl || undefined,
               isVeg: Boolean(formData.is_veg),
               isSpicy: Boolean(formData.is_spicy),
               isAvailable: Boolean(formData.is_available)
@@ -806,9 +886,9 @@ export default function MenuManager({ className = '' }) {
               name: trimmedName,
               description: formData.description.trim(),
               price: Math.round(parsedPrice * 100) / 100,
-              imageUrl: formData.image_url.trim(),
-              images: [formData.image_url.trim()].filter(Boolean),
-              makingVideoUrl: formData.making_video_url.trim() || undefined,
+              imageUrl: finalImageUrl,
+              images: [finalImageUrl].filter(Boolean),
+              makingVideoUrl: finalVideoUrl || undefined,
               isVeg: Boolean(formData.is_veg),
               isSpicy: Boolean(formData.is_spicy),
               isAvailable: Boolean(formData.is_available)
@@ -825,7 +905,7 @@ export default function MenuManager({ className = '' }) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               ...payload,
-              making_video_url: formData.making_video_url.trim()
+              making_video_url: finalVideoUrl
             })
           });
         } catch (putErr) {
@@ -1146,6 +1226,9 @@ export default function MenuManager({ className = '' }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
           {filteredDishes.map((dish) => {
             const isAvailable = Boolean(dish.is_available);
+            const dishVideo = dish.making_video_url || dish.makingVideoUrl || dish.videoUrl || (isVideoUrl(dish.image_url) ? dish.image_url : null);
+            const hasVideo = Boolean(dishVideo);
+
             return (
               <div
                 key={dish.id}
@@ -1154,9 +1237,20 @@ export default function MenuManager({ className = '' }) {
                 }`}
               >
                 <div className="flex flex-col flex-1">
-                  {/* Dish Header Image & Tags - strictly uniform height and aspect ratio */}
-                  <div className="relative w-full h-48 bg-[#1e293b] overflow-hidden shrink-0">
-                    {dish.image_url ? (
+                  {/* Dish Header Media & Tags - strictly uniform height and aspect ratio */}
+                  <div className="relative w-full h-48 bg-[#0b0f19] overflow-hidden shrink-0">
+                    {hasVideo ? (
+                      <video
+                        src={dishVideo}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+                          !isAvailable ? 'grayscale-40 opacity-70' : ''
+                        }`}
+                      />
+                    ) : dish.image_url && !isVideoUrl(dish.image_url) ? (
                       <img
                         src={dish.image_url}
                         alt={dish.name}
@@ -1173,11 +1267,11 @@ export default function MenuManager({ className = '' }) {
                     ) : null}
                     <div
                       className={`w-full h-full flex flex-col items-center justify-center bg-[#1e293b] text-[#94a3b8] ${
-                        dish.image_url ? 'hidden' : 'flex'
+                        hasVideo || (dish.image_url && !isVideoUrl(dish.image_url)) ? 'hidden' : 'flex'
                       }`}
                     >
                       <ImageIcon className="w-8 h-8 mb-1 opacity-60" />
-                      <span className="text-[11px] font-medium text-zinc-400">No Image Provided</span>
+                      <span className="text-[11px] font-medium text-zinc-400">No Media Provided</span>
                     </div>
 
                     {/* Top Badges */}
@@ -1197,16 +1291,18 @@ export default function MenuManager({ className = '' }) {
                           Spicy
                         </span>
                       )}
-                      {Boolean(dish.image_url && (dish.image_url.includes('telegram') || dish.image_url.includes('api.telegram.org'))) && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-sky-600 text-white shadow-xs" title="Photo hosted on Telegram Channel CDN">
+                      {Boolean((dish.image_url && (dish.image_url.includes('telegram') || dish.image_url.includes('api.telegram.org'))) ||
+                               (dishVideo && (dishVideo.includes('telegram') || dishVideo.includes('api.telegram.org')))) && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-sky-600 text-white shadow-xs" title="Media hosted on Telegram Channel CDN">
                           <Send className="w-2.5 h-2.5 -rotate-45" />
                           TG Media
                         </span>
                       )}
-                      {Boolean(dish.making_video_url || dish.makingVideoUrl) ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-600 text-white shadow-xs border border-rose-400/40" title="Profile video active: plays on customer view">
+                      {hasVideo ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-600 text-white shadow-md border border-rose-400/50 animate-pulse" title="360° Profile Video active: running 24/7">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
                           <Video className="w-2.5 h-2.5 fill-current" />
-                          Video Active
+                          <span>🎥 360° Video</span>
                         </span>
                       ) : (
                         <button
@@ -1216,10 +1312,10 @@ export default function MenuManager({ className = '' }) {
                             handleOpenEditModal(dish);
                           }}
                           className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 cursor-pointer transition"
-                          title="Click to add a profile video to this dish"
+                          title="Click to add a 360° profile video to this dish"
                         >
                           <Video className="w-2.5 h-2.5 text-purple-400" />
-                          + Video
+                          + 360° Video
                         </button>
                       )}
                     </div>
@@ -1543,7 +1639,7 @@ export default function MenuManager({ className = '' }) {
                         </span>
                       </h4>
                       <p className="text-[11px] text-[#94a3b8]">
-                        Photos & kitchen reels host on <strong className="text-[#f8fafc]">@Restaurant Media</strong>; records in <strong className="text-[#f8fafc]">Convex</strong>.
+                        High-res photos & 360° looping video reels hosted on <strong className="text-[#f8fafc]">@Restaurant Media</strong>; records in <strong className="text-[#f8fafc]">Convex</strong>.
                       </p>
                     </div>
                   </div>
@@ -1556,157 +1652,36 @@ export default function MenuManager({ className = '' }) {
                   </div>
                 )}
 
-                {/* 1. FOOD PHOTO SECTION */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between flex-wrap gap-1">
-                    <label className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5">
-                      <ImageIcon className="w-3.5 h-3.5 text-sky-400" />
-                      <span>Food Dish Photo</span>
-                    </label>
+                {/* Primary Media: Food Profile Media (Photo or 360° Angular Video Reel) */}
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between flex-wrap gap-1">
+                      <label className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="text-xs sm:text-sm font-extrabold text-white">Food Profile Media (Photo or 360° Angular Video Reel)</span>
+                      </label>
 
-                    {(formData.image_url?.includes('telegram') || formData.image_url?.includes('api.telegram.org')) && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700 animate-fadeIn">
-                        <Check className="w-3 h-3 stroke-[3]" />
-                        <span>✅ Hosted on Telegram Channel</span>
-                      </span>
-                    )}
+                      {((formData.image_url && (formData.image_url.includes('telegram') || formData.image_url.includes('api.telegram.org'))) ||
+                        (formData.making_video_url && (formData.making_video_url.includes('telegram') || formData.making_video_url.includes('api.telegram.org')))) && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700 animate-fadeIn">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                          <span>✅ Hosted on Telegram Channel CDN</span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-[#94a3b8] mt-0.5">
+                      Upload a high-res photo or a 360° looping video reel to Telegram Channel CDN (@Restaurant Media). Video profiles run continuously 24/7 on customer view!
+                    </p>
                   </div>
 
-                  {/* Hidden photo file input */}
+                  {/* Hidden file inputs */}
                   <input
                     type="file"
                     ref={photoInputRef}
-                    accept="image/*"
+                    accept="image/*,video/*"
                     onChange={handlePhotoUpload}
                     className="hidden"
                   />
-
-                  {/* Upload button and URL field */}
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <button
-                      type="button"
-                      onClick={() => photoInputRef.current?.click()}
-                      disabled={uploadingPhoto}
-                      className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50 shrink-0"
-                    >
-                      {uploadingPhoto ? (
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Send className="w-3.5 h-3.5 -rotate-45" />
-                      )}
-                      <span>{uploadingPhoto ? 'Uploading to Telegram Channel...' : 'Upload Photo to Telegram'}</span>
-                    </button>
-
-                    <div className="relative flex-1">
-                      <input
-                        type="url"
-                        value={formData.image_url}
-                        onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                        placeholder="Telegram CDN URL or external photo link..."
-                        className="admin-dark-input w-full font-mono placeholder-[#64748b] truncate"
-                        style={{
-                          backgroundColor: '#0f172a',
-                          color: '#f8fafc',
-                          border: '1px solid #334155',
-                          padding: '10px 14px',
-                          paddingRight: '32px',
-                          borderRadius: '8px',
-                          fontSize: '14px',
-                          fontWeight: 500
-                        }}
-                      />
-                      {formData.image_url && (
-                        <button
-                          type="button"
-                          onClick={() => setFormData({ ...formData, image_url: '' })}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#f8fafc] text-xs p-1 cursor-pointer"
-                          title="Clear photo"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Photo Preview Box */}
-                  {formData.image_url && (
-                    <div className="flex items-center gap-3 p-2.5 bg-[#0f172a] rounded-xl border border-[#334155]">
-                      <div className="w-14 h-14 rounded-lg overflow-hidden border border-[#334155] bg-[#1e293b] shrink-0">
-                        <img
-                          src={formData.image_url}
-                          alt="Dish Preview"
-                          className="w-full h-full object-cover"
-                          onError={(e) => { e.target.style.display = 'none'; }}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-bold text-[#f8fafc] truncate">
-                          {formData.name || 'Dish Photo Preview'}
-                        </p>
-                        <p className="text-[10px] text-[#94a3b8] truncate font-mono mt-0.5">
-                          {formData.image_url}
-                        </p>
-                        {(formData.image_url.includes('telegram') || formData.image_url.includes('api.telegram.org')) && (
-                          <span className="text-[10px] text-sky-400 font-medium flex items-center gap-1 mt-0.5">
-                            <Send className="w-2.5 h-2.5 -rotate-45" /> Channel: @Restaurant Media (Telegram CDN)
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* 2. KITCHEN REEL VIDEO SECTION */}
-                <div className="space-y-2.5 pt-3 border-t border-[#334155]">
-                  <div className="flex items-center justify-between flex-wrap gap-1.5">
-                    <div>
-                      <label className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5">
-                        <Video className="w-4 h-4 text-rose-400" />
-                        <span>Food Profile Video Reel <span className="text-[10px] text-amber-300 font-semibold">(Plays on Customer View at First Glance)</span></span>
-                      </label>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        MP4, WebM or video link. When set, customers see a realistic looping video right on this dish card!
-                      </p>
-                    </div>
-
-                    {(formData.making_video_url?.includes('telegram') || formData.making_video_url?.includes('api.telegram.org')) && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700 animate-fadeIn">
-                        <Check className="w-3 h-3 stroke-[3]" />
-                        <span>Hosted on Telegram Channel</span>
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Quick Food Video Preset Chips */}
-                  <div className="bg-[#0b0f19] p-2.5 rounded-xl border border-slate-800 space-y-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                      Quick Sample Food Reels (1-Click Apply):
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {[
-                        { label: '👨‍🍳 Chef Wok Fire Reel', url: '/videos/reel-chef.mp4' },
-                        { label: '🥩 Sizzling Ribeye Sizzle', url: '/videos/reel-chef.mp4' },
-                        { label: '🍔 Gourmet Wagyu Burger', url: '/videos/reel-chef.mp4' },
-                        { label: '🍝 Truffle Pasta Plating', url: '/videos/reel-chef.mp4' },
-                        { label: '🍰 Lava Dessert Reveal', url: '/videos/reel-chef.mp4' }
-                      ].map((preset) => (
-                        <button
-                          key={preset.label}
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, making_video_url: preset.url }))}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer border ${
-                            formData.making_video_url === preset.url
-                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/60 shadow-xs'
-                              : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
-                          }`}
-                        >
-                          {preset.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Hidden video file input */}
                   <input
                     type="file"
                     ref={videoInputRef}
@@ -1715,75 +1690,229 @@ export default function MenuManager({ className = '' }) {
                     className="hidden"
                   />
 
-                  {/* Upload button and URL field */}
-                  <div className="flex flex-col sm:flex-row gap-2">
+                  {/* Dual High-Visibility Upload Buttons */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* [📸 Upload Photo to Telegram] (Sky blue button triggering photoInputRef) */}
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={uploadingPhoto || uploadingVideo}
+                      className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-xs font-bold shadow-md shadow-sky-600/20 transition cursor-pointer disabled:opacity-50"
+                    >
+                      {uploadingPhoto ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4 -rotate-45" />
+                      )}
+                      <span>{uploadingPhoto ? 'Uploading Photo to Telegram...' : '📸 Upload Photo to Telegram'}</span>
+                    </button>
+
+                    {/* [🎥 Upload 360° Profile Video to Telegram] (Rose/Purple button triggering videoInputRef) */}
                     <button
                       type="button"
                       onClick={() => videoInputRef.current?.click()}
-                      disabled={uploadingVideo}
-                      className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50 shrink-0"
+                      disabled={uploadingPhoto || uploadingVideo}
+                      className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-rose-600 to-amber-600 hover:from-purple-500 hover:via-rose-500 hover:to-amber-500 active:scale-95 text-white text-xs font-bold shadow-md shadow-rose-600/30 transition cursor-pointer disabled:opacity-50"
                     >
                       {uploadingVideo ? (
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <RefreshCw className="w-4 h-4 animate-spin" />
                       ) : (
-                        <Video className="w-3.5 h-3.5" />
+                        <Video className="w-4 h-4" />
                       )}
-                      <span>{uploadingVideo ? 'Uploading Video...' : 'Upload Video File'}</span>
+                      <span>{uploadingVideo ? 'Uploading 360° Video...' : '🎥 Upload 360° Profile Video to Telegram'}</span>
                     </button>
+                  </div>
 
-                    <div className="relative flex-1">
-                      <input
-                        type="url"
-                        value={formData.making_video_url}
-                        onChange={(e) => setFormData({ ...formData, making_video_url: e.target.value })}
-                        placeholder="Paste MP4 / WebM video link or select sample clip above..."
-                        className="admin-dark-input w-full font-mono placeholder-[#64748b] truncate"
-                        style={{
-                          backgroundColor: '#0f172a',
-                          color: '#f8fafc',
-                          border: '1px solid #334155',
-                          padding: '10px 14px',
-                          paddingRight: '32px',
-                          borderRadius: '8px',
-                          fontSize: '14px',
-                          fontWeight: 500
+                  {/* Primary Media URL Input Field (accepts both photo and video) */}
+                  <div className="relative">
+                    <input
+                      type="url"
+                      value={formData.image_url || formData.making_video_url}
+                      onChange={(e) => handlePrimaryMediaUrlChange(e.target.value)}
+                      placeholder="Paste Telegram CDN link, 360° video link (.mp4/.webm), or image URL..."
+                      className="admin-dark-input w-full font-mono placeholder-[#64748b] truncate text-xs"
+                      style={{
+                        backgroundColor: '#0f172a',
+                        color: '#f8fafc',
+                        border: (formData.making_video_url || isVideoUrl(formData.image_url)) ? '1px solid #f43f5e' : '1px solid #334155',
+                        padding: '10px 14px',
+                        paddingRight: '32px',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        fontWeight: 500
+                      }}
+                    />
+                    {(formData.image_url || formData.making_video_url) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => ({ ...prev, image_url: '', making_video_url: '' }));
                         }}
-                      />
-                      {formData.making_video_url && (
-                        <button
-                          type="button"
-                          onClick={() => setFormData({ ...formData, making_video_url: '' })}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#f8fafc] text-xs p-1 cursor-pointer"
-                          title="Clear video"
-                        >
-                          ✕
-                        </button>
-                      )}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#f8fafc] text-xs p-1 cursor-pointer"
+                        title="Clear media"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick 360° Video Presets */}
+                  <div className="bg-[#0b0f19] p-3 rounded-xl border border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Quick 360° Video Presets (1-Click Apply):</span>
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-medium">Plays 24/7 Loop</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {PRESET_360_VIDEOS.map((preset) => {
+                        const isSelected = (formData.making_video_url === preset.url || formData.image_url === preset.url);
+                        return (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => handleSelectVideoPreset(preset.url)}
+                            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 border ${
+                              isSelected
+                                ? 'bg-rose-500/20 text-rose-300 border-rose-500 shadow-sm shadow-rose-500/20'
+                                : 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-700'
+                            }`}
+                          >
+                            <span>🔄</span>
+                            <span>{preset.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Video Player Preview */}
-                  {formData.making_video_url && (
-                    <div className="p-3 bg-[#0b0f19] rounded-xl border border-rose-500/30 space-y-2">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-[#f8fafc]">
-                        <span className="flex items-center gap-1.5 text-rose-400">
-                          <Play className="w-3.5 h-3.5 fill-current" /> Live Profile Video Preview (Customer View)
-                        </span>
-                        <span className="text-[10px] text-[#94a3b8] font-mono truncate max-w-xs">
-                          {formData.making_video_url}
-                        </span>
+                  {/* Profile Media Preview Player */}
+                  {(() => {
+                    const activeVideo = (formData.making_video_url && isVideoUrl(formData.making_video_url)) 
+                      ? formData.making_video_url 
+                      : (formData.image_url && isVideoUrl(formData.image_url))
+                        ? formData.image_url
+                        : formData.making_video_url;
+                    const isVideoActive = Boolean(activeVideo && (isVideoUrl(activeVideo) || formData.making_video_url));
+
+                    if (isVideoActive) {
+                      return (
+                        <div className="p-3.5 bg-[#0b0f19] rounded-xl border-2 border-rose-500/50 shadow-lg shadow-rose-950/40 space-y-2.5 animate-fadeIn">
+                          {/* Glowing Badge */}
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-extrabold bg-gradient-to-r from-rose-600 to-purple-600 text-white shadow-md shadow-rose-600/30 border border-rose-400/40 animate-pulse">
+                              <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                              <Video className="w-3.5 h-3.5 fill-current" />
+                              <span>🎥 360° Angular Video Profile Active (Plays 24/7 on Diner Card)</span>
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono truncate max-w-xs">
+                              {activeVideo}
+                            </span>
+                          </div>
+
+                          <div className="relative rounded-lg overflow-hidden border border-slate-800 bg-black aspect-video max-h-52 flex items-center justify-center">
+                            <video
+                              src={activeVideo}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              controls
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+
+                          <p className="text-[11px] text-slate-300 leading-tight">
+                            ✨ This high-impact 360° profile video will play smoothly in a continuous 24/7 loop on the diner's mobile card, giving guests an immersive 360° product experience!
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    if (formData.image_url && !isVideoUrl(formData.image_url)) {
+                      return (
+                        <div className="flex items-center gap-3 p-3 bg-[#0f172a] rounded-xl border border-[#334155] animate-fadeIn">
+                          <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#334155] bg-[#1e293b] shrink-0">
+                            <img
+                              src={formData.image_url}
+                              alt="Dish Preview"
+                              className="w-full h-full object-cover"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                                Photo Profile
+                              </span>
+                              <p className="text-xs font-bold text-[#f8fafc] truncate">
+                                {formData.name || 'Dish Photo Preview'}
+                              </p>
+                            </div>
+                            <p className="text-[10px] text-[#94a3b8] truncate font-mono mt-1">
+                              {formData.image_url}
+                            </p>
+                            {(formData.image_url.includes('telegram') || formData.image_url.includes('api.telegram.org')) && (
+                              <span className="text-[10px] text-sky-400 font-medium flex items-center gap-1 mt-0.5">
+                                <Send className="w-2.5 h-2.5 -rotate-45" /> Telegram Channel CDN (@Restaurant Media)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return null;
+                  })()}
+
+                  {/* Optional secondary video URL or fallback photo link accordion */}
+                  <details className="text-xs text-slate-400 pt-1 border-t border-slate-700/60">
+                    <summary className="cursor-pointer hover:text-white font-semibold transition py-1 select-none flex items-center gap-1">
+                      <span>⚙️ Advanced: Separate Kitchen Reel Video URL (Optional)</span>
+                    </summary>
+                    <div className="mt-2 space-y-2 p-2.5 bg-[#0f172a] rounded-lg border border-slate-800">
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                          Direct Video URL (making_video_url):
+                        </label>
+                        <input
+                          type="url"
+                          value={formData.making_video_url}
+                          onChange={(e) => handleMakingVideoUrlChange(e.target.value)}
+                          placeholder="e.g. /videos/reel-chef.mp4 or Telegram video link..."
+                          className="admin-dark-input w-full font-mono text-xs placeholder-[#64748b]"
+                          style={{
+                            backgroundColor: '#1e293b',
+                            color: '#f8fafc',
+                            border: '1px solid #334155',
+                            padding: '8px 12px',
+                            borderRadius: '6px'
+                          }}
+                        />
                       </div>
-                      <video
-                        src={formData.making_video_url}
-                        controls
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        className="w-full max-h-48 rounded-lg bg-black object-contain border border-slate-800 shadow-md"
-                      />
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                          Static Fallback Photo URL (image_url):
+                        </label>
+                        <input
+                          type="url"
+                          value={formData.image_url}
+                          onChange={(e) => handlePrimaryMediaUrlChange(e.target.value)}
+                          placeholder="e.g. https://images.unsplash.com/... or Telegram photo link"
+                          className="admin-dark-input w-full font-mono text-xs placeholder-[#64748b]"
+                          style={{
+                            backgroundColor: '#1e293b',
+                            color: '#f8fafc',
+                            border: '1px solid #334155',
+                            padding: '8px 12px',
+                            borderRadius: '6px'
+                          }}
+                        />
+                      </div>
                     </div>
-                  )}
+                  </details>
+
                 </div>
 
               </div>
