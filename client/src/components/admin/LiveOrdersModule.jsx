@@ -231,7 +231,7 @@ export default function LiveOrdersModule({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Card 1: Total Active Tickets */}
-        <div className="relative group overflow-hidden rounded-3xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-xs hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-500/40 transition-all duration-300">
+        <div className="relative group overflow-hidden admin-card bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-xs hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-500/40 transition-all duration-300">
           <div className="absolute -top-12 -right-12 w-28 h-28 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all duration-500 pointer-events-none" />
           <div className="flex items-center justify-between">
             <div>
@@ -258,7 +258,7 @@ export default function LiveOrdersModule({
         </div>
 
         {/* Card 2: Cooking Now */}
-        <div className="relative group overflow-hidden rounded-3xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-xs hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-500/40 transition-all duration-300">
+        <div className="relative group overflow-hidden admin-card bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-xs hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-500/40 transition-all duration-300">
           <div className="absolute -top-12 -right-12 w-28 h-28 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-all duration-500 pointer-events-none" />
           <div className="flex items-center justify-between">
             <div>
@@ -285,7 +285,7 @@ export default function LiveOrdersModule({
         </div>
 
         {/* Card 3: Ready for Pickup */}
-        <div className="relative group overflow-hidden rounded-3xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-xs hover:shadow-xl hover:shadow-emerald-500/10 hover:border-emerald-500/40 transition-all duration-300">
+        <div className="relative group overflow-hidden admin-card bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-xs hover:shadow-xl hover:shadow-emerald-500/10 hover:border-emerald-500/40 transition-all duration-300">
           <div className="absolute -top-12 -right-12 w-28 h-28 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-500 pointer-events-none" />
           <div className="flex items-center justify-between">
             <div>
@@ -312,7 +312,7 @@ export default function LiveOrdersModule({
         </div>
 
         {/* Card 4: Delivered Today */}
-        <div className="relative group overflow-hidden rounded-3xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-xs hover:shadow-xl hover:shadow-cyan-500/10 hover:border-cyan-500/40 transition-all duration-300">
+        <div className="relative group overflow-hidden admin-card bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-xs hover:shadow-xl hover:shadow-cyan-500/10 hover:border-cyan-500/40 transition-all duration-300">
           <div className="absolute -top-12 -right-12 w-28 h-28 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all duration-500 pointer-events-none" />
           <div className="flex items-center justify-between">
             <div>
