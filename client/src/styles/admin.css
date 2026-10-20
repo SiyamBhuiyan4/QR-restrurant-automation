@@ -147,6 +147,11 @@
 .admin-root {
   overflow-x: hidden;
   max-width: 100%;
+  --admin-accent: #059669;
+  --admin-accent-soft: #fbbf24;
+  --admin-surface: #ffffff;
+  --admin-surface-dark: #111827;
+  --admin-border: rgba(148, 163, 184, 0.25);
 }
 
 .admin-root img,
@@ -218,25 +223,9 @@
 
 /* Sidebar fixed 260px & main content alignment (zero white gap) */
 .admin-sidebar {
-  width: 260px !important;
-  min-width: 260px !important;
-  max-width: 260px !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  height: 100vh !important;
-  z-index: 40 !important;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.admin-root.dark .admin-sidebar {
-  background-color: #0b0f19 !important;
-  border-right: 1px solid #1e293b !important;
-}
-
-.admin-root:not(.dark) .admin-sidebar {
-  background-color: #ffffff !important;
-  border-right: 1px solid #e2e8f0 !important;
+  background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+  border-right: 1px solid rgba(148, 163, 184, 0.12);
+  box-shadow: 4px 0 24px rgba(2, 6, 23, 0.25);
 }
 
 .admin-viewport {
