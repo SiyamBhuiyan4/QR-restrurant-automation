@@ -1,27 +1,20 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Bell,
   BellRing,
-  Volume2,
-  VolumeX,
   Clock,
   Check,
   CheckCircle2,
   Flame,
-  RefreshCw,
   CheckCheck,
   UserCheck,
   ExternalLink,
   Search,
-  Wifi,
-  WifiOff,
   Users,
   User,
   ShieldCheck,
   ChevronDown,
   X,
-  Radio,
-  Sparkles
+  Radio
 } from 'lucide-react';
 import { useSocket, useSocketListener } from '../context/SocketContext';
 import { useRestaurant } from '../context/RestaurantContext';
@@ -159,12 +152,6 @@ export default function WaiterPanel() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'urgent' | 'acknowledged' | 'my-tables' | 'history'
   const [tableSearch, setTableSearch] = useState('');
-  const [isMuted, setIsMuted] = useState(() => {
-    if (typeof localStorage !== 'undefined') {
-      return localStorage.getItem('smartdine_waiter_muted') === 'true';
-    }
-    return false;
-  });
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [acknowledgedMap, setAcknowledgedMap] = useState({}); // callId -> { employeeName, timestamp }
   const [callEmployeeOverrides, setCallEmployeeOverrides] = useState({}); // callId -> employeeId
@@ -268,15 +255,7 @@ export default function WaiterPanel() {
   }, [convexCalls]);
 
   // Socket Context
-  const { isConnected, socket } = useSocket();
-
-  // Sync mute state to synthesizer
-  useEffect(() => {
-    bellSynthesizer.isMuted = isMuted;
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('smartdine_waiter_muted', String(isMuted));
-    }
-  }, [isMuted]);
+  const { socket } = useSocket();
 
   // Live timer tick every 1000ms for accurate elapsed time calculation & urgency pulsing
   useEffect(() => {
@@ -729,46 +708,24 @@ export default function WaiterPanel() {
       <header className="sticky top-0 z-30 bg-[#0b0f19]/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 sm:px-6 shadow-sm">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* Left: Branding & Role Identity */}
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 via-amber-500 to-amber-600 flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/20 transition-transform ${
-                  isChimeAnimating ? 'scale-110 ring-4 ring-amber-400' : ''
-                }`}
-              >
-                <BellRing
-                  className={`w-5 h-5 text-slate-950 ${
-                    isChimeAnimating ? 'animate-wiggle text-white' : ''
-                  }`}
-                />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
-                    On-Field Waiter Console
-                  </h1>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/40">
-                    On-Field Floor Service
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300 font-medium">
-                  Real-Time Table Service, Assistance Requests &amp; Order Delivery
-                </p>
-              </div>
-            </div>
-
-            {/* Socket Status indicator for mobile */}
-            <div className="sm:hidden flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-[11px] font-semibold border border-slate-700">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div
+              className={`w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 via-amber-500 to-amber-600 flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/20 transition-transform ${
+                isChimeAnimating ? 'scale-110 ring-4 ring-amber-400' : ''
+              }`}
+            >
+              <BellRing
+                className={`w-5 h-5 text-slate-950 ${
+                  isChimeAnimating ? 'animate-wiggle text-white' : ''
                 }`}
               />
-              <span className="text-slate-200">{isConnected ? 'Live' : 'Offline'}</span>
             </div>
+            <h1 className="text-lg font-black tracking-tight text-white">
+              On-Field Waiter Console
+            </h1>
           </div>
 
-          {/* Right: Employee Selector, Table Assignments, Audio & Controls */}
+          {/* Right: Employee Selector & Table Assignments */}
           <div className="flex items-center flex-wrap gap-2 sm:gap-3 w-full sm:w-auto justify-end">
             {/* Active Employee Filter Selector */}
             <div className="relative inline-flex items-center">
@@ -826,90 +783,6 @@ export default function WaiterPanel() {
             >
               <Users className="w-3.5 h-3.5 text-amber-400" />
               <span className="hidden sm:inline">Table Assignments</span>
-            </button>
-
-            {/* Desktop Socket Status Badge */}
-            <div
-              className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
-                isConnected
-                  ? 'bg-emerald-950/70 text-emerald-300 border-emerald-700/80'
-                  : 'bg-rose-950/70 text-rose-300 border-rose-700/80 animate-pulse'
-              }`}
-              title={
-                isConnected
-                  ? 'Real-time WebSocket connected'
-                  : 'Connecting to Socket.IO server'
-              }
-            >
-              {isConnected ? (
-                <>
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
-                  <Wifi className="w-3.5 h-3.5" />
-                  <span>Real-Time Live</span>
-                </>
-              ) : (
-                <>
-                  <WifiOff className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Reconnecting...</span>
-                </>
-              )}
-            </div>
-
-            {/* Audio Chime Mute / Unmute Toggle */}
-            <button
-              type="button"
-              onClick={() => setIsMuted((prev) => !prev)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition active:scale-95 cursor-pointer ${
-                isMuted
-                  ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
-                  : 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
-              }`}
-              title={
-                isMuted
-                  ? 'Audio chime is muted. Tap to enable chime alerts.'
-                  : 'Audio chime is active. Tap to mute.'
-              }
-            >
-              {isMuted ? (
-                <>
-                  <VolumeX className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Muted</span>
-                </>
-              ) : (
-                <>
-                  <Volume2 className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Chime Active</span>
-                </>
-              )}
-            </button>
-
-            {/* Test Calling Chime Button */}
-            <button
-              type="button"
-              onClick={triggerChime}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition active:scale-95 cursor-pointer ${
-                isChimeAnimating ? 'ring-2 ring-amber-400 text-amber-300' : ''
-              }`}
-              title="Test Web Audio desk calling chime"
-            >
-              <Bell className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Test Chime</span>
-            </button>
-
-            {/* Manual Refresh Button */}
-            <button
-              type="button"
-              onClick={fetchCalls}
-              disabled={isLoading}
-              className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition active:scale-95 cursor-pointer disabled:opacity-50"
-              title="Refresh requests"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${isLoading ? 'animate-spin text-amber-400' : ''}`}
-              />
             </button>
           </div>
         </div>

@@ -14,7 +14,6 @@ import {
   Flame,
   Sparkles,
   Layers,
-  Columns3,
   Wifi,
   WifiOff,
   BellRing,
@@ -101,7 +100,7 @@ export const playKitchenChime = () => {
  * Features:
  * - Real-time Socket.IO synchronization (`order:new`, `order:status_update`, `order:cancel`)
  * - Web Audio API synthesizer for instant attention-grabbing kitchen chimes
- * - Kanban multi-column view & Tabbed single-stream view toggle
+ * - Streamlined Tabbed Status Stream view (All Active, Active / Pending, In Kitchen, Ready for Pickup, Completed)
  * - Header bar with Live Digital Clock (HH:MM:SS), Active Ticket Counter, Mute/Unmute, Fullscreen toggle
  * - Clean embedded styling (`isEmbedded=true`) without duplicate page headers or awkward margins
  * - Ticket status progression: Pending -> Preparing -> Ready -> Served
@@ -112,6 +111,7 @@ export default function KitchenDisplay({
   isEmbedded = false,
   showHeader = true,
   className = '',
+  initialTab = 'all',
   initialViewMode = null,
   onOrderCountChange = null
 }) {
@@ -131,18 +131,8 @@ export default function KitchenDisplay({
 
   const [audioUnlocked, setAudioUnlocked] = useState(false);
 
-  // View state: 'kanban' (board columns) or 'tabs' (focused status tabs)
-  const [viewMode, setViewMode] = useState(() => {
-    if (initialViewMode) return initialViewMode;
-    try {
-      return localStorage.getItem('kds_view_mode') || 'kanban';
-    } catch {
-      return 'kanban';
-    }
-  });
-
-  // Active tab when in 'tabs' view mode: 'all' | 'pending' | 'preparing' | 'ready' | 'completed'
-  const [activeTab, setActiveTab] = useState('all');
+  // Active status tab: 'all' | 'pending' | 'preparing' | 'ready' | 'completed'
+  const [activeTab, setActiveTab] = useState(initialTab || 'all');
 
   // Search & filter query
   const [searchQuery, setSearchQuery] = useState('');
@@ -526,15 +516,7 @@ export default function KitchenDisplay({
     alertTimeoutRef.current = setTimeout(() => setRecentAlertMessage(null), 3000);
   };
 
-  // 12. View Mode switcher
-  const handleViewModeChange = (mode) => {
-    setViewMode(mode);
-    try {
-      localStorage.setItem('kds_view_mode', mode);
-    } catch {}
-  };
-
-  // 13. Computed Order Categorization & Stats
+  // 12. Computed Order Categorization & Stats
   const { pendingOrders, preparingOrders, readyOrders, completedOrders } = useMemo(() => {
     const pending = [];
     const preparing = [];
@@ -776,37 +758,6 @@ export default function KitchenDisplay({
                 <span className="hidden xl:inline">Test Alert</span>
               </button>
 
-              {/* View Mode Toggle: Kanban Columns vs Tabs */}
-              <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => handleViewModeChange('kanban')}
-                  className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                    viewMode === 'kanban'
-                      ? 'bg-amber-500 text-slate-950 shadow-sm'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="Kanban Board View"
-                >
-                  <Columns3 className="w-3.5 h-3.5" />
-                  <span className="hidden md:inline">Kanban</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleViewModeChange('tabs')}
-                  className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                    viewMode === 'tabs'
-                      ? 'bg-amber-500 text-slate-950 shadow-sm'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="Tabbed Single Stream View"
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  <span className="hidden md:inline">Tabs</span>
-                </button>
-              </div>
-
               {/* Refresh / Sync Button */}
               <button
                 type="button"
@@ -860,260 +811,228 @@ export default function KitchenDisplay({
             <h2 className="text-xl font-bold text-white">Loading Kitchen Display...</h2>
             <p className="text-xs text-slate-400 mt-1">Connecting to live order stream</p>
           </div>
-        ) : viewMode === 'kanban' ? (
-          /* =====================================================================
-             VIEW 1: KANBAN COLUMNS VIEW (Optimized for wall monitors & widescreen)
-             ===================================================================== */
-          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4 flex-1 items-start">
-            
-            {/* COLUMN 1: PENDING / NEW */}
-            <div className={`flex flex-col bg-slate-950/60 rounded-2xl border border-amber-500/30 overflow-hidden shadow-lg ${isEmbedded ? 'min-h-[420px]' : 'min-h-[500px]'}`}>
-              <div className="p-3 bg-amber-500/15 border-b border-amber-500/30 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-amber-400 animate-ping" />
-                  <h2 className="font-black text-sm sm:text-base tracking-wide uppercase text-amber-300">
-                    Active / Pending
-                  </h2>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-xs font-mono">
-                  {pendingOrders.length}
-                </span>
-              </div>
-
-              <div className={`p-3 flex flex-col gap-3.5 overflow-y-auto ${isEmbedded ? 'max-h-[calc(100vh-220px)]' : 'max-h-[calc(100vh-160px)]'}`}>
-                {pendingOrders.length === 0 ? (
-                  <div className="py-12 text-center text-slate-500 text-xs italic">
-                    No pending orders in queue.
-                  </div>
-                ) : (
-                  pendingOrders.map((order) => (
-                    <OrderCard
-                      key={order.id || order._id}
-                      order={order}
-                      onStatusChange={handleStatusChange}
-                      isUpdating={updatingOrderId === (order.id || order._id)}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* COLUMN 2: IN KITCHEN (PREPARING) */}
-            <div className={`flex flex-col bg-slate-950/60 rounded-2xl border border-orange-500/30 overflow-hidden shadow-lg ${isEmbedded ? 'min-h-[420px]' : 'min-h-[500px]'}`}>
-              <div className="p-3 bg-orange-500/15 border-b border-orange-500/30 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-orange-400 animate-bounce" />
-                  <h2 className="font-black text-sm sm:text-base tracking-wide uppercase text-orange-300">
-                    In Kitchen
-                  </h2>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-orange-500 text-slate-950 font-black text-xs font-mono">
-                  {preparingOrders.length}
-                </span>
-              </div>
-
-              <div className={`p-3 flex flex-col gap-3.5 overflow-y-auto ${isEmbedded ? 'max-h-[calc(100vh-220px)]' : 'max-h-[calc(100vh-160px)]'}`}>
-                {preparingOrders.length === 0 ? (
-                  <div className="py-12 text-center text-slate-500 text-xs italic">
-                    No tickets currently on the grill.
-                  </div>
-                ) : (
-                  preparingOrders.map((order) => (
-                    <OrderCard
-                      key={order.id || order._id}
-                      order={order}
-                      onStatusChange={handleStatusChange}
-                      isUpdating={updatingOrderId === (order.id || order._id)}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* COLUMN 3: READY FOR PICKUP */}
-            <div className={`flex flex-col bg-slate-950/60 rounded-2xl border border-emerald-500/30 overflow-hidden shadow-lg ${isEmbedded ? 'min-h-[420px]' : 'min-h-[500px]'}`}>
-              <div className="p-3 bg-emerald-500/15 border-b border-emerald-500/30 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-emerald-400" />
-                  <h2 className="font-black text-sm sm:text-base tracking-wide uppercase text-emerald-300">
-                    Ready
-                  </h2>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-black text-xs font-mono">
-                  {readyOrders.length}
-                </span>
-              </div>
-
-              <div className={`p-3 flex flex-col gap-3.5 overflow-y-auto ${isEmbedded ? 'max-h-[calc(100vh-220px)]' : 'max-h-[calc(100vh-160px)]'}`}>
-                {readyOrders.length === 0 ? (
-                  <div className="py-12 text-center text-slate-500 text-xs italic">
-                    No orders waiting for server pickup.
-                  </div>
-                ) : (
-                  readyOrders.map((order) => (
-                    <OrderCard
-                      key={order.id || order._id}
-                      order={order}
-                      onStatusChange={handleStatusChange}
-                      isUpdating={updatingOrderId === (order.id || order._id)}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* COLUMN 4: RECENTLY COMPLETED */}
-            <div className={`flex flex-col bg-slate-950/60 rounded-2xl border border-slate-800 overflow-hidden shadow-lg ${isEmbedded ? 'min-h-[420px]' : 'min-h-[500px]'}`}>
-              <div className="p-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-slate-400" />
-                  <h2 className="font-black text-sm sm:text-base tracking-wide uppercase text-slate-400">
-                    Completed
-                  </h2>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-black text-xs font-mono">
-                  {completedOrders.length}
-                </span>
-              </div>
-
-              <div className={`p-3 flex flex-col gap-3.5 overflow-y-auto ${isEmbedded ? 'max-h-[calc(100vh-220px)]' : 'max-h-[calc(100vh-160px)]'}`}>
-                {completedOrders.length === 0 ? (
-                  <div className="py-12 text-center text-slate-500 text-xs italic">
-                    No completed orders recorded today.
-                  </div>
-                ) : (
-                  completedOrders.slice(0, 10).map((order) => (
-                    <OrderCard
-                      key={order.id || order._id}
-                      order={order}
-                      onStatusChange={handleStatusChange}
-                      isUpdating={updatingOrderId === (order.id || order._id)}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-
-          </div>
         ) : (
           /* =====================================================================
-             VIEW 2: TABBED SINGLE STREAM VIEW (Optimized for handheld tablets)
+             TABBED STATUS STREAM VIEW (Permanent, high-efficiency kitchen workflow)
              ===================================================================== */
           <div className="flex flex-col gap-4 flex-1">
-            {/* Status Navigation Tabs */}
-            <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
-              <button
-                type="button"
-                onClick={() => setActiveTab('all')}
-                className={`px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer ${
-                  activeTab === 'all'
-                    ? 'bg-white text-slate-950 shadow-md font-black'
-                    : 'bg-slate-900 text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>All Active</span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-slate-800 text-white">
-                  {activeCount}
-                </span>
-              </button>
+            {/* Category Filter Navigation Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/80 p-2 sm:p-2.5 rounded-2xl border border-slate-800 shadow-md">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* 1. All Active */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('all')}
+                  className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
+                    activeTab === 'all'
+                      ? 'bg-white text-slate-950 shadow-md shadow-white/10 ring-2 ring-white/30'
+                      : 'bg-slate-950/70 hover:bg-slate-800 text-slate-300 border border-slate-850 hover:text-white'
+                  }`}
+                >
+                  <Layers className={`w-4 h-4 ${activeTab === 'all' ? 'text-slate-950' : 'text-slate-400'}`} />
+                  <span>All Active</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-black ${
+                      activeTab === 'all'
+                        ? 'bg-slate-950 text-white'
+                        : 'bg-slate-800 text-slate-300'
+                    }`}
+                  >
+                    {activeCount}
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('pending')}
-                className={`px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer ${
-                  activeTab === 'pending'
-                    ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                    : 'bg-slate-900 text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>Active / Pending</span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-amber-500/20 text-amber-300">
-                  {pendingOrders.length}
-                </span>
-              </button>
+                {/* 2. Active / Pending */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('pending')}
+                  className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
+                    activeTab === 'pending'
+                      ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 ring-2 ring-amber-400/50'
+                      : 'bg-slate-950/70 hover:bg-slate-800 text-slate-300 border border-slate-850 hover:text-amber-300'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${activeTab === 'pending' ? 'bg-slate-950' : 'bg-amber-400'} animate-ping`} />
+                  <span>Active / Pending</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-black ${
+                      activeTab === 'pending'
+                        ? 'bg-slate-950 text-amber-300'
+                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    }`}
+                  >
+                    {pendingOrders.length}
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('preparing')}
-                className={`px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer ${
-                  activeTab === 'preparing'
-                    ? 'bg-orange-500 text-slate-950 shadow-md font-black'
-                    : 'bg-slate-900 text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>In Kitchen</span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-orange-500/20 text-orange-300">
-                  {preparingOrders.length}
-                </span>
-              </button>
+                {/* 3. In Kitchen */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('preparing')}
+                  className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
+                    activeTab === 'preparing'
+                      ? 'bg-orange-500 text-slate-950 shadow-md shadow-orange-500/20 ring-2 ring-orange-400/50'
+                      : 'bg-slate-950/70 hover:bg-slate-800 text-slate-300 border border-slate-850 hover:text-orange-300'
+                  }`}
+                >
+                  <Flame className={`w-4 h-4 ${activeTab === 'preparing' ? 'text-slate-950 animate-bounce' : 'text-orange-400'}`} />
+                  <span>In Kitchen</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-black ${
+                      activeTab === 'preparing'
+                        ? 'bg-slate-950 text-orange-300'
+                        : 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                    }`}
+                  >
+                    {preparingOrders.length}
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('ready')}
-                className={`px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer ${
-                  activeTab === 'ready'
-                    ? 'bg-emerald-500 text-slate-950 shadow-md font-black'
-                    : 'bg-slate-900 text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>Ready for Pickup</span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-300">
-                  {readyOrders.length}
-                </span>
-              </button>
+                {/* 4. Ready for Pickup */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('ready')}
+                  className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
+                    activeTab === 'ready'
+                      ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 ring-2 ring-emerald-400/50'
+                      : 'bg-slate-950/70 hover:bg-slate-800 text-slate-300 border border-slate-850 hover:text-emerald-300'
+                  }`}
+                >
+                  <Sparkles className={`w-4 h-4 ${activeTab === 'ready' ? 'text-slate-950' : 'text-emerald-400'}`} />
+                  <span>Ready for Pickup</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-black ${
+                      activeTab === 'ready'
+                        ? 'bg-slate-950 text-emerald-300'
+                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    }`}
+                  >
+                    {readyOrders.length}
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('completed')}
-                className={`px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer ${
-                  activeTab === 'completed'
-                    ? 'bg-slate-700 text-white shadow-md font-black'
-                    : 'bg-slate-900 text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>Completed</span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-slate-800 text-slate-400">
-                  {completedOrders.length}
-                </span>
-              </button>
+                {/* 5. Completed */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('completed')}
+                  className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
+                    activeTab === 'completed'
+                      ? 'bg-slate-700 text-white shadow-md shadow-slate-700/20 ring-2 ring-slate-500/50'
+                      : 'bg-slate-950/70 hover:bg-slate-800 text-slate-300 border border-slate-850 hover:text-slate-100'
+                  }`}
+                >
+                  <CheckCircle2 className={`w-4 h-4 ${activeTab === 'completed' ? 'text-emerald-400' : 'text-slate-400'}`} />
+                  <span>Completed</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-black ${
+                      activeTab === 'completed'
+                        ? 'bg-slate-950 text-slate-200'
+                        : 'bg-slate-800 text-slate-400 border border-slate-700'
+                    }`}
+                  >
+                    {completedOrders.length}
+                  </span>
+                </button>
+              </div>
+
+              {/* Right Side: Active search filter indicator or view badge */}
+              <div className="flex items-center gap-2 text-xs">
+                {searchQuery && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold">
+                    <Filter className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Filtered by: &quot;{searchQuery}&quot;</span>
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="ml-1 text-slate-400 hover:text-white cursor-pointer"
+                      title="Clear Filter"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+                <div className="hidden md:flex items-center gap-1.5 text-slate-500 text-xs font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span>Live Stream</span>
+                </div>
+              </div>
             </div>
 
             {/* Tabbed Ticket Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
-              {(() => {
-                let displayList = [];
-                if (activeTab === 'all') {
-                  displayList = [...pendingOrders, ...preparingOrders, ...readyOrders];
-                } else if (activeTab === 'pending') {
-                  displayList = pendingOrders;
-                } else if (activeTab === 'preparing') {
-                  displayList = preparingOrders;
-                } else if (activeTab === 'ready') {
-                  displayList = readyOrders;
-                } else {
-                  displayList = completedOrders;
-                }
+            {(() => {
+              let displayList = [];
+              let tabLabel = '';
+              let emptyDescription = '';
 
-                if (displayList.length === 0) {
-                  return (
-                    <div className="col-span-full py-20 text-center text-slate-500">
-                      <div className="text-4xl mb-2">🍽️</div>
-                      <div className="text-base font-bold text-slate-300">No tickets in this section</div>
-                      <p className="text-xs text-slate-500 mt-1">New incoming tickets will arrive in real-time</p>
+              if (activeTab === 'all') {
+                displayList = [...pendingOrders, ...preparingOrders, ...readyOrders];
+                tabLabel = 'Active Orders';
+                emptyDescription = 'All caught up! No active kitchen tickets at the moment.';
+              } else if (activeTab === 'pending') {
+                displayList = pendingOrders;
+                tabLabel = 'Active / Pending Orders';
+                emptyDescription = 'No new pending orders in the queue.';
+              } else if (activeTab === 'preparing') {
+                displayList = preparingOrders;
+                tabLabel = 'In Kitchen (Cooking)';
+                emptyDescription = 'No tickets currently on the grill or in preparation.';
+              } else if (activeTab === 'ready') {
+                displayList = readyOrders;
+                tabLabel = 'Ready for Pickup';
+                emptyDescription = 'No orders currently waiting for server pickup.';
+              } else {
+                displayList = completedOrders;
+                tabLabel = 'Completed Orders';
+                emptyDescription = 'No completed orders recorded today.';
+              }
+
+              if (displayList.length === 0) {
+                return (
+                  <div className="flex-1 flex flex-col items-center justify-center p-12 sm:p-16 text-center rounded-3xl bg-slate-900/40 border border-slate-800/80">
+                    <div className="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center mb-4 text-3xl shadow-inner">
+                      {activeTab === 'all' && '🍽️'}
+                      {activeTab === 'pending' && '⏱️'}
+                      {activeTab === 'preparing' && '🍳'}
+                      {activeTab === 'ready' && '🛎️'}
+                      {activeTab === 'completed' && '✨'}
                     </div>
-                  );
-                }
+                    <h3 className="text-lg font-black text-white">{tabLabel} Empty</h3>
+                    <p className="text-xs sm:text-sm text-slate-400 mt-1.5 max-w-md">
+                      {searchQuery
+                        ? `No tickets match your search "${searchQuery}".`
+                        : emptyDescription}
+                    </p>
+                    {searchQuery ? (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="mt-4 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition cursor-pointer"
+                      >
+                        Clear Search Filter
+                      </button>
+                    ) : (
+                      <div className="mt-4 flex items-center gap-2 text-xs text-slate-500 font-mono">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>Listening for live orders</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
 
-                return displayList.map((order) => (
-                  <OrderCard
-                    key={order.id || order._id}
-                    order={order}
-                    onStatusChange={handleStatusChange}
-                    isUpdating={updatingOrderId === (order.id || order._id)}
-                  />
-                ));
-              })()}
-            </div>
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5">
+                  {displayList.map((order) => (
+                    <OrderCard
+                      key={order.id || order._id}
+                      order={order}
+                      onStatusChange={handleStatusChange}
+                      isUpdating={updatingOrderId === (order.id || order._id)}
+                    />
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
       </main>

@@ -117,22 +117,30 @@ export default function AdminDashboard({ className = '' }) {
     });
   };
 
-  // Ensure html, body, and all outer viewport elements have background #0b0f19
+  // Ensure admin-active is set on documentElement and body, and cleanup on unmount
   useEffect(() => {
     document.documentElement.classList.add('admin-active');
     document.body.classList.add('admin-active');
     const prevHtmlBg = document.documentElement.style.backgroundColor;
     const prevBodyBg = document.body.style.backgroundColor;
-    document.documentElement.style.backgroundColor = '#0b0f19';
-    document.body.style.backgroundColor = '#0b0f19';
 
     return () => {
       document.documentElement.classList.remove('admin-active');
       document.body.classList.remove('admin-active');
+      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
       document.documentElement.style.backgroundColor = prevHtmlBg;
       document.body.style.backgroundColor = prevBodyBg;
     };
   }, []);
+
+  // Synchronize Dark / Light Mode with documentElement, body, and colors
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    document.body.classList.toggle('dark', isDarkMode);
+    document.documentElement.style.backgroundColor = isDarkMode ? '#0b0f19' : '#f8fafc';
+    document.body.style.backgroundColor = isDarkMode ? '#0b0f19' : '#f8fafc';
+  }, [isDarkMode]);
 
   // Sidebar Layout States
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -407,14 +415,16 @@ export default function AdminDashboard({ className = '' }) {
 
   return (
     <div
-      className={`admin-root dark text-slate-100 ${className}`}
+      className={`admin-root ${isDarkMode ? 'dark text-slate-100' : 'text-slate-900'} ${className}`}
       style={{
         display: 'flex',
         width: '100vw',
         minHeight: '100vh',
-        backgroundColor: '#0b0f19',
+        backgroundColor: isDarkMode ? '#0b0f19' : '#f8fafc',
+        color: isDarkMode ? '#ffffff' : '#0f172a',
         overflowX: 'hidden',
-        fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"
+        fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+        transition: 'background-color 0.2s ease, color 0.2s ease'
       }}
     >
       {/* =======================================================================
@@ -454,11 +464,13 @@ export default function AdminDashboard({ className = '' }) {
           marginLeft: '260px',
           width: 'calc(100% - 260px)',
           minWidth: 0,
-          backgroundColor: '#0b0f19',
+          backgroundColor: isDarkMode ? '#0b0f19' : '#f8fafc',
+          color: isDarkMode ? '#ffffff' : '#0f172a',
           padding: 0,
           display: 'flex',
           flexDirection: 'column',
-          minHeight: '100vh'
+          minHeight: '100vh',
+          transition: 'background-color 0.2s ease, color 0.2s ease'
         }}
       >
         {/* Sticky Header Bar */}
@@ -482,7 +494,14 @@ export default function AdminDashboard({ className = '' }) {
         />
 
         {/* Scrollable Dynamic Workspace */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto" style={{ backgroundColor: '#0b0f19' }}>
+        <main
+          className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto"
+          style={{
+            backgroundColor: isDarkMode ? '#0b0f19' : '#f8fafc',
+            color: isDarkMode ? '#ffffff' : '#0f172a',
+            transition: 'background-color 0.2s ease, color 0.2s ease'
+          }}
+        >
           {/* TAB 1: OVERVIEW & REVENUE ANALYTICS */}
           {activeTab === 'overview' && (
             <div className="animate-fadeIn">
@@ -546,27 +565,8 @@ export default function AdminDashboard({ className = '' }) {
 
           {/* TAB 5: ON-FIELD WAITER CONSOLE */}
           {activeTab === 'floor' && (
-            <div className="space-y-3 animate-fadeIn">
-              <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
-                  <span className="font-bold text-slate-200">On-Field Waiter Console</span>
-                  <span className="text-slate-500">•</span>
-                  <span className="text-slate-400">Direct Embedded Floor Staff Station (4-View Model)</span>
-                </div>
-                <a
-                  href="/waiter"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold transition"
-                >
-                  <span>Launch /waiter</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-              <div className="rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
-                <WaiterPanel />
-              </div>
+            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+              <WaiterPanel />
             </div>
           )}
 

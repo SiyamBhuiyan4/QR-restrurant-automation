@@ -37,7 +37,8 @@ import {
   Minus,
   Trash2,
   Lock,
-  ShieldAlert
+  ShieldAlert,
+  Scale
 } from 'lucide-react';
 
 import TableSecurityModal from './TableSecurityModal';
@@ -814,14 +815,14 @@ export default function LiveTablesModule({
       </div>
 
       {/* =======================================================================
-          TOP TELEMETRY & FILTER CONTROLS BAR
+          TOP TELEMETRY & STATUS FILTER CONTROLS BAR
           ======================================================================= */}
-      <div className="bg-[#111827] backdrop-blur-2xl rounded-3xl border border-[#334155] p-5 shadow-2xl shadow-black/40 space-y-5">
+      <div className="bg-[#111827]/95 backdrop-blur-2xl rounded-3xl border border-slate-700/80 p-5 sm:p-6 shadow-2xl shadow-black/40 space-y-6">
         
         {/* Row 1: Header, Search & View Toggle */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF5A26] to-[#FF7A45] text-white flex items-center justify-center shadow-lg shadow-[#FF5A26]/30 ring-1 ring-[#FF7A45]/40 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF5A26] to-[#FF7A45] text-white flex items-center justify-center shadow-lg shadow-[#FF5A26]/30 ring-1 ring-white/20 shrink-0">
               <UtensilsCrossed className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -829,27 +830,27 @@ export default function LiveTablesModule({
                 <h2 className="text-lg sm:text-xl font-black text-[#f8fafc] tracking-tight leading-none">
                   Live Orders &amp; Table Tracking
                 </h2>
-                <span className="px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
                   Floor Matrix
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 font-medium mt-1">
-                Real-time {tables.length}-table floor matrix &bull; 4-stage kitchen pipeline &bull; Instant Employee dispatch
+              <p className="text-xs text-slate-400 font-medium mt-1">
+                Real-time {tables.length}-table floor matrix &bull; 4-stage kitchen pipeline &bull; Instant staff dispatch
               </p>
             </div>
           </div>
 
-          {/* Quick Search & Filters */}
+          {/* Quick Search & Controls */}
           <div className="flex flex-wrap items-center gap-2.5">
             {/* View Mode Toggle */}
-            <div className="flex items-center bg-[#1e293b] p-1 rounded-xl border border-[#334155]">
+            <div className="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                   viewMode === 'grid'
                     ? 'bg-[#FF5A26] text-white shadow-md'
-                    : 'text-zinc-400 hover:text-[#f8fafc]'
+                    : 'text-slate-400 hover:text-[#f8fafc]'
                 }`}
                 title="Grid Card View"
               >
@@ -861,7 +862,7 @@ export default function LiveTablesModule({
                 className={`p-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                   viewMode === 'compact'
                     ? 'bg-[#FF5A26] text-white shadow-md'
-                    : 'text-zinc-400 hover:text-[#f8fafc]'
+                    : 'text-slate-400 hover:text-[#f8fafc]'
                 }`}
                 title="Compact List View"
               >
@@ -885,112 +886,274 @@ export default function LiveTablesModule({
                     }
                   });
                 }}
-                className="px-3 py-2 rounded-xl bg-[#1e293b] hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 border border-[#334155] cursor-pointer active:scale-95 shrink-0"
+                className="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 hover:text-white text-xs font-bold transition flex items-center gap-2 border border-slate-700 shadow-sm cursor-pointer active:scale-95 shrink-0"
                 title="Distribute tables evenly across active employees (Requires PIN 808080)"
               >
-                <span>⚖️ Balance Staff</span>
+                <Scale className="w-3.5 h-3.5 text-amber-400" />
+                <span>Balance Staff</span>
               </button>
             )}
+
+            {/* Add Table Modal Trigger */}
+            <button
+              type="button"
+              onClick={() => setIsAddTableModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 hover:text-white text-xs font-bold transition flex items-center gap-1.5 border border-slate-700 shadow-sm cursor-pointer active:scale-95 shrink-0"
+              title="Add a custom table (Requires Admin PIN 808080)"
+            >
+              <Plus className="w-3.5 h-3.5 text-[#FF7A45]" />
+              <span>Add Table</span>
+            </button>
 
           </div>
         </div>
 
-        {/* Row 2: Status Filter Pills (Exact Requirement: All, Available, Order Running, Ready in Kitchen, Need Assistance) */}
-        <div className="pt-4 border-t border-[#334155] flex flex-wrap items-center gap-2">
+        {/* Row 2: Executive Summary Metrics Telemetry Row */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           
-          {/* Pill: ALL (12) */}
+          {/* 1. Available Metric Card */}
+          <button
+            type="button"
+            onClick={() => setActiveFilter(activeFilter === TABLE_STATUS.AVAILABLE ? 'all' : TABLE_STATUS.AVAILABLE)}
+            className={`group p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden ${
+              activeFilter === TABLE_STATUS.AVAILABLE
+                ? 'bg-gradient-to-br from-emerald-950/50 via-slate-900 to-slate-900 border-emerald-500/50 shadow-lg shadow-emerald-950/40 ring-1 ring-emerald-500/40'
+                : 'bg-gradient-to-br from-emerald-950/20 via-slate-900/60 to-slate-900/90 border-slate-800 hover:border-emerald-500/30 hover:bg-slate-800/40'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Available
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight">
+                {counts.available}
+              </span>
+              <span className="text-xs text-slate-500 font-semibold">
+                / {counts.all} tables
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium mt-1 truncate">
+              Vacant &amp; ready to seat
+            </p>
+            {activeFilter === TABLE_STATUS.AVAILABLE && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 to-teal-400" />
+            )}
+          </button>
+
+          {/* 2. Order Running Metric Card */}
+          <button
+            type="button"
+            onClick={() => setActiveFilter(activeFilter === TABLE_STATUS.ORDER_RUNNING ? 'all' : TABLE_STATUS.ORDER_RUNNING)}
+            className={`group p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden ${
+              activeFilter === TABLE_STATUS.ORDER_RUNNING
+                ? 'bg-gradient-to-br from-amber-950/50 via-slate-900 to-slate-900 border-amber-500/50 shadow-lg shadow-amber-950/40 ring-1 ring-amber-500/40'
+                : 'bg-gradient-to-br from-amber-950/20 via-slate-900/60 to-slate-900/90 border-slate-800 hover:border-amber-500/30 hover:bg-slate-800/40'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Orders Running
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                <Flame className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight">
+                {counts.orderRunning}
+              </span>
+              <span className="text-xs text-slate-500 font-semibold">
+                active
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium mt-1 truncate">
+              Placed &amp; prep underway
+            </p>
+            {activeFilter === TABLE_STATUS.ORDER_RUNNING && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 to-orange-400" />
+            )}
+          </button>
+
+          {/* 3. Ready in Kitchen Metric Card */}
+          <button
+            type="button"
+            onClick={() => setActiveFilter(activeFilter === TABLE_STATUS.READY_IN_KITCHEN ? 'all' : TABLE_STATUS.READY_IN_KITCHEN)}
+            className={`group p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden ${
+              activeFilter === TABLE_STATUS.READY_IN_KITCHEN
+                ? 'bg-gradient-to-br from-cyan-950/50 via-slate-900 to-slate-900 border-cyan-500/50 shadow-lg shadow-cyan-950/40 ring-1 ring-cyan-500/40'
+                : 'bg-gradient-to-br from-cyan-950/20 via-slate-900/60 to-slate-900/90 border-slate-800 hover:border-cyan-500/30 hover:bg-slate-800/40'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Ready in Kitchen
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                <ConciergeBell className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-black text-cyan-400 tracking-tight">
+                {counts.readyInKitchen}
+              </span>
+              <span className="text-xs text-slate-500 font-semibold">
+                for pickup
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium mt-1 truncate">
+              Plated hot • Alerted staff
+            </p>
+            {activeFilter === TABLE_STATUS.READY_IN_KITCHEN && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-400" />
+            )}
+          </button>
+
+          {/* 4. Need Assistance Metric Card */}
+          <button
+            type="button"
+            onClick={() => setActiveFilter(activeFilter === TABLE_STATUS.NEED_ASSISTANCE ? 'all' : TABLE_STATUS.NEED_ASSISTANCE)}
+            className={`group p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden ${
+              activeFilter === TABLE_STATUS.NEED_ASSISTANCE
+                ? 'bg-gradient-to-br from-rose-950/50 via-slate-900 to-slate-900 border-rose-500/50 shadow-lg shadow-rose-950/40 ring-1 ring-rose-500/40'
+                : 'bg-gradient-to-br from-rose-950/20 via-slate-900/60 to-slate-900/90 border-slate-800 hover:border-rose-500/30 hover:bg-slate-800/40'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Need Assistance
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-black text-rose-400 tracking-tight">
+                {counts.needAssistance}
+              </span>
+              <span className="text-xs text-slate-500 font-semibold">
+                call alert
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium mt-1 truncate">
+              Guest assistance calls
+            </p>
+            {activeFilter === TABLE_STATUS.NEED_ASSISTANCE && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-rose-500 to-red-500" />
+            )}
+          </button>
+
+        </div>
+
+        {/* Row 3: Modern Glassmorphic Status Tab Bar */}
+        <div className="pt-4 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
+          
+          {/* Tab: ALL */}
           <button
             type="button"
             onClick={() => setActiveFilter('all')}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
               activeFilter === 'all'
-                ? 'bg-[#334155] text-[#f8fafc] border border-zinc-500 shadow-lg shadow-black/50 ring-2 ring-[#FF7A45]/40'
-                : 'bg-[#1e293b] text-zinc-300 hover:text-[#f8fafc] hover:bg-[#334155] border border-[#334155]'
+                ? 'bg-slate-800 text-white border border-slate-600 shadow-lg shadow-black/40 ring-1 ring-slate-500/40'
+                : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800'
             }`}
           >
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shadow-[0_0_6px_rgba(255,255,255,0.7)]" />
             <span>All Tables</span>
             <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
-              activeFilter === 'all' ? 'bg-[#FF5A26] text-white' : 'bg-[#111827] text-zinc-300 border border-[#334155]'
+              activeFilter === 'all' ? 'bg-[#FF5A26] text-white' : 'bg-slate-800 text-slate-300 border border-slate-700/60'
             }`}>
               {counts.all}
             </span>
           </button>
 
-          {/* Pill: Available (4) - Soft slate / neutral emerald */}
+          {/* Tab: Available - Emerald theme */}
           <button
             type="button"
             onClick={() => setActiveFilter(TABLE_STATUS.AVAILABLE)}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
               activeFilter === TABLE_STATUS.AVAILABLE
-                ? 'bg-slate-800/90 text-emerald-300 border border-emerald-500/50 shadow-lg shadow-emerald-950/40 ring-2 ring-emerald-500/40'
-                : 'bg-[#1e293b] text-zinc-300 hover:text-emerald-300 hover:bg-[#334155] border border-[#334155]'
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-950/30 ring-1 ring-emerald-500/30'
+                : 'bg-slate-900/80 text-slate-400 hover:text-emerald-400 hover:bg-slate-800/60 border border-slate-800'
             }`}
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
             <span>Available</span>
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-[#111827] text-emerald-400 border border-emerald-500/30">
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
+              activeFilter === TABLE_STATUS.AVAILABLE
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                : 'bg-slate-800 text-emerald-400/80 border border-slate-700/60'
+            }`}>
               {counts.available}
             </span>
           </button>
 
-          {/* Pill: Order Running (5) - Amber #f59e0b (bg #fef3c7) */}
+          {/* Tab: Order Running - Amber theme with Flame icon */}
           <button
             type="button"
             onClick={() => setActiveFilter(TABLE_STATUS.ORDER_RUNNING)}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
               activeFilter === TABLE_STATUS.ORDER_RUNNING
-                ? 'bg-[#fef3c7] text-[#92400e] border border-amber-400 shadow-lg shadow-amber-500/20 ring-2 ring-amber-400'
-                : 'bg-[#1e293b] text-amber-300 hover:text-amber-200 hover:bg-[#334155] border border-[#334155]'
+                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30 shadow-lg shadow-amber-950/30 ring-1 ring-amber-500/30'
+                : 'bg-slate-900/80 text-slate-400 hover:text-amber-400 hover:bg-slate-800/60 border border-slate-800'
             }`}
           >
-            <Flame className="w-3.5 h-3.5 text-amber-500" />
+            <Flame className="w-3.5 h-3.5 text-amber-400" />
             <span>Order Running</span>
             <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
               activeFilter === TABLE_STATUS.ORDER_RUNNING
-                ? 'bg-amber-200 text-[#92400e]'
-                : 'bg-[#111827] text-amber-300 border border-[#334155]'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                : 'bg-slate-800 text-amber-400/80 border border-slate-700/60'
             }`}>
               {counts.orderRunning}
             </span>
           </button>
 
-          {/* Pill: Ready in Kitchen (2) - Emerald Green #10b981 (bg #d1fae5) */}
+          {/* Tab: Ready in Kitchen - Cyan theme with ConciergeBell icon */}
           <button
             type="button"
             onClick={() => setActiveFilter(TABLE_STATUS.READY_IN_KITCHEN)}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
               activeFilter === TABLE_STATUS.READY_IN_KITCHEN
-                ? 'bg-[#d1fae5] text-[#065f46] border border-emerald-400 shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-400 animate-pulse'
-                : 'bg-[#1e293b] text-emerald-400 hover:text-emerald-200 hover:bg-[#334155] border border-[#334155]'
+                ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 shadow-lg shadow-cyan-950/30 ring-1 ring-cyan-500/30'
+                : 'bg-slate-900/80 text-slate-400 hover:text-cyan-400 hover:bg-slate-800/60 border border-slate-800'
             }`}
           >
-            <ConciergeBell className="w-3.5 h-3.5 text-emerald-600" />
+            <ConciergeBell className="w-3.5 h-3.5 text-cyan-400" />
             <span>Ready in Kitchen</span>
             <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
               activeFilter === TABLE_STATUS.READY_IN_KITCHEN
-                ? 'bg-emerald-200 text-[#065f46]'
-                : 'bg-[#111827] text-emerald-400 border border-emerald-500/40'
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                : 'bg-slate-800 text-cyan-400/80 border border-slate-700/60'
             }`}>
               {counts.readyInKitchen}
             </span>
           </button>
 
-          {/* Pill: Need Assistance (1) - Crimson Red #ef4444 (bg #fee2e2) */}
+          {/* Tab: Need Assistance - Rose theme with pulsing red dot and AlertTriangle */}
           <button
             type="button"
             onClick={() => setActiveFilter(TABLE_STATUS.NEED_ASSISTANCE)}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
               activeFilter === TABLE_STATUS.NEED_ASSISTANCE
-                ? 'bg-[#fee2e2] text-[#991b1b] border border-red-400 shadow-lg shadow-red-500/25 ring-2 ring-red-400 animate-pulse'
-                : 'bg-[#1e293b] text-red-400 hover:text-red-200 hover:bg-[#334155] border border-[#334155]'
+                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30 shadow-lg shadow-rose-950/30 ring-1 ring-rose-500/30'
+                : 'bg-slate-900/80 text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 border border-slate-800'
             }`}
           >
-            <AlertTriangle className="w-3.5 h-3.5 text-red-600 animate-bounce" />
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+            </span>
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
             <span>Need Assistance</span>
             <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
               activeFilter === TABLE_STATUS.NEED_ASSISTANCE
-                ? 'bg-red-200 text-[#991b1b]'
-                : 'bg-[#111827] text-red-300 border border-[#334155]'
+                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                : 'bg-slate-800 text-rose-400/80 border border-slate-700/60'
             }`}>
               {counts.needAssistance}
             </span>
@@ -1000,13 +1163,11 @@ export default function LiveTablesModule({
           {activeFilter !== 'all' && (
             <button
               type="button"
-              onClick={() => {
-                setActiveFilter('all');
-              }}
-              className="ml-auto text-xs text-zinc-400 hover:text-[#FF7A45] font-semibold flex items-center gap-1 transition cursor-pointer"
+              onClick={() => setActiveFilter('all')}
+              className="ml-auto text-xs text-slate-400 hover:text-[#FF7A45] font-semibold flex items-center gap-1.5 transition cursor-pointer px-3 py-1.5 rounded-xl hover:bg-slate-800/60 border border-transparent hover:border-slate-700"
             >
-              <RotateCcw className="w-3 h-3" />
-              <span>Reset Filters</span>
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset Filter</span>
             </button>
           )}
 
@@ -1074,80 +1235,48 @@ export default function LiveTablesModule({
             const isAdvancing = activeOrder && advancingOrderIds[activeOrder.id];
 
             // -----------------------------------------------------------------
-            // STATUS BADGE CONFIGURATION (Exact Requirements)
-            // Available: Soft slate / neutral emerald
-            // Order Running: Amber #f59e0b (bg #fef3c7)
-            // Ready in Kitchen: Emerald Green #10b981 (bg #d1fae5)
-            // Customer Call / Issue: Crimson Red #ef4444 (bg #fee2e2) with subtle pulsing glow.
+            // STATUS BADGE CONFIGURATION
+            // Available: Soft emerald/slate glow
+            // Order Running: Amber flame theme
+            // Ready in Kitchen: Cyan concierge theme
+            // Customer Call / Issue: Crimson / rose alert glow
             // -----------------------------------------------------------------
             let statusBadge = null;
-            let cardAccentClass = 'border-[#334155] hover:border-slate-500';
+            let cardAccentClass = 'border-slate-800 hover:border-slate-700 bg-slate-900/80';
 
             if (table.status === TABLE_STATUS.AVAILABLE) {
-              cardAccentClass = 'border-[#334155] hover:border-emerald-500/50';
+              cardAccentClass = 'border-slate-800/80 hover:border-emerald-500/40 bg-gradient-to-b from-[#0f172a] via-[#0f172a] to-emerald-950/10';
               statusBadge = (
-                <span
-                  className="inline-flex items-center gap-1.5 font-black uppercase tracking-wider bg-slate-800/90 text-emerald-400 border border-emerald-500/30 shadow-xs shrink-0"
-                  style={{
-                    fontSize: '11px',
-                    padding: '4px 10px',
-                    borderRadius: '999px',
-                    whiteSpace: 'nowrap',
-                    maxWidth: '100%'
-                  }}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                <span className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 px-2.5 py-1 rounded-full text-[11px] shadow-xs shadow-emerald-500/10 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] shrink-0" />
                   <span>Available</span>
                 </span>
               );
             } else if (table.status === TABLE_STATUS.ORDER_RUNNING) {
-              cardAccentClass = 'border-[#334155] hover:border-amber-400 shadow-md shadow-amber-950/20';
+              cardAccentClass = 'border-amber-500/30 hover:border-amber-500/50 shadow-lg shadow-amber-950/20 bg-gradient-to-b from-[#0f172a] via-[#0f172a] to-amber-950/15';
               statusBadge = (
-                <span
-                  className="inline-flex items-center gap-1.5 font-black uppercase tracking-wider bg-[#fef3c7] text-[#92400e] border border-amber-300 shadow-sm shrink-0"
-                  style={{
-                    fontSize: '11px',
-                    padding: '4px 10px',
-                    borderRadius: '999px',
-                    whiteSpace: 'nowrap',
-                    maxWidth: '100%'
-                  }}
-                >
-                  <Flame className="w-3 h-3 text-[#f59e0b] shrink-0" />
+                <span className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-full text-[11px] shadow-xs shadow-amber-500/10 shrink-0">
+                  <Flame className="w-3 h-3 text-amber-400 shrink-0" />
                   <span>Order Running</span>
                 </span>
               );
             } else if (table.status === TABLE_STATUS.READY_IN_KITCHEN) {
-              cardAccentClass = 'border-[#334155] hover:border-emerald-400 shadow-lg shadow-emerald-950/40';
+              cardAccentClass = 'border-cyan-500/40 hover:border-cyan-400 shadow-xl shadow-cyan-950/30 ring-1 ring-cyan-500/20 bg-gradient-to-b from-[#0f172a] via-[#0f172a] to-cyan-950/15';
               statusBadge = (
-                <span
-                  className="inline-flex items-center gap-1.5 font-black uppercase tracking-wider bg-[#d1fae5] text-[#065f46] border border-emerald-300 shadow-sm animate-pulse shrink-0"
-                  style={{
-                    fontSize: '11px',
-                    padding: '4px 10px',
-                    borderRadius: '999px',
-                    whiteSpace: 'nowrap',
-                    maxWidth: '100%'
-                  }}
-                >
-                  <ConciergeBell className="w-3 h-3 text-[#10b981] shrink-0" />
+                <span className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-2.5 py-1 rounded-full text-[11px] shadow-xs shadow-cyan-500/10 shrink-0">
+                  <ConciergeBell className="w-3 h-3 text-cyan-400 shrink-0 animate-pulse" />
                   <span>Ready in Kitchen</span>
                 </span>
               );
             } else if (table.status === TABLE_STATUS.NEED_ASSISTANCE) {
-              cardAccentClass = 'border-[#334155] ring-1 ring-red-500/40 shadow-[0_0_25px_rgba(239,68,68,0.22)] animate-pulse';
+              cardAccentClass = 'border-rose-500/50 hover:border-rose-400 shadow-2xl shadow-rose-950/40 ring-1 ring-rose-500/30 bg-gradient-to-b from-[#0f172a] via-[#0f172a] to-rose-950/20';
               statusBadge = (
-                <span
-                  className="inline-flex items-center gap-1.5 font-black uppercase tracking-wider bg-[#fee2e2] text-[#991b1b] border border-red-300 shadow-md shadow-red-500/20 shrink-0"
-                  style={{
-                    fontSize: '11px',
-                    padding: '4px 10px',
-                    borderRadius: '999px',
-                    whiteSpace: 'nowrap',
-                    maxWidth: '100%'
-                  }}
-                >
-                  <AlertTriangle className="w-3 h-3 text-[#ef4444] animate-bounce shrink-0" />
+                <span className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2.5 py-1 rounded-full text-[11px] shadow-xs shadow-rose-500/20 shrink-0">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                  </span>
+                  <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0 animate-bounce" />
                   <span>Need Assistance</span>
                 </span>
               );
@@ -1156,39 +1285,25 @@ export default function LiveTablesModule({
             return (
               <div
                 key={table.id}
-                className={`rounded-3xl border border-[#334155] p-5 transition-all duration-300 backdrop-blur-2xl flex flex-col justify-between relative group overflow-hidden bg-[#0f172a] ${cardAccentClass}`}
-                style={{
-                  backgroundColor: '#0f172a',
-                  borderColor: '#334155',
-                  overflow: 'hidden'
-                }}
+                className={`rounded-3xl border p-5 transition-all duration-300 backdrop-blur-2xl flex flex-col justify-between relative group overflow-hidden ${cardAccentClass}`}
               >
                 {/* -----------------------------------------------------------
                     CARD TOP HEADER: Table #, Capacity, Status Badge & Remove
                     ----------------------------------------------------------- */}
                 <div className="space-y-3">
-                  <div
-                    className="flex justify-between items-start gap-2 flex-wrap"
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      gap: '8px',
-                      flexWrap: 'wrap'
-                    }}
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-[#1e293b] border border-[#334155] flex items-center justify-center font-black text-sm text-[#f8fafc] shadow-inner shrink-0">
+                  <div className="flex justify-between items-start gap-2 flex-wrap">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-10 h-10 rounded-2xl bg-slate-800/90 border border-slate-700/80 flex items-center justify-center font-black text-sm text-slate-100 shadow-inner shrink-0 group-hover:border-[#FF5A26]/40 transition-colors">
                         {table.tableNumber}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="font-black text-[#f8fafc] text-base tracking-tight leading-none whitespace-normal break-words">
+                        <h3 className="font-black text-slate-100 text-base tracking-tight leading-none whitespace-normal break-words">
                           {table.name}
                         </h3>
-                        <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-medium mt-1">
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium mt-1">
                           <span>{table.capacity || table.seats || 4} Seats</span>
-                          <span>&bull;</span>
-                          <span className="text-zinc-300">{table.location || table.zone || 'Main Hall'}</span>
+                          <span className="text-slate-600">&bull;</span>
+                          <span className="text-slate-300">{table.location || table.zone || 'Main Hall'}</span>
                         </div>
                       </div>
                     </div>
@@ -1201,7 +1316,7 @@ export default function LiveTablesModule({
                         onClick={() => requestRemoveSpecificTable(table.tableNumber)}
                         title={`Remove ${table.name} (Requires Admin PIN 808080)`}
                         aria-label={`Remove Table ${table.tableNumber}`}
-                        className="w-7 h-7 rounded-lg bg-[#1e293b] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 border border-[#334155] hover:border-rose-500/40 flex items-center justify-center transition cursor-pointer"
+                        className="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700/80 hover:border-rose-500/40 flex items-center justify-center transition cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -1211,13 +1326,13 @@ export default function LiveTablesModule({
                   {/* -----------------------------------------------------------
                       ASSIGNED EMPLOYEE SELECTOR (Direct Interactive Dropdown - Rule 2)
                       ----------------------------------------------------------- */}
-                  <div className="relative pt-2 pb-1 border-t border-[#334155] space-y-1.5">
+                  <div className="relative pt-2.5 pb-1 border-t border-slate-800/80 space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
-                          Assigned Employee
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                          Assigned Staff
                         </span>
-                        <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1 py-0.5 rounded" title="Assignment protected by Admin PIN (808080)">
+                        <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-amber-400/90 bg-amber-500/10 border border-amber-500/20 px-1 py-0.5 rounded" title="Assignment protected by Admin PIN (808080)">
                           <Lock className="w-2.5 h-2.5" />
                           <span>PIN</span>
                         </span>
@@ -1229,7 +1344,7 @@ export default function LiveTablesModule({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 p-1.5 rounded-xl bg-[#1e293b] border border-[#334155]">
+                    <div className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-800/60 border border-slate-700/60">
                       <div
                         className="w-7 h-7 rounded-lg text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm"
                         style={{ backgroundColor: assignedEmp?.avatarColor || assignedEmp?.color || '#FF5A26' }}
@@ -1244,7 +1359,7 @@ export default function LiveTablesModule({
                           const val = e.target.value ? e.target.value : null;
                           requestReassignEmployee(table.tableNumber, val);
                         }}
-                        className="flex-1 bg-transparent text-xs font-bold text-[#f8fafc] focus:outline-none cursor-pointer py-1 truncate"
+                        className="flex-1 bg-transparent text-xs font-bold text-slate-200 focus:outline-none cursor-pointer py-1 truncate"
                       >
                         <option value="" className="bg-[#0f172a] text-zinc-400">
                           -- Unassigned (Floor Pool) --
@@ -1262,27 +1377,29 @@ export default function LiveTablesModule({
                       CASE 1: TABLE HAS ACTIVE ASSISTANCE / ISSUE
                       ----------------------------------------------------------- */}
                   {table.status === TABLE_STATUS.NEED_ASSISTANCE && (
-                    <div className="p-3 rounded-2xl bg-[#1e293b] border border-red-500/50 space-y-2">
+                    <div className="p-3.5 rounded-2xl bg-rose-950/30 border border-rose-500/40 space-y-2.5 shadow-inner">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-black text-red-400 flex items-center gap-1.5">
-                          <AlertCircle className="w-3.5 h-3.5 text-red-400" />
-                          <span>Customer Issue Report</span>
+                        <span className="font-black text-rose-300 flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                          <span>Customer Assistance Alert</span>
                         </span>
                         {issueNote?.severity && (
-                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${
-                            issueNote.severity === ISSUE_SEVERITY.CRITICAL ? 'bg-red-500 text-white' : 'bg-amber-500 text-black'
+                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                            issueNote.severity === ISSUE_SEVERITY.CRITICAL 
+                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' 
+                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                           }`}>
                             {issueNote.severity}
                           </span>
                         )}
                       </div>
 
-                      <p className="text-xs text-[#f8fafc] font-medium leading-snug line-clamp-2">
-                        {issueNote ? issueNote.complaintText : 'Guest requested prompt employee assistance at table.'}
+                      <p className="text-xs text-slate-200 font-medium leading-snug line-clamp-2">
+                        "{issueNote ? issueNote.complaintText : 'Guest requested prompt employee assistance at table.'}"
                       </p>
 
-                      <div className="flex items-center justify-between text-[10px] text-red-300/80 pt-1 border-t border-[#334155]">
-                        <span>Guest: {issueNote?.customerName || 'Dining Guest'}</span>
+                      <div className="flex items-center justify-between text-[10px] text-rose-300/80 pt-1.5 border-t border-rose-500/20">
+                        <span>Guest: <strong className="text-slate-200">{issueNote?.customerName || 'Dining Guest'}</strong></span>
                         <span>{issueNote ? formatElapsed(15) : 'Active'}</span>
                       </div>
                     </div>
@@ -1294,16 +1411,18 @@ export default function LiveTablesModule({
                   {activeOrder && table.status !== TABLE_STATUS.AVAILABLE && (
                     <div className="space-y-3 pt-2">
                       
-                      {/* Live Order Summary */}
-                      <div className="p-3 rounded-2xl bg-[#1e293b] border border-[#334155] space-y-2">
+                      {/* Live Order Summary Box */}
+                      <div className="p-3 rounded-2xl bg-slate-800/50 border border-slate-700/60 space-y-2">
                         <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-1.5 font-bold text-[#f8fafc]">
-                            <span className="text-[#FF7A45]">{activeOrder.orderNumber}</span>
-                            <span className="text-zinc-500">&bull;</span>
-                            <span className="text-[#f8fafc]">{activeOrder.customerName}</span>
+                          <div className="flex items-center gap-1.5 font-bold text-slate-100">
+                            <span className="px-1.5 py-0.5 rounded-md bg-[#FF5A26]/15 text-[#FF7A45] font-black text-[11px] border border-[#FF5A26]/30">
+                              {activeOrder.orderNumber}
+                            </span>
+                            <span className="text-slate-500">&bull;</span>
+                            <span className="text-slate-200 font-semibold truncate max-w-[120px]">{activeOrder.customerName}</span>
                           </div>
-                          <span className="text-[10px] font-medium text-zinc-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-zinc-400" />
+                          <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1 shrink-0">
+                            <Clock className="w-3 h-3 text-slate-400" />
                             <span>{formatElapsed(activeOrder.timeElapsedMinutes)}</span>
                           </span>
                         </div>
@@ -1311,26 +1430,26 @@ export default function LiveTablesModule({
                         {/* Items Preview with Quantities & Prices */}
                         <div className="space-y-1.5 text-xs">
                           {activeOrder.items.slice(0, 2).map((item, idx) => (
-                            <div key={item.id || idx} className="flex items-start justify-between gap-2 text-[#f8fafc]">
-                              <span className="pr-1 text-[#f8fafc] leading-snug whitespace-normal break-words">
-                                <span className="font-bold text-[#FF7A45]">{item.quantity}×</span>{' '}
+                            <div key={item.id || idx} className="flex items-start justify-between gap-2 text-slate-200">
+                              <span className="pr-1 text-slate-200 leading-snug whitespace-normal break-words">
+                                <span className="font-bold text-[#FF7A45] mr-1">{item.quantity}×</span>
                                 <span>{item.name}</span>
                               </span>
-                              <span className="font-semibold text-zinc-300 shrink-0 text-right">
+                              <span className="font-semibold text-slate-300 shrink-0 text-right">
                                 {formatCurrency(item.price * item.quantity)}
                               </span>
                             </div>
                           ))}
                           {activeOrder.items.length > 2 && (
-                            <p className="text-[10px] text-zinc-400 font-bold">
+                            <p className="text-[10px] text-slate-400 font-bold">
                               +{activeOrder.items.length - 2} more item(s) ordered
                             </p>
                           )}
                         </div>
 
                         {/* Total Bill */}
-                        <div className="pt-2 border-t border-[#334155] flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-zinc-300">
+                        <div className="pt-2 border-t border-slate-700/60 flex items-center justify-between">
+                          <span className="text-[11px] font-medium text-slate-400">
                             Total Bill ({activeOrder.items.reduce((s, i) => s + i.quantity, 0)} items)
                           </span>
                           <span className="text-sm font-black text-emerald-400">
@@ -1339,25 +1458,18 @@ export default function LiveTablesModule({
                         </div>
                       </div>
 
-                      {/* -------------------------------------------------------
-                          KITCHEN-TO-EMPLOYEE STEPPER / PROGRESS BAR
-                          Exact 4-Stage Pipeline:
-                          1. Order Placed
-                          2. Kitchen Preparing
-                          3. Ready for Pickup (Employee Notified)
-                          4. Served
-                          ------------------------------------------------------- */}
+                      {/* Kitchen-to-Employee Stepper / Progress Bar */}
                       <div className="space-y-1.5 pt-1">
-                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-zinc-400">
-                          <span>Kitchen &rarr; Employee Pipeline</span>
+                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-400">
+                          <span>Kitchen &rarr; Waiter Pipeline</span>
                           <span className="text-[#FF7A45] font-extrabold">
                             {activeOrder.kitchenFlowStage === KITCHEN_STAGE.PLACED ? '1/4 Placed' :
-                             activeOrder.kitchenFlowStage === KITCHEN_STAGE.PREPARING ? '2/4 Preparing' :
-                             activeOrder.kitchenFlowStage === KITCHEN_STAGE.READY_PICKUP ? '3/4 Ready Pickup' : '4/4 Served'}
+                             activeOrder.kitchenFlowStage === KITCHEN_STAGE.PREPARING ? '2/4 Prep' :
+                             activeOrder.kitchenFlowStage === KITCHEN_STAGE.READY_PICKUP ? '3/4 Ready' : '4/4 Served'}
                           </span>
                         </div>
 
-                        {/* Horizontal Stepper Strip */}
+                        {/* Stepper Grid */}
                         <div className="grid grid-cols-4 gap-1.5">
                           {ORDER_PIPELINE_STAGES.map((stage, sIdx) => {
                             const stageKeys = ORDER_PIPELINE_STAGES.map(s => s.key);
@@ -1370,10 +1482,10 @@ export default function LiveTablesModule({
                                 key={stage.key}
                                 className={`p-1.5 rounded-xl border text-center transition-all ${
                                   isCurrent
-                                    ? 'bg-[#FF5A26]/20 border-[#FF5A26] text-[#f8fafc] shadow-md shadow-[#FF5A26]/20 ring-1 ring-[#FF7A45]'
+                                    ? 'bg-[#FF5A26]/20 border-[#FF5A26] text-white shadow-md shadow-[#FF5A26]/20 ring-1 ring-[#FF7A45]'
                                     : isCompleted
-                                    ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
-                                    : 'bg-[#1e293b] border-[#334155] text-zinc-400'
+                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                                    : 'bg-slate-800/40 border-slate-700/50 text-slate-500'
                                 }`}
                                 title={stage.description}
                               >
@@ -1383,7 +1495,7 @@ export default function LiveTablesModule({
                                   ) : isCurrent ? (
                                     <stage.icon className="w-3 h-3 text-[#FF7A45] animate-pulse" />
                                   ) : (
-                                    <span className="text-[10px] font-bold">{sIdx + 1}</span>
+                                    <span className="text-[10px] font-bold text-slate-500">{sIdx + 1}</span>
                                   )}
                                 </div>
                                 <span className="text-[9px] font-black block truncate leading-tight">
@@ -1402,13 +1514,13 @@ export default function LiveTablesModule({
                       CASE 3: TABLE IS AVAILABLE
                       ----------------------------------------------------------- */}
                   {table.status === TABLE_STATUS.AVAILABLE && (
-                    <div className="py-6 px-3 rounded-2xl bg-[#1e293b] border border-[#334155] text-center space-y-2">
-                      <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                    <div className="py-7 px-3 rounded-2xl bg-slate-800/40 border border-slate-700/50 text-center space-y-2">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
                         <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                       </div>
-                      <p className="text-xs font-bold text-[#f8fafc]">Table Clean &amp; Vacant</p>
-                      <p className="text-[11px] text-zinc-400">
-                        Ready for hostess seating &bull; Capacity {table.capacity} guests
+                      <p className="text-xs font-bold text-slate-200">Table Clean &amp; Vacant</p>
+                      <p className="text-[11px] text-slate-400">
+                        Ready for guest seating &bull; Capacity {table.capacity || 4} diners
                       </p>
                     </div>
                   )}
@@ -1416,13 +1528,9 @@ export default function LiveTablesModule({
                 </div>
 
                 {/* -----------------------------------------------------------
-                    ACTION TOOLBAR ON EACH CARD (Exact Requirements)
-                    - 1-Click "Dispatch / Notify Employee"
-                    - "View Order Receipt / Modal"
-                    - "Clear / Reset Table" when served
-                    - Prominent "Handle Issue" Crimson button for assistance
+                    ACTION TOOLBAR ON EACH CARD
                     ----------------------------------------------------------- */}
-                <div className="pt-4 mt-4 border-t border-[#334155] space-y-2">
+                <div className="pt-4 mt-4 border-t border-slate-800/80 space-y-2">
                   
                   {/* Advance Kitchen Stage 1-Click Action */}
                   {activeOrder && activeOrder.kitchenFlowStage !== KITCHEN_STAGE.SERVED && (
@@ -1430,7 +1538,7 @@ export default function LiveTablesModule({
                       type="button"
                       disabled={isAdvancing}
                       onClick={() => handleAdvanceStage(activeOrder.id, table.tableNumber)}
-                      className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:from-[#ff6b3d] hover:to-[#ff8d5c] text-[#f8fafc] text-xs font-black shadow-md shadow-[#FF5A26]/30 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer disabled:opacity-50"
+                      className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:from-[#ff6b3d] hover:to-[#ff8d5c] text-white text-xs font-black shadow-md shadow-[#FF5A26]/30 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer disabled:opacity-50"
                     >
                       {activeOrder.kitchenFlowStage === KITCHEN_STAGE.PLACED && (
                         <>
@@ -1441,7 +1549,7 @@ export default function LiveTablesModule({
                       {activeOrder.kitchenFlowStage === KITCHEN_STAGE.PREPARING && (
                         <>
                           <ConciergeBell className="w-3.5 h-3.5" />
-                          <span>Advance: Mark Ready &amp; Alert Employee</span>
+                          <span>Advance: Mark Ready &amp; Alert Staff</span>
                         </>
                       )}
                       {activeOrder.kitchenFlowStage === KITCHEN_STAGE.READY_PICKUP && (
@@ -1453,12 +1561,12 @@ export default function LiveTablesModule({
                     </button>
                   )}
 
-                  {/* Reset Table Button (when served or available) */}
+                  {/* Reset Table Button (when served) */}
                   {activeOrder && activeOrder.kitchenFlowStage === KITCHEN_STAGE.SERVED && (
                     <button
                       type="button"
                       onClick={() => handleResetTable(table.tableNumber)}
-                      className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-[#f8fafc] text-xs font-black shadow-md shadow-emerald-900/40 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+                      className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-md shadow-emerald-950/40 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                       <span>Clear &amp; Reset Table (Served)</span>
@@ -1470,7 +1578,7 @@ export default function LiveTablesModule({
                     <button
                       type="button"
                       onClick={() => setActiveIssueModal({ table, note: issueNote })}
-                      className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-[#f8fafc] text-xs font-black shadow-lg shadow-red-600/40 ring-1 ring-red-400 flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer animate-pulse"
+                      className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-xs font-black shadow-lg shadow-rose-950/50 ring-1 ring-rose-400/50 flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer animate-pulse"
                     >
                       <AlertTriangle className="w-4 h-4 text-white" />
                       <span>Handle Issue &bull; Resolve Alert</span>
@@ -1485,8 +1593,8 @@ export default function LiveTablesModule({
                       onClick={() => handleDispatchEmployee(table.tableNumber, table.assignedEmployeeId)}
                       className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border ${
                         isDispatched
-                          ? 'bg-emerald-600 text-[#f8fafc] border-emerald-500'
-                          : 'bg-[#1e293b] hover:bg-[#334155] text-[#f8fafc] border-[#334155]'
+                          ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm'
+                          : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border-slate-700/80'
                       }`}
                       title="Dispatch alert to assigned employee handset"
                     >
@@ -1498,7 +1606,7 @@ export default function LiveTablesModule({
                       ) : (
                         <>
                           <Send className="w-3.5 h-3.5 text-[#FF7A45]" />
-                          <span>Notify Employee</span>
+                          <span>Notify Staff</span>
                         </>
                       )}
                     </button>
@@ -1508,44 +1616,31 @@ export default function LiveTablesModule({
                       <button
                         type="button"
                         onClick={() => setSelectedOrderModal({ order: activeOrder, table, employee: assignedEmp })}
-                        className="py-1.5 px-3 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-[#f8fafc] text-xs font-bold transition flex items-center justify-center gap-1 border border-[#334155] cursor-pointer"
+                        className="py-1.5 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1 border border-slate-700/80 cursor-pointer"
                         title="View Full Order Receipt Modal"
                       >
-                        <Eye className="w-3.5 h-3.5 text-zinc-400" />
+                        <Eye className="w-3.5 h-3.5 text-slate-400" />
                         <span>Receipt</span>
                       </button>
                     )}
 
                     {/* Table Reset shortcut if already clean */}
                     {table.status === TABLE_STATUS.AVAILABLE && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => triggerToast(`Table ${table.tableNumber} is ready. Guest QR code active.`, 'info')}
-                          className="flex-1 py-1.5 px-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-emerald-300 text-xs font-bold transition border border-[#334155] flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                          <Users className="w-3.5 h-3.5" />
-                          <span>Seat Table</span>
-                        </button>
-                        {tables.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveSpecificTable(table.tableNumber)}
-                            className="py-1.5 px-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/70 text-rose-300 hover:text-white text-xs font-bold transition border border-rose-800/40 flex items-center justify-center gap-1 cursor-pointer"
-                            title={`Remove Table ${table.tableNumber}`}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Remove</span>
-                          </button>
-                        )}
-                      </>
+                      <button
+                        type="button"
+                        onClick={() => triggerToast(`Table ${table.tableNumber} is ready. Guest QR code active.`, 'info')}
+                        className="flex-1 py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-emerald-400 text-xs font-bold transition border border-slate-700/80 flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <Users className="w-3.5 h-3.5" />
+                        <span>Seat Table</span>
+                      </button>
                     )}
 
                     {/* Explicit Remove Table Button (Protected by PIN 808080) */}
                     <button
                       type="button"
                       onClick={() => requestRemoveSpecificTable(table.tableNumber)}
-                      className="py-1.5 px-2.5 rounded-xl bg-[#1e293b] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 border border-[#334155] hover:border-rose-500/40 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                      className="py-1.5 px-2.5 rounded-xl bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700/80 hover:border-rose-500/40 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shrink-0"
                       title={`Remove Table #${table.tableNumber} (Admin PIN 808080)`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -1677,7 +1772,8 @@ export default function LiveTablesModule({
                 className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-amber-300 border border-[#334155] text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
                 title="Quickly add default 4-seat table (Requires PIN 808080)"
               >
-                <span>⚡ Quick Add (4-Seat)</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Quick Add (4-Seat)</span>
               </button>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
