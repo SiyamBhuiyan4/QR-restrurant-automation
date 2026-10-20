@@ -1246,9 +1246,13 @@ export function RestaurantProvider({ children }) {
       table: tableNum,
       reason: callData.reason || 'Assistance Requested',
       type: callData.type || 'assistance',
-      customMessage: callData.customMessage || callData.custom_message || '',
+      customMessage: callData.customMessage || callData.custom_message || callData.message || '',
+      custom_message: callData.custom_message || callData.customMessage || callData.message || '',
+      message: callData.message || callData.custom_message || callData.customMessage || '',
       timestamp: callData.timestamp || Date.now(),
       status: 'pending',
+      created_at: callData.created_at || new Date(callData.timestamp || Date.now()).toISOString(),
+      createdAt: callData.createdAt || callData.timestamp || Date.now(),
       assignedEmployeeId: assignedEmp ? assignedEmp.id : null,
       assignedEmployeeName: assignedEmp ? assignedEmp.name : 'Unassigned (General Pool)',
       assignedEmployeeRole: assignedEmp ? assignedEmp.role : 'Floor Specialist',
@@ -1256,7 +1260,7 @@ export function RestaurantProvider({ children }) {
     };
 
     setAssistanceCalls(prevCalls => {
-      const existing = prevCalls.filter(c => Number(c.tableNumber) !== tableNum);
+      const existing = prevCalls.filter(c => Number(c.tableNumber || c.table_number || c.table) !== tableNum);
       const next = [enrichedCall, ...existing];
       broadcastState('CALLS_UPDATED', next);
       return next;
@@ -1282,13 +1286,17 @@ export function RestaurantProvider({ children }) {
 
     setAssistanceCalls(prevCalls => {
       const target = prevCalls.find(
-        c => c.id === tableNumberOrCallId || Number(c.tableNumber) === Number(tableNumberOrCallId)
+        c =>
+          String(c.id) === String(tableNumberOrCallId) ||
+          Number(c.tableNumber || c.table_number || c.table) === Number(tableNumberOrCallId)
       );
       if (target) {
-        resolvedTableNum = Number(target.tableNumber);
+        resolvedTableNum = Number(target.tableNumber || target.table_number || target.table);
       }
       const next = prevCalls.filter(
-        c => c.id !== tableNumberOrCallId && Number(c.tableNumber) !== Number(tableNumberOrCallId)
+        c =>
+          String(c.id) !== String(tableNumberOrCallId) &&
+          Number(c.tableNumber || c.table_number || c.table) !== Number(tableNumberOrCallId)
       );
       broadcastState('CALLS_UPDATED', next);
       return next;

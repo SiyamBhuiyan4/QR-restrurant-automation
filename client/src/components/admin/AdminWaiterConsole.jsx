@@ -121,12 +121,35 @@ export default function AdminWaiterConsole() {
     return [];
   }, [restaurant?.employees]);
 
-  // Active Assistance Calls
+  // Active Assistance Calls (Merged Context & localStorage)
   const calls = useMemo(() => {
+    const map = new Map();
+
     if (restaurant?.assistanceCalls && Array.isArray(restaurant.assistanceCalls)) {
-      return restaurant.assistanceCalls;
+      restaurant.assistanceCalls.forEach(c => {
+        if (!c) return;
+        const callId = String(c.id || c._id || `tbl_${c.table_number || c.tableNumber || c.table}`);
+        map.set(callId, c);
+      });
     }
-    return [];
+
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('smartdine_active_assistance_calls');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(c => {
+              if (!c) return;
+              const callId = String(c.id || c._id || `tbl_${c.table_number || c.tableNumber || c.table}`);
+              if (!map.has(callId)) map.set(callId, c);
+            });
+          }
+        }
+      } catch (_) {}
+    }
+
+    return Array.from(map.values()).filter(c => c && c.status !== 'resolved');
   }, [restaurant?.assistanceCalls]);
 
   // Venue Tables Count

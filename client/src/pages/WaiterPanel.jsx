@@ -213,19 +213,8 @@ export default function WaiterPanel() {
 
   const { socket } = useSocket();
 
-  // Active Assistance Calls
-  const [calls, setCalls] = useState(() => {
-    if (restaurant?.assistanceCalls && Array.isArray(restaurant.assistanceCalls)) {
-      return restaurant.assistanceCalls;
-    }
-    if (typeof localStorage !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('smartdine_active_assistance_calls');
-        if (saved) return JSON.parse(saved);
-      } catch (_) {}
-    }
-    return [];
-  });
+  // Local optimistic resolved call IDs to instantly remove calls on click
+  const [locallyResolvedIds, setLocallyResolvedIds] = useState(new Set());
 
   // Track notified call keys so vibration & chime only trigger once per new call
   const notifiedCallKeysRef = useRef(new Set());
@@ -244,31 +233,6 @@ export default function WaiterPanel() {
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch initial calls from API / backend
-  useEffect(() => {
-    fetch('/api/waiter/calls')
-      .then(res => (res.ok ? res.json() : []))
-      .then(data => {
-        const list = Array.isArray(data) ? data : data.data || [];
-        if (list.length > 0) {
-          setCalls(prev => {
-            const map = new Map();
-            prev.forEach(c => map.set(String(c.id || c.tableNumber), c));
-            list.forEach(c => map.set(String(c.id || c.tableNumber), c));
-            return Array.from(map.values());
-          });
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  // Sync calls from RestaurantContext
-  useEffect(() => {
-    if (restaurant?.assistanceCalls && Array.isArray(restaurant.assistanceCalls)) {
-      setCalls(restaurant.assistanceCalls);
-    }
-  }, [restaurant?.assistanceCalls]);
-
   // Convex Cloud integration (optional)
   let convexCalls = null;
   let resolveConvexCall = null;
@@ -277,13 +241,79 @@ export default function WaiterPanel() {
     resolveConvexCall = useMutation(api.waiter.resolveCall);
   } catch (_) {}
 
-  useEffect(() => {
-    if (convexCalls && Array.isArray(convexCalls)) {
-      setCalls(convexCalls.map(c => ({ ...c, id: c.id ?? c._id })));
-    }
-  }, [convexCalls]);
+  // Unified Active Assistance Calls
+  // Merges Context (primary), localStorage, and Convex Cloud calls seamlessly.
+  // NEVER wipes out calls if Convex returns [] (empty array).
+  const calls = useMemo(() => {
+    const map = new Map();
 
-  // Real-time tab-to-tab BroadcastChannel listener
+    // 1. RestaurantContext (Venue source of truth)
+    if (restaurant?.assistanceCalls && Array.isArray(restaurant.assistanceCalls)) {
+      restaurant.assistanceCalls.forEach(c => {
+        if (!c) return;
+        const callId = String(c.id || c._id || `tbl_${c.table_number || c.tableNumber || c.table}`);
+        map.set(callId, c);
+      });
+    }
+
+    // 2. Direct localStorage fallback
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('smartdine_active_assistance_calls');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(c => {
+              if (!c) return;
+              const callId = String(c.id || c._id || `tbl_${c.table_number || c.tableNumber || c.table}`);
+              if (!map.has(callId)) {
+                map.set(callId, c);
+              }
+            });
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 3. Convex Cloud calls (merge ONLY if non-empty, NEVER wipe out local calls)
+    if (convexCalls && Array.isArray(convexCalls) && convexCalls.length > 0) {
+      convexCalls.forEach(c => {
+        if (!c) return;
+        const callId = String(c._id || c.id || `tbl_${c.tableNumber || c.table_number || c.table}`);
+        const tblNum = Number(c.tableNumber ?? c.table_number ?? c.table);
+        const alreadyExists = Array.from(map.values()).some(
+          ex => Number(ex.table_number ?? ex.tableNumber ?? ex.table) === tblNum
+        );
+        if (!alreadyExists && !map.has(callId)) {
+          map.set(callId, {
+            id: callId,
+            tableNumber: tblNum,
+            table_number: tblNum,
+            table: tblNum,
+            reason: c.reason || 'Assistance requested',
+            custom_message: c.custom_message || c.message || '',
+            message: c.message || c.custom_message || '',
+            status: c.status || 'pending',
+            created_at: c.createdAt ? new Date(c.createdAt).toISOString() : new Date().toISOString(),
+            createdAt: c.createdAt || Date.now()
+          });
+        }
+      });
+    }
+
+    // 4. Exclude resolved calls
+    return Array.from(map.values()).filter(c => {
+      if (!c || c.status === 'resolved') return false;
+      const callId = String(c.id || c._id);
+      const tbl = Number(c.table_number ?? c.tableNumber ?? c.table);
+      if (locallyResolvedIds.has(callId) || locallyResolvedIds.has(`tbl_${tbl}`)) {
+        return false;
+      }
+      return true;
+    });
+  }, [restaurant?.assistanceCalls, convexCalls, locallyResolvedIds]);
+
+  // Real-time tab-to-tab BroadcastChannel listener for fast cross-tab sync
   useEffect(() => {
     if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return;
     const bc = new BroadcastChannel('smartdine_restaurant_state');
@@ -293,7 +323,9 @@ export default function WaiterPanel() {
       if (!msg) return;
 
       if (msg.type === 'CALLS_UPDATED' && Array.isArray(msg.data)) {
-        setCalls(msg.data);
+        if (restaurant?.setAssistanceCalls) {
+          restaurant.setAssistanceCalls(msg.data);
+        }
       }
     };
 
@@ -302,29 +334,26 @@ export default function WaiterPanel() {
       bc.removeEventListener('message', handleBroadcastMessage);
       bc.close();
     };
-  }, []);
+  }, [restaurant]);
 
   // Real-time Socket.IO listeners
   useSocketListener('waiter:call', (newCall) => {
     if (!newCall) return;
-    const callId = newCall.id ?? newCall._id ?? `call_${Date.now()}`;
-    setCalls(prev => {
-      if (prev.some(c => String(c.id) === String(callId))) return prev;
-      return [{ ...newCall, id: callId }, ...prev];
-    });
+    if (restaurant?.registerAssistanceCall) {
+      restaurant.registerAssistanceCall(newCall);
+    }
   });
 
   useSocketListener('waiter:resolve', (payload) => {
     const resolvedId = typeof payload === 'object' ? payload?.id : payload;
     const resolvedTable = typeof payload === 'object' ? payload?.table : null;
     if (resolvedId || resolvedTable) {
-      setCalls(prev =>
-        prev.filter(
-          c =>
-            String(c.id) !== String(resolvedId) &&
-            (!resolvedTable || Number(c.table_number || c.tableNumber || c.table) !== Number(resolvedTable))
-        )
-      );
+      setLocallyResolvedIds(prev => {
+        const next = new Set(prev);
+        if (resolvedId) next.add(String(resolvedId));
+        if (resolvedTable) next.add(`tbl_${resolvedTable}`);
+        return next;
+      });
     }
   });
 
@@ -481,14 +510,13 @@ export default function WaiterPanel() {
   const handleResolve = async (callId, tableNum) => {
     const finalTable = Number(tableNum);
 
-    // 1. Immediately remove call from active alerts list on waiter's screen
-    setCalls(prev =>
-      prev.filter(
-        c =>
-          String(c.id) !== String(callId) &&
-          (!finalTable || Number(c.table_number || c.tableNumber || c.table) !== finalTable)
-      )
-    );
+    // 1. Immediately remove call from active alerts list on waiter's screen (optimistic UI)
+    setLocallyResolvedIds(prev => {
+      const next = new Set(prev);
+      if (callId) next.add(String(callId));
+      if (finalTable) next.add(`tbl_${finalTable}`);
+      return next;
+    });
 
     // 2. Update status to "Resolved" in RestaurantContext & Admin Panel (broadcasts across tabs)
     if (restaurant?.resolveAssistanceCall) {
