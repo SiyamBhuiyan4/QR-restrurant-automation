@@ -35,6 +35,9 @@ export const DEFAULT_EMPLOYEE_ROSTER = [
     zone: 'Zone 1 (Main Hall)',
     phone: '+880 1712-345001',
     email: 'rakib.ahmed@restaurant.local',
+    accountCode: 'WAIT-101',
+    passcode: '1001',
+    hiredAt: '2026-01-15',
     avgResponseTime: '11s',
     onTimeRate: '99%'
   },
@@ -53,6 +56,9 @@ export const DEFAULT_EMPLOYEE_ROSTER = [
     zone: 'Zone 2 (Window Side)',
     phone: '+880 1819-456002',
     email: 'hasan.mahmud@restaurant.local',
+    accountCode: 'WAIT-102',
+    passcode: '1002',
+    hiredAt: '2026-02-01',
     avgResponseTime: '11s',
     onTimeRate: '98%'
   },
@@ -71,6 +77,9 @@ export const DEFAULT_EMPLOYEE_ROSTER = [
     zone: 'Zone 3 (Patio & Terrace)',
     phone: '+880 1913-789003',
     email: 'priya.sen@restaurant.local',
+    accountCode: 'WAIT-103',
+    passcode: '1003',
+    hiredAt: '2026-02-15',
     avgResponseTime: '11s',
     onTimeRate: '100%'
   },
@@ -89,6 +98,9 @@ export const DEFAULT_EMPLOYEE_ROSTER = [
     zone: 'Zone 4 (Central Hall)',
     phone: '+880 1614-234004',
     email: 'tanvir.rahman@restaurant.local',
+    accountCode: 'WAIT-104',
+    passcode: '1004',
+    hiredAt: '2026-03-01',
     avgResponseTime: '11s',
     onTimeRate: '97%'
   },
@@ -107,6 +119,9 @@ export const DEFAULT_EMPLOYEE_ROSTER = [
     zone: 'Zone 5 (Private Dining)',
     phone: '+880 1515-678005',
     email: 'sadia.islam@restaurant.local',
+    accountCode: 'WAIT-105',
+    passcode: '1005',
+    hiredAt: '2026-03-10',
     avgResponseTime: '11s',
     onTimeRate: '98%'
   }
@@ -221,6 +236,25 @@ export const DEFAULT_ASSISTANCE_CALLS = [
   }
 ];
 
+export function sanitizeEmployeeRecord(e, index = 0) {
+  if (!e) return e;
+  const numId = e.numericId || (index + 1);
+  let emp = {
+    ...e,
+    accountCode: e.accountCode || `WAIT-10${numId}`,
+    passcode: e.passcode || `100${numId}`,
+    hiredAt: e.hiredAt || '2026-01-15'
+  };
+  if (emp.id === 'emp-5' || emp.numericId === 5 || emp.name === 'Saima Islam') {
+    emp = {
+      ...emp,
+      name: 'Sadia Islam',
+      email: emp.email ? emp.email.replace('saima', 'sadia') : 'sadia.islam@restaurant.local'
+    };
+  }
+  return emp;
+}
+
 export function createTableRecord(tableNumber, assignedEmployeeId = null) {
   const locations = [TABLE_LOCATION.MAIN_HALL, TABLE_LOCATION.WINDOW, TABLE_LOCATION.PATIO];
   const capacities = [2, 4, 4, 6, 8];
@@ -273,16 +307,7 @@ export function RestaurantProvider({ children }) {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed.map(e => {
-              if (e.id === 'emp-5' || e.numericId === 5 || e.name === 'Saima Islam') {
-                return {
-                  ...e,
-                  name: 'Sadia Islam',
-                  email: e.email ? e.email.replace('saima', 'sadia') : 'sadia.islam@restaurant.local'
-                };
-              }
-              return e;
-            });
+            return parsed.map((e, index) => sanitizeEmployeeRecord(e, index));
           }
         }
       } catch (_) {}
@@ -374,16 +399,22 @@ export function RestaurantProvider({ children }) {
 
   useEffect(() => {
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(employees));
+      const sanitized = employees.map((e, index) => sanitizeEmployeeRecord(e, index));
+      localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(sanitized));
       // Backwards-compatibility for older WaiterPanel localStorage key
-      const legacyRoster = employees.map(e => ({
+      const legacyRoster = sanitized.map(e => ({
         id: e.id,
+        numericId: e.numericId,
         name: e.name,
         initials: e.initials,
         role: e.role,
         tables: e.assignedTables,
         color: e.color || 'from-orange-500 to-amber-600',
-        zone: e.zone
+        zone: e.zone,
+        accountCode: e.accountCode,
+        passcode: e.passcode,
+        hiredAt: e.hiredAt,
+        status: e.status
       }));
       localStorage.setItem('smartdine_floor_staff_roster', JSON.stringify(legacyRoster));
     }
@@ -438,7 +469,9 @@ export function RestaurantProvider({ children }) {
       if (!msg || !msg.type) return;
       if (msg.type === 'SYNC_ALL' && msg.data) {
         if (msg.data.tableCount) setTableCountState(msg.data.tableCount);
-        if (msg.data.employees) setEmployeesState(msg.data.employees);
+        if (msg.data.employees && Array.isArray(msg.data.employees)) {
+          setEmployeesState(msg.data.employees.map((e, index) => sanitizeEmployeeRecord(e, index)));
+        }
         if (msg.data.tables) setTablesState(msg.data.tables);
         if (msg.data.calls) setAssistanceCalls(msg.data.calls);
         if (msg.data.reports) setCustomerReportsState(msg.data.reports);
@@ -447,7 +480,11 @@ export function RestaurantProvider({ children }) {
       } else if (msg.type === 'TABLES_UPDATED') {
         setTablesState(msg.data);
       } else if (msg.type === 'EMPLOYEES_UPDATED') {
-        setEmployeesState(msg.data);
+        if (Array.isArray(msg.data)) {
+          setEmployeesState(msg.data.map((e, index) => sanitizeEmployeeRecord(e, index)));
+        } else {
+          setEmployeesState(msg.data);
+        }
       } else if (msg.type === 'CALLS_UPDATED') {
         setAssistanceCalls(msg.data);
       } else if (msg.type === 'REPORTS_UPDATED') {
@@ -469,7 +506,12 @@ export function RestaurantProvider({ children }) {
         try { setTablesState(JSON.parse(e.newValue)); } catch (_) {}
       }
       if (e.key === STORAGE_KEYS.EMPLOYEES && e.newValue) {
-        try { setEmployeesState(JSON.parse(e.newValue)); } catch (_) {}
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            setEmployeesState(parsed.map((emp, index) => sanitizeEmployeeRecord(emp, index)));
+          }
+        } catch (_) {}
       }
       if (e.key === STORAGE_KEYS.CALLS && e.newValue) {
         try { setAssistanceCalls(JSON.parse(e.newValue)); } catch (_) {}
@@ -502,6 +544,10 @@ export function RestaurantProvider({ children }) {
 
     return null;
   }, [tables, employees]);
+
+  const getWaiterByTable = useCallback((tableNumber) => {
+    return getAssignedEmployeeForTable(tableNumber);
+  }, [getAssignedEmployeeForTable]);
 
   // ---------------------------------------------------------------------------
   // DYNAMIC TABLE COUNT CONTROLS (Rule 1)
@@ -787,6 +833,194 @@ export function RestaurantProvider({ children }) {
       return nextTables;
     });
   }, [employees, tableCount, broadcastState]);
+
+  // ---------------------------------------------------------------------------
+  // WAITER CREDENTIALS, AUTHENTICATION & HIRING
+  // ---------------------------------------------------------------------------
+  const authenticateWaiter = useCallback((identifier, passcode) => {
+    if (!identifier || !passcode) {
+      return { success: false, error: 'Invalid ID or PIN' };
+    }
+
+    const cleanId = String(identifier).trim().toLowerCase();
+    const cleanPass = String(passcode).trim();
+
+    const employee = employees.find(emp => {
+      const empId = String(emp.id || '').toLowerCase();
+      const numId = String(emp.numericId ?? '');
+      const code = String(emp.accountCode || '').toLowerCase();
+      const name = String(emp.name || '').toLowerCase();
+      const email = String(emp.email || '').toLowerCase();
+
+      // 1. Direct exact match (emp-1, 1, WAIT-101, email, name)
+      if (empId === cleanId) return true;
+      if (numId === cleanId) return true;
+      if (code === cleanId) return true;
+      if (email === cleanId) return true;
+      if (name === cleanId) return true;
+
+      // 2. Prefix-agnostic numeric match (e.g. entering "101" matches "WAIT-101")
+      const codeNumeric = code.replace(/^[a-z]+-?/i, '');
+      const inputNumeric = cleanId.replace(/^[a-z]+-?/i, '');
+      if (codeNumeric && inputNumeric && codeNumeric === inputNumeric) return true;
+
+      // 3. First name match (e.g. "rakib" matches "Rakib Ahmed")
+      const firstName = name.split(' ')[0];
+      if (firstName && firstName === cleanId) return true;
+
+      return false;
+    });
+
+    if (!employee) {
+      return { success: false, error: 'Invalid ID or PIN' };
+    }
+
+    const expectedPasscode = String(employee.passcode || '').trim();
+    if (cleanPass !== expectedPasscode) {
+      return { success: false, error: 'Invalid ID or PIN' };
+    }
+
+    return {
+      success: true,
+      employee
+    };
+  }, [employees]);
+
+  const updateEmployeeCredentials = useCallback((employeeId, credentials = {}) => {
+    const idStr = String(employeeId);
+    let updatedEmployee = null;
+
+    setEmployeesState(prevEmps => {
+      const nextEmps = prevEmps.map(emp => {
+        if (emp.id === idStr || String(emp.numericId) === idStr || emp.accountCode === idStr) {
+          const updated = {
+            ...emp,
+            ...(credentials.accountCode ? { accountCode: String(credentials.accountCode).trim().toUpperCase() } : {}),
+            ...(credentials.passcode ? { passcode: String(credentials.passcode).trim() } : {}),
+            ...(credentials.hiredAt ? { hiredAt: String(credentials.hiredAt).trim() } : {})
+          };
+          updatedEmployee = updated;
+          return updated;
+        }
+        return emp;
+      });
+
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(nextEmps));
+        } catch (_) {}
+      }
+
+      broadcastState('EMPLOYEES_UPDATED', nextEmps);
+      return nextEmps;
+    });
+
+    return {
+      success: !!updatedEmployee,
+      employee: updatedEmployee
+    };
+  }, [broadcastState]);
+
+  const hireEmployee = useCallback((employeeData = {}) => {
+    let created = null;
+
+    setEmployeesState(prevEmps => {
+      const maxNumericId = prevEmps.reduce((max, e) => Math.max(max, Number(e.numericId) || 0), 0);
+      const nextNumId = maxNumericId + 1;
+      const nextId = `emp-${nextNumId}`;
+      const name = employeeData.name?.trim() || `Waiter ${nextNumId}`;
+      const initials = employeeData.initials || name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'W';
+      const role = employeeData.role || 'Floor Specialist';
+      const shift = employeeData.shift || 'Morning Shift (08:00 - 16:00)';
+      const status = employeeData.status || 'Active';
+      const assignedTables = Array.isArray(employeeData.assignedTables) ? employeeData.assignedTables : [];
+      const accountCode = employeeData.accountCode ? String(employeeData.accountCode).trim().toUpperCase() : `WAIT-10${nextNumId}`;
+      const passcode = employeeData.passcode ? String(employeeData.passcode).trim() : `100${nextNumId}`;
+      const hiredAt = employeeData.hiredAt || new Date().toISOString().split('T')[0];
+
+      const palette = [
+        { color: 'from-orange-500 to-amber-600', avatarColor: '#f59e0b' },
+        { color: 'from-blue-500 to-indigo-600', avatarColor: '#3b82f6' },
+        { color: 'from-purple-500 to-violet-600', avatarColor: '#8b5cf6' },
+        { color: 'from-amber-500 to-yellow-600', avatarColor: '#eab308' },
+        { color: 'from-pink-500 to-rose-600', avatarColor: '#ec4899' },
+        { color: 'from-emerald-500 to-teal-600', avatarColor: '#10b981' },
+        { color: 'from-cyan-500 to-blue-600', avatarColor: '#06b6d4' }
+      ];
+      const theme = palette[(nextNumId - 1) % palette.length];
+
+      created = {
+        id: nextId,
+        numericId: nextNumId,
+        name,
+        initials,
+        role,
+        shift,
+        status,
+        assignedTables,
+        color: employeeData.color || theme.color,
+        avatarColor: employeeData.avatarColor || theme.avatarColor,
+        avatarBg: employeeData.avatarBg || theme.color,
+        zone: employeeData.zone || `Zone ${((nextNumId - 1) % 5) + 1}`,
+        phone: employeeData.phone || `+880 1700-${String(100000 + nextNumId).slice(1)}`,
+        email: employeeData.email || `${name.toLowerCase().replace(/\s+/g, '.') || 'waiter'}@restaurant.local`,
+        accountCode,
+        passcode,
+        hiredAt,
+        avgResponseTime: '12s',
+        onTimeRate: '99%'
+      };
+
+      const nextEmps = [...prevEmps, created];
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(nextEmps));
+        } catch (_) {}
+      }
+      broadcastState('EMPLOYEES_UPDATED', nextEmps);
+      return nextEmps;
+    });
+
+    return created;
+  }, [broadcastState]);
+
+  const removeEmployee = useCallback((employeeId) => {
+    const idStr = String(employeeId);
+    let removed = false;
+
+    setEmployeesState(prevEmps => {
+      const target = prevEmps.find(e => e.id === idStr || String(e.numericId) === idStr);
+      if (!target) return prevEmps;
+
+      const nextEmps = prevEmps.filter(e => e.id !== target.id);
+      removed = true;
+
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(nextEmps));
+        } catch (_) {}
+      }
+      broadcastState('EMPLOYEES_UPDATED', nextEmps);
+      return nextEmps;
+    });
+
+    return removed;
+  }, [broadcastState]);
+
+  const setEmployees = useCallback((updater) => {
+    setEmployeesState(prev => {
+      const nextRaw = typeof updater === 'function' ? updater(prev) : updater;
+      if (!Array.isArray(nextRaw)) return prev;
+      const sanitized = nextRaw.map((e, index) => sanitizeEmployeeRecord(e, index));
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(sanitized));
+        } catch (_) {}
+      }
+      broadcastState('EMPLOYEES_UPDATED', sanitized);
+      return sanitized;
+    });
+  }, [broadcastState]);
 
   // ---------------------------------------------------------------------------
   // ASSISTANCE CALLS & ROUTING (Rule 3)
@@ -1132,15 +1366,23 @@ export function RestaurantProvider({ children }) {
 
     // Lookups
     getAssignedEmployeeForTable,
+    getWaiterByTable,
     getReportsForEmployee,
     getReportsForTable,
+
+    // Authentication & Staff Credentials
+    authenticateWaiter,
+    updateEmployeeCredentials,
+    hireEmployee,
+    addEmployee: hireEmployee,
+    removeEmployee,
 
     // Actions (Floor & Tables)
     setTableCount,
     addTable,
     removeTable,
     setTables,
-    setEmployees: setEmployeesState,
+    setEmployees,
     assignTableToEmployee,
     reassignAllTables,
     setEmployeeStatus,

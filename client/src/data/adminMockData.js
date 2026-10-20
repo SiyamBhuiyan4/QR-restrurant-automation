@@ -315,6 +315,9 @@ export const mockEmployees = [
     avgResponseTimeSec: 85,
     phone: '+880 1712-345001',
     shift: EMPLOYEE_SHIFT.MORNING,
+    accountCode: 'WAIT-101',
+    passcode: '1001',
+    hiredAt: '2026-01-15',
   },
   {
     id: 2,
@@ -333,6 +336,9 @@ export const mockEmployees = [
     avgResponseTimeSec: 64,
     phone: '+880 1819-456002',
     shift: EMPLOYEE_SHIFT.MORNING,
+    accountCode: 'WAIT-102',
+    passcode: '1002',
+    hiredAt: '2026-02-01',
   },
   {
     id: 3,
@@ -351,6 +357,9 @@ export const mockEmployees = [
     avgResponseTimeSec: 52,
     phone: '+880 1913-789003',
     shift: EMPLOYEE_SHIFT.MORNING,
+    accountCode: 'WAIT-103',
+    passcode: '1003',
+    hiredAt: '2026-02-15',
   },
   {
     id: 4,
@@ -369,10 +378,13 @@ export const mockEmployees = [
     avgResponseTimeSec: 94,
     phone: '+880 1614-234004',
     shift: EMPLOYEE_SHIFT.EVENING,
+    accountCode: 'WAIT-104',
+    passcode: '1004',
+    hiredAt: '2026-03-01',
   },
   {
     id: 5,
-    name: 'Saima Islam',
+    name: 'Sadia Islam',
     role: EMPLOYEE_ROLE.SENIOR_HOST,
     avatar: {
       initials: 'SI',
@@ -387,6 +399,9 @@ export const mockEmployees = [
     avgResponseTimeSec: 78,
     phone: '+880 1515-678005',
     shift: EMPLOYEE_SHIFT.EVENING,
+    accountCode: 'WAIT-105',
+    passcode: '1005',
+    hiredAt: '2026-03-10',
   },
 ];
 
