@@ -50,11 +50,11 @@ const ALL_TABLE_NUMBERS = Array.from({ length: TOTAL_TABLES_COUNT }, (_, i) => i
 
 // Initial default shift assignment mapping
 const DEFAULT_ROSTER_MAP_BY_ID = {
-  'emp-1': [1, 6, 11],
-  'emp-2': [2, 7, 12],
-  'emp-3': [3, 8],
-  'emp-4': [4, 9],
-  'emp-5': [5, 10]
+  'emp-1': [1, 2, 3],
+  'emp-2': [4, 5, 6],
+  'emp-3': [7, 8],
+  'emp-4': [9, 10],
+  'emp-5': [11, 12]
 };
 
 // Look up default shift owner for any table number
@@ -69,17 +69,17 @@ const getDefaultOwnerForTable = (tableNumber) => {
 // Initial Root Custody Mapping (Table -> Original Shift Owner)
 const INITIAL_TABLE_CUSTODY = {
   1: { tableNumber: 1, originalOwnerId: 'emp-1', delegationTrail: ['emp-1'] },
-  2: { tableNumber: 2, originalOwnerId: 'emp-2', delegationTrail: ['emp-2'] },
-  3: { tableNumber: 3, originalOwnerId: 'emp-3', delegationTrail: ['emp-3'] },
-  4: { tableNumber: 4, originalOwnerId: 'emp-4', delegationTrail: ['emp-4'] },
-  5: { tableNumber: 5, originalOwnerId: 'emp-5', delegationTrail: ['emp-5'] },
-  6: { tableNumber: 6, originalOwnerId: 'emp-1', delegationTrail: ['emp-1'] },
-  7: { tableNumber: 7, originalOwnerId: 'emp-2', delegationTrail: ['emp-2'] },
+  2: { tableNumber: 2, originalOwnerId: 'emp-1', delegationTrail: ['emp-1'] },
+  3: { tableNumber: 3, originalOwnerId: 'emp-1', delegationTrail: ['emp-1'] },
+  4: { tableNumber: 4, originalOwnerId: 'emp-2', delegationTrail: ['emp-2'] },
+  5: { tableNumber: 5, originalOwnerId: 'emp-2', delegationTrail: ['emp-2'] },
+  6: { tableNumber: 6, originalOwnerId: 'emp-2', delegationTrail: ['emp-2'] },
+  7: { tableNumber: 7, originalOwnerId: 'emp-3', delegationTrail: ['emp-3'] },
   8: { tableNumber: 8, originalOwnerId: 'emp-3', delegationTrail: ['emp-3'] },
   9: { tableNumber: 9, originalOwnerId: 'emp-4', delegationTrail: ['emp-4'] },
-  10: { tableNumber: 10, originalOwnerId: 'emp-5', delegationTrail: ['emp-5'] },
-  11: { tableNumber: 11, originalOwnerId: 'emp-1', delegationTrail: ['emp-1'] },
-  12: { tableNumber: 12, originalOwnerId: 'emp-2', delegationTrail: ['emp-2'] }
+  10: { tableNumber: 10, originalOwnerId: 'emp-4', delegationTrail: ['emp-4'] },
+  11: { tableNumber: 11, originalOwnerId: 'emp-5', delegationTrail: ['emp-5'] },
+  12: { tableNumber: 12, originalOwnerId: 'emp-5', delegationTrail: ['emp-5'] }
 };
 
 // Initial Mock Employees Roster - Aligned strictly with design specs
@@ -92,7 +92,9 @@ const INITIAL_EMPLOYEES = [
     role: 'Floor Specialist',
     shift: 'Morning Shift (08:00 - 16:00)',
     status: 'Active',
-    assignedTables: [1, 6, 11],
+    username: 'rakib',
+    password: '1234',
+    assignedTables: [1, 2, 3],
     activePickups: 0,
     activeRequests: 0,
     avgResponseTime: '11s',
@@ -104,8 +106,8 @@ const INITIAL_EMPLOYEES = [
     nudgesCount: 0,
     accountCode: 'WAIT-101',
     waiterCode: 'WAIT-101',
-    passcode: '1001',
-    waiterPin: '1001',
+    passcode: '1234',
+    waiterPin: '1234',
     hiredAt: '2026-01-15'
   },
   {
@@ -116,7 +118,9 @@ const INITIAL_EMPLOYEES = [
     role: 'Senior Host',
     shift: 'Morning Shift (08:00 - 16:00)',
     status: 'Active',
-    assignedTables: [2, 7, 12],
+    username: 'hasan',
+    password: '1234',
+    assignedTables: [4, 5, 6],
     activePickups: 0,
     activeRequests: 0,
     avgResponseTime: '11s',
@@ -128,8 +132,8 @@ const INITIAL_EMPLOYEES = [
     nudgesCount: 0,
     accountCode: 'WAIT-102',
     waiterCode: 'WAIT-102',
-    passcode: '1002',
-    waiterPin: '1002',
+    passcode: '1234',
+    waiterPin: '1234',
     hiredAt: '2026-02-01'
   },
   {
@@ -140,7 +144,9 @@ const INITIAL_EMPLOYEES = [
     role: 'Operations Lead',
     shift: 'Morning Shift (08:00 - 16:00)',
     status: 'Active',
-    assignedTables: [3, 8],
+    username: 'priya',
+    password: '1234',
+    assignedTables: [7, 8],
     activePickups: 0,
     activeRequests: 0,
     avgResponseTime: '11s',
@@ -152,8 +158,8 @@ const INITIAL_EMPLOYEES = [
     nudgesCount: 0,
     accountCode: 'WAIT-103',
     waiterCode: 'WAIT-103',
-    passcode: '1003',
-    waiterPin: '1003',
+    passcode: '1234',
+    waiterPin: '1234',
     hiredAt: '2026-02-15'
   },
   {
@@ -164,7 +170,9 @@ const INITIAL_EMPLOYEES = [
     role: 'Floor Specialist',
     shift: 'Mid Shift (12:00 - 20:00)',
     status: 'Active',
-    assignedTables: [4, 9],
+    username: 'tanvir',
+    password: '1234',
+    assignedTables: [9, 10],
     activePickups: 0,
     activeRequests: 0,
     avgResponseTime: '11s',
@@ -176,8 +184,8 @@ const INITIAL_EMPLOYEES = [
     nudgesCount: 0,
     accountCode: 'WAIT-104',
     waiterCode: 'WAIT-104',
-    passcode: '1004',
-    waiterPin: '1004',
+    passcode: '1234',
+    waiterPin: '1234',
     hiredAt: '2026-03-01'
   },
   {
@@ -188,7 +196,9 @@ const INITIAL_EMPLOYEES = [
     role: 'Senior Host',
     shift: 'Evening Shift (16:00 - 00:00)',
     status: 'Active',
-    assignedTables: [5, 10],
+    username: 'sadia',
+    password: '1234',
+    assignedTables: [11, 12],
     activePickups: 0,
     activeRequests: 0,
     avgResponseTime: '11s',
@@ -200,8 +210,8 @@ const INITIAL_EMPLOYEES = [
     nudgesCount: 0,
     accountCode: 'WAIT-105',
     waiterCode: 'WAIT-105',
-    passcode: '1005',
-    waiterPin: '1005',
+    passcode: '1234',
+    waiterPin: '1234',
     hiredAt: '2026-03-10'
   }
 ];
@@ -1404,6 +1414,8 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
     const pin = generateRandomPin();
     setFormData({
       name: '',
+      username: '',
+      password: '',
       role: 'Floor Specialist',
       shift: 'Morning Shift (08:00 - 16:00)',
       status: 'Active',
@@ -1421,10 +1433,12 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
 
   const handleOpenEditModal = (emp) => {
     setEditingEmployee(emp);
-    const code = emp.accountCode || emp.waiterCode || `WAIT-${100 + (emp.numericId || 1)}`;
-    const pin = emp.passcode || emp.waiterPin || '1234';
+    const code = emp.username || emp.accountCode || emp.waiterCode || `WAIT-${100 + (emp.numericId || 1)}`;
+    const pin = emp.password || emp.passcode || emp.waiterPin || '1234';
     setFormData({
       name: emp.name,
+      username: emp.username || emp.accountCode || emp.waiterCode || '',
+      password: emp.password || emp.passcode || emp.waiterPin || '',
       role: emp.role,
       shift: emp.shift,
       status: emp.status,
@@ -1447,42 +1461,51 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
       return;
     }
 
-    const code = (formData.accountCode || formData.waiterCode || '').trim().toUpperCase() || generateNextWaiterCode();
-    const pin = (formData.passcode || formData.waiterPin || '').trim() || generateRandomPin();
+    const rawUser = (formData.username || formData.accountCode || formData.waiterCode || '').trim();
+    const username = rawUser ? rawUser.toLowerCase() : formData.name.toLowerCase().replace(/\s+/g, '.');
+    const password = (formData.password || formData.passcode || formData.waiterPin || '').trim() || '1234';
+    const code = (formData.accountCode || formData.waiterCode || username).trim().toUpperCase() || generateNextWaiterCode();
+    const pin = password;
 
     pushUndoSnapshot(editingEmployee ? `Updated ${formData.name.trim()}` : `Registered ${formData.name.trim()}`);
 
+    let nextEmployees;
+
     if (editingEmployee) {
-      setEmployees(prev =>
-        prev.map(emp => {
-          if (emp.id === editingEmployee.id) {
-            return {
-              ...emp,
-              name: formData.name.trim(),
-              role: formData.role,
-              shift: formData.shift,
-              status: formData.status,
-              phone: formData.phone.trim(),
-              email: formData.email.trim(),
-              assignedTables: formData.assignedTables.sort((a, b) => a - b),
-              accountCode: code,
-              waiterCode: code,
-              passcode: pin,
-              waiterPin: pin
-            };
-          }
-          if (formData.assignedTables.some(t => (emp.assignedTables || []).includes(t))) {
-            return {
-              ...emp,
-              assignedTables: emp.assignedTables.filter(t => !formData.assignedTables.includes(t))
-            };
-          }
-          return emp;
-        })
-      );
+      nextEmployees = employees.map(emp => {
+        if (emp.id === editingEmployee.id) {
+          return {
+            ...emp,
+            name: formData.name.trim(),
+            username,
+            password,
+            role: formData.role,
+            shift: formData.shift,
+            status: formData.status,
+            phone: formData.phone.trim(),
+            email: formData.email.trim(),
+            assignedTables: formData.assignedTables.sort((a, b) => a - b),
+            accountCode: code,
+            waiterCode: code,
+            passcode: pin,
+            waiterPin: pin
+          };
+        }
+        if (formData.assignedTables.some(t => (emp.assignedTables || []).includes(t))) {
+          return {
+            ...emp,
+            assignedTables: emp.assignedTables.filter(t => !formData.assignedTables.includes(t))
+          };
+        }
+        return emp;
+      });
+
+      setEmployees(nextEmployees);
 
       if (restaurantContext?.updateEmployeeCredentials) {
         restaurantContext.updateEmployeeCredentials(editingEmployee.id, {
+          username,
+          password,
           accountCode: code,
           passcode: pin
         });
@@ -1508,6 +1531,8 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
         id: newId,
         numericId: nextNumericId,
         name: formData.name.trim(),
+        username,
+        password,
         initials,
         role: formData.role,
         shift: formData.shift,
@@ -1520,7 +1545,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
         onTimeRate: '100%',
         avatarType: 'orange',
         phone: formData.phone.trim() || `+880 1700-${String(100000 + nextNumericId).slice(1)}`,
-        email: formData.email.trim() || `${formData.name.toLowerCase().replace(/\s+/g, '.')}@smartdine.internal`,
+        email: formData.email.trim() || `${username}@smartdine.internal`,
         nudgesCount: 0,
         accountCode: code,
         waiterCode: code,
@@ -1529,13 +1554,12 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
         hiredAt: new Date().toISOString().split('T')[0]
       };
 
-      setEmployees(prev => {
-        const cleaned = prev.map(emp => ({
-          ...emp,
-          assignedTables: (emp.assignedTables || []).filter(t => !formData.assignedTables.includes(t))
-        }));
-        return [...cleaned, newEmp];
-      });
+      const cleaned = employees.map(emp => ({
+        ...emp,
+        assignedTables: (emp.assignedTables || []).filter(t => !formData.assignedTables.includes(t))
+      }));
+      nextEmployees = [...cleaned, newEmp];
+      setEmployees(nextEmployees);
 
       // Register new tables in custody
       setTableCustody(prev => {
@@ -1553,6 +1577,8 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
       if (restaurantContext?.hireEmployee) {
         restaurantContext.hireEmployee({
           name: formData.name.trim(),
+          username,
+          password,
           role: formData.role,
           shift: formData.shift,
           status: formData.status,
@@ -1564,11 +1590,23 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
         });
       }
 
-      showToast(`Employee "${formData.name.trim()}" successfully registered with Waiter ID ${code}!`, 'success', {
+      showToast(`Employee "${formData.name.trim()}" successfully registered with Username "${username}"!`, 'success', {
         label: 'Undo',
         onClick: handleUndo
       });
     }
+
+    // Persist to localStorage and RestaurantContext shared state
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('smartdine_restaurant_employees', JSON.stringify(nextEmployees));
+        localStorage.setItem('smartdine_floor_staff_roster', JSON.stringify(nextEmployees));
+        localStorage.setItem('smartdine_floor_employee_roster', JSON.stringify(nextEmployees));
+      }
+      if (restaurantContext?.setEmployees) {
+        restaurantContext.setEmployees(nextEmployees);
+      }
+    } catch (_) {}
 
     setIsAddEditModalOpen(false);
   };
@@ -3129,7 +3167,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                 </div>
               </div>
 
-              {/* Waiter Console Account Credentials Section */}
+              {/* Waiter Login Credentials Section */}
               <div className="p-4 rounded-xl bg-[#0B0F19] border border-amber-500/25 space-y-3 shadow-inner">
                 <div className="flex items-center justify-between pb-2 border-b border-white/[0.07]">
                   <div className="flex items-center gap-2">
@@ -3138,10 +3176,10 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                     </div>
                     <div>
                       <span className="text-xs font-bold text-white block">
-                        Waiter Console Account Credentials
+                        Waiter Login Credentials
                       </span>
                       <span className="text-[10px] text-slate-400 block">
-                        Assigned ID &amp; 4-digit PIN for handheld terminal login
+                        Username &amp; Password used by this waiter to log into /waiter
                       </span>
                     </div>
                   </div>
@@ -3149,19 +3187,21 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                   <button
                     type="button"
                     onClick={() => {
-                      const code = generateNextWaiterCode();
+                      const autoUser = formData.name ? formData.name.toLowerCase().replace(/\s+/g, '') : generateNextWaiterCode().toLowerCase();
                       const pin = generateRandomPin();
                       setFormData({
                         ...formData,
-                        accountCode: code,
-                        waiterCode: code,
+                        username: autoUser,
+                        password: pin,
+                        accountCode: autoUser.toUpperCase(),
+                        waiterCode: autoUser.toUpperCase(),
                         passcode: pin,
                         waiterPin: pin
                       });
-                      showToast('Generated fresh Staff Account ID and 4-digit PIN!', 'info');
+                      showToast('Generated fresh Username and Password!', 'info');
                     }}
                     className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition cursor-pointer"
-                    title="Auto-generate fresh Account ID & PIN"
+                    title="Auto-generate fresh Username & Password"
                   >
                     <RefreshCw className="w-3 h-3 text-amber-400" />
                     <span>Auto Generate</span>
@@ -3171,19 +3211,24 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
-                      <span>Staff Account ID / Code *</span>
-                      <span className="text-[10px] text-amber-400/80 font-mono">e.g. WAIT-106</span>
+                      <span>Username *</span>
+                      <span className="text-[10px] text-amber-400/80 font-mono">e.g. rakib</span>
                     </label>
                     <div className="relative">
                       <Key className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
                         type="text"
                         required
-                        placeholder="WAIT-106"
-                        value={formData.accountCode || formData.waiterCode || ''}
+                        placeholder="e.g. rakib"
+                        value={formData.username || formData.accountCode || ''}
                         onChange={e => {
-                          const val = e.target.value.toUpperCase();
-                          setFormData({ ...formData, accountCode: val, waiterCode: val });
+                          const val = e.target.value.toLowerCase().trim();
+                          setFormData({
+                            ...formData,
+                            username: val,
+                            accountCode: val.toUpperCase(),
+                            waiterCode: val.toUpperCase()
+                          });
                         }}
                         className="w-full bg-[#111726] border border-white/[0.07] text-amber-400 font-mono font-bold text-xs rounded-xl pl-9 pr-3.5 py-2.5 focus:outline-none focus:border-amber-500 transition tracking-wide"
                       />
@@ -3192,16 +3237,16 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
 
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
-                      <span>4-Digit Waiter Console PIN *</span>
+                      <span>Password *</span>
                       <button
                         type="button"
                         onClick={() => {
                           const pin = generateRandomPin();
-                          setFormData({ ...formData, passcode: pin, waiterPin: pin });
+                          setFormData({ ...formData, password: pin, passcode: pin, waiterPin: pin });
                         }}
                         className="text-[10px] text-amber-400 hover:underline cursor-pointer"
                       >
-                        Roll Random PIN
+                        Roll Random
                       </button>
                     </label>
                     <div className="relative">
@@ -3209,12 +3254,11 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                       <input
                         type={showModalPin ? 'text' : 'password'}
                         required
-                        maxLength={6}
-                        placeholder="1006"
-                        value={formData.passcode || formData.waiterPin || ''}
+                        placeholder="e.g. 1234"
+                        value={formData.password || formData.passcode || formData.waiterPin || ''}
                         onChange={e => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                          setFormData({ ...formData, passcode: val, waiterPin: val });
+                          const val = e.target.value;
+                          setFormData({ ...formData, password: val, passcode: val, waiterPin: val });
                         }}
                         className="w-full bg-[#111726] border border-white/[0.07] text-emerald-400 font-mono font-bold text-xs tracking-widest rounded-xl pl-9 pr-9 py-2.5 focus:outline-none focus:border-amber-500 transition"
                       />
@@ -3222,7 +3266,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                         type="button"
                         onClick={() => setShowModalPin(!showModalPin)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition cursor-pointer"
-                        title={showModalPin ? 'Hide PIN' : 'View PIN'}
+                        title={showModalPin ? 'Hide Password' : 'View Password'}
                       >
                         {showModalPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </button>
@@ -3232,7 +3276,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
 
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Allows staff to authenticate on field mobile terminals and acknowledge calling alerts.</span>
+                  <span>The waiter enters this exact username and password on the /waiter login page.</span>
                 </div>
               </div>
 
