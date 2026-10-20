@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 const ITERATIONS = 100000;
@@ -119,9 +119,68 @@ export const me = query({
 });
 
 export async function requireAdmin(ctx, token) {
-  // Fail closed until the admin login decision (A or B) is implemented.
-  throw new Error("ADMIN_AUTH_NOT_CONFIGURED");
+  if (!token) throw new Error("UNAUTHORIZED");
+  const tokenHash = await sha256Hex(token);
+  const session = await ctx.db
+    .query("adminSessions")
+    .withIndex("by_tokenHash", (q) => q.eq("tokenHash", tokenHash))
+    .unique();
+  if (!session || session.expiresAt < Date.now()) throw new Error("UNAUTHORIZED");
+  return true;
 }
+
+export const adminLogin = mutation({
+  args: { pin: v.string() },
+  handler: async (ctx, { pin }) => {
+    const row = await ctx.db.query("adminAuth").first();
+    const now = Date.now();
+    if (!row) throw new Error("INVALID_CREDENTIALS");
+    if (row.lockedUntil && row.lockedUntil > now) throw new Error("LOCKED");
+    const ok = await verifyPassword(pin, row.salt, row.passwordHash);
+    if (!ok) {
+      const fails = (row.failedLogins ?? 0) + 1;
+      await ctx.db.patch(row._id, {
+        failedLogins: fails,
+        lockedUntil: fails >= MAX_FAILS ? now + LOCK_MS : undefined,
+      });
+      throw new Error("INVALID_CREDENTIALS");
+    }
+    await ctx.db.patch(row._id, { failedLogins: 0, lockedUntil: undefined });
+    const token = toHex(crypto.getRandomValues(new Uint8Array(32)));
+    await ctx.db.insert("adminSessions", {
+      tokenHash: await sha256Hex(token),
+      createdAt: now,
+      expiresAt: now + SESSION_MS,
+    });
+    return { token };
+  },
+});
+
+export const adminLogout = mutation({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const tokenHash = await sha256Hex(token);
+    const session = await ctx.db
+      .query("adminSessions")
+      .withIndex("by_tokenHash", (q) => q.eq("tokenHash", tokenHash))
+      .unique();
+    if (session) await ctx.db.delete(session._id);
+    return null;
+  },
+});
+
+export const setAdminPin = internalMutation({
+  args: { pin: v.string() },
+  handler: async (ctx, { pin }) => {
+    if (pin.length < 6) throw new Error("INVALID_INPUT");
+    const { salt, passwordHash } = await hashPassword(pin);
+    const row = await ctx.db.query("adminAuth").first();
+    const data = { passwordHash, salt, failedLogins: 0, lockedUntil: undefined, updatedAt: Date.now() };
+    if (row) await ctx.db.patch(row._id, data);
+    else await ctx.db.insert("adminAuth", data);
+    return null;
+  },
+});
 
 export const createEmployee = mutation({
   args: {

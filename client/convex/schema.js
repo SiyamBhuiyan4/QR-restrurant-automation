@@ -60,6 +60,20 @@ export default defineSchema({
     .index("by_created_at", ["createdAt"])
     .index("by_table", ["tableNumber"]),
 
+  adminAuth: defineTable({
+    passwordHash: v.string(),
+    salt: v.string(),
+    failedLogins: v.optional(v.number()),
+    lockedUntil: v.optional(v.number()),
+    updatedAt: v.number(),
+  }),
+
+  adminSessions: defineTable({
+    tokenHash: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  }).index("by_tokenHash", ["tokenHash"]),
+
   employees: defineTable({
     username: v.string(),
     passwordHash: v.string(),
