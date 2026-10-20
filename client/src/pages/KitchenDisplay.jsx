@@ -830,38 +830,6 @@ export default function KitchenDisplay({
                   </>
                 )}
               </button>
-
-              {/* Test Kitchen Chime Button */}
-              <button
-                type="button"
-                onClick={handleTestChime}
-                className="p-1.5 sm:px-2.5 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                title="Test Kitchen Sound Alert"
-              >
-                <BellRing className="w-4 h-4 text-amber-400" />
-                <span className="hidden xl:inline">Test Alert</span>
-              </button>
-
-              {/* Refresh / Sync Button */}
-              <button
-                type="button"
-                onClick={fetchOrders}
-                disabled={isLoading}
-                className="p-1.5 sm:p-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 transition cursor-pointer"
-                title="Refresh Orders"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-amber-400' : ''}`} />
-              </button>
-
-              {/* Fullscreen Button */}
-              <button
-                type="button"
-                onClick={toggleFullscreen}
-                className="p-1.5 sm:p-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 transition cursor-pointer"
-                title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-              >
-                {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-              </button>
             </div>
           </div>
 
