@@ -574,27 +574,7 @@ export function RestaurantProvider({ children }) {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            let list = parsed.map((e, index) => sanitizeEmployeeRecord(e, index));
-            const alexIndex = list.findIndex(e => e.id === 'emp-042' || e.numericId === 42 || e.name === 'Alex M.');
-            if (alexIndex === -1) {
-              list = [DEFAULT_EMPLOYEE_ROSTER[0], ...list];
-            } else {
-              list[alexIndex] = {
-                ...DEFAULT_EMPLOYEE_ROSTER[0],
-                ...list[alexIndex],
-                assignedTables: [1, 3, 4]
-              };
-            }
-            list = list.map(e => {
-              if (e.id === 'emp-042' || e.numericId === 42 || e.name === 'Alex M.') {
-                return { ...e, assignedTables: [1, 3, 4] };
-              }
-              if (Array.isArray(e.assignedTables)) {
-                return { ...e, assignedTables: e.assignedTables.filter(t => ![1, 3, 4].includes(Number(t))) };
-              }
-              return e;
-            });
-            return list;
+            return parsed.map((e, index) => sanitizeEmployeeRecord(e, index));
           }
         }
       } catch (_) {}
@@ -610,13 +590,7 @@ export function RestaurantProvider({ children }) {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed.map(t => {
-              const num = Number(t.tableNumber || t.id);
-              if ([1, 3, 4].includes(num)) {
-                return { ...t, assignedEmployeeId: 'emp-042' };
-              }
-              return t;
-            });
+            return parsed;
           }
         }
       } catch (_) {}

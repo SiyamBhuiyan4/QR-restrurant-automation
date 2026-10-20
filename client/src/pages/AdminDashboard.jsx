@@ -17,7 +17,7 @@ import AdminLoginGate from '../components/admin/AdminLoginGate';
 
 // System Standalone Consoles (Directly Embedded into Master Admin)
 import KitchenDisplay from './KitchenDisplay';
-import WaiterPanel from './WaiterPanel';
+import AdminWaiterConsole from '../components/admin/AdminWaiterConsole';
 import EmployeeView from './EmployeeView';
 import MenuManager from '../components/MenuManager';
 import QRBatchGenerator from './QRBatchGenerator';
@@ -563,10 +563,10 @@ export default function AdminDashboard({ className = '' }) {
             </div>
           )}
 
-          {/* TAB 5: ON-FIELD WAITER CONSOLE */}
+          {/* TAB 5: ON-FIELD WAITER CONSOLE (ADMIN GOD-MODE OVERVIEW & DISPATCH) */}
           {activeTab === 'floor' && (
             <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
-              <WaiterPanel />
+              <AdminWaiterConsole />
             </div>
           )}
 
