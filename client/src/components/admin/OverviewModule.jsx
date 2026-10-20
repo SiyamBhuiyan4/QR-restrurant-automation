@@ -735,7 +735,7 @@ export default function OverviewModule({
       {/* =========================================================================
           PROMINENT DATE RANGE COMMAND BAR (TOP OF MODULE - ALWAYS VISIBLE)
           ========================================================================= */}
-      <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg space-y-4">
+      <div className="admin-card border border-[#334155] bg-[#111827] p-5 text-[#f8fafc] space-y-4">
         {/* Top Row: Title, Active Range Summary & Calendar Toggle */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
@@ -879,7 +879,7 @@ export default function OverviewModule({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 w-full">
         
         {/* KPI 1: Total Sales (Orders Count) */}
-        <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-emerald-500/50 transition-all group min-w-0">
+        <div className="bg-[#111827] border border-[#334155] admin-card p-5 text-[#f8fafc] hover:border-emerald-500/50 transition-all group min-w-0">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
               <ShoppingBag className="w-5 h-5" />
@@ -917,7 +917,7 @@ export default function OverviewModule({
         </div>
 
         {/* KPI 2: Total Revenue */}
-        <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-amber-500/50 transition-all group min-w-0">
+        <div className="bg-[#111827] border border-[#334155] admin-card p-5 text-[#f8fafc] hover:border-amber-500/50 transition-all group min-w-0">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shrink-0">
               <DollarSign className="w-5 h-5" />
@@ -955,7 +955,7 @@ export default function OverviewModule({
         </div>
 
         {/* KPI 3: Net Profit */}
-        <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-emerald-500/50 transition-all group min-w-0">
+        <div className="bg-[#111827] border border-[#334155] admin-card p-5 text-[#f8fafc] hover:border-emerald-500/50 transition-all group min-w-0">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
               <TrendingUp className="w-5 h-5" />
