@@ -101,29 +101,10 @@ export default function AdminWaiterConsole() {
   const [inlineMessage, setInlineMessage] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Filter staff messages for active waiter
-  const waiterStaffMessages = useMemo(() => {
-    if (!activeWaiter || !restaurant?.staffMessages || !Array.isArray(restaurant.staffMessages)) {
-      return [];
-    }
-    const empId = activeWaiter.id;
-    const numId = String(activeWaiter.numericId);
-    const user = (activeWaiter.username || '').toLowerCase();
-
-    return restaurant.staffMessages.filter(
-      m =>
-        m.toWaiterId === empId ||
-        String(m.toWaiterId) === numId ||
-        (m.toWaiterId && m.toWaiterId.toLowerCase() === user)
-    );
-  }, [activeWaiter, restaurant?.staffMessages]);
-
   // Convex mutations if available
   let resolveConvexCall = null;
   try {
-    if (api?.assistance?.resolveCall) {
-      resolveConvexCall = useMutation(api.assistance.resolveCall);
-    }
+    resolveConvexCall = useMutation(api.waiter.resolveCall);
   } catch (_) {}
 
   const showToast = useCallback((msg, type = 'success') => {
@@ -200,6 +181,23 @@ export default function AdminWaiterConsole() {
       e => e.id === selectedWaiterId || String(e.numericId) === String(selectedWaiterId)
     );
   }, [selectedWaiterId, employees]);
+
+  // Filter staff messages for active waiter
+  const waiterStaffMessages = useMemo(() => {
+    if (!activeWaiter || !restaurant?.staffMessages || !Array.isArray(restaurant.staffMessages)) {
+      return [];
+    }
+    const empId = activeWaiter.id;
+    const numId = String(activeWaiter.numericId);
+    const user = (activeWaiter.username || '').toLowerCase();
+
+    return restaurant.staffMessages.filter(
+      m =>
+        m.toWaiterId === empId ||
+        String(m.toWaiterId) === numId ||
+        (m.toWaiterId && m.toWaiterId.toLowerCase() === user)
+    );
+  }, [activeWaiter, restaurant?.staffMessages]);
 
   // Helper: Get calls for a specific waiter's assigned tables
   const getCallsForWaiter = useCallback((waiter) => {

@@ -7,7 +7,7 @@ import App from './App.jsx';
 import './index.css';
 import './styles/motion.css';
 
-const LATEST_BUILD_TAG = '2026-10-20.31-admin-waiter-chat-and-dock-removal';
+const LATEST_BUILD_TAG = '2026-10-20.32-fix-activewaiter-init-error';
 
 // Asynchronously purge obsolete caches, service workers, and force clean reload
 (async function checkAndEvictStaleCaches() {
