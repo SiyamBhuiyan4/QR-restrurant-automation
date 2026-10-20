@@ -324,3 +324,10 @@
 .admin-btn-danger:hover {
   background: rgba(225, 29, 72, 0.08);
 }
+
+/* ---------- Admin header: glass surface and soft edge ---------- */
+.admin-header {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+}
