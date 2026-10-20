@@ -278,3 +278,49 @@
   animation: adminGatePulse 2s infinite;
 }
 
+
+/* ---------- Design system: shared tokens and surfaces ---------- */
+.admin-root {
+  --admin-font: 'Hind Siliguri', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --admin-radius-card: 16px;
+  --admin-radius-control: 10px;
+  --admin-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 6px 20px rgba(15, 23, 42, 0.06);
+  --admin-accent: #059669;
+  --admin-accent-soft: #fbbf24;
+  --admin-danger: #e11d48;
+}
+
+.admin-root {
+  font-family: var(--admin-font);
+}
+
+.admin-card {
+  border-radius: var(--admin-radius-card);
+  box-shadow: var(--admin-shadow-card);
+}
+
+.admin-section-title {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.admin-btn {
+  border-radius: var(--admin-radius-control);
+  font-weight: 700;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-btn:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 2px;
+}
+
+.admin-btn-danger {
+  color: var(--admin-danger);
+  border: 1px solid rgba(225, 29, 72, 0.35);
+  background: transparent;
+}
+
+.admin-btn-danger:hover {
+  background: rgba(225, 29, 72, 0.08);
+}
