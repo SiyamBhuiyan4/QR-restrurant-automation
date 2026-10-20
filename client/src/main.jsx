@@ -7,7 +7,7 @@ import App from './App.jsx';
 import './index.css';
 import './styles/motion.css';
 
-const LATEST_BUILD_TAG = '2026-10-20.33-sync-views-no-suspense';
+const LATEST_BUILD_TAG = '2026-10-20.34-waiter-floating-chat-and-alert-dispatch';
 
 // Evict stale caches safely on new builds when online
 (async function checkAndEvictStaleCaches() {

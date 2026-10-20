@@ -12,7 +12,10 @@ import {
   Flame,
   Volume2,
   VolumeX,
-  ShieldAlert
+  ShieldAlert,
+  AlertTriangle,
+  X,
+  Radio
 } from 'lucide-react';
 import { useSocket, useSocketListener } from '../context/SocketContext';
 import { useRestaurant, DEFAULT_EMPLOYEE_ROSTER } from '../context/RestaurantContext';
@@ -143,6 +146,39 @@ class TwoSecondWaiterChime {
       console.warn('[TwoSecondWaiterChime] Playback error:', e);
     }
   }
+
+  playUrgentAlert() {
+    if (this.isMuted) return;
+    try {
+      this.init();
+      if (!this.ctx) return;
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+
+      const now = this.ctx.currentTime;
+      const master = this.ctx.createGain();
+      master.gain.setValueAtTime(0.55, now);
+      master.connect(this.ctx.destination);
+
+      // Fast rising alert beeps (880Hz, 1200Hz, 1400Hz)
+      [0, 0.22, 0.44].forEach((offset, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(880 + idx * 160, now + offset);
+        gain.gain.setValueAtTime(0.001, now + offset);
+        gain.gain.exponentialRampToValueAtTime(0.4, now + offset + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.19);
+        osc.connect(gain);
+        gain.connect(master);
+        osc.start(now + offset);
+        osc.stop(now + offset + 0.2);
+      });
+    } catch (e) {
+      console.warn('[TwoSecondWaiterChime] Alert sound error:', e);
+    }
+  }
 }
 
 const chime = new TwoSecondWaiterChime();
@@ -224,6 +260,10 @@ export default function WaiterPanel() {
 
   // Waiter quick reply texts map { [messageId]: string }
   const [replyTexts, setReplyTexts] = useState({});
+
+  // Floating Chat Drawer & Alert Toast State
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [activeAlertToast, setActiveAlertToast] = useState(null);
 
   // Update chime mute state
   useEffect(() => {
@@ -406,6 +446,15 @@ export default function WaiterPanel() {
     });
   }, [currentWaiter, restaurant?.staffMessages]);
 
+  // Pending staff messages filter
+  const pendingStaffMessages = useMemo(() => {
+    return myStaffMessages.filter(m => m.status !== 'acknowledged' && m.status !== 'resolved');
+  }, [myStaffMessages]);
+
+  const hasPendingAlert = useMemo(() => {
+    return pendingStaffMessages.some(m => m.isAlert || m.category === 'alert');
+  }, [pendingStaffMessages]);
+
   // Sound & Vibration alert when Admin sends a new instruction/text to this waiter
   useEffect(() => {
     if (!currentWaiter || myStaffMessages.length === 0) return;
@@ -414,8 +463,19 @@ export default function WaiterPanel() {
       const msgKey = String(msg.id || msg.timestamp);
       if (!notifiedMsgKeysRef.current.has(msgKey)) {
         notifiedMsgKeysRef.current.add(msgKey);
-        triggerCallVibration();
-        chime.play();
+
+        const isAlert = msg.isAlert || msg.category === 'alert';
+        if (isAlert) {
+          triggerCallVibration();
+          chime.playUrgentAlert();
+          setActiveAlertToast(msg);
+          setTimeout(() => setActiveAlertToast(null), 9000);
+        } else {
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate(250);
+          }
+          chime.play();
+        }
       }
     });
   }, [myStaffMessages, currentWaiter]);
@@ -429,8 +489,18 @@ export default function WaiterPanel() {
     const user = (currentWaiter.username || '').toLowerCase();
 
     if (targetId === empId || targetId === numId || targetId.toLowerCase() === user) {
-      triggerCallVibration();
-      chime.play();
+      const isAlert = msg.isAlert || msg.category === 'alert';
+      if (isAlert) {
+        triggerCallVibration();
+        chime.playUrgentAlert();
+        setActiveAlertToast(msg);
+        setTimeout(() => setActiveAlertToast(null), 9000);
+      } else {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate(250);
+        }
+        chime.play();
+      }
     }
   });
 
@@ -806,150 +876,6 @@ export default function WaiterPanel() {
         </section>
 
         {/* =====================================================================
-            2B. ADMIN DISPATCH & INSTRUCTIONS
-            Live text tasks & instructions sent directly from the Admin Panel.
-            ===================================================================== */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-2 px-1">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-emerald-400" />
-              <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-200">
-                Admin Dispatch &amp; Tasks
-              </h2>
-            </div>
-            <span
-              className={`text-xs font-black px-2.5 py-0.5 rounded-full border ${
-                myStaffMessages.filter(m => m.status !== 'acknowledged' && m.status !== 'resolved').length > 0
-                  ? 'bg-amber-950/80 text-amber-300 border-amber-700 animate-pulse'
-                  : 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
-              }`}
-            >
-              {myStaffMessages.filter(m => m.status !== 'acknowledged' && m.status !== 'resolved').length > 0
-                ? `${myStaffMessages.filter(m => m.status !== 'acknowledged' && m.status !== 'resolved').length} Pending`
-                : 'All Clear'}
-            </span>
-          </div>
-
-          {myStaffMessages.length === 0 ? (
-            <div className="py-4 text-center text-xs text-slate-400 bg-slate-900/40 rounded-2xl border border-dashed border-slate-800">
-              No instructions from Admin right now.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {myStaffMessages.map(msg => {
-                const isPending = msg.status !== 'acknowledged' && msg.status !== 'resolved';
-                const replyVal = replyTexts[msg.id] || '';
-
-                return (
-                  <div
-                    key={msg.id}
-                    className={`p-4 sm:p-5 rounded-3xl border transition shadow-xl space-y-3 ${
-                      isPending
-                        ? 'bg-gradient-to-r from-emerald-950/70 via-slate-900 to-slate-900 border-2 border-emerald-500/80 ring-2 ring-emerald-500/20'
-                        : 'bg-slate-900/80 border-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        {isPending && <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />}
-                        <span className="text-xs font-black text-emerald-400 uppercase tracking-wide flex items-center gap-1.5">
-                          <MessageSquare className="w-3.5 h-3.5" />
-                          <span>💬 Admin: {msg.fromName || 'Head Desk'}</span>
-                        </span>
-                        {isPending && (
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 animate-pulse">
-                            Urgent Task
-                          </span>
-                        )}
-                      </div>
-
-                      <span className="text-xs text-slate-400 font-mono">
-                        {formatCallTime(msg.timestamp, currentTime)}
-                      </span>
-                    </div>
-
-                    {/* Message Text */}
-                    <div className="p-3 rounded-2xl bg-black/40 border border-white/[0.06]">
-                      <p className="text-sm font-bold text-white leading-relaxed">
-                        "{msg.text}"
-                      </p>
-                    </div>
-
-                    {/* Replies if any */}
-                    {msg.replies && msg.replies.length > 0 && (
-                      <div className="space-y-1.5 pl-3 border-l-2 border-emerald-500/40">
-                        {msg.replies.map((rep, idx) => (
-                          <div key={idx} className="text-xs text-emerald-300">
-                            <span className="font-bold">You replied:</span> "{rep.text}"
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Action & Reply Bar */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-white/[0.06]">
-                      {/* Quick Reply Form */}
-                      <div className="flex items-center gap-2 flex-1">
-                        <input
-                          type="text"
-                          placeholder="Reply to Admin (e.g. 'On it!', 'Done!')..."
-                          value={replyVal}
-                          onChange={e => setReplyTexts(prev => ({ ...prev, [msg.id]: e.target.value }))}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              if (replyVal.trim() && restaurant?.acknowledgeStaffMessage) {
-                                restaurant.acknowledgeStaffMessage(msg.id, replyVal.trim());
-                                setReplyTexts(prev => ({ ...prev, [msg.id]: '' }));
-                              }
-                            }
-                          }}
-                          className="flex-1 bg-[#080B10] border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (replyVal.trim() && restaurant?.acknowledgeStaffMessage) {
-                              restaurant.acknowledgeStaffMessage(msg.id, replyVal.trim());
-                              setReplyTexts(prev => ({ ...prev, [msg.id]: '' }));
-                            }
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition cursor-pointer"
-                        >
-                          Reply
-                        </button>
-                      </div>
-
-                      {/* Acknowledge Button */}
-                      {isPending ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (restaurant?.acknowledgeStaffMessage) {
-                              restaurant.acknowledgeStaffMessage(msg.id, replyVal.trim() || 'Acknowledged');
-                              setReplyTexts(prev => ({ ...prev, [msg.id]: '' }));
-                            }
-                          }}
-                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black shadow-md shadow-emerald-500/20 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
-                        >
-                          <Check className="w-4 h-4 text-slate-950" strokeWidth={3} />
-                          <span>Acknowledge / Done</span>
-                        </button>
-                      ) : (
-                        <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                          <span>Acknowledged &bull; Admin Notified</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* =====================================================================
             3. CUSTOMER CALLS LIST
             Clean section showing live calls coming ONLY from assigned tables.
             Alert Card: Table Number, Customer Reason/Message, Time of Call,
@@ -1046,6 +972,267 @@ export default function WaiterPanel() {
           )}
         </section>
       </main>
+
+      {/* =======================================================================
+          TOP URGENT ALERT BANNER (Active when an Alert arrives and chat is closed)
+          ======================================================================= */}
+      {activeAlertToast && !isChatOpen && (
+        <div className="fixed top-4 left-4 right-4 z-50 max-w-md mx-auto p-4 rounded-2xl bg-gradient-to-r from-rose-950 via-slate-900 to-rose-950 border-2 border-rose-500 text-white shadow-2xl animate-bounce flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 animate-pulse" />
+            <div className="min-w-0">
+              <p className="text-[11px] font-black uppercase text-rose-300 flex items-center gap-1">
+                <span>🚨 Admin Urgent Alert</span>
+              </p>
+              <p className="text-xs font-bold text-white truncate">"{activeAlertToast.text}"</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setIsChatOpen(true);
+              setActiveAlertToast(null);
+            }}
+            className="px-3 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 text-xs font-black shrink-0 transition active:scale-95 cursor-pointer shadow"
+          >
+            Open &amp; Reply
+          </button>
+        </div>
+      )}
+
+      {/* =======================================================================
+          FLOATING BOTTOM-RIGHT CHAT BUTTON ("Lafabe" / Bounces if new/pending messages)
+          ======================================================================= */}
+      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end pointer-events-auto">
+        <button
+          type="button"
+          onClick={() => {
+            setIsChatOpen(prev => !prev);
+            if (activeAlertToast) setActiveAlertToast(null);
+          }}
+          className={`relative group flex items-center justify-center p-3.5 sm:p-4 rounded-full shadow-2xl transition-all cursor-pointer active:scale-95 ${
+            hasPendingAlert
+              ? 'bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 text-white ring-4 ring-rose-500/40 animate-bounce shadow-rose-600/60'
+              : pendingStaffMessages.length > 0
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-500 text-white ring-4 ring-emerald-500/30 animate-bounce shadow-emerald-600/50'
+                : 'bg-[#111726]/95 hover:bg-[#1E293B] text-slate-300 hover:text-white border border-slate-700 hover:border-amber-500/50 shadow-black/80'
+          }`}
+          title="Open Admin Messages & Instructions"
+        >
+          {hasPendingAlert ? (
+            <AlertTriangle className="w-6 h-6 text-white animate-pulse" />
+          ) : (
+            <MessageSquare className="w-6 h-6" />
+          )}
+
+          {/* Badge Counter */}
+          {pendingStaffMessages.length > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 flex h-6 min-w-6 items-center justify-center px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-black border-2 border-[#080B10] shadow-md animate-pulse">
+              {pendingStaffMessages.length}
+            </span>
+          )}
+
+          {/* Ripple Ping on Alert */}
+          {hasPendingAlert && (
+            <span className="absolute inset-0 rounded-full bg-rose-500/40 animate-ping -z-10" />
+          )}
+        </button>
+      </div>
+
+      {/* =======================================================================
+          SLIDE-OVER / BOTTOM-SHEET MODAL: ADMIN DISPATCH & DIRECT CHAT
+          ======================================================================= */}
+      {isChatOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex flex-col justify-end sm:justify-center items-center sm:p-4 animate-fadeIn">
+          <div className="bg-[#0f1420] border border-white/[0.08] rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl flex flex-col max-h-[85vh] text-slate-100 overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-white/[0.08] flex items-center justify-between gap-3 bg-[#131926]">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                  hasPendingAlert ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'
+                }`}>
+                  {hasPendingAlert ? <AlertTriangle className="w-4 h-4 animate-pulse" /> : <MessageSquare className="w-4 h-4" />}
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white flex items-center gap-2">
+                    <span>Admin Dispatch &amp; Chat</span>
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
+                      hasPendingAlert
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                        : pendingStaffMessages.length > 0
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                          : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                    }`}>
+                      {pendingStaffMessages.length > 0 ? `${pendingStaffMessages.length} Pending` : 'All Clear'}
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Direct live instructions &amp; call reminders from Head Desk
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsChatOpen(false)}
+                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+                title="Close Chat"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Message Feed */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 flex-1 bg-[#0b0f19]">
+              {myStaffMessages.length === 0 ? (
+                <div className="py-12 text-center text-xs text-slate-400 bg-slate-900/40 rounded-2xl border border-dashed border-slate-800">
+                  <MessageSquare className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                  <p className="font-bold text-slate-300">No instructions from Admin right now.</p>
+                  <p className="text-[11px] text-slate-500 mt-1">All assigned tables running smoothly!</p>
+                </div>
+              ) : (
+                myStaffMessages.map(msg => {
+                  const isPending = msg.status !== 'acknowledged' && msg.status !== 'resolved';
+                  const isAlert = msg.isAlert || msg.category === 'alert';
+                  const replyVal = replyTexts[msg.id] || '';
+
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`p-4 rounded-2xl border transition shadow-lg space-y-3 ${
+                        isAlert
+                          ? 'bg-gradient-to-r from-rose-950/60 via-slate-900 to-slate-900 border-2 border-rose-500/80 ring-2 ring-rose-500/20'
+                          : isPending
+                            ? 'bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border-2 border-emerald-500/80 ring-2 ring-emerald-500/20'
+                            : 'bg-slate-900/80 border-slate-800'
+                      }`}
+                    >
+                      {/* Message Header */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          {isPending && (
+                            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                              isAlert ? 'bg-rose-400 animate-ping' : 'bg-emerald-400 animate-ping'
+                            }`} />
+                          )}
+                          <span className={`text-xs font-black uppercase tracking-wide flex items-center gap-1.5 ${
+                            isAlert ? 'text-rose-400' : 'text-emerald-400'
+                          }`}>
+                            {isAlert ? <AlertTriangle className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
+                            <span>{msg.fromName || 'Admin'}</span>
+                          </span>
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                            isAlert
+                              ? 'bg-rose-500 text-white animate-pulse'
+                              : isPending
+                                ? 'bg-amber-500 text-slate-950 animate-pulse'
+                                : 'bg-slate-800 text-slate-300'
+                          }`}>
+                            {isAlert ? '🚨 Urgent Call Alert' : '💬 Normal Instruction'}
+                          </span>
+                        </div>
+
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {formatCallTime(msg.timestamp, currentTime)}
+                        </span>
+                      </div>
+
+                      {/* Message Text */}
+                      <div className="p-3 rounded-xl bg-black/40 border border-white/[0.06]">
+                        <p className={`text-sm font-bold leading-relaxed ${isAlert ? 'text-rose-100' : 'text-white'}`}>
+                          "{msg.text}"
+                        </p>
+                      </div>
+
+                      {/* Replies History */}
+                      {msg.replies && msg.replies.length > 0 && (
+                        <div className="space-y-1.5 pl-3 border-l-2 border-emerald-500/40">
+                          {msg.replies.map((rep, idx) => (
+                            <div key={idx} className="text-xs text-emerald-300">
+                              <span className="font-bold">You replied:</span> "{rep.text}"
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Actions & Reply Bar */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-white/[0.06]">
+                        {/* Quick Reply Form */}
+                        <div className="flex items-center gap-2 flex-1">
+                          <input
+                            type="text"
+                            placeholder="Reply to Admin (e.g. 'On it!', 'Done!')..."
+                            value={replyVal}
+                            onChange={e => setReplyTexts(prev => ({ ...prev, [msg.id]: e.target.value }))}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (replyVal.trim() && restaurant?.acknowledgeStaffMessage) {
+                                  restaurant.acknowledgeStaffMessage(msg.id, replyVal.trim());
+                                  setReplyTexts(prev => ({ ...prev, [msg.id]: '' }));
+                                }
+                              }
+                            }}
+                            className="flex-1 bg-[#080B10] border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (replyVal.trim() && restaurant?.acknowledgeStaffMessage) {
+                                restaurant.acknowledgeStaffMessage(msg.id, replyVal.trim());
+                                setReplyTexts(prev => ({ ...prev, [msg.id]: '' }));
+                              }
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition cursor-pointer"
+                          >
+                            Reply
+                          </button>
+                        </div>
+
+                        {/* Acknowledge Button */}
+                        {isPending ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (restaurant?.acknowledgeStaffMessage) {
+                                restaurant.acknowledgeStaffMessage(msg.id, replyVal.trim() || 'Acknowledged');
+                                setReplyTexts(prev => ({ ...prev, [msg.id]: '' }));
+                              }
+                            }}
+                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black shadow-md shadow-emerald-500/20 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                          >
+                            <Check className="w-4 h-4 text-slate-950" strokeWidth={3} />
+                            <span>Acknowledge / Done</span>
+                          </button>
+                        ) : (
+                          <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                            <span>Acknowledged &bull; Admin Notified</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3 border-t border-white/[0.08] bg-[#131926] flex items-center justify-between">
+              <span className="text-[11px] text-slate-400">
+                Staff ID: {currentWaiter?.staffId || currentWaiter?.accountCode || 'Floor Specialist'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsChatOpen(false)}
+                className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition cursor-pointer"
+              >
+                Close Chat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

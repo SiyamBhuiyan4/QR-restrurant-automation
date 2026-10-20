@@ -1634,6 +1634,7 @@ export function RestaurantProvider({ children }) {
     const targetEmp = employees.find(
       e => e.id === toWaiterId || String(e.numericId) === String(toWaiterId) || (e.username && e.username.toLowerCase() === String(toWaiterId).toLowerCase())
     );
+    const isAlert = options.isAlert === true || options.category === 'alert' || options.type === 'alert';
     const newMsg = {
       id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       from: options.from || 'Admin',
@@ -1643,7 +1644,10 @@ export function RestaurantProvider({ children }) {
       text: text.trim(),
       timestamp: Date.now(),
       status: 'pending',
-      urgent: options.urgent !== false,
+      urgent: isAlert ? true : (options.urgent !== false),
+      isAlert: isAlert,
+      category: isAlert ? 'alert' : 'normal',
+      tableNumber: options.tableNumber || null,
       replies: []
     };
 

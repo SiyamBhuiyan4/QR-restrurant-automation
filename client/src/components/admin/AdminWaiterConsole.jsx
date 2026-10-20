@@ -98,7 +98,9 @@ export default function AdminWaiterConsole() {
   // Direct Message Modal / Nudge State
   const [messageTarget, setMessageTarget] = useState(null);
   const [messageText, setMessageText] = useState('');
+  const [modalMessageType, setModalMessageType] = useState('normal'); // 'normal' | 'alert'
   const [inlineMessage, setInlineMessage] = useState('');
+  const [inlineMessageType, setInlineMessageType] = useState('normal'); // 'normal' | 'alert'
   const [toastMessage, setToastMessage] = useState(null);
 
   // Convex mutations if available
@@ -397,15 +399,19 @@ export default function AdminWaiterConsole() {
   const handleSendNudge = (waiter) => {
     setMessageTarget(waiter);
     setMessageText('');
+    setModalMessageType('normal');
   };
 
   const handleDispatchMessage = (e) => {
     e.preventDefault();
     if (!messageText.trim() || !messageTarget) return;
 
+    const isAlert = modalMessageType === 'alert';
     if (restaurant?.sendStaffMessage) {
       restaurant.sendStaffMessage(messageTarget.id, messageText.trim(), {
-        urgent: true,
+        urgent: isAlert,
+        isAlert: isAlert,
+        category: isAlert ? 'alert' : 'normal',
         from: 'Admin',
         fromName: 'Head Desk / Admin'
       });
@@ -417,22 +423,33 @@ export default function AdminWaiterConsole() {
         waiterId: messageTarget.id,
         waiterName: messageTarget.name,
         message: messageText.trim(),
+        isAlert: isAlert,
+        category: isAlert ? 'alert' : 'normal',
         timestamp: Date.now()
       });
     }
 
-    showToast(`Text instruction dispatched to ${messageTarget.name}'s phone!`, 'success');
+    showToast(
+      isAlert
+        ? `🚨 Urgent Alert dispatched to ${messageTarget.name}'s phone!`
+        : `💬 Text instruction dispatched to ${messageTarget.name}'s phone!`,
+      isAlert ? 'warning' : 'success'
+    );
     setMessageTarget(null);
     setMessageText('');
+    setModalMessageType('normal');
   };
 
   const handleSendInlineMessage = (e) => {
     e.preventDefault();
     if (!inlineMessage.trim() || !activeWaiter) return;
 
+    const isAlert = inlineMessageType === 'alert';
     if (restaurant?.sendStaffMessage) {
       restaurant.sendStaffMessage(activeWaiter.id, inlineMessage.trim(), {
-        urgent: true,
+        urgent: isAlert,
+        isAlert: isAlert,
+        category: isAlert ? 'alert' : 'normal',
         from: 'Admin',
         fromName: 'Head Desk / Admin'
       });
@@ -443,11 +460,18 @@ export default function AdminWaiterConsole() {
         waiterId: activeWaiter.id,
         waiterName: activeWaiter.name,
         message: inlineMessage.trim(),
+        isAlert: isAlert,
+        category: isAlert ? 'alert' : 'normal',
         timestamp: Date.now()
       });
     }
 
-    showToast(`Text instruction sent to ${activeWaiter.name}!`, 'success');
+    showToast(
+      isAlert
+        ? `🚨 Urgent Alert dispatched to ${activeWaiter.name}'s phone!`
+        : `💬 Text instruction sent to ${activeWaiter.name}!`,
+      isAlert ? 'warning' : 'success'
+    );
     setInlineMessage('');
   };
 
@@ -1216,49 +1240,130 @@ export default function AdminWaiterConsole() {
               </div>
             ) : (
               <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
-                {waiterStaffMessages.map(msg => (
-                  <div
-                    key={msg.id}
-                    className={`p-3.5 rounded-2xl border transition ${
-                      msg.status === 'acknowledged'
-                        ? 'bg-emerald-950/30 border-emerald-500/30'
-                        : 'bg-[#0B0F19] border-amber-500/40'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>Admin Text Instruction</span>
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-slate-400 font-mono">
-                          {formatCallTime(msg.timestamp, currentTime)}
-                        </span>
-                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                          msg.status === 'acknowledged'
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                            : 'bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse'
+                {waiterStaffMessages.map(msg => {
+                  const isAlert = msg.isAlert || msg.category === 'alert';
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`p-3.5 rounded-2xl border transition ${
+                        isAlert
+                          ? 'bg-rose-950/30 border-rose-500/50 shadow-lg shadow-rose-950/30'
+                          : msg.status === 'acknowledged'
+                            ? 'bg-emerald-950/30 border-emerald-500/30'
+                            : 'bg-[#0B0F19] border-amber-500/40'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs font-black flex items-center gap-1.5 ${
+                          isAlert ? 'text-rose-400' : 'text-amber-400'
                         }`}>
-                          {msg.status === 'acknowledged' ? '✓ Acknowledged by Waiter' : 'Pending Acknowledgment'}
+                          {isAlert ? <AlertTriangle className="w-3.5 h-3.5 text-rose-400 animate-pulse" /> : <MessageSquare className="w-3.5 h-3.5" />}
+                          <span>{isAlert ? '🚨 Urgent Call Alert / Reminder' : '💬 Normal Text Instruction'}</span>
                         </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {formatCallTime(msg.timestamp, currentTime)}
+                          </span>
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                            msg.status === 'acknowledged'
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : isAlert
+                                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse'
+                                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse'
+                          }`}>
+                            {msg.status === 'acknowledged' ? '✓ Acknowledged by Waiter' : 'Pending Acknowledgment'}
+                          </span>
+                        </div>
                       </div>
+
+                      <p className={`text-xs font-semibold mt-1.5 ${isAlert ? 'text-rose-100 font-bold' : 'text-white'}`}>
+                        "{msg.text}"
+                      </p>
+
+                      {/* Waiter Replies */}
+                      {msg.replies && msg.replies.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-white/[0.06] space-y-1">
+                          {msg.replies.map((rep, idx) => (
+                            <div key={idx} className="flex items-center gap-2 text-[11px] text-emerald-300">
+                              <span className="font-bold">↳ {activeWaiter.name}:</span>
+                              <span className="italic">"{rep.text}"</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
+                  );
+                })}
+              </div>
+            )}
 
-                    <p className="text-xs text-white font-medium mt-1.5">"{msg.text}"</p>
+            {/* Message Type Selector: Normal vs Urgent Alert */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/[0.06]">
+              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/40 border border-white/[0.07]">
+                <button
+                  type="button"
+                  onClick={() => setInlineMessageType('normal')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    inlineMessageType === 'normal'
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>💬 Normal Text</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInlineMessageType('alert')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
+                    inlineMessageType === 'alert'
+                      ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 animate-pulse'
+                      : 'text-rose-400 hover:text-rose-300'
+                  }`}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>🚨 Urgent Call Alert</span>
+                </button>
+              </div>
 
-                    {/* Waiter Replies */}
-                    {msg.replies && msg.replies.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-white/[0.06] space-y-1">
-                        {msg.replies.map((rep, idx) => (
-                          <div key={idx} className="flex items-center gap-2 text-[11px] text-emerald-300">
-                            <span className="font-bold">↳ {activeWaiter.name}:</span>
-                            <span className="italic">"{rep.text}"</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+              {inlineMessageType === 'alert' && (
+                <span className="text-[11px] font-semibold text-rose-400 animate-pulse flex items-center gap-1">
+                  <span>⚡ Phone will vibrate &amp; bounce badge on waiter's screen</span>
+                </span>
+              )}
+            </div>
+
+            {/* Quick Chips when in Alert mode (e.g. for forgotten calls) */}
+            {inlineMessageType === 'alert' && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[11px] text-slate-400 font-semibold mr-1">Quick Alerts:</span>
+                {selectedWaiterCalls.map(c => {
+                  const t = c.table_number || c.tableNumber || c.table;
+                  return (
+                    <button
+                      key={c.id || t}
+                      type="button"
+                      onClick={() => setInlineMessage(`Table ${t} call waiter korse, tumi jaoni keno? Taratari jao!`)}
+                      className="px-2.5 py-1 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-500/50 text-rose-300 text-[11px] font-bold transition cursor-pointer"
+                    >
+                      🚨 Table {t} Waiter Forgotten Call!
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => setInlineMessage('Customer assistance call pending! Please attend immediately.')}
+                  className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] font-semibold transition cursor-pointer"
+                >
+                  ⚠️ Assistance Call Pending
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInlineMessage('Customer table e wait kortese, check koro taratari.')}
+                  className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] font-semibold transition cursor-pointer"
+                >
+                  🏃 Customer Waiting
+                </button>
               </div>
             )}
 
@@ -1267,17 +1372,38 @@ export default function AdminWaiterConsole() {
               <input
                 type="text"
                 required
-                placeholder={`Type instruction to send to ${activeWaiter.name}'s phone (e.g. "Table 7 needs water" or "eita koro")...`}
+                placeholder={
+                  inlineMessageType === 'alert'
+                    ? `Type urgent alert for ${activeWaiter.name} (e.g. "Table 4 call waiter korse, taratari jao")...`
+                    : `Type normal instruction for ${activeWaiter.name} (e.g. "Table 7 needs water" or "Side counter e jao")...`
+                }
                 value={inlineMessage}
                 onChange={e => setInlineMessage(e.target.value)}
-                className="flex-1 bg-[#0B0F19] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className={`flex-1 bg-[#0B0F19] border rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none ${
+                  inlineMessageType === 'alert'
+                    ? 'border-rose-500/60 focus:border-rose-400'
+                    : 'border-white/[0.08] focus:border-amber-500'
+                }`}
               />
               <button
                 type="submit"
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black transition active:scale-95 cursor-pointer flex items-center gap-1.5 shrink-0 shadow-md shadow-amber-500/20"
+                className={`px-4 py-2.5 rounded-xl text-xs font-black transition active:scale-95 cursor-pointer flex items-center gap-1.5 shrink-0 shadow-md ${
+                  inlineMessageType === 'alert'
+                    ? 'bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white shadow-rose-600/30'
+                    : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-amber-500/20'
+                }`}
               >
-                <Send className="w-3.5 h-3.5 text-slate-950" />
-                <span>Send Text</span>
+                {inlineMessageType === 'alert' ? (
+                  <>
+                    <AlertTriangle className="w-3.5 h-3.5 text-white" />
+                    <span>Send Urgent Alert</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5 text-slate-950" />
+                    <span>Send Text</span>
+                  </>
+                )}
               </button>
             </form>
           </div>
@@ -1504,17 +1630,53 @@ export default function AdminWaiterConsole() {
             </div>
 
             <form onSubmit={handleDispatchMessage} className="mt-4 space-y-3">
+              {/* Type Switcher */}
+              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/40 border border-white/[0.07]">
+                <button
+                  type="button"
+                  onClick={() => setModalMessageType('normal')}
+                  className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    modalMessageType === 'normal'
+                      ? 'bg-emerald-600 text-white shadow'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>💬 Normal Text</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalMessageType('alert')}
+                  className={`flex-1 py-1.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    modalMessageType === 'alert'
+                      ? 'bg-rose-600 text-white shadow shadow-rose-600/30'
+                      : 'text-rose-400 hover:text-rose-300'
+                  }`}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>🚨 Urgent Call Alert</span>
+                </button>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Message / Task
+                  {modalMessageType === 'alert' ? '🚨 Urgent Alert Message / Call Reminder' : 'Message / Task'}
                 </label>
                 <textarea
                   rows={3}
                   required
-                  placeholder="e.g. Table 3 has been waiting on appetizers for 15 mins. Please check-in."
+                  placeholder={
+                    modalMessageType === 'alert'
+                      ? "e.g. Table 4 call waiter korse, tumi jaoni keno? Taratari jao!"
+                      : "e.g. Table 3 has been waiting on appetizers for 15 mins. Please check-in."
+                  }
                   value={messageText}
                   onChange={e => setMessageText(e.target.value)}
-                  className="w-full bg-[#0B0F19] border border-white/[0.08] rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500"
+                  className={`w-full bg-[#0B0F19] border rounded-xl p-3 text-xs text-white focus:outline-none ${
+                    modalMessageType === 'alert'
+                      ? 'border-rose-500/60 focus:border-rose-400'
+                      : 'border-white/[0.08] focus:border-amber-500'
+                  }`}
                 />
               </div>
 
@@ -1522,16 +1684,29 @@ export default function AdminWaiterConsole() {
                 <button
                   type="button"
                   onClick={() => setMessageTarget(null)}
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold transition"
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-black shadow-md shadow-amber-500/20 transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                  className={`px-4 py-1.5 rounded-xl text-xs font-black shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer ${
+                    modalMessageType === 'alert'
+                      ? 'bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 text-white shadow-rose-600/30'
+                      : 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-amber-500/20'
+                  }`}
                 >
-                  <Send className="w-3.5 h-3.5 text-slate-950" />
-                  <span>Send Nudge</span>
+                  {modalMessageType === 'alert' ? (
+                    <>
+                      <AlertTriangle className="w-3.5 h-3.5 text-white" />
+                      <span>Send Urgent Alert</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5 text-slate-950" />
+                      <span>Send Nudge</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
