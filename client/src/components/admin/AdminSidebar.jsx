@@ -45,18 +45,18 @@ export default function AdminSidebar({
   // Normalized active tab
   const currentTab = activeTab === 'stats' ? 'overview' : activeTab === 'employee' ? 'kds' : activeTab;
 
-  // 1. OPERATIONS & ANALYTICS
+  // 1. OPERATIONS
   const operationsNav = [
     {
       id: 'overview',
-      label: 'Overview & Revenue',
+      label: 'Overview',
       shortLabel: 'Overview',
       icon: LayoutDashboard,
       badge: null
     },
     {
       id: 'tables',
-      label: 'Live Tables & Floor',
+      label: 'Floor & Tables',
       shortLabel: 'Tables',
       icon: Grid3X3,
       badge: `${tableCount} Tables`,
@@ -64,20 +64,16 @@ export default function AdminSidebar({
     },
     {
       id: 'orders',
-      label: 'Live Orders Pipeline',
+      label: 'Orders',
       shortLabel: 'Orders',
       icon: ShoppingBag,
       badge: readyPickups > 0 ? `${readyPickups} Ready` : null,
       badgeColor: 'emerald',
       pulse: readyPickups > 0
-    }
-  ];
-
-  // 2. LIVE FLOOR & SERVICE CONSOLES (Embedded Direct Access)
-  const consolesNav = [
+    },
     {
       id: 'kds',
-      label: 'Employee & Kitchen Hub',
+      label: 'Kitchen (KDS)',
       shortLabel: 'Kitchen Hub',
       icon: ChefHat,
       badge: activeOrders > 0 ? activeOrders : null,
@@ -86,7 +82,7 @@ export default function AdminSidebar({
     },
     {
       id: 'floor',
-      label: 'On-Field Waiter Console',
+      label: 'Waiter Console',
       shortLabel: 'Waiter',
       icon: ConciergeBell,
       badge: assistanceCount > 0 ? assistanceCount : null,
@@ -96,29 +92,29 @@ export default function AdminSidebar({
     }
   ];
 
-  // 3. CATALOG & TOOLS
+  // 2. CATALOG & QR
   const catalogNav = [
     {
       id: 'menu',
-      label: 'Menu Management',
+      label: 'Menu',
       shortLabel: 'Menu',
       icon: UtensilsCrossed,
       badge: null
     },
     {
       id: 'qr',
-      label: 'Table QR Generator',
+      label: 'QR Codes',
       shortLabel: 'QR Codes',
       icon: QrCode,
       badge: null
     }
   ];
 
-  // 4. STAFF & SERVICE INTELLIGENCE
+  // 3. TEAM & FEEDBACK
   const staffNav = [
     {
       id: 'employees',
-      label: 'Employee Roster & Shifts',
+      label: 'Staff',
       shortLabel: 'Staff Hub',
       icon: Users,
       badge: busyEmployees > 0 ? `${busyEmployees} busy` : null,
@@ -127,7 +123,7 @@ export default function AdminSidebar({
     },
     {
       id: 'reports',
-      label: 'Customer Reports & Notes',
+      label: 'Reports & Feedback',
       shortLabel: 'Reports',
       icon: MessageSquareWarning,
       badge: pendingReports > 0 ? pendingReports : null,
@@ -292,10 +288,9 @@ export default function AdminSidebar({
         }`}
         style={{ paddingBottom: '80px' }}
       >
-        {renderNavGroup('Operations', operationsNav)}
-        {renderNavGroup('Live Consoles', consolesNav)}
-        {renderNavGroup('Catalog & QR', catalogNav)}
-        {renderNavGroup('Team & Feedback', staffNav)}
+        {renderNavGroup('OPERATIONS', operationsNav)}
+        {renderNavGroup('CATALOG & QR', catalogNav)}
+        {renderNavGroup('TEAM & FEEDBACK', staffNav)}
       </div>
 
       {/* 3. FOOTER STATUS BAR */}
