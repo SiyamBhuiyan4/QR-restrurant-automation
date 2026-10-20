@@ -18,7 +18,6 @@ import AdminLoginGate from '../components/admin/AdminLoginGate';
 // System Standalone Consoles (Directly Embedded into Master Admin)
 import KitchenDisplay from './KitchenDisplay';
 import AdminWaiterConsole from '../components/admin/AdminWaiterConsole';
-import EmployeeView from './EmployeeView';
 import MenuManager from '../components/MenuManager';
 import QRBatchGenerator from './QRBatchGenerator';
 import { ExternalLink } from 'lucide-react';
@@ -86,8 +85,7 @@ export default function AdminDashboard({ className = '' }) {
         'menu',
         'qr',
         'employees',
-        'reports',
-        'employee'
+        'reports'
       ];
       if (tabParam === 'stats') return 'overview';
       if (tabParam === 'kitchen') return 'kds';
@@ -213,10 +211,11 @@ export default function AdminDashboard({ className = '' }) {
         'menu',
         'qr',
         'employees',
-        'reports',
-        'employee'
+        'reports'
       ];
-      if (tabParam === 'stats') {
+      if (tabParam === 'employee') {
+        setActiveTab('employees');
+      } else if (tabParam === 'stats') {
         setActiveTab('overview');
       } else if (tabParam === 'kitchen') {
         setActiveTab('kds');
@@ -561,13 +560,6 @@ export default function AdminDashboard({ className = '' }) {
                 orders={liveOrders}
                 onAdvanceStage={handleAdvanceOrderStage}
               />
-            </div>
-          )}
-
-          {/* TAB: EMPLOYEE VIEW (FULL UNIFIED HUB) */}
-          {activeTab === 'employee' && (
-            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
-              <EmployeeView isEmbedded={true} />
             </div>
           )}
 
