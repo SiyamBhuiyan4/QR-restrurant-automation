@@ -1050,19 +1050,7 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
                 <span>{activeWaiter.username || activeWaiter.accountCode?.toLowerCase() || 'waiter'}</span>
                 <span className="text-slate-600">|</span>
                 <span className="text-emerald-400 font-bold">Pass:</span>
-                <span>
-                  {visiblePasswords[activeWaiter.id]
-                    ? (activeWaiter.password || activeWaiter.passcode || '1234')
-                    : '••••'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => togglePasswordVisibility(activeWaiter.id)}
-                  className="text-slate-400 hover:text-white"
-                  title="Toggle password"
-                >
-                  {visiblePasswords[activeWaiter.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                </button>
+                <span className="tracking-widest">••••••••</span>
               </div>
 
               {/* Edit Button */}
