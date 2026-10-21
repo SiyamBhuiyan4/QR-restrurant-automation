@@ -304,47 +304,6 @@ export default function EmployeeView({ isEmbedded = false }) {
             </button>
           </form>
 
-          {/* Quick Demo Credentials for Fast Testing */}
-          <div className="pt-2 border-t border-slate-800 space-y-2">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">
-              Quick Test Accounts (Click to Fill):
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => handleFillCredentials('kabir', '1234')}
-                className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-left transition text-slate-300 hover:text-white"
-              >
-                <div className="font-bold text-amber-400">Chef Kabir</div>
-                <div className="text-[10px] text-slate-400">kabir / 1234</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFillCredentials('tariq', '1234')}
-                className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-left transition text-slate-300 hover:text-white"
-              >
-                <div className="font-bold text-orange-400">Sous Chef Tariq</div>
-                <div className="text-[10px] text-slate-400">tariq / 1234</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFillCredentials('rahim', '1234')}
-                className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-left transition text-slate-300 hover:text-white"
-              >
-                <div className="font-bold text-emerald-400">Cook Rahim</div>
-                <div className="text-[10px] text-slate-400">rahim / 1234</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFillCredentials('alex', '1234')}
-                className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-left transition text-slate-300 hover:text-white"
-              >
-                <div className="font-bold text-sky-400">Alex M. (#042)</div>
-                <div className="text-[10px] text-slate-400">alex / 1234</div>
-              </button>
-            </div>
-          </div>
-
           {/* Quick links */}
           <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
             <a href="/" className="hover:text-amber-400 transition">
