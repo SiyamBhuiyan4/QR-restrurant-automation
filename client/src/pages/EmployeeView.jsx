@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { verifyStaffSecret } from '../utils/staffCredentials';
 import KitchenDisplay from './KitchenDisplay';
 import EmployeesModule from '../components/admin/EmployeesModule';
 import CustomerReportsModule, { getCustomerReportsCount } from '../components/admin/CustomerReportsModule';
 import AdminWaiterConsole from '../components/admin/AdminWaiterConsole';
 import { useRestaurant } from '../context/RestaurantContext';
+import { useShiftClock, formatClockTime } from '../utils/shiftClock';
 import {
   ChefHat,
   Lock,
@@ -17,6 +19,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Coffee,
+  Clock,
   CheckCircle2
 } from 'lucide-react';
 
@@ -86,6 +89,8 @@ export default function EmployeeView({ isEmbedded = false }) {
 
   const [activeTab, setActiveTab] = useState(getTabFromUrl);
   const [reportsCount, setReportsCount] = useState(() => getCustomerReportsCount());
+  // Shift clock for the logged-in employee (stored in localStorage, read by the Staff roster)
+  const shift = useShiftClock(loggedInEmployee);
 
   // Handle Employee Login
   const handleLogin = (e) => {
@@ -107,8 +112,7 @@ export default function EmployeeView({ isEmbedded = false }) {
         const p = password.trim();
         matched = employees.find(emp => {
           const empU = (emp.username || emp.accountCode || '').toLowerCase();
-          const empP = String(emp.password || emp.passcode || emp.pin || emp.waiterPin || '');
-          return empU === u && empP === p;
+          return empU === u && verifyStaffSecret(emp, p);
         });
       }
 
@@ -492,6 +496,20 @@ export default function EmployeeView({ isEmbedded = false }) {
                       </span>
                     )}
                   </div>
+                  {/* Shift clock in / out */}
+                  <button
+                    type="button"
+                    onClick={shift.toggle}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition cursor-pointer active:scale-95 ${
+                      shift.clockedIn
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        : 'bg-slate-800/90 text-slate-200 border-slate-700 hover:bg-slate-700'
+                    }`}
+                    title={shift.clockedIn ? `On shift since ${formatClockTime(shift.clockInAt)}` : 'Clock in to your shift'}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{shift.clockedIn ? 'Clock out' : 'Clock in'}</span>
+                  </button>
                   {(() => {
                     const liveEmp = (employees || []).find(
                       e => String(e.id) === String(loggedInEmployee.id) || String(e.numericId) === String(loggedInEmployee.numericId)

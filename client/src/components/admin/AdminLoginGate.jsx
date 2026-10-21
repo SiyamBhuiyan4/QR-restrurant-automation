@@ -10,6 +10,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import '../../styles/admin.css';
+import { resolveAdminTheme } from '../../hooks/useAdminTheme';
 
 /**
  * Master Admin Access Key
@@ -77,7 +78,7 @@ export default function AdminLoginGate({ onLoginSuccess }) {
   const hasError = Boolean(error);
 
   return (
-    <div className="admin-root admin-login">
+    <div className="admin-root admin-shell admin-login" data-theme={resolveAdminTheme()}>
       <div className={`admin-login-card ${isShaking ? 'animate-gate-shake is-error' : ''} ${isSuccess ? 'is-success' : ''}`}>
         <div className="admin-login-brand">
           <span className="admin-login-icon">

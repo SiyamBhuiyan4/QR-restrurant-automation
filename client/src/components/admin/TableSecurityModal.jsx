@@ -77,13 +77,13 @@ export default function TableSecurityModal({
 
     const trimmed = password.trim();
     if (!trimmed) {
-      setErrorMessage('Please enter the Admin PIN / Password (808080)');
+      setErrorMessage('Please enter the Admin PIN');
       if (inputRef.current) inputRef.current.focus();
       return;
     }
 
     if (trimmed !== '808080') {
-      setErrorMessage('Access Denied: Incorrect PIN. Please enter 808080.');
+      setErrorMessage('Access Denied: Incorrect PIN. Please try again.');
       if (inputRef.current) {
         inputRef.current.select();
         inputRef.current.focus();

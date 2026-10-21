@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   MessageSquare,
   AlertTriangle,
@@ -12,23 +12,17 @@ import {
   VolumeX,
   Send,
   RotateCcw,
-  Plus,
-  MessageCircle,
-  User,
   Utensils,
   ChevronDown,
-  ChevronUp,
   Sparkles,
-  ShieldAlert,
-  ArrowRight,
-  Filter,
-  CheckCheck,
-  Smartphone,
-  CheckCircle,
-  Zap
+  Zap,
+  ArrowLeft,
+  Eye,
+  Inbox
 } from 'lucide-react';
 import { useRestaurant } from '../../context/RestaurantContext';
 import '../../styles/admin-tables.css';
+import '../../styles/admin-feedback.css';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Audio Synthesizer Chime
@@ -386,312 +380,309 @@ function formatClockTime(ts) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Badges: Severity & Status
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Feedback presentation helpers (layout + badges + detail panel)
+// ─────────────────────────────────────────────────────────────────────────────
+const SEVERITY_META = {
+  critical: { label: 'Critical', icon: AlertTriangle, tone: 'danger' },
+  moderate: { label: 'Moderate', icon: AlertCircle, tone: 'warning' },
+  general: { label: 'General', icon: MessageSquare, tone: 'neutral' },
+};
+
+const STATUS_META = {
+  new: { label: 'New', tone: 'danger' },
+  in_progress: { label: 'In review', tone: 'warning' },
+  resolved: { label: 'Resolved', tone: 'success' },
+};
+
+const DATE_RANGE_OPTIONS = [
+  { id: 'all', label: 'Any time' },
+  { id: 'today', label: 'Today' },
+  { id: '7d', label: 'Last 7 days' },
+  { id: '30d', label: 'Last 30 days' },
+];
+
+function isInDateRange(ts, range) {
+  if (range === 'all' || !ts) return true;
+  if (range === 'today') {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    return ts >= start.getTime();
+  }
+  const days = range === '7d' ? 7 : 30;
+  return Date.now() - ts <= days * 86400000;
+}
+
+function getCategory(report) {
+  if (report.category) return report.category;
+  const match = REALISTIC_CUSTOMER_ISSUES.find(i => i.note === report.note);
+  return match?.category || 'General';
+}
+
 function SeverityPill({ severity }) {
-  if (severity === 'critical') {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-500/15 border border-rose-500/40 text-rose-300 shadow-sm shadow-rose-950/30">
-        <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-        Critical
-      </span>
-    );
-  }
-  if (severity === 'moderate') {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/15 border border-amber-500/40 text-amber-300">
-        <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-        Moderate
-      </span>
-    );
-  }
+  const key = SEVERITY_META[severity] ? severity : 'general';
+  const meta = SEVERITY_META[key];
+  const Icon = meta.icon;
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800/80 border border-slate-700/80 text-slate-300">
-      <MessageSquare className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-      General
+    <span className={`fb-pill fb-tone--${meta.tone}`}>
+      <Icon className="fb-pill__icon" aria-hidden="true" />
+      {meta.label}
     </span>
   );
 }
 
 function StatusPill({ status }) {
-  if (status === 'new') {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-500/20 text-rose-200 border border-rose-500/40 shadow-sm shadow-rose-950/40">
-        <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping inline-block" />
-        New Issue
-      </span>
-    );
-  }
-  if (status === 'in_progress') {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-200 border border-amber-500/40">
-        <span className="w-2 h-2 rounded-full bg-amber-400" />
-        In Progress
-      </span>
-    );
-  }
+  const key = STATUS_META[status] ? status : 'new';
+  const meta = STATUS_META[key];
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">
-      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-      Resolved
+    <span className={`fb-pill fb-tone--${meta.tone}`}>
+      <span className="fb-dot" aria-hidden="true" />
+      {meta.label}
     </span>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Inline Focused Messaging Drawer
-// ─────────────────────────────────────────────────────────────────────────────
-function InlineMessageDrawer({
+function FeedbackDetail({
   report,
   staff,
-  activeTarget,
-  onChangeTarget,
-  onSendMessage,
-  onClose,
   employeeMode,
-  currentEmployee
+  currentEmployee,
+  onAssign,
+  onMarkInReview,
+  onResolve,
+  onReopen,
+  onSend,
+  onBack
 }) {
-  const [inputText, setInputText] = useState('');
-  const messagesEndRef = useRef(null);
+  const [target, setTarget] = useState('customer');
+  const [draft, setDraft] = useState('');
+  const [resolveOpen, setResolveOpen] = useState(false);
+  const [resolveNote, setResolveNote] = useState('');
 
+  const isResolved = report.status === 'resolved';
   const messages = report.messages || [];
-  const presets = activeTarget === 'customer'
+  const presets = target === 'customer'
     ? CUSTOMER_PRESETS
     : STAFF_PRESETS.map(p => p.replace('{table}', report.table));
-
-  // Auto-scroll chat history
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length, activeTarget]);
+  const sender = employeeMode && currentEmployee ? currentEmployee.name : 'Admin';
 
   const handleSend = () => {
-    if (!inputText.trim()) return;
-    const sender = employeeMode && currentEmployee ? currentEmployee.name : 'Admin';
-    onSendMessage(report.id, activeTarget, inputText.trim(), sender);
-    setInputText('');
+    const text = draft.trim();
+    if (!text) return;
+    onSend(report.id, target, text, sender);
+    setDraft('');
   };
 
-  const handleApplyPreset = (preset) => {
-    setInputText(preset);
+  const handleResolve = () => {
+    onResolve(report.id, resolveNote);
+    setResolveOpen(false);
+    setResolveNote('');
   };
 
   return (
-    <div className="mt-3.5 rounded-2xl border border-slate-700/80 bg-[#0B0F19]/95 backdrop-blur-md overflow-hidden shadow-2xl transition-all animate-fadeIn">
-      {/* Drawer Header Tabs */}
-      <div className="flex items-center justify-between border-b border-slate-800/90 px-3 py-1.5 bg-slate-900/60">
-        <div className="flex items-center gap-2">
-          {/* Tab 1: Customer */}
-          <button
-            type="button"
-            onClick={() => onChangeTarget('customer')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTarget === 'customer'
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <Utensils className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Customer (Table #{report.table})</span>
-            {messages.filter(m => m.to === 'customer').length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-cyan-500/30 text-cyan-200 text-[10px] font-black">
-                {messages.filter(m => m.to === 'customer').length}
-              </span>
-            )}
-          </button>
-
-          {/* Tab 2: Staff */}
-          <button
-            type="button"
-            onClick={() => onChangeTarget('employee')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTarget === 'employee'
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <User className="w-3.5 h-3.5 text-amber-400" />
-            <span>Staff ({staff?.name || 'Assigned'})</span>
-            {messages.filter(m => m.to === 'employee').length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-200 text-[10px] font-black">
-                {messages.filter(m => m.to === 'employee').length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Close Button */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
-          title="Close Message Bar"
-        >
-          <X className="w-4 h-4" />
+    <article className="fb-detail" aria-label={`Table ${report.table} request`}>
+      <header className="fb-detail__head">
+        <button type="button" className="fb-btn fb-btn--ghost fb-detail__back" onClick={onBack}>
+          <ArrowLeft className="fb-icon" aria-hidden="true" />
+          <span>Back to list</span>
         </button>
-      </div>
-
-      {/* Message History Thread */}
-      <div className="max-h-44 overflow-y-auto p-3.5 space-y-2.5 bg-slate-950/40">
-        {messages.length === 0 ? (
-          <div className="py-4 text-center">
-            <p className="text-xs text-slate-500">
-              No messages sent yet. Use the presets or write a direct text below.
-            </p>
+        <div className="fb-detail__title-row">
+          <div className="fb-min">
+            <p className="fb-eyebrow">Table #{report.table} · {TABLE_ZONES[report.table] || 'Main Hall'}</p>
+            <h3 className="fb-detail__title">
+              {report.customerName ? `Request from ${report.customerName}` : 'Customer request'}
+            </h3>
           </div>
-        ) : (
-          messages.map((m) => {
-            const isCustomer = m.to === 'customer';
-            return (
-              <div
-                key={m.id}
-                className={`flex flex-col ${isCustomer ? 'items-start' : 'items-end'}`}
-              >
-                <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs shadow-md border ${
-                    isCustomer
-                      ? 'bg-cyan-950/70 border-cyan-500/40 text-cyan-100 rounded-tl-sm'
-                      : 'bg-amber-950/70 border-amber-500/40 text-amber-100 rounded-tr-sm'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-1 text-[10px] font-bold opacity-80 pb-0.5 border-b border-white/10">
-                    {isCustomer ? (
-                      <span className="flex items-center gap-1 text-cyan-300">
-                        <Utensils className="w-2.5 h-2.5" /> To Table #{report.table} Guest
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-amber-300">
-                        <Smartphone className="w-2.5 h-2.5" /> To Staff ({staff?.name})
-                      </span>
-                    )}
-                    <span className="ml-auto text-slate-400 font-mono">
-                      {m.from ? `${m.from} · ` : ''}{formatClockTime(m.sentAt)}
-                    </span>
-                  </div>
-                  <p className="font-medium leading-relaxed select-text">{m.text}</p>
-                </div>
-              </div>
-            );
-          })
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Quick 1-Click Preset Suggestions */}
-      <div className="p-3 border-t border-slate-800/80 bg-slate-900/30">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-          <Sparkles className="w-3 h-3 text-orange-400" />
-          <span>One-Click Presets for {activeTarget === 'customer' ? `Table #${report.table}` : staff?.name}:</span>
+          <div className="fb-detail__pills">
+            <SeverityPill severity={report.severity} />
+            <StatusPill status={report.status} />
+          </div>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {presets.map((preset, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => handleApplyPreset(preset)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer text-left ${
-                activeTarget === 'customer'
-                  ? 'bg-cyan-950/40 hover:bg-cyan-900/60 border-cyan-500/30 text-cyan-300 hover:border-cyan-400'
-                  : 'bg-amber-950/40 hover:bg-amber-900/60 border-amber-500/30 text-amber-300 hover:border-amber-400'
-              }`}
-            >
-              {preset}
-            </button>
-          ))}
+      </header>
+
+      <blockquote className="fb-quote">{report.note}</blockquote>
+
+      {isResolved && report.resolutionNote && (
+        <div className="fb-callout fb-callout--success">
+          <CheckCircle2 className="fb-icon fb-callout__icon" aria-hidden="true" />
+          <div className="fb-min">
+            <strong>Resolved{report.resolutionTime ? ` in ${report.resolutionTime}` : ''}</strong>
+            <p>{report.resolutionNote}</p>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Input Box & Send Button */}
-      <div className="p-3 bg-slate-900/80 border-t border-slate-800 flex items-center gap-2">
-        <div className="relative flex-1">
-          <input
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={
-              activeTarget === 'customer'
-                ? `Direct SMS / notification to Table #${report.table} customer...`
-                : `Directive to ${staff?.name} (e.g. jao kaj koro / attend table immediately)...`
-            }
-            className={`w-full px-3.5 py-2.5 rounded-xl text-xs text-white placeholder:text-slate-500 bg-[#0B0F19] border focus:outline-none transition ${
-              activeTarget === 'customer'
-                ? 'border-cyan-500/30 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40'
-                : 'border-amber-500/30 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/40'
-            }`}
-          />
-        </div>
+      <dl className="fb-meta">
+        <div><dt>Table</dt><dd>#{report.table}</dd></div>
+        <div><dt>Category</dt><dd>{getCategory(report)}</dd></div>
+        <div><dt>Guest</dt><dd>{report.customerName || '—'}</dd></div>
+        <div><dt>Received</dt><dd>{formatClockTime(report.createdAt)} · {timeAgo(report.createdAt)}</dd></div>
+        <div><dt>Resolved at</dt><dd>{isResolved && report.resolvedAt ? formatClockTime(report.resolvedAt) : '—'}</dd></div>
+        <div><dt>Turnaround</dt><dd>{report.resolutionTime || '—'}</dd></div>
+      </dl>
 
-        <button
-          type="button"
-          onClick={handleSend}
-          disabled={!inputText.trim()}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
-            activeTarget === 'customer'
-              ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-600/30'
-              : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/30'
-          }`}
-        >
-          <Send className="w-3.5 h-3.5" />
-          <span>Send</span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Inline Resolution Drawer
-// ─────────────────────────────────────────────────────────────────────────────
-function InlineResolutionDrawer({ report, onConfirm, onCancel }) {
-  const [note, setNote] = useState('');
-
-  return (
-    <div className="mt-3.5 p-3.5 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 backdrop-blur-md animate-fadeIn">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>Add Resolution Note for Table #{report.table}</span>
-        </div>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-slate-400 hover:text-white p-1 text-xs cursor-pointer"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      <div className="flex flex-wrap gap-1.5 mb-2.5">
-        {RESOLUTION_PRESETS.map((p, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setNote(p)}
-            className="px-2.5 py-1 rounded-lg text-[10px] font-medium bg-emerald-900/30 hover:bg-emerald-800/50 border border-emerald-500/20 text-emerald-200 transition cursor-pointer"
+      <section className="fb-section" aria-label="Assigned staff">
+        <h4 className="fb-section__title">Assigned staff</h4>
+        <div className="fb-staff">
+          <div className="fb-avatar" aria-hidden="true">{staff.initials}</div>
+          <div className="fb-staff__info">
+            <strong>{staff.name}</strong>
+            <span>{staff.zone}</span>
+            {report.dispatch?.note && <span>{report.dispatch.note}</span>}
+          </div>
+          <select
+            aria-label="Assign staff"
+            className="fb-select fb-select--auto"
+            value={report.staffId}
+            onChange={(e) => onAssign(report.id, e.target.value)}
           >
-            {p}
-          </button>
-        ))}
-      </div>
+            {REAL_STAFF.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.name} — {s.status === 'available' ? 'Free' : 'Busy'}
+              </option>
+            ))}
+          </select>
+        </div>
+      </section>
 
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Custom resolution memo (e.g. Handled by staff, guest satisfied)..."
-          className="flex-1 px-3 py-2 rounded-xl text-xs bg-[#0B0F19] border border-emerald-500/30 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-400"
-        />
-        <button
-          type="button"
-          onClick={() => onConfirm(note)}
-          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/30 transition cursor-pointer active:scale-95"
-        >
-          <Check className="w-3.5 h-3.5" />
-          <span>Confirm Resolved</span>
-        </button>
-      </div>
-    </div>
+      <section className="fb-section" aria-label="Status actions">
+        <h4 className="fb-section__title">Status</h4>
+        <div className="fb-actions">
+          {!isResolved && report.status === 'new' && (
+            <button type="button" className="fb-btn fb-btn--info" onClick={() => onMarkInReview(report.id)}>
+              <Eye className="fb-icon" aria-hidden="true" />
+              <span>Mark in review</span>
+            </button>
+          )}
+          {!isResolved && (
+            <button
+              type="button"
+              className="fb-btn fb-btn--primary"
+              aria-expanded={resolveOpen}
+              onClick={() => setResolveOpen(o => !o)}
+            >
+              <Check className="fb-icon" aria-hidden="true" />
+              <span>Resolve</span>
+            </button>
+          )}
+          {isResolved && (
+            <button type="button" className="fb-btn" onClick={() => onReopen(report.id)}>
+              <RotateCcw className="fb-icon" aria-hidden="true" />
+              <span>Reopen</span>
+            </button>
+          )}
+        </div>
+
+        {resolveOpen && !isResolved && (
+          <div className="fb-resolve">
+            <div className="fb-chips">
+              {RESOLUTION_PRESETS.map((p) => (
+                <button key={p} type="button" className="fb-chip" onClick={() => setResolveNote(p)}>
+                  {p}
+                </button>
+              ))}
+            </div>
+            <div className="fb-inline-form">
+              <input
+                type="text"
+                className="fb-input"
+                value={resolveNote}
+                onChange={(e) => setResolveNote(e.target.value)}
+                placeholder="Resolution note (optional)"
+                aria-label="Resolution note"
+              />
+              <button type="button" className="fb-btn fb-btn--primary" onClick={handleResolve}>
+                <span>Confirm resolved</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section className="fb-section" aria-label="Replies">
+        <h4 className="fb-section__title">
+          Replies & notes <span className="fb-count">{messages.length}</span>
+        </h4>
+
+        <div className="fb-thread">
+          {messages.length === 0 ? (
+            <p className="fb-muted">No replies yet. Message the guest or dispatch staff below.</p>
+          ) : (
+            messages.map((m) => {
+              const toGuest = m.to === 'customer';
+              const toStaff = m.to === 'employee';
+              const kind = toGuest ? 'guest' : toStaff ? 'staff' : 'incoming';
+              return (
+                <div key={m.id} className={`fb-msg fb-msg--${kind}`}>
+                  <div className="fb-msg__meta">
+                    <span>{toGuest ? 'To guest' : toStaff ? 'To staff' : 'From guest'}</span>
+                    <span>{m.from ? `${m.from} · ` : ''}{formatClockTime(m.sentAt)}</span>
+                  </div>
+                  <p>{m.text}</p>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <div className="fb-composer">
+          <div className="fb-segment" role="tablist" aria-label="Message recipient">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={target === 'customer'}
+              onClick={() => setTarget('customer')}
+            >
+              Guest (Table #{report.table})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={target === 'employee'}
+              onClick={() => setTarget('employee')}
+            >
+              Staff ({staff.name.split(' ')[0]})
+            </button>
+          </div>
+
+          <div className="fb-chips">
+            {presets.map((preset) => (
+              <button key={preset} type="button" className="fb-chip" onClick={() => setDraft(preset)}>
+                {preset}
+              </button>
+            ))}
+          </div>
+
+          <div className="fb-inline-form">
+            <input
+              type="text"
+              className="fb-input"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              aria-label="Message"
+              placeholder={
+                target === 'customer'
+                  ? `Message to the guest at Table #${report.table}...`
+                  : `Directive to ${staff.name}...`
+              }
+            />
+            <button
+              type="button"
+              className="fb-btn fb-btn--primary"
+              onClick={handleSend}
+              disabled={!draft.trim()}
+            >
+              <Send className="fb-icon" aria-hidden="true" />
+              <span>Send</span>
+            </button>
+          </div>
+        </div>
+      </section>
+    </article>
   );
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Master CustomerReportsModule Component
@@ -725,8 +716,11 @@ export default function CustomerReportsModule({
   });
 
   const [tab, setTab] = useState('all'); // 'all' | 'new' | 'in_progress' | 'resolved' | 'assigned_to_me'
-  const [severityFilter, setSeverityFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [tableFilter, setTableFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
   const [activeStaffId, setActiveStaffId] = useState(currentEmployeeId);
   const [toast, setToast] = useState(null);
   const [tick, setTick] = useState(0);
@@ -939,34 +933,56 @@ export default function CustomerReportsModule({
   }, [reports, activeStaffId]);
 
   // ── Filtered List ─────────────────────────────────────────────────────────
+  const categoryOptions = useMemo(
+    () => Array.from(new Set(reports.map(getCategory))).sort(),
+    [reports]
+  );
+  const tableOptions = useMemo(
+    () => Array.from(new Set(reports.map(r => Number(r.table))))
+      .filter(Number.isFinite)
+      .sort((a, b) => a - b),
+    [reports]
+  );
+  const activeFilterCount = [
+    tab !== 'all',
+    categoryFilter !== 'all',
+    dateFilter !== 'all',
+    tableFilter !== 'all',
+    searchQuery.trim() !== ''
+  ].filter(Boolean).length;
+
   const filteredReports = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     return reports.filter(r => {
-      // Tab filter
       if (tab === 'new' && r.status !== 'new') return false;
       if (tab === 'in_progress' && r.status !== 'in_progress') return false;
       if (tab === 'resolved' && r.status !== 'resolved') return false;
       if (tab === 'assigned_to_me' && r.staffId !== activeStaffId) return false;
-
-      // Severity filter
-      if (severityFilter !== 'all' && r.severity !== severityFilter) return false;
-
-      // Search query filter
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
+      if (categoryFilter !== 'all' && getCategory(r) !== categoryFilter) return false;
+      if (tableFilter !== 'all' && String(r.table) !== tableFilter) return false;
+      if (!isInDateRange(r.createdAt, dateFilter)) return false;
+      if (q) {
         const staff = REAL_STAFF.find(s => s.id === r.staffId);
-        const zone = TABLE_ZONES[r.table] || '';
-        return (
+        const hit =
           String(r.table).includes(q) ||
-          r.note.toLowerCase().includes(q) ||
-          (r.customerName && r.customerName.toLowerCase().includes(q)) ||
-          (staff && staff.name.toLowerCase().includes(q)) ||
-          (zone && zone.toLowerCase().includes(q)) ||
-          (r.resolutionNote && r.resolutionNote.toLowerCase().includes(q))
-        );
+          (r.note || '').toLowerCase().includes(q) ||
+          (r.customerName || '').toLowerCase().includes(q) ||
+          (staff?.name || '').toLowerCase().includes(q) ||
+          (TABLE_ZONES[r.table] || '').toLowerCase().includes(q) ||
+          (r.resolutionNote || '').toLowerCase().includes(q);
+        if (!hit) return false;
       }
       return true;
     });
-  }, [reports, tab, severityFilter, searchQuery, activeStaffId]);
+  }, [reports, tab, categoryFilter, tableFilter, dateFilter, searchQuery, activeStaffId]);
+
+  const clearFilters = () => {
+    setTab('all');
+    setCategoryFilter('all');
+    setDateFilter('all');
+    setTableFilter('all');
+    setSearchQuery('');
+  };
 
   // ── Action Handlers ───────────────────────────────────────────────────────
 
@@ -1266,609 +1282,301 @@ export default function CustomerReportsModule({
     handleSimulateCustomerRequest();
   }, [handleSimulateCustomerRequest]);
 
+  // 4b. Mark In Review (new -> in_progress, same status contract as dispatch)
+  const handleMarkInReview = useCallback((reportId) => {
+    const report = reports.find(r => r.id === reportId);
+    if (!report) return;
+    const updated = reports.map(r => (r.id === reportId ? { ...r, status: 'in_progress' } : r));
+    saveReports(updated);
+    showToast(`Table #${report.table} marked in review`, 'info');
+  }, [reports, saveReports, showToast]);
+
   // ── Render ────────────────────────────────────────────────────────────────
+  const selectedReport = filteredReports.find(r => r.id === selectedId) || null;
+  const staffFor = (r) => REAL_STAFF.find(s => s.id === r.staffId) || REAL_STAFF[0];
+
+  const summaryTiles = [
+    { id: 'all', label: 'Total', value: metrics.total, hint: 'All requests', tone: 'neutral' },
+    { id: 'new', label: 'New', value: metrics.newCount, hint: 'Needs dispatch', tone: 'danger' },
+    { id: 'in_progress', label: 'In review', value: metrics.inProgress, hint: 'Staff on the way', tone: 'warning' },
+    { id: 'resolved', label: 'Resolved', value: metrics.resolved, hint: 'Closed out', tone: 'success' },
+  ];
+
   return (
-    <div
-      className={`relative w-full text-slate-100 ${
-        isEmbedded ? 'p-0' : 'p-4 sm:p-6 lg:p-8'
-      } ${className}`}
-      style={{ backgroundColor: '#0B0F19', minHeight: '100%' }}
-    >
-      {/* ── Global Floating Toast ─────────────────────────────────────────── */}
+    <div className={`fb-root ${isEmbedded ? 'fb-root--embedded' : ''} ${className}`}>
+      {/* ── Toast ─────────────────────────────────────────────────────────── */}
       {toast && (
-        <div className="fixed top-6 right-6 z-50 animate-fadeIn pointer-events-none">
-          <div
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-2xl backdrop-blur-xl pointer-events-auto text-xs font-bold ${
-              toast.type === 'success'
-                ? 'bg-emerald-950/95 border-emerald-500/50 text-emerald-200 shadow-emerald-950/50'
-                : toast.type === 'warn'
-                ? 'bg-rose-950/95 border-rose-500/50 text-rose-200 shadow-rose-950/50 animate-bounce'
-                : 'bg-slate-900/95 border-slate-700 text-slate-200 shadow-black/60'
-            }`}
-          >
-            {toast.type === 'success' ? (
-              <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-            ) : toast.type === 'warn' ? (
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-            ) : (
-              <MessageSquare className="w-4 h-4 text-cyan-400 shrink-0" />
-            )}
-            <span className="leading-tight">{toast.msg}</span>
-            <button
-              type="button"
-              onClick={() => setToast(null)}
-              className="ml-2 text-slate-400 hover:text-white cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
+        <div className={`fb-toast fb-toast--${toast.type}`} role="status">
+          {toast.type === 'success' ? (
+            <CheckCircle2 className="fb-icon" aria-hidden="true" />
+          ) : toast.type === 'warn' ? (
+            <AlertTriangle className="fb-icon" aria-hidden="true" />
+          ) : (
+            <MessageSquare className="fb-icon" aria-hidden="true" />
+          )}
+          <span>{toast.msg}</span>
+          <button type="button" className="fb-btn fb-btn--ghost fb-btn--icon" onClick={() => setToast(null)} aria-label="Dismiss">
+            <X className="fb-icon" aria-hidden="true" />
+          </button>
         </div>
       )}
 
-      {/* ── Top Header & Actions ──────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 p-[1px] shadow-lg shadow-orange-500/20 flex-shrink-0">
-            <div className="w-full h-full rounded-2xl bg-[#0B0F19] flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-orange-400" />
-            </div>
+      {/* ── Header ────────────────────────────────────────────────────────── */}
+      <header className="fb-header">
+        <div className="fb-min">
+          <div className="fb-title-row">
+            <h2 className="fb-title">
+              {employeeMode ? 'Floor requests & feedback' : 'Customer feedback & requests'}
+            </h2>
+            <span className="fb-live">Live</span>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="admin-section-title text-lg sm:text-xl font-extrabold text-white tracking-tight">
-                {employeeMode ? 'Staff Floor Requests & Notes' : 'Customer Reports & Notes'}
-              </h2>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-300">
-                Live Dispatch
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 font-medium">
-              Direct table assistance · Assign staff · 2-way text with customer or staff · Instant resolution
-            </p>
-          </div>
+          <p className="fb-subtitle">
+            Table requests, assignments and replies in one place.
+          </p>
         </div>
 
-        {/* Right Action Toolbar */}
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-          {/* Active Employee Selector in employeeMode */}
+        <div className="fb-header__actions">
           {employeeMode && (
-            <div className="flex items-center gap-2 bg-[#111726]/90 border border-slate-800 rounded-xl px-2.5 py-1.5">
-              <span className="text-[11px] text-slate-400 font-medium">Staff:</span>
+            <label className="fb-field fb-field--inline">
+              <span>Staff</span>
               <select
                 value={activeStaffId}
                 onChange={(e) => setActiveStaffId(e.target.value)}
-                className="bg-transparent text-xs font-bold text-amber-300 focus:outline-none cursor-pointer"
+                className="fb-select fb-select--auto"
               >
                 {REAL_STAFF.map(s => (
-                  <option key={s.id} value={s.id} className="bg-slate-900 text-white">
-                    {s.name} ({s.initials})
-                  </option>
+                  <option key={s.id} value={s.id}>{s.name} ({s.initials})</option>
                 ))}
               </select>
-            </div>
+            </label>
           )}
 
-          {/* Sound Mute Toggle */}
           <button
             type="button"
+            className="fb-btn fb-btn--ghost fb-btn--icon"
             onClick={() => {
               const next = !muted;
               setMuted(next);
               if (!next) chime.success();
             }}
-            className={`p-2.5 rounded-xl border text-xs font-semibold transition cursor-pointer ${
-              muted
-                ? 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
-                : 'bg-amber-500/15 border-amber-500/40 text-amber-300 hover:bg-amber-500/25'
-            }`}
-            title={muted ? 'Unmute Audio Chimes' : 'Mute Audio Alerts'}
+            title={muted ? 'Unmute audio alerts' : 'Mute audio alerts'}
+            aria-label={muted ? 'Unmute audio alerts' : 'Mute audio alerts'}
           >
-            {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            {muted ? <VolumeX className="fb-icon" aria-hidden="true" /> : <Volume2 className="fb-icon" aria-hidden="true" />}
           </button>
 
-          {/* ── Realistic Customer Request Simulation Suite ── */}
-          <div className="relative flex items-center gap-1.5">
+          <div className="fb-simulate">
             <button
               type="button"
+              className="fb-btn fb-btn--primary"
               onClick={() => setShowSimulateMenu(prev => !prev)}
-              className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white text-xs font-black shadow-lg shadow-orange-500/25 transition active:scale-95 cursor-pointer"
-              title="Simulate realistic customer issues: napkins, steak temperature, wine spill, allergy substitute, check split"
+              aria-expanded={showSimulateMenu}
             >
-              <Zap className="w-4 h-4 text-amber-200 animate-pulse" />
-              <span>Simulate Customer Request</span>
-              <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+              <Zap className="fb-icon" aria-hidden="true" />
+              <span>Simulate request</span>
+              <ChevronDown className="fb-icon" aria-hidden="true" />
             </button>
 
-            {/* Quick 1-click issue launcher buttons */}
-            <div className="hidden lg:flex items-center gap-1 bg-[#111726] border border-slate-800 rounded-xl p-1">
-              {REALISTIC_CUSTOMER_ISSUES.map(issue => (
-                <button
-                  key={issue.id}
-                  type="button"
-                  onClick={() => handleSimulateCustomerRequest(issue.id)}
-                  className="px-2 py-1 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-800/80 transition cursor-pointer flex items-center gap-1"
-                  title={`Simulate ${issue.title} (Table #${issue.defaultTable})`}
-                >
-                  <span>{issue.icon}</span>
-                  <span className="hidden xl:inline">{issue.shortLabel.split(' ')[0]}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Dropdown Menu */}
             {showSimulateMenu && (
-              <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl bg-[#0f172a]/95 border border-amber-500/40 p-2.5 shadow-2xl z-50 animate-fadeIn backdrop-blur-xl text-slate-100">
-                <div className="flex items-center justify-between px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-amber-400 border-b border-slate-800">
-                  <span>Realistic Restaurant Issues</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowSimulateMenu(false)}
-                    className="text-slate-400 hover:text-white p-0.5 cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
+              <div className="fb-menu" role="menu">
+                <div className="fb-menu__head">
+                  <span>Realistic restaurant issues</span>
+                  <button type="button" className="fb-btn fb-btn--ghost fb-btn--icon" onClick={() => setShowSimulateMenu(false)} aria-label="Close menu">
+                    <X className="fb-icon" aria-hidden="true" />
                   </button>
                 </div>
-
-                <div className="space-y-1 mt-2">
-                  {REALISTIC_CUSTOMER_ISSUES.map((issue) => (
-                    <button
-                      key={issue.id}
-                      type="button"
-                      onClick={() => {
-                        handleSimulateCustomerRequest(issue.id);
-                        setShowSimulateMenu(false);
-                      }}
-                      className="w-full flex items-center justify-between p-2 rounded-xl text-left hover:bg-slate-800/80 transition cursor-pointer text-xs group"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="text-lg shrink-0">{issue.icon}</span>
-                        <div className="min-w-0">
-                          <p className="font-bold text-white group-hover:text-amber-300 truncate">
-                            {issue.title}
-                          </p>
-                          <p className="text-[10px] text-slate-400 truncate">
-                            Table #{issue.defaultTable} &bull; {issue.category}
-                          </p>
-                        </div>
-                      </div>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase shrink-0 ${
-                        issue.severity === 'critical'
-                          ? 'bg-rose-500/20 text-rose-300'
-                          : issue.severity === 'moderate'
-                          ? 'bg-amber-500/20 text-amber-300'
-                          : 'bg-slate-700 text-slate-300'
-                      }`}>
-                        {issue.severity}
-                      </span>
-                    </button>
-                  ))}
-
-                  <div className="pt-2 border-t border-slate-800">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleSimulateCustomerRequest();
-                        setShowSimulateMenu(false);
-                      }}
-                      className="w-full flex items-center justify-center gap-2 p-2 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs transition cursor-pointer"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Random Realistic Issue</span>
-                    </button>
-                  </div>
-                </div>
+                {REALISTIC_CUSTOMER_ISSUES.map((issue) => (
+                  <button
+                    key={issue.id}
+                    type="button"
+                    role="menuitem"
+                    className="fb-menu__item"
+                    onClick={() => {
+                      handleSimulateCustomerRequest(issue.id);
+                      setShowSimulateMenu(false);
+                    }}
+                  >
+                    <span className="fb-min">
+                      <strong>{issue.icon} {issue.title}</strong>
+                      <span className="fb-menu__sub">Table #{issue.defaultTable} · {issue.category}</span>
+                    </span>
+                    <SeverityPill severity={issue.severity} />
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="fb-btn fb-btn--ghost fb-menu__random"
+                  onClick={() => {
+                    handleSimulateCustomerRequest();
+                    setShowSimulateMenu(false);
+                  }}
+                >
+                  <Sparkles className="fb-icon" aria-hidden="true" />
+                  <span>Random realistic issue</span>
+                </button>
               </div>
             )}
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* ── Top Executive KPI Metrics ─────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
-        {/* Metric 1: Total */}
-        <div className="p-4 rounded-2xl bg-[#111726]/90 border border-slate-800/80 backdrop-blur-md flex flex-col justify-between transition-colors hover:border-slate-700">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Total Reports</span>
-            <MessageSquare className="w-4 h-4 text-slate-500" />
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl sm:text-3xl font-black text-white">{metrics.total}</span>
-            <span className="text-[11px] text-slate-500 block mt-0.5">All customer logs</span>
-          </div>
-        </div>
-
-        {/* Metric 2: Urgent / New */}
-        <div
-          className={`p-4 rounded-2xl border backdrop-blur-md flex flex-col justify-between transition-all ${
-            metrics.newCount > 0
-              ? 'bg-rose-950/20 border-rose-500/40 shadow-lg shadow-rose-950/30'
-              : 'bg-[#111726]/90 border-slate-800/80'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-300">
-              New / Urgent
-            </span>
-            {metrics.newCount > 0 ? (
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-            ) : (
-              <CheckCircle2 className="w-4 h-4 text-slate-500" />
-            )}
-          </div>
-          <div className="mt-2">
-            <span
-              className={`text-2xl sm:text-3xl font-black ${
-                metrics.newCount > 0 ? 'text-rose-400' : 'text-slate-300'
-              }`}
-            >
-              {metrics.newCount}
-            </span>
-            <span className="text-[11px] text-slate-400 block mt-0.5">Needs floor dispatch</span>
-          </div>
-        </div>
-
-        {/* Metric 3: In Progress */}
-        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 backdrop-blur-md flex flex-col justify-between">
-          <div className="flex items-center justify-between text-amber-300">
-            <span className="text-[11px] font-bold uppercase tracking-wider">In Progress</span>
-            <Clock className="w-4 h-4 text-amber-400" />
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl sm:text-3xl font-black text-amber-300">{metrics.inProgress}</span>
-            <span className="text-[11px] text-slate-400 block mt-0.5">Staff on way to table</span>
-          </div>
-        </div>
-
-        {/* Metric 4: Resolved */}
-        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 backdrop-blur-md flex flex-col justify-between">
-          <div className="flex items-center justify-between text-emerald-300">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Resolved</span>
-            <CheckCheck className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl sm:text-3xl font-black text-emerald-300">{metrics.resolved}</span>
-            <span className="text-[11px] text-slate-400 block mt-0.5">Confirmed satisfied</span>
-          </div>
-        </div>
-
-        {/* Metric 5: Avg Turnaround or Assigned to Me */}
-        <div className="col-span-2 sm:col-span-4 lg:col-span-1 p-4 rounded-2xl bg-[#111726]/90 border border-slate-800/80 backdrop-blur-md flex flex-col justify-between">
-          <div className="flex items-center justify-between text-cyan-300">
-            <span className="text-[11px] font-bold uppercase tracking-wider">
-              {employeeMode ? 'My Active' : 'Avg Resolution'}
-            </span>
-            <Sparkles className="w-4 h-4 text-cyan-400" />
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl sm:text-3xl font-black text-cyan-300">
-              {employeeMode ? metrics.assignedToActive : metrics.avgMins}
-            </span>
-            <span className="text-[11px] text-slate-400 block mt-0.5">
-              {employeeMode ? `Assigned to ${currentEmployee.name}` : 'Floor response rate'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Clean Filter & Search Header ──────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6 p-3 rounded-2xl bg-[#111726]/90 border border-slate-800/80 backdrop-blur-md">
-        {/* Filter Tabs */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {[
-            { id: 'all', label: 'All Requests', count: metrics.total },
-            { id: 'new', label: 'New Issues', count: metrics.newCount, alert: metrics.newCount > 0 },
-            { id: 'in_progress', label: 'In Progress', count: metrics.inProgress },
-            { id: 'resolved', label: 'Resolved', count: metrics.resolved },
-            ...(employeeMode
-              ? [{ id: 'assigned_to_me', label: `My Assigned (${currentEmployee.initials})`, count: metrics.assignedToActive }]
-              : [])
-          ].map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                tab === t.id
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-orange-500/25 scale-[1.02]'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <span>{t.label}</span>
-              <span
-                className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
-                  tab === t.id
-                    ? 'bg-black/30 text-white'
-                    : t.alert
-                    ? 'bg-rose-500/30 text-rose-300 animate-pulse'
-                    : 'bg-slate-800 text-slate-400'
-                }`}
-              >
-                {t.count}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Search & Severity Filter */}
-        <div className="flex items-center gap-2">
-          {/* Severity Dropdown */}
-          <select
-            value={severityFilter}
-            onChange={(e) => setSeverityFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-[#0B0F19] border border-slate-800 text-xs font-semibold text-slate-300 focus:outline-none focus:border-amber-500 cursor-pointer"
+      {/* ── Summary counts ────────────────────────────────────────────────── */}
+      <section className="fb-stats" aria-label="Summary">
+        {summaryTiles.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={`fb-stat fb-stat--${t.tone} ${tab === t.id ? 'is-active' : ''}`}
+            onClick={() => setTab(t.id)}
+            aria-pressed={tab === t.id}
           >
-            <option value="all">All Severities</option>
-            <option value="critical">Critical Issues</option>
-            <option value="moderate">Moderate</option>
-            <option value="general">General Requests</option>
-          </select>
+            <span className="fb-stat__label">{t.label}</span>
+            <span className="fb-stat__value">{t.value}</span>
+            <span className="fb-stat__hint">{t.hint}</span>
+          </button>
+        ))}
+        <div className="fb-stat fb-stat--static">
+          <span className="fb-stat__label">{employeeMode ? 'My active' : 'Avg resolution'}</span>
+          <span className="fb-stat__value">{employeeMode ? metrics.assignedToActive : metrics.avgMins}</span>
+          <span className="fb-stat__hint">
+            {employeeMode ? `Assigned to ${currentEmployee.name}` : 'Floor response rate'}
+          </span>
+        </div>
+      </section>
 
-          {/* Real-time Search Input */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+      {/* ── Filters ───────────────────────────────────────────────────────── */}
+      <section className="fb-filters" aria-label="Filters">
+        <label className="fb-field">
+          <span>Status</span>
+          <select className="fb-select" value={tab} onChange={(e) => setTab(e.target.value)}>
+            <option value="all">All statuses</option>
+            <option value="new">New</option>
+            <option value="in_progress">In review</option>
+            <option value="resolved">Resolved</option>
+            {employeeMode && <option value="assigned_to_me">My assigned</option>}
+          </select>
+        </label>
+
+        <label className="fb-field">
+          <span>Category</span>
+          <select className="fb-select" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+            <option value="all">All categories</option>
+            {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </label>
+
+        <label className="fb-field">
+          <span>Date range</span>
+          <select className="fb-select" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}>
+            {DATE_RANGE_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+          </select>
+        </label>
+
+        <label className="fb-field">
+          <span>Table</span>
+          <select className="fb-select" value={tableFilter} onChange={(e) => setTableFilter(e.target.value)}>
+            <option value="all">All tables</option>
+            {tableOptions.map(n => <option key={n} value={String(n)}>Table #{n}</option>)}
+          </select>
+        </label>
+
+        <label className="fb-field fb-field--search">
+          <span>Search</span>
+          <div className="fb-search">
+            <Search className="fb-icon fb-search__icon" aria-hidden="true" />
             <input
-              type="text"
+              type="search"
+              className="fb-input"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search table, note, staff..."
-              className="w-48 sm:w-60 pl-8 pr-7 py-2 rounded-xl bg-[#0B0F19] border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500 transition"
+              placeholder="Table, note, guest, staff..."
             />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-0.5 cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
           </div>
-        </div>
-      </div>
+        </label>
 
-      {/* ── Report Cards Container ────────────────────────────────────────── */}
-      <div className="space-y-4">
-        {filteredReports.length === 0 ? (
-          <div className="admin-empty py-16">
-            <MessageSquare className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-            <h3 className="text-sm font-bold text-slate-300">No customer reports match this view</h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              Change your filters or click "Simulate Report" to test live table notifications.
-            </p>
+        {activeFilterCount > 0 && (
+          <div className="fb-field fb-field--action">
+            <span aria-hidden="true">&nbsp;</span>
+            <button type="button" className="fb-btn fb-btn--ghost" onClick={clearFilters}>
+              Clear filters ({activeFilterCount})
+            </button>
           </div>
-        ) : (
-          filteredReports.map((report) => {
-            const staff = REAL_STAFF.find(s => s.id === report.staffId) || REAL_STAFF[0];
-            const isResolved = report.status === 'resolved';
-            const isCritical = report.severity === 'critical';
-            const tableZone = TABLE_ZONES[report.table] || 'Main Hall';
-            const drawerTarget = activeDrawers[report.id] || null;
-            const isResDrawerOpen = resolutionDrawers[report.id] || false;
-
-            const customerMsgs = (report.messages || []).filter(m => m.to === 'customer');
-            const staffMsgs = (report.messages || []).filter(m => m.to === 'employee');
-
-            return (
-              <div
-                key={report.id}
-                className={`admin-card border p-4 sm:p-5 transition-all duration-200 backdrop-blur-md shadow-xl ${
-                  isCritical && !isResolved
-                    ? 'bg-[#111726]/95 border-rose-500/40 shadow-rose-950/20 ring-1 ring-rose-500/20'
-                    : isResolved
-                    ? 'bg-[#111726]/60 border-emerald-500/25 opacity-90'
-                    : 'bg-[#111726]/90 border-slate-800/80 hover:border-slate-700/80'
-                }`}
-              >
-                {/* ── Top Bar: Table Info + Badges + Timestamp ─────────────── */}
-                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Table Badge */}
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-300 font-black text-xs shadow-sm">
-                      <Utensils className="w-3.5 h-3.5 text-orange-400" />
-                      Table #{report.table} • {tableZone}
-                    </span>
-
-                    {/* Severity Pill */}
-                    <SeverityPill severity={report.severity} />
-
-                    {/* Status Pill */}
-                    <StatusPill status={report.status} />
-
-                    {/* Guest Name if available */}
-                    {report.customerName && (
-                      <span className="text-xs text-slate-400 font-medium hidden sm:inline-block">
-                        Guest: <strong className="text-slate-300">{report.customerName}</strong>
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Elapsed Time */}
-                  <div className="flex items-center gap-1 text-xs text-slate-400 font-mono ml-auto">
-                    <Clock className="w-3.5 h-3.5 text-slate-500" />
-                    <span>{timeAgo(report.createdAt)}</span>
-                    <span className="text-slate-600">({formatClockTime(report.createdAt)})</span>
-                  </div>
-                </div>
-
-                {/* ── Body: Prominent Customer Request Text ─────────────────── */}
-                <div className="mb-4 pl-3.5 border-l-2 border-orange-500/60 py-1 bg-slate-900/40 rounded-r-xl pr-3">
-                  <p className="text-sm sm:text-base text-slate-100 font-medium leading-relaxed select-text">
-                    "{report.note}"
-                  </p>
-                </div>
-
-                {/* ── Resolved Success Banner (if resolved) ────────────────── */}
-                {isResolved && report.resolutionNote && (
-                  <div className="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 mb-4 animate-fadeIn">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-emerald-200 font-semibold leading-relaxed">
-                        {report.resolutionNote}
-                      </p>
-                      <span className="text-[11px] text-emerald-400/80 mt-0.5 block font-mono">
-                        Resolved in {report.resolutionTime || 'few mins'} · {timeAgo(report.resolvedAt)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Assigned Staff Strip (Inline & Clutter-Free) ──────────── */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-[#0B0F19]/80 border border-slate-800/80 mb-4">
-                  {/* Staff Info */}
-                  <div className="flex items-center gap-3">
-                    {/* Avatar Initials */}
-                    <div
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black shrink-0 border ${staff.avatarBg}`}
-                    >
-                      {staff.initials}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-extrabold text-white">{staff.name}</span>
-                        <span className="text-[11px] text-slate-400">{staff.role}</span>
-                        <span
-                          className={`w-2 h-2 rounded-full ${
-                            staff.status === 'available' ? 'bg-emerald-400' : 'bg-amber-400'
-                          }`}
-                          title={`Status: ${staff.status}`}
-                        />
-                      </div>
-                      <p className="text-[11px] text-slate-500">
-                        {staff.zone} · {staff.shift}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Immediate 1-Click Inline Assignment Selector */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-400 shrink-0 hidden md:inline">
-                      Assign To:
-                    </span>
-                    <select
-                      value={report.staffId}
-                      onChange={(e) => handleAssignStaff(report.id, e.target.value)}
-                      className="bg-slate-900 border border-slate-700/80 hover:border-amber-500/50 text-xs font-bold text-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer transition shadow-sm"
-                    >
-                      {REAL_STAFF.map(s => (
-                        <option key={s.id} value={s.id}>
-                          {s.name} ({s.initials}) — {s.status === 'available' ? '🟢 Free' : '🟡 Busy'}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* ── TWO EXPLICIT TEXT OPTIONS & RESOLUTION CONTROLS ──────── */}
-                <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-slate-800/80">
-                  {/* Left: Two Clear Communication / Text Options */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* BUTTON 1: Text Customer (Table #) - Cyan Themed */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleDrawer(report.id, 'customer')}
-                      className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer active:scale-95 ${
-                        drawerTarget === 'customer'
-                          ? 'bg-cyan-500/25 border-cyan-400 text-cyan-200 shadow-md shadow-cyan-500/20'
-                          : 'bg-cyan-500/10 hover:bg-cyan-500/20 border-cyan-500/30 text-cyan-300'
-                      }`}
-                    >
-                      <Utensils className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>💬 Text Customer (Table #{report.table})</span>
-                      {customerMsgs.length > 0 && (
-                        <span className="px-1.5 py-0.2 rounded-full bg-cyan-500/30 text-cyan-200 text-[10px] font-black">
-                          {customerMsgs.length}
-                        </span>
-                      )}
-                    </button>
-
-                    {/* BUTTON 2: Text Staff ({staff.name}) - Amber Themed */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleDrawer(report.id, 'employee')}
-                      className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer active:scale-95 ${
-                        drawerTarget === 'employee'
-                          ? 'bg-amber-500/25 border-amber-400 text-amber-200 shadow-md shadow-amber-500/20'
-                          : 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/30 text-amber-300'
-                      }`}
-                    >
-                      <Smartphone className="w-3.5 h-3.5 text-amber-400" />
-                      <span>📱 Text Staff ({staff.name.split(' ')[0]})</span>
-                      {staffMsgs.length > 0 && (
-                        <span className="px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-200 text-[10px] font-black">
-                          {staffMsgs.length}
-                        </span>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Right: Resolution Control */}
-                  <div className="flex items-center gap-2">
-                    {!isResolved ? (
-                      <>
-                        {/* 1-Click Quick Resolve */}
-                        <button
-                          type="button"
-                          onClick={() => handleMarkResolved(report.id)}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md shadow-emerald-600/30 transition-all cursor-pointer active:scale-95"
-                        >
-                          <Check className="w-4 h-4" />
-                          <span>✓ Mark Resolved</span>
-                        </button>
-
-                        {/* Optional Memo Toggle */}
-                        <button
-                          type="button"
-                          onClick={() => setResolutionDrawers(prev => ({ ...prev, [report.id]: !prev[report.id] }))}
-                          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition cursor-pointer text-xs"
-                          title="Add Custom Resolution Memo"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5" />
-                        </button>
-                      </>
-                    ) : (
-                      /* Reopen Button */
-                      <button
-                        type="button"
-                        onClick={() => handleReopen(report.id)}
-                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-bold transition cursor-pointer"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
-                        <span>↺ Reopen</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* ── Inline Focused Messaging Bar (Expands seamlessly) ─────── */}
-                {drawerTarget && (
-                  <InlineMessageDrawer
-                    report={report}
-                    staff={staff}
-                    activeTarget={drawerTarget}
-                    onChangeTarget={(t) => setActiveDrawers(prev => ({ ...prev, [report.id]: t }))}
-                    onSendMessage={handleSendMessage}
-                    onClose={() => setActiveDrawers(prev => {
-                      const c = { ...prev };
-                      delete c[report.id];
-                      return c;
-                    })}
-                    employeeMode={employeeMode}
-                    currentEmployee={currentEmployee}
-                  />
-                )}
-
-                {/* ── Inline Resolution Drawer (if user requested memo) ─────── */}
-                {isResDrawerOpen && (
-                  <InlineResolutionDrawer
-                    report={report}
-                    onConfirm={(note) => handleMarkResolved(report.id, note)}
-                    onCancel={() => setResolutionDrawers(prev => ({ ...prev, [report.id]: false }))}
-                  />
-                )}
-              </div>
-            );
-          })
         )}
+      </section>
+
+      {/* ── Inbox: list + detail ──────────────────────────────────────────── */}
+      <div className={`fb-body ${selectedReport ? 'fb-body--has-selection' : ''}`}>
+        <section className="fb-list" aria-label="Requests">
+          <div className="fb-list__head">
+            Showing {filteredReports.length} of {reports.length} requests
+          </div>
+
+          {filteredReports.length === 0 ? (
+            <div className="fb-empty">
+              <Inbox className="fb-empty__icon" aria-hidden="true" />
+              <strong>No requests match these filters</strong>
+              <span>Adjust or clear the filters, or simulate a request to test the flow.</span>
+            </div>
+          ) : (
+            <ul className="fb-list__items">
+              {filteredReports.map((r) => {
+                const isSelected = r.id === selectedId;
+                const classes = [
+                  'fb-item',
+                  isSelected ? 'is-selected' : '',
+                  r.severity === 'critical' && r.status !== 'resolved' ? 'is-urgent' : '',
+                  r.status === 'resolved' ? 'is-resolved' : '',
+                ].join(' ');
+                return (
+                  <li key={r.id}>
+                    <button
+                      type="button"
+                      className={classes}
+                      onClick={() => setSelectedId(r.id)}
+                      aria-pressed={isSelected}
+                    >
+                      <span className="fb-item__top">
+                        <span className="fb-table">Table #{r.table}</span>
+                        <StatusPill status={r.status} />
+                      </span>
+                      <span className="fb-item__note">{r.note}</span>
+                      <span className="fb-item__meta">
+                        <SeverityPill severity={r.severity} />
+                        <span>{getCategory(r)}</span>
+                        <span>{staffFor(r).name.split(' ')[0]}</span>
+                        <span className="fb-item__time">{timeAgo(r.createdAt)}</span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        <section className="fb-detail-wrap">
+          {selectedReport ? (
+            <FeedbackDetail
+              key={selectedReport.id}
+              report={selectedReport}
+              staff={staffFor(selectedReport)}
+              employeeMode={employeeMode}
+              currentEmployee={currentEmployee}
+              onAssign={handleAssignStaff}
+              onMarkInReview={handleMarkInReview}
+              onResolve={handleMarkResolved}
+              onReopen={handleReopen}
+              onSend={handleSendMessage}
+              onBack={() => setSelectedId(null)}
+            />
+          ) : (
+            <div className="fb-detail fb-detail--empty">
+              <Inbox className="fb-empty__icon" aria-hidden="true" />
+              <strong>Select a request</strong>
+              <span>Choose a request from the list to see the full message, reply, and update its status.</span>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

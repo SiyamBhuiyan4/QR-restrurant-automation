@@ -1032,9 +1032,9 @@ export default function MenuManager({ className = '' }) {
     <div className={`space-y-6 ${className}`}>
       
       {/* Top Banner / Actions Bar */}
-      <div className="admin-enter bg-[#111827] rounded-2xl border border-[#334155] p-4 sm:p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 text-[#f8fafc]">
+      <div className="admin-enter bg-[var(--adm-surface)] rounded-2xl border border-[var(--adm-border)] p-4 sm:p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 text-[var(--adm-text)]">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-[#f8fafc] tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-bold text-[var(--adm-text)] tracking-tight">
             Menu Management
           </h2>
         </div>
@@ -1071,13 +1071,13 @@ export default function MenuManager({ className = '' }) {
 
       {/* Quick Metrics Bar */}
       <div className="admin-enter grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4" style={{ '--i': 1 }}>
-        <div className="bg-[#111827] p-4 rounded-xl border border-[#334155] shadow-xs">
-          <span className="text-xs font-medium text-[#94a3b8]">Total Items</span>
-          <div className="text-xl sm:text-2xl font-bold text-[#f8fafc] mt-1">
+        <div className="bg-[var(--adm-surface)] p-4 rounded-xl border border-[var(--adm-border)] shadow-xs">
+          <span className="text-xs font-medium text-[var(--adm-text-muted)]">Total Items</span>
+          <div className="text-xl sm:text-2xl font-bold text-[var(--adm-text)] mt-1">
             {stats.total}
           </div>
         </div>
-        <div className="bg-[#111827] p-4 rounded-xl border border-[#334155] shadow-xs">
+        <div className="bg-[var(--adm-surface)] p-4 rounded-xl border border-[var(--adm-border)] shadow-xs">
           <span className="text-xs font-medium text-emerald-400 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span> In Stock
           </span>
@@ -1085,7 +1085,7 @@ export default function MenuManager({ className = '' }) {
             {stats.inStock}
           </div>
         </div>
-        <div className="bg-[#111827] p-4 rounded-xl border border-[#334155] shadow-xs">
+        <div className="bg-[var(--adm-surface)] p-4 rounded-xl border border-[var(--adm-border)] shadow-xs">
           <span className="text-xs font-medium text-rose-400 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-rose-500"></span> Sold Out
           </span>
@@ -1093,11 +1093,11 @@ export default function MenuManager({ className = '' }) {
             {stats.outOfStock}
           </div>
         </div>
-        <div className="bg-[#111827] p-4 rounded-xl border border-[#334155] shadow-xs">
+        <div className="bg-[var(--adm-surface)] p-4 rounded-xl border border-[var(--adm-border)] shadow-xs">
           <span className="text-xs font-medium text-amber-400 flex items-center gap-1">
             <Leaf className="w-3.5 h-3.5 text-emerald-400" /> Vegetarian
           </span>
-          <div className="text-xl sm:text-2xl font-bold text-[#f8fafc] mt-1">
+          <div className="text-xl sm:text-2xl font-bold text-[var(--adm-text)] mt-1">
             {stats.vegCount}
           </div>
         </div>
@@ -1105,9 +1105,9 @@ export default function MenuManager({ className = '' }) {
 
       {/* 2-Tier Glassmorphic Dark-Mode Menu Filter and Category Toolbar */}
       <div 
-        className="rounded-[12px] p-3 sm:p-3.5 space-y-2.5 shadow-2xl backdrop-blur-md transition-all text-[#f8fafc]"
+        className="rounded-[12px] p-3 sm:p-3.5 space-y-2.5 shadow-2xl backdrop-blur-md transition-all text-[var(--adm-text)]"
         style={{
-          backgroundColor: '#121724',
+          backgroundColor: 'var(--adm-surface)',
           border: '1px solid rgba(255, 255, 255, 0.08)'
         }}
       >
@@ -1121,9 +1121,9 @@ export default function MenuManager({ className = '' }) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search dishes by name, description, or ingredients..."
-              className="w-full text-xs text-slate-100 placeholder:text-slate-500 font-normal pl-9 pr-8 py-2 rounded-[8px] transition focus:outline-none focus:border-amber-500/60"
+              className="w-full text-xs text-slate-100 placeholder:text-[var(--adm-text-muted)] font-normal pl-9 pr-8 py-2 rounded-[8px] transition focus:outline-none focus:border-amber-500/60"
               style={{
-                backgroundColor: '#080A10',
+                backgroundColor: 'var(--adm-surface)',
                 border: '1px solid rgba(255, 255, 255, 0.06)'
               }}
             />
@@ -1131,7 +1131,7 @@ export default function MenuManager({ className = '' }) {
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--adm-text-muted)] hover:text-white text-xs cursor-pointer"
                 title="Clear search"
               >
                 ✕
@@ -1157,8 +1157,8 @@ export default function MenuManager({ className = '' }) {
                   onClick={() => setFilterType(f.id)}
                   className={`px-3 py-1.5 rounded-[8px] text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 border active:scale-95 ${
                     isActive
-                      ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white border-amber-400/40 shadow-sm shadow-amber-500/25'
-                      : 'bg-[#182030]/90 hover:bg-[#20293D] text-slate-300 hover:text-white border-white/[0.08]'
+                      ? 'bg-gradient-to-r from-[var(--adm-primary)] to-[var(--adm-primary)] text-white border-amber-400/40 shadow-sm shadow-amber-500/25'
+                      : 'bg-[var(--adm-surface)]/90 hover:bg-[var(--adm-surface-2)] text-[var(--adm-text-muted)] hover:text-white border-white/[0.08]'
                   }`}
                 >
                   {f.icon}
@@ -1183,8 +1183,8 @@ export default function MenuManager({ className = '' }) {
             onClick={() => setSelectedCategory('All')}
             className={`px-3 py-1.5 rounded-[8px] text-xs font-semibold whitespace-nowrap transition cursor-pointer shrink-0 border ${
               selectedCategory === 'All'
-                ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white border-amber-400/40 shadow-sm shadow-amber-500/20'
-                : 'bg-[#182030]/90 text-slate-300 hover:text-white hover:bg-[#20293D] border-white/[0.08]'
+                ? 'bg-gradient-to-r from-[var(--adm-primary)] to-[var(--adm-primary)] text-white border-amber-400/40 shadow-sm shadow-amber-500/20'
+                : 'bg-[var(--adm-surface)]/90 text-[var(--adm-text-muted)] hover:text-white hover:bg-[var(--adm-surface-2)] border-white/[0.08]'
             }`}
           >
             All Categories ({dishes.length})
@@ -1201,13 +1201,13 @@ export default function MenuManager({ className = '' }) {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1.5 rounded-[8px] text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 shrink-0 border ${
                   isSelected
-                    ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white border-amber-400/40 shadow-sm shadow-amber-500/20'
-                    : 'bg-[#182030]/90 text-slate-300 hover:text-white hover:bg-[#20293D] border-white/[0.08]'
+                    ? 'bg-gradient-to-r from-[var(--adm-primary)] to-[var(--adm-primary)] text-white border-amber-400/40 shadow-sm shadow-amber-500/20'
+                    : 'bg-[var(--adm-surface)]/90 text-[var(--adm-text-muted)] hover:text-white hover:bg-[var(--adm-surface-2)] border-white/[0.08]'
                 }`}
               >
                 <span>{cat}</span>
                 <span className={`w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 ${
-                  isSelected ? 'bg-black/35 text-white' : 'bg-[#0B0F19] text-slate-300 border border-white/[0.05]'
+                  isSelected ? 'bg-black/35 text-white' : 'bg-[var(--adm-surface)] text-[var(--adm-text-muted)] border border-white/[0.05]'
                 }`}>
                   {count}
                 </span>
@@ -1223,7 +1223,7 @@ export default function MenuManager({ className = '' }) {
               setCategoryError('');
               setIsCategoryModalOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] border border-dashed border-[#F59E0B]/50 hover:border-[#F59E0B] bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 text-[#F59E0B] text-xs font-bold transition whitespace-nowrap cursor-pointer shadow-xs active:scale-95 shrink-0 ml-auto"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] border border-dashed border-[var(--adm-primary)]/50 hover:border-[var(--adm-primary)] bg-[var(--adm-primary)]/10 hover:bg-[var(--adm-primary)]/20 text-[var(--adm-primary)] text-xs font-bold transition whitespace-nowrap cursor-pointer shadow-xs active:scale-95 shrink-0 ml-auto"
             title="Create a new menu category"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -1236,13 +1236,13 @@ export default function MenuManager({ className = '' }) {
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center text-center">
           <RefreshCw className="w-8 h-8 text-amber-500 animate-spin mb-3" />
-          <p className="text-sm font-medium text-[#94a3b8]">Loading restaurant dishes...</p>
+          <p className="text-sm font-medium text-[var(--adm-text-muted)]">Loading restaurant dishes...</p>
         </div>
       ) : filteredDishes.length === 0 ? (
-        <div className="admin-empty bg-[#111827] rounded-2xl border border-dashed border-[#334155] p-12 px-4 text-center">
-          <UtensilsCrossed className="w-10 h-10 text-[#94a3b8] mx-auto mb-3" />
-          <h3 className="text-base font-bold text-[#f8fafc]">No dishes found</h3>
-          <p className="text-xs text-[#94a3b8] max-w-sm mx-auto mt-1 mb-4">
+        <div className="admin-empty bg-[var(--adm-surface)] rounded-2xl border border-dashed border-[var(--adm-border)] p-12 px-4 text-center">
+          <UtensilsCrossed className="w-10 h-10 text-[var(--adm-text-muted)] mx-auto mb-3" />
+          <h3 className="text-base font-bold text-[var(--adm-text)]">No dishes found</h3>
+          <p className="text-xs text-[var(--adm-text-muted)] max-w-sm mx-auto mt-1 mb-4">
             No menu items match your current search and category filters.
           </p>
           <button
@@ -1252,7 +1252,7 @@ export default function MenuManager({ className = '' }) {
               setSelectedCategory('All');
               setFilterType('all');
             }}
-            className="px-4 py-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-[#f8fafc] border border-[#334155] text-xs font-semibold transition cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-[var(--adm-surface-2)] hover:bg-[var(--adm-border)] text-[var(--adm-text)] border border-[var(--adm-border)] text-xs font-semibold transition cursor-pointer"
           >
             Clear Filters
           </button>
@@ -1262,11 +1262,11 @@ export default function MenuManager({ className = '' }) {
           {groupedDishes.map(([categoryName, categoryDishes]) => (
           <section key={categoryName} aria-label={categoryName}>
             <div className="flex items-center gap-3 mb-3">
-              <h3 className="text-sm font-black uppercase tracking-wider text-amber-400">{categoryName}</h3>
-              <span className="text-[11px] font-bold text-[#94a3b8] bg-[#1e293b] border border-[#334155] rounded-full px-2 py-0.5">
+              <h3 className="text-sm font-black uppercase tracking-wider text-[var(--adm-primary)]">{categoryName}</h3>
+              <span className="text-[11px] font-bold text-[var(--adm-text-muted)] bg-[var(--adm-surface-2)] border border-[var(--adm-border)] rounded-full px-2 py-0.5">
                 {categoryDishes.length} {categoryDishes.length === 1 ? 'dish' : 'dishes'}
               </span>
-              <div className="flex-1 h-px bg-[#334155]" />
+              <div className="flex-1 h-px bg-[var(--adm-border)]" />
             </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
           {categoryDishes.map((dish) => {
@@ -1277,13 +1277,13 @@ export default function MenuManager({ className = '' }) {
             return (
               <div
                 key={dish.id}
-                className={`group flex flex-col justify-between h-full bg-[#111827] rounded-2xl border transition-all duration-200 overflow-hidden shadow-md hover:border-slate-500 hover:shadow-xl ${
-                  !isAvailable ? 'border-rose-900/60 bg-[#111827]/90' : 'border-[#334155]'
+                className={`group flex flex-col justify-between h-full bg-[var(--adm-surface)] rounded-2xl border transition-all duration-200 overflow-hidden shadow-md hover:border-[var(--adm-text-muted)] hover:shadow-xl ${
+                  !isAvailable ? 'border-[var(--adm-danger)]/60 bg-[var(--adm-surface)]/90' : 'border-[var(--adm-border)]'
                 }`}
               >
                 <div className="flex flex-col flex-1">
                   {/* Dish Header Media & Tags - strictly uniform height and aspect ratio */}
-                  <div className="relative w-full h-48 bg-[#0b0f19] overflow-hidden shrink-0">
+                  <div className="relative w-full h-48 bg-[var(--adm-surface)] overflow-hidden shrink-0">
                     {hasVideo ? (
                       <video
                         src={dishVideo}
@@ -1311,7 +1311,7 @@ export default function MenuManager({ className = '' }) {
                       />
                     ) : null}
                     <div
-                      className={`w-full h-full flex flex-col items-center justify-center bg-[#1e293b] text-[#94a3b8] ${
+                      className={`w-full h-full flex flex-col items-center justify-center bg-[var(--adm-surface-2)] text-[var(--adm-text-muted)] ${
                         hasVideo || (dish.image_url && !isVideoUrl(dish.image_url)) ? 'hidden' : 'flex'
                       }`}
                     >
@@ -1321,7 +1321,7 @@ export default function MenuManager({ className = '' }) {
 
                     {/* Top Badges */}
                     <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 z-10 max-w-[70%]">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0f172a]/90 backdrop-blur-xs text-[#f8fafc] border border-white/10 shadow-xs">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[var(--adm-surface)]/90 backdrop-blur-xs text-[var(--adm-text)] border border-white/10 shadow-xs">
                         {dish.category}
                       </span>
                       {Boolean(dish.is_veg) && (
@@ -1331,7 +1331,7 @@ export default function MenuManager({ className = '' }) {
                         </span>
                       )}
                       {Boolean(dish.is_spicy) && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-600 text-white shadow-xs">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-[var(--adm-danger)] text-white shadow-xs">
                           <Flame className="w-2.5 h-2.5 fill-current" />
                           Spicy
                         </span>
@@ -1356,7 +1356,7 @@ export default function MenuManager({ className = '' }) {
                             e.stopPropagation();
                             handleOpenEditModal(dish);
                           }}
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 cursor-pointer transition"
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-slate-900/80 hover:bg-[var(--adm-surface-2)] text-[var(--adm-text-muted)] hover:text-white border border-slate-700/80 cursor-pointer transition"
                           title="Click to add a 360° profile video to this dish"
                         >
                           <Video className="w-2.5 h-2.5 text-purple-400" />
@@ -1370,7 +1370,7 @@ export default function MenuManager({ className = '' }) {
                       <span
                         className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-tight shadow-xs uppercase ${
                           isAvailable
-                            ? 'bg-emerald-500 text-white'
+                            ? 'bg-[var(--adm-success)] text-white'
                             : 'bg-rose-600 text-white'
                         }`}
                       >
@@ -1383,7 +1383,7 @@ export default function MenuManager({ className = '' }) {
                   <div className="p-4 flex-1 flex flex-col justify-between">
                     <div>
                       <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <h3 className="font-bold text-[#f8fafc] text-base leading-snug line-clamp-1 group-hover:text-amber-400 transition-colors" title={dish.name}>
+                        <h3 className="font-bold text-[var(--adm-text)] text-base leading-snug line-clamp-1 group-hover:text-amber-400 transition-colors" title={dish.name}>
                           {dish.name}
                         </h3>
                         {inlinePriceId === dish.id ? (
@@ -1391,7 +1391,7 @@ export default function MenuManager({ className = '' }) {
                             className="flex items-center gap-1 shrink-0"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <span className="text-sm font-bold text-[#f8fafc]">$</span>
+                            <span className="text-sm font-bold text-[var(--adm-text)]">$</span>
                             <input
                               type="number"
                               min="0"
@@ -1405,20 +1405,20 @@ export default function MenuManager({ className = '' }) {
                                 if (e.key === 'Escape') cancelInlinePriceEdit();
                               }}
                               disabled={inlinePriceSaving}
-                              className="w-20 px-1.5 py-0.5 rounded-md bg-[#0f172a] border border-amber-500 text-sm font-bold text-[#f8fafc] focus:outline-none"
+                              className="w-20 px-1.5 py-0.5 rounded-md bg-[var(--adm-surface)] border border-[var(--adm-primary)] text-sm font-bold text-[var(--adm-text)] focus:outline-none"
                             />
                             <button
                               type="button"
                               onClick={() => saveInlinePrice(dish)}
                               disabled={inlinePriceSaving}
-                              className="px-1.5 py-0.5 rounded-md bg-amber-500 text-white text-[11px] font-bold disabled:opacity-50"
+                              className="px-1.5 py-0.5 rounded-md bg-[var(--adm-primary)] text-[var(--adm-primary-fg)] text-[11px] font-bold disabled:opacity-50"
                             >
                               Save
                             </button>
                             <button
                               type="button"
                               onClick={cancelInlinePriceEdit}
-                              className="px-1 py-0.5 rounded-md text-[11px] font-bold text-[#94a3b8] hover:text-white"
+                              className="px-1 py-0.5 rounded-md text-[11px] font-bold text-[var(--adm-text-muted)] hover:text-white"
                             >
                               Esc
                             </button>
@@ -1427,7 +1427,7 @@ export default function MenuManager({ className = '' }) {
                           <button
                             type="button"
                             onClick={(e) => startInlinePriceEdit(dish, e)}
-                            className="text-base font-extrabold text-[#f8fafc] tracking-tight shrink-0 rounded px-1 -mx-1 hover:bg-[#1e293b] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                            className="text-base font-extrabold text-[var(--adm-text)] tracking-tight shrink-0 rounded px-1 -mx-1 border border-dashed border-transparent hover:border-[var(--adm-border)] hover:bg-[var(--adm-surface-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                             title="Click to edit price"
                             aria-label={`Edit price for ${dish.name}`}
                           >
@@ -1436,7 +1436,7 @@ export default function MenuManager({ className = '' }) {
                         )}
                       </div>
 
-                      <p className="text-xs text-[#94a3b8] line-clamp-2 leading-relaxed h-9 overflow-hidden">
+                      <p className="text-xs text-[var(--adm-text-muted)] line-clamp-2 leading-relaxed h-9 overflow-hidden">
                         {dish.description || 'No description provided.'}
                       </p>
                     </div>
@@ -1444,7 +1444,7 @@ export default function MenuManager({ className = '' }) {
                 </div>
 
                 {/* Footer Controls: Availability Switch + Edit + Delete */}
-                <div className="p-3.5 bg-[#1e293b] border-t border-[#334155] flex items-center justify-between gap-2 shrink-0 mt-auto">
+                <div className="p-3.5 bg-[var(--adm-surface-2)] border-t border-[var(--adm-border)] flex items-center justify-between gap-2 shrink-0 mt-auto">
                   
                   {/* Availability Toggle Switch */}
                   <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
@@ -1456,10 +1456,10 @@ export default function MenuManager({ className = '' }) {
                       onChange={(e) => handleToggleAvailability(dish.id, dish.is_available, e)}
                       className="sr-only peer"
                     />
-                    <span className={`relative inline-block w-11 h-6 rounded-full transition-colors ${isAvailable ? 'bg-emerald-500' : 'bg-[#475569]'}`}>
+                    <span className={`relative inline-block w-11 h-6 rounded-full transition-colors ${isAvailable ? "bg-[var(--adm-success)]" : "bg-[var(--adm-border)]"} peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--adm-primary)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--adm-surface)]`}>
                       <span className={`absolute top-[3px] left-[3px] h-[18px] w-[18px] rounded-full bg-white shadow transition-transform ${isAvailable ? 'translate-x-5' : ''}`} />
                     </span>
-                    <span className={`text-xs font-black ${isAvailable ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <span className={`text-xs font-black ${isAvailable ? "text-[var(--adm-success)]" : "text-[var(--adm-danger)]"}`}>
                       {isAvailable ? 'In stock' : 'Out of stock'}
                     </span>
                   </label>
@@ -1469,7 +1469,7 @@ export default function MenuManager({ className = '' }) {
                     <button
                       type="button"
                       onClick={() => handleOpenEditModal(dish)}
-                      className="p-1.5 rounded-lg border border-[#334155] bg-[#0f172a] hover:bg-[#334155] text-[#f8fafc] transition active:scale-95 cursor-pointer"
+                      className="p-1.5 rounded-lg border border-[var(--adm-border)] bg-[var(--adm-surface)] hover:bg-[var(--adm-border)] text-[var(--adm-text)] transition active:scale-95 cursor-pointer"
                       title="Edit dish details"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -1477,7 +1477,7 @@ export default function MenuManager({ className = '' }) {
                     <button
                       type="button"
                       onClick={() => setDishToDelete(dish)}
-                      className="p-1.5 rounded-lg border border-[#334155] bg-[#0f172a] hover:bg-rose-950/60 hover:border-rose-700 text-[#94a3b8] hover:text-rose-400 transition active:scale-95 cursor-pointer"
+                      className="p-1.5 rounded-lg border border-[var(--adm-border)] bg-[var(--adm-surface)] hover:bg-rose-950/60 hover:border-rose-700 text-[var(--adm-text-muted)] hover:text-rose-400 transition active:scale-95 cursor-pointer"
                       title="Delete dish"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -1500,19 +1500,19 @@ export default function MenuManager({ className = '' }) {
           ========================================================================= */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-lg bg-[#111827] rounded-2xl shadow-2xl border border-[#334155] overflow-hidden transform transition-all animate-scaleUp max-h-[90vh] flex flex-col text-[#f8fafc]">
+          <div className="w-full max-w-lg bg-[var(--adm-surface)] rounded-2xl shadow-2xl border border-[var(--adm-border)] overflow-hidden transform transition-all animate-scaleUp max-h-[90vh] flex flex-col text-[var(--adm-text)]">
             
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-[#334155] flex items-center justify-between bg-[#1e293b]">
+            <div className="px-6 py-4 border-b border-[var(--adm-border)] flex items-center justify-between bg-[var(--adm-surface-2)]">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
                   {modalMode === 'add' ? <Plus className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
                 </div>
                 <div>
-                  <h3 className="font-bold text-[#f8fafc] text-base leading-tight">
+                  <h3 className="font-bold text-[var(--adm-text)] text-base leading-tight">
                     {modalMode === 'add' ? 'Add New Dish' : 'Edit Dish Details'}
                   </h3>
-                  <p className="text-xs text-[#94a3b8]">
+                  <p className="text-xs text-[var(--adm-text-muted)]">
                     {modalMode === 'add' ? 'Fill out the details to introduce a new menu item' : 'Update pricing, images, or dish information'}
                   </p>
                 </div>
@@ -1520,7 +1520,7 @@ export default function MenuManager({ className = '' }) {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-[#94a3b8] hover:text-[#f8fafc] p-1 rounded-lg cursor-pointer transition"
+                className="text-[var(--adm-text-muted)] hover:text-[var(--adm-text)] p-1 rounded-lg cursor-pointer transition"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1537,7 +1537,7 @@ export default function MenuManager({ className = '' }) {
 
               {/* Dish Name */}
               <div>
-                <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-[var(--adm-text-muted)] uppercase tracking-wider mb-1">
                   Dish Name *
                 </label>
                 <input
@@ -1546,11 +1546,11 @@ export default function MenuManager({ className = '' }) {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Signature Truffle Ribeye"
-                  className="admin-dark-input w-full placeholder-[#64748b]"
+                  className="admin-dark-input w-full placeholder-[var(--adm-text-muted)]"
                   style={{
-                    backgroundColor: '#0f172a',
-                    color: '#f8fafc',
-                    border: '1px solid #334155',
+                    backgroundColor: 'var(--adm-surface)',
+                    color: 'var(--adm-text)',
+                    border: '1px solid var(--adm-border)',
                     padding: '10px 14px',
                     borderRadius: '8px',
                     fontSize: '14px',
@@ -1564,7 +1564,7 @@ export default function MenuManager({ className = '' }) {
                 {/* Category Selection / Input */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
+                    <label className="block text-xs font-bold text-[var(--adm-text-muted)] uppercase tracking-wider">
                       Category *
                     </label>
                     {!isCreatingInlineCategory && (
@@ -1588,9 +1588,9 @@ export default function MenuManager({ className = '' }) {
                       onChange={handleCategorySelectChange}
                       className="admin-dark-select w-full"
                       style={{
-                        backgroundColor: '#0f172a',
-                        color: '#f8fafc',
-                        border: '1px solid #334155',
+                        backgroundColor: 'var(--adm-surface)',
+                        color: 'var(--adm-text)',
+                        border: '1px solid var(--adm-border)',
                         padding: '10px 14px',
                         borderRadius: '8px',
                         fontSize: '14px',
@@ -1602,7 +1602,7 @@ export default function MenuManager({ className = '' }) {
                           {c}
                         </option>
                       ))}
-                      <option value="__new__" className="text-amber-400 font-bold bg-[#1e293b]">
+                      <option value="__new__" className="text-amber-400 font-bold bg-[var(--adm-surface-2)]">
                         + Create New Category...
                       </option>
                     </select>
@@ -1624,11 +1624,11 @@ export default function MenuManager({ className = '' }) {
                           }}
                           placeholder="Type new category..."
                           autoFocus
-                          className="admin-dark-input flex-1 placeholder-[#64748b]"
+                          className="admin-dark-input flex-1 placeholder-[var(--adm-text-muted)]"
                           style={{
-                            backgroundColor: '#0f172a',
-                            color: '#f8fafc',
-                            border: '1px solid #f59e0b',
+                            backgroundColor: 'var(--adm-surface)',
+                            color: 'var(--adm-text)',
+                            border: '1px solid var(--adm-primary)',
                             padding: '9px 12px',
                             borderRadius: '8px',
                             fontSize: '13px',
@@ -1649,12 +1649,12 @@ export default function MenuManager({ className = '' }) {
                             setIsCreatingInlineCategory(false);
                             setInlineCategoryName('');
                           }}
-                          className="px-2.5 py-2 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8] hover:text-[#f8fafc] text-xs font-semibold transition cursor-pointer border border-[#334155] shrink-0"
+                          className="px-2.5 py-2 rounded-lg bg-[var(--adm-surface-2)] hover:bg-[var(--adm-border)] text-[var(--adm-text-muted)] hover:text-[var(--adm-text)] text-xs font-semibold transition cursor-pointer border border-[var(--adm-border)] shrink-0"
                         >
                           Cancel
                         </button>
                       </div>
-                      <p className="text-[10px] text-[#94a3b8]">
+                      <p className="text-[10px] text-[var(--adm-text-muted)]">
                         Press Enter or click Add to create and select category.
                       </p>
                     </div>
@@ -1663,11 +1663,11 @@ export default function MenuManager({ className = '' }) {
 
                 {/* Price */}
                 <div>
-                  <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-[var(--adm-text-muted)] uppercase tracking-wider mb-1">
                     Price ($ USD) *
                   </label>
                   <div className="relative">
-                    <DollarSign className="w-4 h-4 text-[#94a3b8] absolute left-3 top-1/2 -translate-y-1/2" />
+                    <DollarSign className="w-4 h-4 text-[var(--adm-text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="number"
                       step="0.01"
@@ -1676,11 +1676,11 @@ export default function MenuManager({ className = '' }) {
                       value={formData.price}
                       onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       placeholder="14.99"
-                      className="admin-dark-input w-full placeholder-[#64748b]"
+                      className="admin-dark-input w-full placeholder-[var(--adm-text-muted)]"
                       style={{
-                        backgroundColor: '#0f172a',
-                        color: '#f8fafc',
-                        border: '1px solid #334155',
+                        backgroundColor: 'var(--adm-surface)',
+                        color: 'var(--adm-text)',
+                        border: '1px solid var(--adm-border)',
                         padding: '10px 14px',
                         paddingLeft: '36px',
                         borderRadius: '8px',
@@ -1694,7 +1694,7 @@ export default function MenuManager({ className = '' }) {
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-[var(--adm-text-muted)] uppercase tracking-wider mb-1">
                   Description
                 </label>
                 <textarea
@@ -1702,11 +1702,11 @@ export default function MenuManager({ className = '' }) {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Ingredients, cooking style, portion notes..."
-                  className="admin-dark-input w-full placeholder-[#64748b] resize-none"
+                  className="admin-dark-input w-full placeholder-[var(--adm-text-muted)] resize-none"
                   style={{
-                    backgroundColor: '#0f172a',
-                    color: '#f8fafc',
-                    border: '1px solid #334155',
+                    backgroundColor: 'var(--adm-surface)',
+                    color: 'var(--adm-text)',
+                    border: '1px solid var(--adm-border)',
                     padding: '10px 14px',
                     borderRadius: '8px',
                     fontSize: '14px',
@@ -1718,7 +1718,7 @@ export default function MenuManager({ className = '' }) {
               {/* ========================================================= */}
               {/* MEDIA STORAGE: TELEGRAM CHANNEL CDN + CONVEX TEXT DB     */}
               {/* ========================================================= */}
-              <div className="p-4 bg-[#1e293b] rounded-2xl border border-[#334155] space-y-4">
+              <div className="p-4 bg-[var(--adm-surface-2)] rounded-2xl border border-[var(--adm-border)] space-y-4">
                 
                 {/* Section Header */}
                 <div className="flex items-center justify-between">
@@ -1727,14 +1727,14 @@ export default function MenuManager({ className = '' }) {
                       <Send className="w-3.5 h-3.5 -rotate-45" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-[#f8fafc] uppercase tracking-wider flex items-center gap-1.5">
+                      <h4 className="text-xs font-bold text-[var(--adm-text)] uppercase tracking-wider flex items-center gap-1.5">
                         <span>Telegram Media Storage & CDN</span>
                         <span className="text-[10px] font-semibold text-sky-400 bg-sky-950/80 px-1.5 py-0.2 rounded-full border border-sky-800">
                           Free Cloud CDN
                         </span>
                       </h4>
-                      <p className="text-[11px] text-[#94a3b8]">
-                        High-res photos & 360° looping video reels hosted on <strong className="text-[#f8fafc]">@Restaurant Media</strong>; records in <strong className="text-[#f8fafc]">Convex</strong>.
+                      <p className="text-[11px] text-[var(--adm-text-muted)]">
+                        High-res photos & 360° looping video reels hosted on <strong className="text-[var(--adm-text)]">@Restaurant Media</strong>; records in <strong className="text-[var(--adm-text)]">Convex</strong>.
                       </p>
                     </div>
                   </div>
@@ -1751,7 +1751,7 @@ export default function MenuManager({ className = '' }) {
                 <div className="space-y-3">
                   <div>
                     <div className="flex items-center justify-between flex-wrap gap-1">
-                      <label className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5">
+                      <label className="text-xs font-bold text-[var(--adm-text)] flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                         <span className="text-xs sm:text-sm font-extrabold text-white">Food Profile Media (Photo or 360° Angular Video Reel)</span>
                       </label>
@@ -1764,7 +1764,7 @@ export default function MenuManager({ className = '' }) {
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-[#94a3b8] mt-0.5">
+                    <p className="text-[11px] text-[var(--adm-text-muted)] mt-0.5">
                       Upload a high-res photo or a 360° looping video reel to Telegram Channel CDN (@Restaurant Media). Video profiles run continuously 24/7 on customer view!
                     </p>
                   </div>
@@ -1825,11 +1825,11 @@ export default function MenuManager({ className = '' }) {
                       value={formData.image_url || formData.making_video_url}
                       onChange={(e) => handlePrimaryMediaUrlChange(e.target.value)}
                       placeholder="Paste Telegram CDN link, 360° video link (.mp4/.webm), or image URL..."
-                      className="admin-dark-input w-full font-mono placeholder-[#64748b] truncate text-xs"
+                      className="admin-dark-input w-full font-mono placeholder-[var(--adm-text-muted)] truncate text-xs"
                       style={{
-                        backgroundColor: '#0f172a',
-                        color: '#f8fafc',
-                        border: (formData.making_video_url || isVideoUrl(formData.image_url)) ? '1px solid #f43f5e' : '1px solid #334155',
+                        backgroundColor: 'var(--adm-surface)',
+                        color: 'var(--adm-text)',
+                        border: (formData.making_video_url || isVideoUrl(formData.image_url)) ? '1px solid var(--adm-danger)' : '1px solid var(--adm-border)',
                         padding: '10px 14px',
                         paddingRight: '32px',
                         borderRadius: '8px',
@@ -1843,7 +1843,7 @@ export default function MenuManager({ className = '' }) {
                         onClick={() => {
                           setFormData((prev) => ({ ...prev, image_url: '', making_video_url: '' }));
                         }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#f8fafc] text-xs p-1 cursor-pointer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--adm-text-muted)] hover:text-[var(--adm-text)] text-xs p-1 cursor-pointer"
                         title="Clear media"
                       >
                         ✕
@@ -1852,13 +1852,13 @@ export default function MenuManager({ className = '' }) {
                   </div>
 
                   {/* Quick 360° Video Presets */}
-                  <div className="bg-[#0b0f19] p-3 rounded-xl border border-slate-800 space-y-2">
+                  <div className="bg-[var(--adm-surface)] p-3 rounded-xl border border-slate-800 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>Quick 360° Video Presets (1-Click Apply):</span>
                       </span>
-                      <span className="text-[10px] text-slate-400 font-medium">Plays 24/7 Loop</span>
+                      <span className="text-[10px] text-[var(--adm-text-muted)] font-medium">Plays 24/7 Loop</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {PRESET_360_VIDEOS.map((preset) => {
@@ -1871,7 +1871,7 @@ export default function MenuManager({ className = '' }) {
                             className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 border ${
                               isSelected
                                 ? 'bg-rose-500/20 text-rose-300 border-rose-500 shadow-sm shadow-rose-500/20'
-                                : 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-700'
+                                : 'bg-[var(--adm-surface-2)]/90 hover:bg-[var(--adm-surface-2)] text-[var(--adm-text-muted)] hover:text-white border-slate-700'
                             }`}
                           >
                             <span>🔄</span>
@@ -1893,7 +1893,7 @@ export default function MenuManager({ className = '' }) {
 
                     if (isVideoActive) {
                       return (
-                        <div className="p-3.5 bg-[#0b0f19] rounded-xl border-2 border-rose-500/50 shadow-lg shadow-rose-950/40 space-y-2.5 animate-fadeIn">
+                        <div className="p-3.5 bg-[var(--adm-surface)] rounded-xl border-2 border-rose-500/50 shadow-lg shadow-rose-950/40 space-y-2.5 animate-fadeIn">
                           {/* Glowing Badge */}
                           <div className="flex items-center justify-between flex-wrap gap-2">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-extrabold bg-gradient-to-r from-rose-600 to-purple-600 text-white shadow-md shadow-rose-600/30 border border-rose-400/40 animate-pulse">
@@ -1901,7 +1901,7 @@ export default function MenuManager({ className = '' }) {
                               <Video className="w-3.5 h-3.5 fill-current" />
                               <span>🎥 360° Angular Video Profile Active (Plays 24/7 on Diner Card)</span>
                             </span>
-                            <span className="text-[10px] text-slate-400 font-mono truncate max-w-xs">
+                            <span className="text-[10px] text-[var(--adm-text-muted)] font-mono truncate max-w-xs">
                               {activeVideo}
                             </span>
                           </div>
@@ -1918,7 +1918,7 @@ export default function MenuManager({ className = '' }) {
                             />
                           </div>
 
-                          <p className="text-[11px] text-slate-300 leading-tight">
+                          <p className="text-[11px] text-[var(--adm-text-muted)] leading-tight">
                             ✨ This high-impact 360° profile video will play smoothly in a continuous 24/7 loop on the diner's mobile card, giving guests an immersive 360° product experience!
                           </p>
                         </div>
@@ -1927,8 +1927,8 @@ export default function MenuManager({ className = '' }) {
 
                     if (formData.image_url && !isVideoUrl(formData.image_url)) {
                       return (
-                        <div className="flex items-center gap-3 p-3 bg-[#0f172a] rounded-xl border border-[#334155] animate-fadeIn">
-                          <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#334155] bg-[#1e293b] shrink-0">
+                        <div className="flex items-center gap-3 p-3 bg-[var(--adm-surface)] rounded-xl border border-[var(--adm-border)] animate-fadeIn">
+                          <div className="w-16 h-16 rounded-lg overflow-hidden border border-[var(--adm-border)] bg-[var(--adm-surface-2)] shrink-0">
                             <img
                               src={formData.image_url}
                               alt="Dish Preview"
@@ -1941,11 +1941,11 @@ export default function MenuManager({ className = '' }) {
                               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
                                 Photo Profile
                               </span>
-                              <p className="text-xs font-bold text-[#f8fafc] truncate">
+                              <p className="text-xs font-bold text-[var(--adm-text)] truncate">
                                 {formData.name || 'Dish Photo Preview'}
                               </p>
                             </div>
-                            <p className="text-[10px] text-[#94a3b8] truncate font-mono mt-1">
+                            <p className="text-[10px] text-[var(--adm-text-muted)] truncate font-mono mt-1">
                               {formData.image_url}
                             </p>
                             {(formData.image_url.includes('telegram') || formData.image_url.includes('api.telegram.org')) && (
@@ -1962,13 +1962,13 @@ export default function MenuManager({ className = '' }) {
                   })()}
 
                   {/* Optional secondary video URL or fallback photo link accordion */}
-                  <details className="text-xs text-slate-400 pt-1 border-t border-slate-700/60">
+                  <details className="text-xs text-[var(--adm-text-muted)] pt-1 border-t border-slate-700/60">
                     <summary className="cursor-pointer hover:text-white font-semibold transition py-1 select-none flex items-center gap-1">
                       <span>⚙️ Advanced: Separate Kitchen Reel Video URL (Optional)</span>
                     </summary>
-                    <div className="mt-2 space-y-2 p-2.5 bg-[#0f172a] rounded-lg border border-slate-800">
+                    <div className="mt-2 space-y-2 p-2.5 bg-[var(--adm-surface)] rounded-lg border border-slate-800">
                       <div>
-                        <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                        <label className="text-[11px] font-semibold text-[var(--adm-text-muted)] block mb-1">
                           Direct Video URL (making_video_url):
                         </label>
                         <input
@@ -1976,18 +1976,18 @@ export default function MenuManager({ className = '' }) {
                           value={formData.making_video_url}
                           onChange={(e) => handleMakingVideoUrlChange(e.target.value)}
                           placeholder="e.g. /videos/reel-chef.mp4 or Telegram video link..."
-                          className="admin-dark-input w-full font-mono text-xs placeholder-[#64748b]"
+                          className="admin-dark-input w-full font-mono text-xs placeholder-[var(--adm-text-muted)]"
                           style={{
-                            backgroundColor: '#1e293b',
-                            color: '#f8fafc',
-                            border: '1px solid #334155',
+                            backgroundColor: 'var(--adm-surface-2)',
+                            color: 'var(--adm-text)',
+                            border: '1px solid var(--adm-border)',
                             padding: '8px 12px',
                             borderRadius: '6px'
                           }}
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                        <label className="text-[11px] font-semibold text-[var(--adm-text-muted)] block mb-1">
                           Static Fallback Photo URL (image_url):
                         </label>
                         <input
@@ -1995,11 +1995,11 @@ export default function MenuManager({ className = '' }) {
                           value={formData.image_url}
                           onChange={(e) => handlePrimaryMediaUrlChange(e.target.value)}
                           placeholder="e.g. https://images.unsplash.com/... or Telegram photo link"
-                          className="admin-dark-input w-full font-mono text-xs placeholder-[#64748b]"
+                          className="admin-dark-input w-full font-mono text-xs placeholder-[var(--adm-text-muted)]"
                           style={{
-                            backgroundColor: '#1e293b',
-                            color: '#f8fafc',
-                            border: '1px solid #334155',
+                            backgroundColor: 'var(--adm-surface-2)',
+                            color: 'var(--adm-text)',
+                            border: '1px solid var(--adm-border)',
                             padding: '8px 12px',
                             borderRadius: '6px'
                           }}
@@ -2013,15 +2013,15 @@ export default function MenuManager({ className = '' }) {
               </div>
 
               {/* Dietary Flags & Stock Switch */}
-              <div className="pt-2 border-t border-[#334155] space-y-2.5">
-                <span className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
+              <div className="pt-2 border-t border-[var(--adm-border)] space-y-2.5">
+                <span className="block text-xs font-bold text-[var(--adm-text-muted)] uppercase tracking-wider">
                   Dish Attributes
                 </span>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {/* Vegetarian Toggle */}
                   <label className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition select-none ${
-                    formData.is_veg ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300' : 'bg-[#1e293b] border-[#334155] text-[#94a3b8]'
+                    formData.is_veg ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300' : 'bg-[var(--adm-surface-2)] border-[var(--adm-border)] text-[var(--adm-text-muted)]'
                   }`}>
                     <input
                       type="checkbox"
@@ -2030,7 +2030,7 @@ export default function MenuManager({ className = '' }) {
                       className="sr-only"
                     />
                     <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                      formData.is_veg ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-[#334155] bg-[#0f172a]'
+                      formData.is_veg ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-[var(--adm-border)] bg-[var(--adm-surface)]'
                     }`}>
                       {formData.is_veg && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
@@ -2040,7 +2040,7 @@ export default function MenuManager({ className = '' }) {
 
                   {/* Spicy Toggle */}
                   <label className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition select-none ${
-                    formData.is_spicy ? 'bg-rose-950/60 border-rose-500 text-rose-300' : 'bg-[#1e293b] border-[#334155] text-[#94a3b8]'
+                    formData.is_spicy ? 'bg-rose-950/60 border-rose-500 text-rose-300' : 'bg-[var(--adm-surface-2)] border-[var(--adm-border)] text-[var(--adm-text-muted)]'
                   }`}>
                     <input
                       type="checkbox"
@@ -2049,7 +2049,7 @@ export default function MenuManager({ className = '' }) {
                       className="sr-only"
                     />
                     <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                      formData.is_spicy ? 'bg-rose-600 border-rose-600 text-white' : 'border-[#334155] bg-[#0f172a]'
+                      formData.is_spicy ? 'bg-rose-600 border-rose-600 text-white' : 'border-[var(--adm-border)] bg-[var(--adm-surface)]'
                     }`}>
                       {formData.is_spicy && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
@@ -2058,32 +2058,36 @@ export default function MenuManager({ className = '' }) {
                   </label>
 
                   {/* Available In Stock Toggle */}
-                  <label className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition select-none ${
-                    formData.is_available ? 'bg-amber-950/60 border-amber-500 text-amber-300' : 'bg-[#1e293b] border-[#334155] text-[#94a3b8]'
+                  <label className={`flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer transition select-none ${
+                    formData.is_available ? 'border-[var(--adm-success)] bg-[var(--adm-surface-2)] text-[var(--adm-text)]' : 'border-[var(--adm-border)] bg-[var(--adm-surface-2)] text-[var(--adm-text-muted)]'
                   }`}>
+                    <span className="flex flex-col">
+                      <span className="text-xs font-bold">Stock status</span>
+                      <span className={`text-[11px] font-semibold ${formData.is_available ? 'text-[var(--adm-success)]' : 'text-[var(--adm-danger)]'}`}>
+                        {formData.is_available ? 'In stock: visible and orderable' : 'Out of stock: hidden from ordering'}
+                      </span>
+                    </span>
                     <input
                       type="checkbox"
+                      role="switch"
+                      aria-checked={formData.is_available}
                       checked={formData.is_available}
                       onChange={(e) => setFormData({ ...formData, is_available: e.target.checked })}
-                      className="sr-only"
+                      className="sr-only peer"
                     />
-                    <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                      formData.is_available ? 'bg-amber-500 border-amber-500 text-white' : 'border-[#334155] bg-[#0f172a]'
-                    }`}>
-                      {formData.is_available && <Check className="w-3 h-3 stroke-[3]" />}
-                    </div>
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span className="text-xs font-semibold">In Stock</span>
+                    <span className={`relative inline-block w-11 h-6 rounded-full shrink-0 transition-colors ${formData.is_available ? 'bg-[var(--adm-success)]' : 'bg-[var(--adm-border)]'} peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--adm-primary)]`}>
+                      <span className={`absolute top-[3px] left-[3px] h-[18px] w-[18px] rounded-full bg-white shadow transition-transform ${formData.is_available ? 'translate-x-5' : ''}`} />
+                    </span>
                   </label>
                 </div>
               </div>
 
               {/* Form Bottom Actions */}
-              <div className="pt-4 border-t border-[#334155] flex items-center justify-end gap-2.5">
+              <div className="pt-4 border-t border-[var(--adm-border)] flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-[#334155] bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8] hover:text-[#f8fafc] text-xs sm:text-sm font-semibold transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-2)] hover:bg-[var(--adm-border)] text-[var(--adm-text-muted)] hover:text-[var(--adm-text)] text-xs sm:text-sm font-semibold transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -2107,18 +2111,18 @@ export default function MenuManager({ className = '' }) {
           ========================================================================= */}
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-md bg-[#111827] rounded-2xl shadow-2xl border border-[#334155] overflow-hidden transform transition-all animate-scaleUp text-[#f8fafc]">
+          <div className="w-full max-w-md bg-[var(--adm-surface)] rounded-2xl shadow-2xl border border-[var(--adm-border)] overflow-hidden transform transition-all animate-scaleUp text-[var(--adm-text)]">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-[#334155] flex items-center justify-between bg-[#1e293b]">
+            <div className="px-6 py-4 border-b border-[var(--adm-border)] flex items-center justify-between bg-[var(--adm-surface-2)]">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
                   <FolderPlus className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-[#f8fafc] text-base leading-tight">
+                  <h3 className="font-bold text-[var(--adm-text)] text-base leading-tight">
                     Add New Category
                   </h3>
-                  <p className="text-xs text-[#94a3b8]">
+                  <p className="text-xs text-[var(--adm-text-muted)]">
                     Create a menu section to group your dishes
                   </p>
                 </div>
@@ -2126,7 +2130,7 @@ export default function MenuManager({ className = '' }) {
               <button
                 type="button"
                 onClick={() => setIsCategoryModalOpen(false)}
-                className="text-[#94a3b8] hover:text-[#f8fafc] p-1 rounded-lg cursor-pointer transition"
+                className="text-[var(--adm-text-muted)] hover:text-[var(--adm-text)] p-1 rounded-lg cursor-pointer transition"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2143,7 +2147,7 @@ export default function MenuManager({ className = '' }) {
 
               {/* Category Name */}
               <div>
-                <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-[var(--adm-text-muted)] uppercase tracking-wider mb-1">
                   Category Name *
                 </label>
                 <input
@@ -2153,11 +2157,11 @@ export default function MenuManager({ className = '' }) {
                   value={newCategoryData.name}
                   onChange={(e) => setNewCategoryData({ ...newCategoryData, name: e.target.value })}
                   placeholder="e.g. Mocktails, Artisan Pizzas, Chef Specials"
-                  className="admin-dark-input w-full placeholder-[#64748b]"
+                  className="admin-dark-input w-full placeholder-[var(--adm-text-muted)]"
                   style={{
-                    backgroundColor: '#0f172a',
-                    color: '#f8fafc',
-                    border: '1px solid #334155',
+                    backgroundColor: 'var(--adm-surface)',
+                    color: 'var(--adm-text)',
+                    border: '1px solid var(--adm-border)',
                     padding: '10px 14px',
                     borderRadius: '8px',
                     fontSize: '14px',
@@ -2168,8 +2172,8 @@ export default function MenuManager({ className = '' }) {
 
               {/* Category Icon / Emoji Quick Selector */}
               <div>
-                <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
-                  Icon / Emoji <span className="text-[10px] text-[#94a3b8] font-normal">(Optional)</span>
+                <label className="block text-xs font-bold text-[var(--adm-text-muted)] uppercase tracking-wider mb-1">
+                  Icon / Emoji <span className="text-[10px] text-[var(--adm-text-muted)] font-normal">(Optional)</span>
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -2177,11 +2181,11 @@ export default function MenuManager({ className = '' }) {
                     value={newCategoryData.icon}
                     onChange={(e) => setNewCategoryData({ ...newCategoryData, icon: e.target.value })}
                     placeholder="🍽️"
-                    className="admin-dark-input w-16 text-center text-lg placeholder-[#64748b]"
+                    className="admin-dark-input w-16 text-center text-lg placeholder-[var(--adm-text-muted)]"
                     style={{
-                      backgroundColor: '#0f172a',
-                      color: '#f8fafc',
-                      border: '1px solid #334155',
+                      backgroundColor: 'var(--adm-surface)',
+                      color: 'var(--adm-text)',
+                      border: '1px solid var(--adm-border)',
                       padding: '8px',
                       borderRadius: '8px',
                       fontWeight: 500
@@ -2196,7 +2200,7 @@ export default function MenuManager({ className = '' }) {
                         className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition border cursor-pointer ${
                           newCategoryData.icon === emoji
                             ? 'bg-amber-500/20 border-amber-500 scale-105'
-                            : 'bg-[#1e293b] border-[#334155] hover:bg-[#334155]'
+                            : 'bg-[var(--adm-surface-2)] border-[var(--adm-border)] hover:bg-[var(--adm-border)]'
                         }`}
                       >
                         {emoji}
@@ -2208,19 +2212,19 @@ export default function MenuManager({ className = '' }) {
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider mb-1">
-                  Description <span className="text-[10px] text-[#94a3b8] font-normal">(Optional)</span>
+                <label className="block text-xs font-bold text-[var(--adm-text-muted)] uppercase tracking-wider mb-1">
+                  Description <span className="text-[10px] text-[var(--adm-text-muted)] font-normal">(Optional)</span>
                 </label>
                 <input
                   type="text"
                   value={newCategoryData.description}
                   onChange={(e) => setNewCategoryData({ ...newCategoryData, description: e.target.value })}
                   placeholder="e.g. Signature handcrafted mocktails & refreshments"
-                  className="admin-dark-input w-full placeholder-[#64748b]"
+                  className="admin-dark-input w-full placeholder-[var(--adm-text-muted)]"
                   style={{
-                    backgroundColor: '#0f172a',
-                    color: '#f8fafc',
-                    border: '1px solid #334155',
+                    backgroundColor: 'var(--adm-surface)',
+                    color: 'var(--adm-text)',
+                    border: '1px solid var(--adm-border)',
                     padding: '10px 14px',
                     borderRadius: '8px',
                     fontSize: '14px',
@@ -2230,11 +2234,11 @@ export default function MenuManager({ className = '' }) {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-[#334155] flex items-center justify-end gap-2.5">
+              <div className="pt-4 border-t border-[var(--adm-border)] flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsCategoryModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-[#334155] bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8] hover:text-[#f8fafc] text-xs sm:text-sm font-semibold transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-2)] hover:bg-[var(--adm-border)] text-[var(--adm-text-muted)] hover:text-[var(--adm-text)] text-xs sm:text-sm font-semibold transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -2257,23 +2261,23 @@ export default function MenuManager({ className = '' }) {
           ========================================================================= */}
       {dishToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-sm bg-[#111827] rounded-2xl shadow-2xl border border-[#334155] p-6 text-center transform transition-all animate-scaleUp text-[#f8fafc]">
+          <div className="w-full max-w-sm bg-[var(--adm-surface)] rounded-2xl shadow-2xl border border-[var(--adm-border)] p-6 text-center transform transition-all animate-scaleUp text-[var(--adm-text)]">
             <div className="w-12 h-12 rounded-full bg-rose-950/80 border border-rose-800 text-rose-400 flex items-center justify-center mx-auto mb-3">
               <Trash2 className="w-6 h-6" />
             </div>
 
-            <h3 className="text-base sm:text-lg font-bold text-[#f8fafc] mb-1">
+            <h3 className="text-base sm:text-lg font-bold text-[var(--adm-text)] mb-1">
               Delete Menu Dish?
             </h3>
-            <p className="text-xs text-[#94a3b8] leading-relaxed mb-5">
-              Are you sure you want to delete <span className="font-semibold text-[#f8fafc]">"{dishToDelete.name}"</span>? This will remove the item immediately from the customer menu.
+            <p className="text-xs text-[var(--adm-text-muted)] leading-relaxed mb-5">
+              Are you sure you want to delete <span className="font-semibold text-[var(--adm-text)]">"{dishToDelete.name}"</span>? This will remove the item immediately from the customer menu.
             </p>
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setDishToDelete(null)}
-                className="flex-1 py-2.5 px-3 rounded-xl border border-[#334155] bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8] hover:text-[#f8fafc] text-xs sm:text-sm font-semibold transition cursor-pointer"
+                className="flex-1 py-2.5 px-3 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-2)] hover:bg-[var(--adm-border)] text-[var(--adm-text-muted)] hover:text-[var(--adm-text)] text-xs sm:text-sm font-semibold transition cursor-pointer"
               >
                 Keep Dish
               </button>

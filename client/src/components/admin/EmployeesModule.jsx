@@ -39,6 +39,16 @@ import {
 import { useRestaurant } from '../../context/RestaurantContext';
 import TableSecurityModal, { TableSecurityModal as PasscodeConfirmDialog } from './TableSecurityModal';
 import '../../styles/staff.css';
+import '../../styles/staff-admin.css';
+import { staffKey, hoursTodayFor, formatHours, SHIFT_EVENT } from '../../utils/shiftClock';
+import {
+  STAFF_MASTER_PIN,
+  STAFF_PASSWORD_MASK,
+  isValidStaffPassword,
+  createStaffCredential,
+  stripPlainCredentials,
+  hasStaffCredentialHash
+} from '../../utils/staffCredentials';
 
 // Storage key for table custody lineage tracking across sessions and days
 const STORAGE_KEY_CUSTODY = 'smartdine_table_custody_v1';
@@ -342,13 +352,10 @@ export default function EmployeesModule({
 
     return list.map((emp, idx) => {
       const code = emp.accountCode || emp.waiterCode || `WAIT-${101 + idx}`;
-      const pin = emp.passcode || emp.waiterPin || `${1001 + idx}`;
       return {
-        ...emp,
+        ...stripPlainCredentials(emp),
         accountCode: code,
         waiterCode: code,
-        passcode: pin,
-        waiterPin: pin,
         hiredAt: emp.hiredAt || '2026-01-15'
       };
     });
@@ -361,24 +368,18 @@ export default function EmployeesModule({
         return incoming.map((propEmp, idx) => {
           const localEmp = prev.find(e => e.id === propEmp.id || String(e.numericId) === String(propEmp.id));
           const code = propEmp.accountCode || propEmp.waiterCode || localEmp?.accountCode || localEmp?.waiterCode || `WAIT-${101 + idx}`;
-          const pin = propEmp.passcode || propEmp.waiterPin || localEmp?.passcode || localEmp?.waiterPin || `${1001 + idx}`;
           if (!localEmp) {
             return {
-              ...propEmp,
+              ...stripPlainCredentials(propEmp),
               accountCode: code,
               waiterCode: code,
-              passcode: pin,
-              waiterPin: pin,
               hiredAt: propEmp.hiredAt || '2026-01-15'
             };
           }
           return {
-            ...localEmp,
-            ...propEmp,
+            ...stripPlainCredentials({ ...localEmp, ...propEmp }),
             accountCode: code,
             waiterCode: code,
-            passcode: pin,
-            waiterPin: pin,
             nudgesCount: localEmp.nudgesCount ?? propEmp.nudgesCount ?? 0,
             assignedTables: propEmp.assignedTables || localEmp.assignedTables || []
           };
@@ -404,8 +405,9 @@ export default function EmployeesModule({
           email: emp.email,
           accountCode: emp.accountCode || emp.waiterCode || 'WAIT-100',
           waiterCode: emp.waiterCode || emp.accountCode || 'WAIT-100',
-          passcode: emp.passcode || emp.waiterPin || '1234',
-          waiterPin: emp.waiterPin || emp.passcode || '1234',
+          ...(hasStaffCredentialHash(emp)
+            ? { passwordHash: emp.passwordHash, passwordSalt: emp.passwordSalt, passwordUpdatedAt: emp.passwordUpdatedAt }
+            : { passcode: emp.passcode || emp.waiterPin || '1234', waiterPin: emp.waiterPin || emp.passcode || '1234' }),
           hiredAt: emp.hiredAt || '2026-01-15'
         }));
         localStorage.setItem(STORAGE_KEY_WAITER_ACCOUNTS, JSON.stringify(waiterAccounts));
@@ -496,11 +498,24 @@ export default function EmployeesModule({
   }, [activityLogs, activityActorFilter, activityActionFilter, activitySearchQuery]);
 
   // Revealed PINs map for executive click-to-reveal toggle { [empId]: boolean }
-  const [revealedPins, setRevealedPins] = useState({});
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [detailEmpId, setDetailEmpId] = useState(null);
+  // Re-render when shift clock changes (and once a minute) so "Hours today" stays current
+  const [, setShiftTick] = useState(0);
+  useEffect(() => {
+    const bump = () => setShiftTick(t => t + 1);
+    const timer = setInterval(bump, 60000);
+    window.addEventListener(SHIFT_EVENT, bump);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener(SHIFT_EVENT, bump);
+    };
+  }, []);
+  const [resetPwTarget, setResetPwTarget] = useState(null);
+  const [resetPwForm, setResetPwForm] = useState({ next: '', confirm: '', masterPin: '', error: '' });
   // Digital Keycard Modal preview
   const [keycardModalEmployee, setKeycardModalEmployee] = useState(null);
   // Password visibility toggle in Add/Edit modal
-  const [showModalPin, setShowModalPin] = useState(false);
 
   // Detect global role switcher from App.jsx to avoid double-stacking floating buttons
   const [hasGlobalSwitcher, setHasGlobalSwitcher] = useState(false);
@@ -520,7 +535,7 @@ export default function EmployeesModule({
   const [selectedBackupEmpId, setSelectedBackupEmpId] = useState('');
   const [rerouteActiveAlerts, setRerouteActiveAlerts] = useState(true);
 
-  // Security Confirmation Modal State (Requires Admin PIN 808080)
+  // Security Confirmation Modal State (Requires admin PIN)
   const [securityModalState, setSecurityModalState] = useState({
     isOpen: false,
     actionTitle: '',
@@ -556,8 +571,8 @@ export default function EmployeesModule({
     assignedTables: [],
     accountCode: '',
     waiterCode: '',
-    passcode: '',
-    waiterPin: ''
+    password: '',
+    confirmPassword: ''
   });
 
   // Notification Toast State with Timer Ref & Interactive Hover Ergonomics
@@ -722,6 +737,7 @@ export default function EmployeesModule({
   // Filtered employees for display
   const filteredEmployees = useMemo(() => {
     return employees.filter(emp => {
+      if (roleFilter !== 'all' && emp.role !== roleFilter) return false;
       if (statusFilter !== 'all') {
         if (statusFilter === 'Absent') {
           if (emp.status !== 'Absent' && emp.status !== 'Absent / Off-duty') return false;
@@ -743,7 +759,7 @@ export default function EmployeesModule({
       }
       return true;
     });
-  }, [employees, statusFilter, searchQuery]);
+  }, [employees, statusFilter, searchQuery, roleFilter]);
 
   // Filtered alerts for Tab 3
   const filteredAlerts = useMemo(() => {
@@ -1123,7 +1139,7 @@ export default function EmployeesModule({
       isOpen: true,
       actionTitle: `Authorize Staff Assignment • Table #${tableNumber}`,
       actionDescription: `Assign Table #${tableNumber} to ${targetName}. Floor routing will update immediately.`,
-      actionNotice: 'Admin PIN verification (808080) required to update staff table assignments.',
+      actionNotice: 'Admin PIN verification required to update staff table assignments.',
       pendingAction: () => {
         handleDirectTableReassign(tableNumber, newEmployeeId);
       }
@@ -1135,7 +1151,7 @@ export default function EmployeesModule({
       isOpen: true,
       actionTitle: 'Authorize Floor Staff Auto-Balance',
       actionDescription: `Automatically redistribute all ${allTableNumbers.length} venue tables evenly across on-duty floor staff.`,
-      actionNotice: 'Admin PIN verification (808080) required to rebalance table assignments.',
+      actionNotice: 'Admin PIN verification required to rebalance table assignments.',
       pendingAction: () => {
         handleAutoBalanceTables();
       }
@@ -1368,48 +1384,66 @@ export default function EmployeesModule({
     return `WAIT-${maxNum + 1}`;
   }, [employees]);
 
-  const generateRandomPin = useCallback(() => {
-    return String(Math.floor(1000 + Math.random() * 9000));
-  }, []);
+  // Persist an employee list to the shared stores (same keys the module always used)
+  const persistEmployeeList = (list) => {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('smartdine_restaurant_employees', JSON.stringify(list));
+        localStorage.setItem('smartdine_floor_staff_roster', JSON.stringify(list));
+        localStorage.setItem('smartdine_floor_employee_roster', JSON.stringify(list));
+      }
+      if (restaurantContext?.setEmployees) {
+        restaurantContext.setEmployees(list);
+      }
+    } catch (_) {}
+  };
 
-  const handleQuickResetPin = useCallback((employeeId) => {
-    const targetEmp = employees.find(e => e.id === employeeId || String(e.numericId) === String(employeeId));
-    if (!targetEmp) return;
+  // Opens the reset dialog. The current password is never displayed, only replaced.
+  const openResetPassword = useCallback((employeeId) => {
+    const target = employees.find(e => e.id === employeeId || String(e.numericId) === String(employeeId));
+    if (!target) return;
+    setResetPwTarget(target);
+    setResetPwForm({ next: '', confirm: '', masterPin: '', error: '' });
+  }, [employees]);
 
-    const newPin = String(Math.floor(1000 + Math.random() * 9000));
-    pushUndoSnapshot(`Reset PIN for ${targetEmp.name}`);
-
-    setEmployees(prev =>
-      prev.map(emp => {
-        if (emp.id === targetEmp.id) {
-          return {
-            ...emp,
-            passcode: newPin,
-            waiterPin: newPin
-          };
-        }
-        return emp;
-      })
-    );
-
-    if (restaurantContext?.updateEmployeeCredentials) {
-      restaurantContext.updateEmployeeCredentials(targetEmp.id, {
-        passcode: newPin,
-        waiterPin: newPin
-      });
+  const submitPasswordReset = (e) => {
+    e.preventDefault();
+    if (!resetPwTarget) return;
+    const next = resetPwForm.next.trim();
+    const confirm = resetPwForm.confirm.trim();
+    if (!isValidStaffPassword(next)) {
+      setResetPwForm(f => ({ ...f, error: 'Password must be 4 to 8 digits.' }));
+      return;
+    }
+    if (next !== confirm) {
+      setResetPwForm(f => ({ ...f, error: 'The two passwords do not match.' }));
+      return;
+    }
+    if (resetPwForm.masterPin.trim() !== STAFF_MASTER_PIN) {
+      setResetPwForm(f => ({ ...f, error: 'Admin master PIN is incorrect. Password was not changed.' }));
+      return;
     }
 
-    setRevealedPins(prev => ({ ...prev, [targetEmp.id]: true }));
+    const target = resetPwTarget;
+    const patch = createStaffCredential(next);
+    pushUndoSnapshot(`Reset password for ${target.name}`);
 
-    showToast(
-      `Quick PIN Reset: ${targetEmp.name}'s new 4-digit PIN is ${newPin}!`,
-      'success',
-      {
-        label: 'Undo',
-        onClick: handleUndo
-      }
+    const nextEmployees = employees.map(emp =>
+      emp.id === target.id ? stripPlainCredentials({ ...emp, ...patch }) : emp
     );
-  }, [employees, pushUndoSnapshot, restaurantContext, showToast, handleUndo]);
+    setEmployees(nextEmployees);
+    if (restaurantContext?.updateEmployeeCredentials) {
+      restaurantContext.updateEmployeeCredentials(target.id, patch);
+    }
+    persistEmployeeList(nextEmployees);
+
+    setResetPwTarget(null);
+    setResetPwForm({ next: '', confirm: '', masterPin: '', error: '' });
+    showToast(`Password updated for ${target.name}. It cannot be viewed again.`, 'success', {
+      label: 'Undo',
+      onClick: handleUndo
+    });
+  };
 
   const handleCopyLoginCard = useCallback((emp) => {
     const tablesText = (emp.assignedTables && emp.assignedTables.length > 0)
@@ -1417,13 +1451,11 @@ export default function EmployeesModule({
       : 'None assigned';
 
     const code = emp.accountCode || emp.waiterCode || 'WAIT-100';
-    const pin = emp.passcode || emp.waiterPin || '1234';
-
-    const cardText = `🍽️ SmartDine Waiter Console Passcard
+    const cardText = `🍽️ SmartDine Waiter Console Access Card
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 👤 Staff Name : ${emp.name} (${emp.role})
 🆔 Account ID : ${code}
-🔑 Console PIN: ${pin}
+🔑 Password   : Set by admin (ask admin to reset if forgotten)
 📍 Assigned   : ${tablesText}
 ⏰ Shift      : ${emp.shift}
 📞 Phone      : ${emp.phone || 'N/A'}
@@ -1434,10 +1466,10 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
       navigator.clipboard.writeText(cardText).then(() => {
         showToast(`Copied Waiter Access Card for ${emp.name} to clipboard!`, 'success');
       }).catch(() => {
-        showToast(`ID: ${code} • PIN: ${pin}`, 'info');
+        showToast(`ID: ${code}`, 'info');
       });
     } else {
-      showToast(`ID: ${code} • PIN: ${pin}`, 'info');
+      showToast(`ID: ${code}`, 'info');
     }
   }, [showToast]);
 
@@ -1447,11 +1479,10 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
         ? emp.assignedTables.map(t => `T${t}`).join(', ')
         : 'None';
       const code = emp.accountCode || emp.waiterCode || 'WAIT-100';
-      const pin = emp.passcode || emp.waiterPin || '1234';
-      return `• ${emp.name.padEnd(18)} | ID: ${code.padEnd(9)} | PIN: ${pin.padEnd(6)} | Tables: ${tablesText}`;
+      return `• ${emp.name.padEnd(18)} | ID: ${code.padEnd(9)} | Tables: ${tablesText}`;
     }).join('\n');
 
-    const fullText = `🍽️ SmartDine Waiter Portal Accounts & PINs Roster\nGenerated: ${new Date().toLocaleTimeString()}\n${'═'.repeat(60)}\n${lines}\n${'═'.repeat(60)}\nHandheld Console: /waiter`;
+    const fullText = `🍽️ SmartDine Waiter Accounts Roster\nGenerated: ${new Date().toLocaleTimeString()}\n${'═'.repeat(60)}\n${lines}\n${'═'.repeat(60)}\nHandheld Console: /waiter`;
 
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(fullText).then(() => {
@@ -1465,11 +1496,11 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
   const handleOpenAddModal = () => {
     setEditingEmployee(null);
     const code = generateNextWaiterCode();
-    const pin = generateRandomPin();
     setFormData({
       name: '',
       username: '',
       password: '',
+      confirmPassword: '',
       role: 'Floor Specialist',
       shift: 'Morning Shift (08:00 - 16:00)',
       status: 'Active',
@@ -1477,22 +1508,19 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
       email: '',
       assignedTables: [],
       accountCode: code,
-      waiterCode: code,
-      passcode: pin,
-      waiterPin: pin
+      waiterCode: code
     });
-    setShowModalPin(true);
     setIsAddEditModalOpen(true);
   };
 
   const handleOpenEditModal = (emp) => {
     setEditingEmployee(emp);
     const code = emp.username || emp.accountCode || emp.waiterCode || `WAIT-${100 + (emp.numericId || 1)}`;
-    const pin = emp.password || emp.passcode || emp.waiterPin || '1234';
     setFormData({
       name: emp.name,
       username: emp.username || emp.accountCode || emp.waiterCode || '',
-      password: emp.password || emp.passcode || emp.waiterPin || '',
+      password: '',
+      confirmPassword: '',
       role: emp.role,
       shift: emp.shift,
       status: emp.status,
@@ -1500,11 +1528,8 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
       email: emp.email || '',
       assignedTables: [...(emp.assignedTables || [])],
       accountCode: code,
-      waiterCode: code,
-      passcode: pin,
-      waiterPin: pin
+      waiterCode: code
     });
-    setShowModalPin(false);
     setIsAddEditModalOpen(true);
   };
 
@@ -1517,9 +1542,23 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
 
     const rawUser = (formData.username || formData.accountCode || formData.waiterCode || '').trim();
     const username = rawUser ? rawUser.toLowerCase() : formData.name.toLowerCase().replace(/\s+/g, '.');
-    const password = (formData.password || formData.passcode || formData.waiterPin || '').trim() || '1234';
     const code = (formData.accountCode || formData.waiterCode || username).trim().toUpperCase() || generateNextWaiterCode();
-    const pin = password;
+
+    // New accounts need an initial password. It is stored hashed and never shown again.
+    // Existing accounts change passwords only through the Set new password flow.
+    let credential = null;
+    if (!editingEmployee) {
+      const pw = String(formData.password || '').trim();
+      if (!isValidStaffPassword(pw)) {
+        showToast('Password must be 4 to 8 digits', 'error');
+        return;
+      }
+      if (pw !== String(formData.confirmPassword || '').trim()) {
+        showToast('The two passwords do not match', 'error');
+        return;
+      }
+      credential = createStaffCredential(pw);
+    }
 
     pushUndoSnapshot(editingEmployee ? `Updated ${formData.name.trim()}` : `Registered ${formData.name.trim()}`);
 
@@ -1532,7 +1571,6 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
             ...emp,
             name: formData.name.trim(),
             username,
-            password,
             role: formData.role,
             shift: formData.shift,
             status: formData.status,
@@ -1540,9 +1578,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
             email: formData.email.trim(),
             assignedTables: formData.assignedTables.sort((a, b) => a - b),
             accountCode: code,
-            waiterCode: code,
-            passcode: pin,
-            waiterPin: pin
+            waiterCode: code
           };
         }
         if (formData.assignedTables.some(t => (emp.assignedTables || []).includes(t))) {
@@ -1557,15 +1593,10 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
       setEmployees(nextEmployees);
 
       if (restaurantContext?.updateEmployeeCredentials) {
-        restaurantContext.updateEmployeeCredentials(editingEmployee.id, {
-          username,
-          password,
-          accountCode: code,
-          passcode: pin
-        });
+        restaurantContext.updateEmployeeCredentials(editingEmployee.id, { accountCode: code });
       }
 
-      showToast(`Employee "${formData.name.trim()}" profile & credentials updated!`, 'success', {
+      showToast(`Employee "${formData.name.trim()}" profile updated!`, 'success', {
         label: 'Undo',
         onClick: handleUndo
       });
@@ -1586,7 +1617,6 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
         numericId: nextNumericId,
         name: formData.name.trim(),
         username,
-        password,
         initials,
         role: formData.role,
         shift: formData.shift,
@@ -1603,8 +1633,9 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
         nudgesCount: 0,
         accountCode: code,
         waiterCode: code,
-        passcode: pin,
-        waiterPin: pin,
+        passwordHash: credential.passwordHash,
+        passwordSalt: credential.passwordSalt,
+        passwordUpdatedAt: credential.passwordUpdatedAt,
         hiredAt: new Date().toISOString().split('T')[0]
       };
 
@@ -1632,7 +1663,6 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
         restaurantContext.hireEmployee({
           name: formData.name.trim(),
           username,
-          password,
           role: formData.role,
           shift: formData.shift,
           status: formData.status,
@@ -1640,7 +1670,9 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
           email: newEmp.email,
           assignedTables: formData.assignedTables,
           accountCode: code,
-          passcode: pin
+          passwordHash: credential.passwordHash,
+          passwordSalt: credential.passwordSalt,
+          passwordUpdatedAt: credential.passwordUpdatedAt
         });
       }
 
@@ -1650,18 +1682,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
       });
     }
 
-    // Persist to localStorage and RestaurantContext shared state
-    try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('smartdine_restaurant_employees', JSON.stringify(nextEmployees));
-        localStorage.setItem('smartdine_floor_staff_roster', JSON.stringify(nextEmployees));
-        localStorage.setItem('smartdine_floor_employee_roster', JSON.stringify(nextEmployees));
-      }
-      if (restaurantContext?.setEmployees) {
-        restaurantContext.setEmployees(nextEmployees);
-      }
-    } catch (_) {}
-
+    persistEmployeeList(nextEmployees);
     setIsAddEditModalOpen(false);
   };
 
@@ -1835,7 +1856,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
             type="button"
             onClick={requestAutoBalanceTables}
             className="h-[38px] px-3.5 flex items-center gap-2 rounded-xl text-xs font-semibold border border-slate-700 text-slate-200 hover:border-amber-500/40 hover:text-white bg-[#111726]/80 transition active:scale-95 cursor-pointer shadow-sm"
-            title="Auto-balance tables across active employees (Requires PIN 808080)"
+            title="Auto-balance tables across active employees (Requires admin PIN)"
           >
             <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
             <span>Auto-Balance Tables</span>
@@ -1950,134 +1971,37 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
           ========================================================================= */}
       <section className="bg-[#111726]/85 backdrop-blur-md rounded-[14px] border border-white/[0.07] px-4 pt-3 pb-0 shadow-md">
         <div className="flex flex-wrap items-center gap-6 border-b border-slate-800 px-2 overflow-x-auto">
-          {/* Tab 1: Employee Directory & Roster */}
+          {/* People */}
           <button
             type="button"
             onClick={() => setActiveTab('roster')}
-            className={`pb-3 text-xs font-bold transition flex items-center gap-2 cursor-pointer relative shrink-0 ${
-              activeTab === 'roster'
-                ? 'text-amber-400'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+            className={`staff-tab ${activeTab === 'roster' ? 'is-active' : ''}`}
           >
             <Users className="w-4 h-4" />
-            <span>Employee Directory &amp; Roster</span>
-            <span
-              className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
-                activeTab === 'roster'
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                  : 'bg-slate-800/80 text-slate-400 border border-slate-700/50'
-              }`}
-            >
-              {employees.length}
-            </span>
-            {activeTab === 'roster' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-t-full shadow-sm" />
-            )}
+            <span>People</span>
+            <span className="staff-tab-count">{employees.length}</span>
           </button>
 
-          {/* Tab 2: Waiter Portal Accounts & PINs */}
-          <button
-            type="button"
-            onClick={() => setActiveTab('waiters')}
-            className={`pb-3 text-xs font-bold transition flex items-center gap-2 cursor-pointer relative shrink-0 ${
-              activeTab === 'waiters'
-                ? 'text-amber-400'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Key className="w-4 h-4" />
-            <span>Waiter Portal Accounts &amp; PINs</span>
-            <span
-              className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
-                activeTab === 'waiters'
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                  : 'bg-slate-800/80 text-slate-400 border border-slate-700/50'
-              }`}
-            >
-              {employees.length}
-            </span>
-            {activeTab === 'waiters' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-t-full shadow-sm" />
-            )}
-          </button>
-
-          {/* Tab 3: Dining Room Table Coverage */}
+          {/* Tables & routing (coverage + live call dispatch) */}
           <button
             type="button"
             onClick={() => setActiveTab('tables')}
-            className={`pb-3 text-xs font-bold transition flex items-center gap-2 cursor-pointer relative shrink-0 ${
-              activeTab === 'tables'
-                ? 'text-amber-400'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+            className={`staff-tab ${activeTab === 'tables' ? 'is-active' : ''}`}
           >
             <Table className="w-4 h-4" />
-            <span>Dining Room Table Coverage (Tables 1–{totalVenueTables})</span>
-            <span
-              className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
-                activeTab === 'tables'
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                  : 'bg-slate-800/80 text-slate-400 border border-slate-700/50'
-              }`}
-            >
-              {summaryMetrics.tablesCovered}/{totalVenueTables}
-            </span>
-            {activeTab === 'tables' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-t-full shadow-sm" />
-            )}
+            <span>Tables &amp; Routing</span>
+            <span className="staff-tab-count">{summaryMetrics.tablesCovered}/{totalVenueTables}</span>
           </button>
 
-          {/* Tab 3: Live Call Routing & Kitchen Dispatch */}
-          <button
-            type="button"
-            onClick={() => setActiveTab('dispatch')}
-            className={`pb-3 text-xs font-bold transition flex items-center gap-2 cursor-pointer relative shrink-0 ${
-              activeTab === 'dispatch'
-                ? 'text-amber-400'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <BellRing className="w-4 h-4" />
-            <span>Live Call Routing &amp; Kitchen Dispatch</span>
-            <span
-              className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
-                activeTab === 'dispatch'
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                  : 'bg-slate-800/80 text-slate-400 border border-slate-700/50'
-              }`}
-            >
-              {alerts.length}
-            </span>
-            {activeTab === 'dispatch' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-t-full shadow-sm" />
-            )}
-          </button>
-
-          {/* Tab 5: Employee Activity & Live Audit History */}
+          {/* Handover, messages & audit */}
           <button
             type="button"
             onClick={() => setActiveTab('history')}
-            className={`pb-3 text-xs font-bold transition flex items-center gap-2 cursor-pointer relative shrink-0 ${
-              activeTab === 'history'
-                ? 'text-amber-400'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+            className={`staff-tab ${activeTab === 'history' ? 'is-active' : ''}`}
           >
             <Clock className="w-4 h-4" />
-            <span>Employee Activity &amp; Live Audit</span>
-            <span
-              className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
-                activeTab === 'history'
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                  : 'bg-slate-800/80 text-slate-400 border border-slate-700/50'
-              }`}
-            >
-              {activityLogs.length}
-            </span>
-            {activeTab === 'history' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-t-full shadow-sm" />
-            )}
+            <span>Handover &amp; Activity</span>
+            <span className="staff-tab-count">{activityLogs.length}</span>
           </button>
         </div>
       </section>
@@ -2085,7 +2009,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
       {/* =========================================================================
           5. FILTER & SEARCH BAR
           ========================================================================= */}
-      {activeTab !== 'history' && (
+      {activeTab === 'roster' && (
         <section className="bg-[#111726]/90 backdrop-blur-md rounded-[14px] border border-slate-800/80 p-3 shadow-md flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Left Pills */}
           <div className="flex items-center gap-2 overflow-x-auto text-xs py-1 scrollbar-none">
@@ -2158,6 +2082,18 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
               <span>Absent ({summaryMetrics.absent})</span>
             </button>
           </div>
+
+          <select
+            value={roleFilter}
+            onChange={e => setRoleFilter(e.target.value)}
+            className="staff-select"
+            aria-label="Filter by role"
+          >
+            <option value="all">All roles</option>
+            {Array.from(new Set(employees.map(e => e.role).filter(Boolean))).map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
 
           {/* Right: Search Input */}
           <div className="relative w-full md:w-72">
@@ -2233,13 +2169,18 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                         {renderAvatar(emp)}
                         <div className="min-w-0">
                           <h4 className="text-base font-semibold text-white tracking-tight whitespace-nowrap">
-                            {emp.name}
+                            <button type="button" onClick={() => setDetailEmpId(emp.id)} className="staff-name-link">
+                              {emp.name}
+                            </button>
                           </h4>
                           <p className="text-xs text-slate-400 font-medium whitespace-nowrap">
                             {emp.role}
                           </p>
                           <p className={`text-xs font-medium mt-0.5 whitespace-nowrap ${getShiftColor(emp)}`}>
                             {emp.shift}
+                          </p>
+                          <p className="text-xs text-slate-400 mt-0.5 whitespace-nowrap" title="Hours clocked in today">
+                            Hours today: <span className="font-semibold text-slate-200">{formatHours(hoursTodayFor(staffKey(emp)))}</span>
                           </p>
                         </div>
                       </div>
@@ -2324,51 +2265,29 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                       </div>
                     </div>
 
-                    {/* Executive Waiter Console Credentials Badge */}
-                    <div className="bg-[#0B0F19]/90 border border-amber-500/25 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2.5 shadow-inner">
-                      <div className="flex items-center gap-2 flex-wrap min-w-0">
-                        <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                          <Key className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[11px] font-bold text-slate-300">
-                            Waiter Login:
-                          </span>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#131926] border border-amber-500/30 font-mono text-xs font-bold text-amber-400 shadow-xs">
-                            ID: {emp.accountCode || emp.waiterCode || `WAIT-${100 + (emp.numericId || 1)}`}
-                          </span>
-                          <span className="text-slate-500 text-xs">•</span>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-950/40 border border-emerald-500/30 font-mono text-xs font-bold text-emerald-400 tracking-wider shadow-xs">
-                            PIN: {revealedPins[emp.id] ? (emp.passcode || emp.waiterPin || '1234') : '••••'}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setRevealedPins(prev => ({ ...prev, [emp.id]: !prev[emp.id] }))}
-                            className="p-1 hover:bg-[#1E293B] rounded-lg text-slate-400 hover:text-white transition cursor-pointer"
-                            title={revealedPins[emp.id] ? 'Hide PIN' : 'Click to reveal 4-digit PIN'}
-                          >
-                            {revealedPins[emp.id] ? <EyeOff className="w-3.5 h-3.5 text-amber-400" /> : <Eye className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
+                    {/* Login & credentials: password is masked and can only be replaced */}
+                    <div className="staff-cred-row">
+                      <div className="staff-cred-fields">
+                        <span className="staff-cred-item">
+                          <span className="staff-cred-label">Login ID</span>
+                          <code className="staff-cred-value">{emp.accountCode || emp.waiterCode || `WAIT-${100 + (emp.numericId || 1)}`}</code>
+                        </span>
+                        <span className="staff-cred-item">
+                          <span className="staff-cred-label">Password</span>
+                          <code className="staff-cred-value staff-cred-masked" aria-label="Password hidden">{STAFF_PASSWORD_MASK}</code>
+                        </span>
                       </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-                        <button
-                          type="button"
-                          onClick={() => handleCopyLoginCard(emp)}
-                          className="px-2.5 py-1 rounded-lg bg-[#131926] hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 border border-slate-700/80 hover:border-amber-500/40 text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
-                          title="Copy waiter credentials to clipboard"
-                        >
-                          <Copy className="w-3 h-3 text-slate-400" />
-                          <span>Copy Card</span>
+                      <div className="staff-cred-actions">
+                        <button type="button" onClick={() => openResetPassword(emp.id)} className="staff-btn staff-btn-primary">
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Set new password</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setKeycardModalEmployee(emp)}
-                          className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
-                          title="View Digital Waiter Keycard"
-                        >
-                          <Smartphone className="w-3 h-3 text-amber-400" />
+                        <button type="button" onClick={() => handleCopyLoginCard(emp)} className="staff-btn" title="Copy login card (no password)">
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copy card</span>
+                        </button>
+                        <button type="button" onClick={() => setKeycardModalEmployee(emp)} className="staff-btn" title="View digital keycard">
+                          <Smartphone className="w-3.5 h-3.5" />
                           <span>Keycard</span>
                         </button>
                       </div>
@@ -2468,279 +2387,8 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
       )}
 
       {/* =========================================================================
-          TAB 2: WAITER PORTAL ACCOUNTS & PINS (CREDENTIALS MANAGEMENT)
-          ========================================================================= */}
-      {activeTab === 'waiters' && (
-        <section className="bg-[#111726]/95 backdrop-blur-md admin-card border border-white/[0.07] p-5 sm:p-6 space-y-6 animate-fadeIn">
-          {/* Subheader */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.07]">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                <Key className="w-5 h-5 text-amber-400" />
-              </div>
-              <div>
-                <h3 className="font-bold text-white text-base sm:text-lg flex items-center gap-2">
-                  <span>Waiter Portal Accounts &amp; PINs</span>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
-                    Console Security
-                  </span>
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  On-field waiter console IDs, 4-digit security PINs, table station zones, and 1-click access distribution
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5">
-              <button
-                type="button"
-                onClick={handleCopyAllAccessRoster}
-                className="h-[38px] px-3.5 rounded-xl border border-slate-700 text-slate-200 hover:border-amber-500/40 hover:text-white bg-[#0B0F19] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
-                title="Copy all waiter IDs, PINs, and table rosters to clipboard"
-              >
-                <Copy className="w-3.5 h-3.5 text-amber-400" />
-                <span>Copy All Access Roster</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleOpenAddModal}
-                className="h-[38px] px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold text-xs shadow-md shadow-orange-500/20 hover:from-amber-400 hover:to-orange-400 active:scale-95 transition cursor-pointer flex items-center gap-1.5"
-              >
-                <UserPlus className="w-3.5 h-3.5 text-slate-950" />
-                <span>+ Hire / Add Waiter</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="p-3.5 rounded-xl bg-[#0B0F19] border border-white/[0.07] flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-slate-400 font-medium block">Total Hired Accounts</span>
-                <span className="text-xl font-extrabold text-white mt-0.5 block">{employees.length} Staff</span>
-              </div>
-              <Users className="w-4 h-4 text-slate-400" />
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#0B0F19] border border-white/[0.07] flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-slate-400 font-medium block">Active On Floor</span>
-                <span className="text-xl font-extrabold text-emerald-400 mt-0.5 block">{summaryMetrics.activeOnDuty} On-Duty</span>
-              </div>
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#0B0F19] border border-white/[0.07] flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-slate-400 font-medium block">Station Tables Covered</span>
-                <span className="text-xl font-extrabold text-amber-400 mt-0.5 block">{summaryMetrics.tablesCovered} / {totalVenueTables}</span>
-              </div>
-              <Table className="w-4 h-4 text-amber-400" />
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#0B0F19] border border-white/[0.07] flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-slate-400 font-medium block">Console Terminal URL</span>
-                <span className="font-mono text-xs font-bold text-emerald-400 mt-0.5 block">/waiter (Live)</span>
-              </div>
-              <Smartphone className="w-4 h-4 text-emerald-400" />
-            </div>
-          </div>
-
-          {/* Waiter Portal Credentials Cards */}
-          {filteredEmployees.length === 0 ? (
-            <div className="p-12 text-center text-slate-400 bg-[#0B0F19] rounded-xl border border-white/[0.07]">
-              <Key className="w-10 h-10 text-slate-500 mx-auto mb-3" />
-              <p className="text-sm font-bold text-white">No Waiter Accounts Found</p>
-              <p className="text-xs text-slate-400 mt-1">Try clearing your search query or add a new waiter profile</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredEmployees.map(emp => {
-                const assignedTables = emp.assignedTables || [];
-                const isRevealed = !!revealedPins[emp.id];
-                const code = emp.accountCode || emp.waiterCode || `WAIT-${100 + (emp.numericId || 1)}`;
-                const pin = emp.passcode || emp.waiterPin || '1234';
-
-                return (
-                  <div
-                    key={emp.id}
-                    className="p-5 rounded-2xl bg-[#0B0F19] border border-white/[0.07] hover:border-amber-500/40 transition-colors shadow-lg flex flex-col justify-between space-y-4"
-                  >
-                    {/* Top Row: Avatar, Name, Role, Shift, Status */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        {renderAvatar(emp)}
-                        <div className="min-w-0">
-                          <h4 className="text-base font-bold text-white truncate">
-                            {emp.name}
-                          </h4>
-                          <p className="text-xs text-slate-400 font-medium truncate">
-                            {emp.role} &bull; <span className={getShiftColor(emp)}>{emp.shift}</span>
-                          </p>
-                          <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                            {emp.phone || 'No phone'} &bull; {emp.email || 'No email'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                          emp.status === 'Active'
-                            ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-500/40'
-                            : emp.status === 'Busy'
-                            ? 'bg-amber-950/70 text-amber-300 border border-amber-500/40'
-                            : emp.status === 'On Break'
-                            ? 'bg-slate-800 text-slate-300 border border-slate-600'
-                            : 'bg-rose-950/70 text-rose-300 border border-rose-500/40'
-                        }`}
-                      >
-                        {emp.status}
-                      </span>
-                    </div>
-
-                    {/* Credentials Matrix Box */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl bg-[#111726]/80 border border-white/[0.07]">
-                      {/* Account ID / Code */}
-                      <div className="flex flex-col justify-between p-2.5 rounded-lg bg-[#080B11] border border-slate-800">
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold mb-1">
-                          <span className="flex items-center gap-1">
-                            <Key className="w-3 h-3 text-amber-400" />
-                            <span>Staff Account ID</span>
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                                navigator.clipboard.writeText(code);
-                                showToast(`Copied Account ID (${code}) to clipboard!`, 'success');
-                              }
-                            }}
-                            className="text-slate-400 hover:text-amber-400 transition cursor-pointer p-0.5"
-                            title="Copy Account ID"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
-                        </div>
-                        <span className="font-mono text-sm font-black text-amber-400 tracking-wide">
-                          {code}
-                        </span>
-                      </div>
-
-                      {/* 4-Digit Console PIN */}
-                      <div className="flex flex-col justify-between p-2.5 rounded-lg bg-[#080B11] border border-slate-800">
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold mb-1">
-                          <span className="flex items-center gap-1">
-                            <Lock className="w-3 h-3 text-emerald-400" />
-                            <span>4-Digit Console PIN</span>
-                          </span>
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => setRevealedPins(prev => ({ ...prev, [emp.id]: !prev[emp.id] }))}
-                              className="text-slate-400 hover:text-white transition cursor-pointer p-0.5"
-                              title={isRevealed ? 'Hide PIN' : 'Reveal PIN'}
-                            >
-                              {isRevealed ? <EyeOff className="w-3 h-3 text-amber-400" /> : <Eye className="w-3 h-3" />}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleQuickResetPin(emp.id)}
-                              className="text-slate-400 hover:text-emerald-400 transition cursor-pointer p-0.5"
-                              title="1-click Quick Reset PIN"
-                            >
-                              <RotateCcw className="w-3 h-3" />
-                            </button>
-                          </div>
-                        </div>
-                        <span className="font-mono text-sm font-black text-emerald-400 tracking-widest">
-                          {isRevealed ? pin : '••••'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Assigned Station Tables */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400 font-semibold flex items-center gap-1.5">
-                          <Table className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Assigned Station Tables ({assignedTables.length})</span>
-                        </span>
-                        <span className="text-[10px] text-slate-500">
-                          {assignedTables.length > 0 ? 'Active Station' : 'Unassigned'}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {assignedTables.length > 0 ? (
-                          assignedTables.map(t => (
-                            <span
-                              key={t}
-                              className="font-bold text-xs px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300"
-                            >
-                              Table {t}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-xs text-slate-500 italic">No tables assigned yet</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Bottom Action Strip */}
-                    <div className="pt-3 border-t border-white/[0.07] flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => handleCopyLoginCard(emp)}
-                          className="px-3 py-1.5 rounded-xl bg-[#131926] hover:bg-amber-500/20 text-slate-200 hover:text-amber-300 border border-white/[0.07] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
-                          title="Copy ready-to-share login details"
-                        >
-                          <Copy className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Copy Login Card</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setKeycardModalEmployee(emp)}
-                          className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
-                          title="View Digital Passcard"
-                        >
-                          <Smartphone className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Digital Passcard</span>
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handleQuickResetPin(emp.id)}
-                          className="px-2.5 py-1.5 rounded-xl bg-[#131926] hover:bg-slate-800 text-slate-300 hover:text-white border border-white/[0.07] text-xs font-semibold transition cursor-pointer flex items-center gap-1 shadow-sm"
-                          title="Generate new 4-digit PIN"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Reset PIN</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditModal(emp)}
-                          className="w-8 h-8 rounded-xl bg-[#131926] hover:bg-slate-800 text-slate-300 hover:text-white border border-white/[0.07] flex items-center justify-center transition cursor-pointer shadow-sm"
-                          title="Edit waiter profile"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      )}
-
+          TAB 2 (removed): waiter credentials now live on each People card and in the detail drawer
+      ========================================================================= */}
       {/* =========================================================================
           TAB B: DINING ROOM TABLE COVERAGE (TABLES 1-12)
           ========================================================================= */}
@@ -2775,7 +2423,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                 type="button"
                 onClick={requestAutoBalanceTables}
                 className="h-[38px] px-3.5 rounded-xl border border-slate-700 text-slate-200 hover:border-amber-500/40 hover:text-white bg-[#0B0F19] text-xs font-semibold transition active:scale-95 cursor-pointer flex items-center gap-2 shadow-sm"
-                title="Auto-balance tables across staff (Requires PIN 808080)"
+                title="Auto-balance tables across staff (Requires admin PIN)"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>Auto-Balance Tables</span>
@@ -2868,7 +2516,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                       </label>
                       <span
                         className="inline-flex items-center gap-0.5 text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1 py-0.2 rounded"
-                        title="Requires PIN 808080"
+                        title="Requires admin PIN"
                       >
                         <Lock className="w-2.5 h-2.5" />
                         <span>PIN</span>
@@ -2904,7 +2552,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
       {/* =========================================================================
           TAB C: LIVE CALL ROUTING & KITCHEN DISPATCH
           ========================================================================= */}
-      {activeTab === 'dispatch' && (
+      {activeTab === 'tables' && (
         <section className="bg-[#111726]/95 backdrop-blur-md admin-card border border-white/[0.07] p-5 sm:p-6 space-y-5 animate-fadeIn">
           {/* Dispatch Subheader */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.07]">
@@ -3414,7 +3062,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                       isOpen: true,
                       actionTitle: 'Authorize Clear Activity History',
                       actionDescription: `Permanently delete all ${activityLogs.length} activity audit log records. This action cannot be reversed.`,
-                      actionNotice: 'Admin PIN verification (808080) required to clear history.',
+                      actionNotice: 'Admin PIN verification required to clear history.',
                       pendingAction: () => clearActivityLogs()
                     });
                   }}
@@ -3599,23 +3247,19 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                     type="button"
                     onClick={() => {
                       const autoUser = formData.name ? formData.name.toLowerCase().replace(/\s+/g, '') : generateNextWaiterCode().toLowerCase();
-                      const pin = generateRandomPin();
                       setFormData({
                         ...formData,
                         username: autoUser,
-                        password: pin,
                         accountCode: autoUser.toUpperCase(),
-                        waiterCode: autoUser.toUpperCase(),
-                        passcode: pin,
-                        waiterPin: pin
+                        waiterCode: autoUser.toUpperCase()
                       });
-                      showToast('Generated fresh Username and Password!', 'info');
+                      showToast('Generated a fresh username', 'info');
                     }}
                     className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition cursor-pointer"
                     title="Auto-generate fresh Username & Password"
                   >
                     <RefreshCw className="w-3 h-3 text-amber-400" />
-                    <span>Auto Generate</span>
+                    <span>Auto username</span>
                   </button>
                 </div>
 
@@ -3646,43 +3290,51 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
-                      <span>Password *</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const pin = generateRandomPin();
-                          setFormData({ ...formData, password: pin, passcode: pin, waiterPin: pin });
-                        }}
-                        className="text-[10px] text-amber-400 hover:underline cursor-pointer"
-                      >
-                        Roll Random
-                      </button>
-                    </label>
-                    <div className="relative">
-                      <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      <input
-                        type={showModalPin ? 'text' : 'password'}
-                        required
-                        placeholder="e.g. 1234"
-                        value={formData.password || formData.passcode || formData.waiterPin || ''}
-                        onChange={e => {
-                          const val = e.target.value;
-                          setFormData({ ...formData, password: val, passcode: val, waiterPin: val });
-                        }}
-                        className="w-full bg-[#111726] border border-white/[0.07] text-emerald-400 font-mono font-bold text-xs tracking-widest rounded-xl pl-9 pr-9 py-2.5 focus:outline-none focus:border-amber-500 transition"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowModalPin(!showModalPin)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition cursor-pointer"
-                        title={showModalPin ? 'Hide Password' : 'View Password'}
-                      >
-                        {showModalPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
+                  {!editingEmployee ? (
+                    <div className="staff-pw-fields">
+                      <div>
+                        <label htmlFor="staff-new-password" className="staff-field-label">Initial password * (4 to 8 digits)</label>
+                        <input
+                          id="staff-new-password"
+                          type="password"
+                          inputMode="numeric"
+                          autoComplete="new-password"
+                          required
+                          maxLength={8}
+                          value={formData.password}
+                          onChange={e => setFormData({ ...formData, password: e.target.value.replace(/\D/g, '') })}
+                          className="staff-input"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="staff-confirm-password" className="staff-field-label">Confirm password *</label>
+                        <input
+                          id="staff-confirm-password"
+                          type="password"
+                          inputMode="numeric"
+                          autoComplete="new-password"
+                          required
+                          maxLength={8}
+                          value={formData.confirmPassword}
+                          onChange={e => setFormData({ ...formData, confirmPassword: e.target.value.replace(/\D/g, '') })}
+                          className="staff-input"
+                        />
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="staff-pw-fields">
+                      <div>
+                        <span className="staff-field-label">Password</span>
+                        <div className="staff-cred-value staff-cred-masked">{STAFF_PASSWORD_MASK}</div>
+                      </div>
+                      <div className="staff-pw-edit">
+                        <button type="button" onClick={() => openResetPassword(editingEmployee.id)} className="staff-btn staff-btn-primary">
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Set new password</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
@@ -3943,6 +3595,34 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
       {/* =========================================================================
           MODAL 4: DIGITAL WAITER KEYCARD PREVIEW MODAL
           ========================================================================= */}
+      {detailEmpId && (() => {
+        const detailEmp = employees.find(e => e.id === detailEmpId);
+        if (!detailEmp) return null;
+        return (
+          <StaffDetailDrawer
+            emp={detailEmp}
+            employees={employees}
+            tableCustody={tableCustody}
+            activityLogs={activityLogs}
+            onClose={() => setDetailEmpId(null)}
+            onResetPassword={() => openResetPassword(detailEmp.id)}
+            onCopyCard={() => handleCopyLoginCard(detailEmp)}
+            onKeycard={() => setKeycardModalEmployee(detailEmp)}
+            onEdit={() => { setDetailEmpId(null); handleOpenEditModal(detailEmp); }}
+          />
+        );
+      })()}
+
+      {resetPwTarget && (
+        <ResetPasswordDialog
+          target={resetPwTarget}
+          form={resetPwForm}
+          setForm={setResetPwForm}
+          onSubmit={submitPasswordReset}
+          onCancel={() => setResetPwTarget(null)}
+        />
+      )}
+
       {keycardModalEmployee && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
           <div className="bg-[#111726]/95 backdrop-blur-md border border-amber-500/30 rounded-2xl w-full max-w-md shadow-2xl p-6 relative text-slate-100 space-y-5">
@@ -4018,10 +3698,10 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
 
                 <div className="p-3 rounded-xl bg-[#080B11]/90 border border-slate-700/60 shadow-inner">
                   <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">
-                    Console PIN
+                    Password
                   </span>
-                  <span className="font-mono text-base font-black text-emerald-400 tracking-widest mt-1 block">
-                    {keycardModalEmployee.passcode || keycardModalEmployee.waiterPin || '1234'}
+                  <span className="font-mono text-base font-black text-emerald-400 tracking-widest mt-1 block" aria-label="Password hidden">
+                    {STAFF_PASSWORD_MASK}
                   </span>
                 </div>
               </div>
@@ -4064,19 +3744,11 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
 
               <button
                 type="button"
-                onClick={() => {
-                  handleQuickResetPin(keycardModalEmployee.id);
-                  const generated = String(Math.floor(1000 + Math.random() * 9000));
-                  setKeycardModalEmployee(prev => prev ? {
-                    ...prev,
-                    passcode: generated,
-                    waiterPin: generated
-                  } : null);
-                }}
-                className="px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                onClick={() => openResetPassword(keycardModalEmployee.id)}
+                className="px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset PIN</span>
+                <span>Set new password</span>
               </button>
 
               <button
@@ -4092,7 +3764,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
       )}
 
       {/* =======================================================================
-          ADMIN STAFF ASSIGNMENT SECURITY MODAL (PIN: 808080)
+          ADMIN STAFF ASSIGNMENT SECURITY MODAL (PIN)
           ======================================================================= */}
       <TableSecurityModal
         isOpen={securityModalState.isOpen}
@@ -4107,6 +3779,191 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
         actionNotice={securityModalState.actionNotice}
         pendingData={securityModalState.pendingAction}
       />
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * Staff detail drawer: profile, tables, login (masked) and recent activity.
+ * ------------------------------------------------------------------------- */
+function StaffDetailDrawer({ emp, employees, tableCustody, activityLogs, onClose, onResetPassword, onCopyCard, onKeycard, onEdit }) {
+  const tables = emp.assignedTables || [];
+  const ownTables = Object.keys(tableCustody || {})
+    .map(Number)
+    .filter(t => tableCustody[t]?.originalOwnerId === emp.id);
+  const recent = (activityLogs || [])
+    .filter(log => {
+      const actor = String(log.actorName || '');
+      const target = String(log.target || '');
+      return actor === emp.name || target.includes(emp.name);
+    })
+    .slice(0, 8);
+
+  return (
+    <div className="staff-drawer-backdrop" onClick={onClose}>
+      <aside
+        className="staff-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${emp.name} details`}
+        onClick={e => e.stopPropagation()}
+      >
+        <header className="staff-drawer-head">
+          <div className="min-w-0">
+            <h3 className="staff-drawer-title">{emp.name}</h3>
+            <p className="staff-drawer-sub">{emp.role} &middot; {emp.status}</p>
+          </div>
+          <button type="button" onClick={onClose} className="staff-icon-btn" aria-label="Close details">
+            <X className="w-4 h-4" />
+          </button>
+        </header>
+
+        <section className="staff-drawer-section">
+          <div className="staff-drawer-section-head">
+            <h4>Profile</h4>
+            <button type="button" onClick={onEdit} className="staff-btn staff-btn-ghost">
+              <Edit2 className="w-3.5 h-3.5" />
+              <span>Edit</span>
+            </button>
+          </div>
+          <dl className="staff-dl">
+            <dt>Shift</dt><dd>{emp.shift || 'Not set'}</dd>
+            <dt>Hours today</dt><dd>{formatHours(hoursTodayFor(staffKey(emp)))}</dd>
+            <dt>Phone</dt><dd>{emp.phone || 'Not set'}</dd>
+            <dt>Email</dt><dd className="break-all">{emp.email || 'Not set'}</dd>
+            <dt>Hired</dt><dd>{emp.hiredAt || 'Not set'}</dd>
+          </dl>
+        </section>
+
+        <section className="staff-drawer-section">
+          <h4>Assigned tables ({tables.length})</h4>
+          {tables.length === 0 ? (
+            <p className="staff-muted">No tables assigned. Assign tables from Tables &amp; Routing or Edit.</p>
+          ) : (
+            <div className="staff-chips">
+              {tables.slice().sort((a, b) => a - b).map(t => (
+                <span key={t} className="staff-chip">T{t}</span>
+              ))}
+            </div>
+          )}
+          {ownTables.length > 0 && (
+            <p className="staff-muted">Original custody: {ownTables.map(t => `T${t}`).join(', ')}</p>
+          )}
+        </section>
+
+        <section className="staff-drawer-section">
+          <h4>Login &amp; credentials</h4>
+          <dl className="staff-dl">
+            <dt>Login ID</dt>
+            <dd><code className="staff-cred-value">{emp.accountCode || emp.waiterCode || 'Not set'}</code></dd>
+            <dt>Password</dt>
+            <dd><code className="staff-cred-value staff-cred-masked">{STAFF_PASSWORD_MASK}</code></dd>
+          </dl>
+          <p className="staff-muted">
+            Passwords are never shown. To give a new one, use Set new password (requires the admin master PIN).
+          </p>
+          <div className="staff-cred-actions">
+            <button type="button" onClick={onResetPassword} className="staff-btn staff-btn-primary">
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Set new password</span>
+            </button>
+            <button type="button" onClick={onCopyCard} className="staff-btn">
+              <Copy className="w-3.5 h-3.5" />
+              <span>Copy card</span>
+            </button>
+            <button type="button" onClick={onKeycard} className="staff-btn">
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Keycard</span>
+            </button>
+          </div>
+        </section>
+
+        <section className="staff-drawer-section">
+          <h4>Recent activity</h4>
+          {recent.length === 0 ? (
+            <p className="staff-muted">No recent activity recorded for {emp.name}.</p>
+          ) : (
+            <ul className="staff-activity-list">
+              {recent.map((log, i) => (
+                <li key={log.id || i}>
+                  <span className="staff-activity-desc">{log.description || log.actionType || 'Activity'}</span>
+                  {log.time && <span className="staff-muted">{log.time}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </aside>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * Reset password dialog: new password x2 + admin master PIN. Old value is never shown.
+ * ------------------------------------------------------------------------- */
+function ResetPasswordDialog({ target, form, setForm, onSubmit, onCancel }) {
+  return (
+    <div className="staff-modal-backdrop" onClick={onCancel}>
+      <form
+        className="staff-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="staff-reset-title"
+        onClick={e => e.stopPropagation()}
+        onSubmit={onSubmit}
+      >
+        <h3 id="staff-reset-title" className="staff-drawer-title">Set new password</h3>
+        <p className="staff-muted">
+          For <strong>{target.name}</strong>. The current password cannot be viewed. Enter a new one below.
+        </p>
+
+        <label className="staff-field-label" htmlFor="staff-reset-new">New password (4 to 8 digits)</label>
+        <input
+          id="staff-reset-new"
+          type="password"
+          inputMode="numeric"
+          autoComplete="new-password"
+          maxLength={8}
+          autoFocus
+          required
+          value={form.next}
+          onChange={e => setForm({ ...form, next: e.target.value.replace(/\D/g, ''), error: '' })}
+          className="staff-input"
+        />
+
+        <label className="staff-field-label" htmlFor="staff-reset-confirm">Confirm new password</label>
+        <input
+          id="staff-reset-confirm"
+          type="password"
+          inputMode="numeric"
+          autoComplete="new-password"
+          maxLength={8}
+          required
+          value={form.confirm}
+          onChange={e => setForm({ ...form, confirm: e.target.value.replace(/\D/g, ''), error: '' })}
+          className="staff-input"
+        />
+
+        <label className="staff-field-label" htmlFor="staff-reset-master">Admin master PIN</label>
+        <input
+          id="staff-reset-master"
+          type="password"
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={8}
+          required
+          value={form.masterPin}
+          onChange={e => setForm({ ...form, masterPin: e.target.value, error: '' })}
+          className="staff-input"
+        />
+
+        {form.error && <p className="staff-error" role="alert">{form.error}</p>}
+
+        <div className="staff-modal-actions">
+          <button type="button" onClick={onCancel} className="staff-btn">Cancel</button>
+          <button type="submit" className="staff-btn staff-btn-primary">Save new password</button>
+        </div>
+      </form>
     </div>
   );
 }

@@ -1,0 +1,188 @@
+/*
+ * ==========================================================================
+ * ADMIN UI PRIMITIVES  (src/styles/admin-ui.css)
+ * --------------------------------------------------------------------------
+ * Reusable classes for every admin module. All colors come from the
+ * --adm-* tokens defined in admin.css on .admin-shell. Works in both themes.
+ * Render inside an element with class "admin-shell" and data-theme set.
+ *
+ *  .adm-card                   Surface panel: surface bg, border, 14px radius, 16px padding.
+ *  .adm-btn                    Base button: 36px tall, secondary (outlined) look.
+ *  .adm-btn--primary           Filled accent button (primary + primary-fg).
+ *  .adm-btn--ghost             Borderless, muted; for toolbars and row actions.
+ *  .adm-btn--danger            Destructive outline in danger color.
+ *  .adm-badge                  Pill label, neutral. Add .adm-badge--success | --warning |
+ *                              --danger | --info | --primary for a tinted status.
+ *  .adm-input                  Text input / select / textarea, 36px tall, focus ring.
+ *  .adm-table                  Wrap in .adm-table-wrap for horizontal scroll on phones.
+ *                              Uses <thead> th and <tbody> td.
+ *  .adm-table-wrap             Scroll container for .adm-table.
+ *  .adm-empty                  Dashed empty-state block with centered muted text.
+ *  .adm-section-title          Section heading (15px semibold) with optional muted sub.
+ *  .adm-section-sub            Muted one-line description under .adm-section-title.
+ *  .adm-muted                  Muted text color helper.
+ * ========================================================================== */
+
+.adm-card {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: 14px;
+  padding: 16px;
+  color: var(--adm-text);
+  min-width: 0;
+}
+
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface);
+  color: var(--adm-text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.adm-btn:hover:not(:disabled) { background: var(--adm-surface-2); }
+.adm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.adm-btn--primary {
+  background: var(--adm-primary);
+  border-color: transparent;
+  color: var(--adm-primary-fg);
+}
+.adm-btn--primary:hover:not(:disabled) {
+  background: var(--adm-primary);
+  filter: brightness(1.06);
+}
+
+.adm-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--adm-text-muted);
+}
+.adm-btn--ghost:hover:not(:disabled) {
+  background: var(--adm-surface-2);
+  color: var(--adm-text);
+}
+
+.adm-btn--danger {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--adm-danger) 45%, transparent);
+  color: var(--adm-danger);
+}
+.adm-btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--adm-danger) 12%, transparent);
+}
+
+.adm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface-2);
+  color: var(--adm-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+.adm-badge--success { color: var(--adm-success); border-color: color-mix(in srgb, var(--adm-success) 35%, transparent); background: color-mix(in srgb, var(--adm-success) 12%, transparent); }
+.adm-badge--warning { color: var(--adm-warning); border-color: color-mix(in srgb, var(--adm-warning) 35%, transparent); background: color-mix(in srgb, var(--adm-warning) 12%, transparent); }
+.adm-badge--danger  { color: var(--adm-danger);  border-color: color-mix(in srgb, var(--adm-danger) 35%, transparent);  background: color-mix(in srgb, var(--adm-danger) 12%, transparent); }
+.adm-badge--info    { color: var(--adm-info);    border-color: color-mix(in srgb, var(--adm-info) 35%, transparent);    background: color-mix(in srgb, var(--adm-info) 12%, transparent); }
+.adm-badge--primary { color: var(--adm-primary); border-color: color-mix(in srgb, var(--adm-primary) 35%, transparent); background: color-mix(in srgb, var(--adm-primary) 12%, transparent); }
+
+.adm-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface-2);
+  color: var(--adm-text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.adm-input::placeholder { color: var(--adm-text-muted); opacity: 0.8; }
+.adm-input:focus {
+  border-color: var(--adm-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--adm-primary) 25%, transparent);
+}
+.adm-input:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.adm-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--adm-border);
+  border-radius: 14px;
+  background: var(--adm-surface);
+}
+
+.adm-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  color: var(--adm-text);
+}
+.adm-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--adm-text-muted);
+  background: var(--adm-surface-2);
+  border-bottom: 1px solid var(--adm-border);
+  white-space: nowrap;
+}
+.adm-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--adm-border);
+  vertical-align: middle;
+}
+.adm-table tbody tr:last-child td { border-bottom: 0; }
+.adm-table tbody tr:hover td { background: var(--adm-surface-2); }
+
+.adm-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--adm-text-muted);
+  font-size: 14px;
+  border: 1px dashed var(--adm-border);
+  border-radius: 14px;
+  background: var(--adm-surface);
+}
+
+.adm-section-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--adm-text);
+}
+.adm-section-sub {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--adm-text-muted);
+}
+
+.adm-muted { color: var(--adm-text-muted); }

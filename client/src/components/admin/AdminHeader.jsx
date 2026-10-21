@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { BillSettingsModal } from './BillReceipt';
 import {
   Search,
   Bell,
@@ -15,6 +16,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Menu,
+  Printer,
   Lock,
   Grid3X3,
   ShoppingBag,
@@ -59,6 +61,7 @@ export default function AdminHeader({
 }) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isBillSettingsOpen, setIsBillSettingsOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchIndex, setSearchIndex] = useState(0);
@@ -298,18 +301,14 @@ export default function AdminHeader({
         )}
 
         <div className="flex flex-col" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
-          <div className={`flex items-center gap-2 text-[11px] font-bold ${
-            isDarkMode ? 'text-slate-400' : 'text-slate-500'
-          }`}>
+          <div className="flex items-center gap-2 text-[11px] font-bold" style={{ color: 'var(--adm-text-muted)' }}>
             <span>Admin</span>
-            <ChevronRight className={`w-3 h-3 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`} />
-            <span className={isDarkMode ? 'text-amber-400 font-bold' : 'text-amber-600 font-bold'}>
+            <ChevronRight className="w-3 h-3" style={{ color: 'var(--adm-text-muted)', opacity: 0.7 }} />
+            <span style={{ color: 'var(--adm-primary)' }} className="font-bold">
               {currentMeta.breadcrumb}
             </span>
           </div>
-          <h1 className={`text-base sm:text-lg font-black tracking-tight leading-tight whitespace-nowrap ${
-            isDarkMode ? 'text-white' : 'text-slate-900'
-          }`}>
+          <h1 className="text-base sm:text-lg font-black tracking-tight leading-tight whitespace-nowrap" style={{ color: 'var(--adm-text)' }}>
             {currentMeta.title}
           </h1>
         </div>
@@ -569,6 +568,17 @@ export default function AdminHeader({
               <button
                 type="button"
                 onClick={() => {
+                  setIsProfileOpen(false);
+                  setIsBillSettingsOpen(true);
+                }}
+                className="admin-profile-signout"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Receipt settings</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   if (window.confirm('Sign out of the admin panel?')) {
                     setIsProfileOpen(false);
                     handleLockLogout();
@@ -583,6 +593,7 @@ export default function AdminHeader({
           )}
         </div>
       </div>
+      <BillSettingsModal open={isBillSettingsOpen} onClose={() => setIsBillSettingsOpen(false)} />
     </header>
   );
 }

@@ -139,7 +139,7 @@ export default function AdminSidebar({
 
       {/* Footer: live status only */}
       <div className="admin-sidebar-footer">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" aria-hidden="true" />
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--adm-success)' }} aria-hidden="true" />
         <span className="truncate">System online</span>
       </div>
     </aside>

@@ -1,0 +1,137 @@
+/* Z-report and day-close panel. Colours come from the admin theme tokens (admin.css). */
+
+.zreport-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--adm-text);
+}
+
+.zreport-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.zreport-toolbar-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--adm-text-muted);
+}
+
+.zreport-print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface-2);
+  color: var(--adm-text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.zreport-print-btn:hover {
+  border-color: var(--adm-primary);
+  color: var(--adm-primary);
+}
+
+/* On screen the receipt is a narrow card so it previews like a slip */
+.zreport-print {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px dashed var(--adm-border);
+  background: var(--adm-surface);
+  font-family: 'Courier New', ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--adm-text);
+  box-sizing: border-box;
+}
+
+.zreport-center {
+  text-align: center;
+}
+
+.zreport-title {
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.zreport-divider {
+  margin: 8px 0;
+  border-top: 1px dashed var(--adm-border);
+}
+
+.zreport-section {
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+
+.zreport-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.zreport-row > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.zreport-row > span:last-child {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.zreport-strong {
+  font-weight: 800;
+}
+
+.zreport-muted {
+  color: var(--adm-text-muted);
+}
+
+/* Print: only the receipt, sized for a narrow 80mm thermal roll */
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 4mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .zreport-print,
+  .zreport-print * {
+    visibility: visible !important;
+  }
+
+  .zreport-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 72mm;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: #fff;
+    color: #000;
+    font-size: 11px;
+  }
+
+  .no-print-zreport {
+    display: none !important;
+  }
+}
