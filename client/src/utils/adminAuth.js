@@ -1,3 +1,5 @@
+import { resolveServerUrl } from '../context/SocketContext';
+
 /**
  * Admin PIN verification. The master PIN lives only on the server.
  * If the server cannot be reached, verification fails closed (returns false).
@@ -6,7 +8,7 @@ export async function verifyAdminPin(pin) {
   const value = String(pin ?? '').trim();
   if (!value) return false;
   try {
-    const res = await fetch('/api/auth/admin-pin', {
+    const res = await fetch(`${resolveServerUrl()}/api/auth/admin-pin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pin: value })

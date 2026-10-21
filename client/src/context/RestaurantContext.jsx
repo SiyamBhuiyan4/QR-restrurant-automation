@@ -1720,7 +1720,7 @@ export function RestaurantProvider({ children }) {
 
     let cancelled = false;
     Promise.all(ids.map(id =>
-      fetch(`/api/staff/messages?recipient=${encodeURIComponent(id)}`)
+      fetch(`${resolveServerUrl()}/api/staff/messages?recipient=${encodeURIComponent(id)}`)
         .then(res => (res.ok ? res.json() : null))
         .then(json => (json?.success && Array.isArray(json.data) ? json.data : []))
         .catch(() => [])
@@ -2381,7 +2381,7 @@ export function RestaurantProvider({ children }) {
     // Persist on the server so staff on other devices receive it.
     // If the server is unreachable the message stays in local state (offline fallback).
     try {
-      fetch('/api/staff/messages', {
+      fetch(`${resolveServerUrl()}/api/staff/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newMsg)

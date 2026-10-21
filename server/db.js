@@ -3,7 +3,8 @@ const path = require('path');
 const fs = require('fs');
 
 // Ensure database directory exists
-const dbDir = __dirname;
+// DATA_DIR lets a hosted deployment keep the database on a persistent disk
+const dbDir = process.env.DATA_DIR || __dirname;
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
