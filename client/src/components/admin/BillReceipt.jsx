@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Printer, X, CheckCircle2 } from 'lucide-react';
-import { resolveServerUrl } from '../../context/SocketContext';
 import { createSettlementInConvex } from '../../utils/convexServices';
+import { convex } from '../../convexClient.js';
+import { api } from '../../convexApi';
+import { mapConvexOrders } from '../../utils/convexOrders.js';
 import '../../styles/receipt.css';
 
 /**
@@ -10,8 +12,8 @@ import '../../styles/receipt.css';
  *
  * - Settings (restaurant name, tax %, service %, footer) live in localStorage.
  * - Settling a table records the payment method in a local settlement ledger and
- *   best-effort marks the server orders as `completed` through the existing
- *   PATCH /api/orders/:id/status route (the server has no paid/payment field).
+ *   best-effort marks the Convex orders as `completed` through api.orders.updateOrderStatus
+ *   (Convex has no paid/payment field on orders).
  */
 
 export const BILL_SETTINGS_KEY = 'smartdine_bill_settings';
@@ -74,7 +76,8 @@ export function normalizeOrder(order) {
     qty: Math.max(1, Number(it.quantity ?? it.qty) || 1),
     price: Number(it.price) || 0
   }));
-  const serverId = /^\d+$/.test(String(order.id ?? '')) ? String(order.id) : null;
+  const rawId = String(order.id ?? '');
+  const serverId = rawId && !rawId.startsWith('ord_') ? rawId : null;
   return {
     id: String(order.id),
     serverId,
@@ -145,21 +148,14 @@ export async function settleTableOrders({ bill, paymentMethod, orders }) {
   const ledger = readJson(BILL_SETTLEMENTS_KEY, []);
   writeJson(BILL_SETTLEMENTS_KEY, [record, ...(Array.isArray(ledger) ? ledger : [])].slice(0, 200));
 
-  const base = resolveServerUrl();
   try {
     await createSettlementInConvex(record);
   } catch (_) { /* offline: local ledger already holds the record */ }
 
-  // Best-effort: use the existing order status route for orders that exist on the server
+  // Best-effort: mark the Convex orders completed (orders without a Convex id are skipped)
   const serverOrders = orders.map(normalizeOrder).filter((o) => o.serverId);
   await Promise.allSettled(
-    serverOrders.map((o) =>
-      fetch(`${base}/api/orders/${o.serverId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'completed' })
-      })
-    )
+    serverOrders.map((o) => convex.mutation(api.orders.updateOrderStatus, { orderId: o.serverId, status: 'completed' }))
   );
   return record;
 }
@@ -443,9 +439,9 @@ export function TableBillLookup() {
     setBusy(true);
     setError('');
     try {
-      const res = await fetch(`${resolveServerUrl()}/api/orders?table=${tableNumber}&limit=100`);
-      const body = await res.json();
-      const open = (body.data || []).filter(o => !['completed', 'cancelled'].includes(String(o.status || '').toLowerCase()));
+      const rows = await convex.query(api.orders.getOrders, { tableNumber });
+      const open = mapConvexOrders(rows)
+        .filter(o => !['completed', 'cancelled'].includes(String(o.status || '').toLowerCase()));
       if (open.length === 0) {
         setError(`No open orders for table ${tableNumber}`);
       } else {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
-import { resolveServerUrl, useSocket } from '../context/SocketContext';
+import { convex } from '../convexClient.js';
+import { useSocket } from '../context/SocketContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import { getPendingOrders, getPendingWaiterCalls } from '../db/indexedDb.js';
 
@@ -229,25 +230,26 @@ export default function AdminDashboard({ className = '' }) {
     resolveConvexCall = useMutation(api.waiter.resolveCall);
   } catch (_) {}
 
-  // Fetch live stats from server/DB
+  // Live restaurant stats (Convex subscription) and a manual refresh that re-reads them
+  let liveStats = undefined;
+  try {
+    liveStats = useQuery(api.orders.getStats, {});
+  } catch (_) {}
+
+  useEffect(() => {
+    if (liveStats) {
+      setServerStats(liveStats);
+      setIsOfflineMode(false);
+    }
+  }, [liveStats]);
+
+  // Re-read stats from Convex (refresh button)
   const fetchDashboardData = useCallback(async (isSilent = false) => {
     if (!isSilent) setIsRefreshing(true);
-    const serverUrl = resolveServerUrl();
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
-
-      const [statsRes, ordersRes] = await Promise.allSettled([
-        fetch(`${serverUrl}/api/stats`, { signal: controller.signal }),
-        fetch(`${serverUrl}/api/orders?limit=30`, { signal: controller.signal })
-      ]);
-      clearTimeout(timeoutId);
-
-      if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
-        const s = await statsRes.value.json();
-        setServerStats(s);
-      }
+      const s = await convex.query(api.orders.getStats, {});
+      setServerStats(s);
       setIsOfflineMode(false);
     } catch (err) {
       setIsOfflineMode(true);
@@ -255,12 +257,6 @@ export default function AdminDashboard({ className = '' }) {
       if (!isSilent) setIsRefreshing(false);
     }
   }, []);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchDashboardData(true);
-    }
-  }, [fetchDashboardData, isAuthenticated]);
 
   // ---------------------------------------------------------------------------
   // INTERACTIVE ACTION HANDLERS

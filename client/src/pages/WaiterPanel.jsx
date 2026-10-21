@@ -733,9 +733,6 @@ export default function WaiterPanel() {
         await resolveConvexCall({ callId });
       } catch (_) {}
     }
-
-    // 5. Update backend REST API
-    fetch(`/api/waiter/calls/${callId}/resolve`, { method: 'PATCH' }).catch(() => {});
   };
 
   // ===========================================================================

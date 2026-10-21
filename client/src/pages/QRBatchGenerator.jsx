@@ -13,7 +13,6 @@ import {
   Mic, 
   ChevronDown
 } from 'lucide-react';
-import { resolveServerUrl } from '../context/SocketContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import '../styles/admin.css';
 import '../styles/qr-generator.css';
@@ -125,7 +124,8 @@ export default function QRBatchGenerator({
   const [copiedTable, setCopiedTable] = useState(null);
   const [layoutMode, setLayoutMode] = useState('grid-2'); // 'grid-2' (2 columns) | 'grid-3' (3 columns)
 
-  // Auto-detect Server URL silently in the background
+  // Base URL for QR codes: the current site origin (the dev server on port 5173 maps to :3000).
+  // The LAN IP lookup was removed; the site origin is used instead.
   useEffect(() => {
     let defaultUrl = '';
     if (typeof window !== 'undefined') {
@@ -136,24 +136,7 @@ export default function QRBatchGenerator({
         defaultUrl = window.location.origin;
       }
     }
-
-    const fetchLanIp = async () => {
-      try {
-        const serverUrl = resolveServerUrl();
-        const res = await fetch(`${serverUrl}/api/network`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.ip || data?.lanUrl) {
-            const serverLan = data.lanUrl || `https://${data.ip}:${data.port || 3000}`;
-            setBaseUrl(serverLan);
-            return;
-          }
-        }
-      } catch (_) {}
-      setBaseUrl(defaultUrl || 'http://localhost:3000');
-    };
-
-    fetchLanIp();
+    setBaseUrl(defaultUrl || 'http://localhost:3000');
   }, []);
 
   // Compute active range

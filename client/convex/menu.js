@@ -1,13 +1,18 @@
 import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 
 export const getMenu = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    availableOnly: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
     const categories = await ctx.db.query("categories").collect();
     categories.sort((a, b) => a.sortOrder - b.sortOrder);
 
-    const items = await ctx.db.query("menuItems").collect();
+    let items = await ctx.db.query("menuItems").collect();
+    if (args.availableOnly) {
+      items = items.filter((item) => item.isAvailable);
+    }
 
     const categorized = categories.map((cat) => ({
       ...cat,
@@ -34,7 +39,11 @@ export const createCategory = mutation({
     sortOrder: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const slug = args.slug || args.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const name = args.name.trim();
+    if (!name) {
+      throw new ConvexError("Category name is required");
+    }
+    const slug = args.slug?.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const existing = await ctx.db
       .query("categories")
       .withIndex("by_slug", (q) => q.eq("slug", slug))
@@ -44,13 +53,39 @@ export const createCategory = mutation({
     }
     const categories = await ctx.db.query("categories").collect();
     const sortOrder = args.sortOrder !== undefined ? args.sortOrder : categories.length + 1;
-    const icon = args.icon || "🍽️";
+    const icon = args.icon?.trim() || "🍽️";
     return await ctx.db.insert("categories", {
-      name: args.name,
+      name,
       slug,
       icon,
       sortOrder,
     });
+  },
+});
+
+// Edits name/icon/sortOrder. The slug is not changeable because menu items reference categories by slug.
+export const updateCategory = mutation({
+  args: {
+    id: v.id("categories"),
+    name: v.optional(v.string()),
+    icon: v.optional(v.string()),
+    sortOrder: v.optional(v.number()),
+  },
+  handler: async (ctx, { id, name, icon, sortOrder }) => {
+    const existing = await ctx.db.get(id);
+    if (!existing) {
+      throw new ConvexError("Category not found");
+    }
+    const patch = {};
+    if (name !== undefined) {
+      const trimmed = name.trim();
+      if (!trimmed) throw new ConvexError("Category name is required");
+      patch.name = trimmed;
+    }
+    if (icon !== undefined) patch.icon = icon.trim() || "🍽️";
+    if (sortOrder !== undefined) patch.sortOrder = sortOrder;
+    await ctx.db.patch(id, patch);
+    return true;
   },
 });
 
@@ -68,14 +103,29 @@ export const createMenuItem = mutation({
     isAvailable: v.boolean(),
   },
   handler: async (ctx, args) => {
+    const name = args.name.trim();
+    if (!name) {
+      throw new ConvexError("Menu item name is required");
+    }
+    if (!Number.isFinite(args.price) || args.price < 0) {
+      throw new ConvexError("A valid non-negative price is required");
+    }
+
     const category = await ctx.db
       .query("categories")
       .withIndex("by_slug", (q) => q.eq("slug", args.categorySlug))
       .first();
+    if (!category) {
+      throw new ConvexError(`Category '${args.categorySlug}' does not exist`);
+    }
 
     return await ctx.db.insert("menuItems", {
       ...args,
-      categoryId: category ? category._id : undefined,
+      name,
+      description: args.description.trim(),
+      imageUrl: args.imageUrl.trim(),
+      makingVideoUrl: args.makingVideoUrl?.trim(),
+      categoryId: category._id,
     });
   },
 });
@@ -94,11 +144,21 @@ export const updateMenuItem = mutation({
     isAvailable: v.optional(v.boolean()),
   },
   handler: async (ctx, { id, ...updates }) => {
+    const existing = await ctx.db.get(id);
+    if (!existing) {
+      throw new ConvexError("Menu item not found");
+    }
     const fieldsToUpdate = {};
     for (const [key, val] of Object.entries(updates)) {
       if (val !== undefined) {
-        fieldsToUpdate[key] = val;
+        fieldsToUpdate[key] = typeof val === "string" ? val.trim() : val;
       }
+    }
+    if (fieldsToUpdate.name !== undefined && !fieldsToUpdate.name) {
+      throw new ConvexError("Menu item name is required");
+    }
+    if (fieldsToUpdate.price !== undefined && (!Number.isFinite(fieldsToUpdate.price) || fieldsToUpdate.price < 0)) {
+      throw new ConvexError("Price must be a non-negative number");
     }
     await ctx.db.patch(id, fieldsToUpdate);
     return true;

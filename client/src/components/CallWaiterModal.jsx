@@ -222,19 +222,8 @@ export default function CallWaiterModal({
         } catch (_) {}
       }
 
-      // 2. Submit to local API endpoint as fallback or companion
-      try {
-        await fetch('/api/waiter/call', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-      } catch (err) {
-        if (!convexSuccess) throw err;
-      }
+      // Convex is the only backend: if the call did not reach it, fall into the offline queue
+      if (!convexSuccess) throw new Error('Waiter call could not be sent to Convex');
 
       // Also trigger socket emit if connected as immediate fail-safe
       if (socketHelpers?.socket?.connected) {

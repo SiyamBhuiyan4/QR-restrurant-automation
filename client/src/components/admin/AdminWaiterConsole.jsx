@@ -36,6 +36,7 @@ import {
 import { useRestaurant } from '../../context/RestaurantContext';
 import { useSocket, useSocketListener } from '../../context/SocketContext';
 import { useQuery, useMutation } from 'convex/react';
+import { mapConvexOrders } from '../../utils/convexOrders.js';
 import { api } from '../../convexApi';
 import TableSecurityModal, { TableSecurityModal as PasscodeConfirmDialog } from './TableSecurityModal';
 import OrderCorrectionModal from './OrderCorrectionModal';
@@ -73,38 +74,15 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
   const restaurant = useRestaurant();
   const { socket } = useSocket();
 
-  // Open server orders per table, used for waiter void requests
-  const [serverTableOrders, setServerTableOrders] = useState([]);
+  // Open server orders per table (live Convex subscription), used for waiter void requests
   const [waiterCorrectionOrder, setWaiterCorrectionOrder] = useState(null);
-  useEffect(() => {
-    let cancelled = false;
-    const loadOpenOrders = () => {
-      fetch('/api/orders?limit=50')
-        .then(r => (r.ok ? r.json() : null))
-        .then(json => {
-          if (cancelled || !json?.success || !Array.isArray(json.data)) return;
-          setServerTableOrders(json.data
-            .filter(o => !['completed', 'cancelled'].includes(String(o.status || '').toLowerCase()))
-            .map(o => ({
-              id: String(o.id),
-              orderNumber: o.order_number,
-              tableNumber: Number(o.table_number),
-              status: o.status,
-              items: (o.items || []).map(it => ({
-                id: it.id,
-                name: it.name,
-                price: Number(it.price) || 0,
-                quantity: Number(it.quantity) || 1
-              })),
-              total: Number(o.total_amount) || 0
-            })));
-        })
-        .catch(() => {});
-    };
-    loadOpenOrders();
-    const timer = setInterval(loadOpenOrders, 15000);
-    return () => { cancelled = true; clearInterval(timer); };
-  }, []);
+  let convexRecentOrders = undefined;
+  try {
+    convexRecentOrders = useQuery(api.orders.getOrders, {});
+  } catch (_) {}
+  const serverTableOrders = useMemo(() => mapConvexOrders(convexRecentOrders)
+    .filter(o => !['completed', 'cancelled'].includes(String(o.status || '').toLowerCase())),
+    [convexRecentOrders]);
 
   // Active Tab: 'all' = All Waiters Overview, or employee.id = Specific Waiter Console
   const [selectedWaiterId, setSelectedWaiterId] = useState('all');
@@ -299,9 +277,6 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
         await resolveConvexCall({ callId });
       } catch (_) {}
     }
-
-    // 4. Update backend REST API
-    fetch(`/api/waiter/calls/${callId}/resolve`, { method: 'PATCH' }).catch(() => {});
 
     showToast(`Table ${finalTable || ''} call marked as resolved venue-wide.`, 'success');
   };

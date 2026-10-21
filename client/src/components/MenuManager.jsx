@@ -28,7 +28,7 @@ import {
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { uploadPhotoToTelegram, uploadVideoToTelegram } from '../services/telegramClient';
-import { resolveServerUrl } from '../context/SocketContext';
+import { convex } from '../convexClient.js';
 import { getCachedMenu, cacheMenu } from '../db/indexedDb.js';
 import '../styles/admin.css';
 
@@ -268,30 +268,29 @@ export default function MenuManager({ className = '' }) {
     setError(null);
     let loadedDishes = [];
 
-    const serverUrl = resolveServerUrl();
-
     try {
-      // 1. Try fetching from backend API
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-      const res = await fetch(`${serverUrl}/api/menu`, {
-        signal: controller.signal
+      // 1. Load the menu from Convex (categories with their items, flattened to dishes)
+      const menu = await convex.query(api.menu.getMenu);
+      const list = [];
+      (Array.isArray(menu) ? menu : []).forEach((cat) => {
+        (cat.items || []).forEach((item) => {
+          list.push(normalizeDish({
+            ...item,
+            id: item._id,
+            convexId: item._id,
+            category: cat.name,
+            categorySlug: cat.slug || item.categorySlug,
+            categoryId: cat._id
+          }));
+        });
       });
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const data = await res.json();
-        // Server could return { success: true, data: [...] } or direct array [...]
-        const items = Array.isArray(data) ? data : (data.data || data.menu || data.items || []);
-        if (items.length > 0) {
-          loadedDishes = items.map(normalizeDish);
-          // Update offline IndexedDB cache
-          await cacheMenu(loadedDishes);
-        }
+      if (list.length > 0) {
+        loadedDishes = list;
+        // Update offline IndexedDB cache
+        await cacheMenu(loadedDishes);
       }
     } catch (err) {
-      console.warn('[MenuManager] API fetch failed or offline, loading from IndexedDB:', err.message);
+      console.warn('[MenuManager] Convex menu load failed or offline, loading from IndexedDB:', err.message);
     }
 
     // 2. If server failed or returned empty, load from IndexedDB
@@ -314,14 +313,10 @@ export default function MenuManager({ className = '' }) {
 
     // Also fetch categories from server API
     try {
-      const catRes = await fetch(`${serverUrl}/api/menu/categories`);
-      if (catRes.ok) {
-        const catData = await catRes.json();
-        const cats = Array.isArray(catData) ? catData : (catData.data || []);
-        if (cats.length > 0) {
-          const names = cats.map(c => c.name).filter(Boolean);
-          setCustomCategories(prev => Array.from(new Set([...prev, ...names])));
-        }
+      const cats = await convex.query(api.menu.getCategories);
+      if (Array.isArray(cats) && cats.length > 0) {
+        const names = cats.map(c => c.name).filter(Boolean);
+        setCustomCategories(prev => Array.from(new Set([...prev, ...names])));
       }
     } catch (e) {
       // offline fallback
@@ -560,26 +555,6 @@ export default function MenuManager({ className = '' }) {
       }
     }
 
-    // 2. Sync with SQLite Server API
-    try {
-      const serverUrl = resolveServerUrl();
-      const res = await fetch(`${serverUrl}/api/menu/${dishId}/availability`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_available: newStatus })
-      });
-
-      if (!res.ok) {
-        await fetch(`${serverUrl}/api/menu/${dishId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ is_available: newStatus })
-        });
-      }
-    } catch (err) {
-      console.warn('[MenuManager] Saved availability toggle locally (offline mode):', err.message);
-    }
-
     triggerSuccess(newStatus ? 'Item marked in stock' : 'Item marked out of stock');
   };
 
@@ -622,17 +597,6 @@ export default function MenuManager({ className = '' }) {
       } catch (convexErr) {
         console.warn('[MenuManager] Convex inline price update failed:', convexErr.message);
       }
-    }
-
-    try {
-      const serverUrl = resolveServerUrl();
-      await fetch(`${serverUrl}/api/menu/${dish.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ price })
-      });
-    } catch (err) {
-      console.warn('[MenuManager] Inline price saved locally (offline mode):', err.message);
     }
 
     setInlinePriceSaving(false);
@@ -681,21 +645,6 @@ export default function MenuManager({ className = '' }) {
       }
     }
 
-    // 3. Persist to SQLite Server
-    try {
-      const serverUrl = resolveServerUrl();
-      await fetch(`${serverUrl}/api/menu/categories`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: trimmedName,
-          icon: chosenIcon
-        })
-      });
-    } catch (apiErr) {
-      console.warn('[MenuManager] Server createCategory warning (offline mode):', apiErr.message);
-    }
-
     setCategorySubmitting(false);
     setIsCategoryModalOpen(false);
     setNewCategoryData({ name: '', icon: '🍽️', description: '' });
@@ -739,15 +688,6 @@ export default function MenuManager({ className = '' }) {
         console.warn('[MenuManager] Inline Convex createCategory warning:', err.message);
       }
     }
-
-    try {
-      const serverUrl = resolveServerUrl();
-      await fetch(`${serverUrl}/api/menu/categories`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: trimmed, icon: '🍽️' })
-      });
-    } catch {}
 
     setFormData(prev => ({ ...prev, category: trimmed }));
     setIsCreatingInlineCategory(false);
@@ -819,7 +759,6 @@ export default function MenuManager({ className = '' }) {
     }
 
     setSubmitting(true);
-    const serverUrl = resolveServerUrl();
 
     let categoryName = formData.category.trim();
     if (isCreatingInlineCategory && inlineCategoryName.trim()) {
@@ -889,27 +828,9 @@ export default function MenuManager({ className = '' }) {
           }
         }
 
-        // 2. Save into SQLite Local Server
+        // 2. Build the local dish record (Convex _id when the insert succeeded)
         let newDishObj = null;
-        try {
-          const res = await fetch(`${serverUrl}/api/menu`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ...payload,
-              making_video_url: finalVideoUrl,
-              convex_id: convexNewId || undefined
-            })
-          });
-          if (res.ok) {
-            const result = await res.json();
-            newDishObj = result.data || result;
-          }
-        } catch (postErr) {
-          console.warn('[MenuManager] Server POST failed, saving locally:', postErr.message);
-        }
 
-        // 3. Fallback ID resolution
         if (!newDishObj || !newDishObj.id) {
           const maxId = dishes.reduce((max, d) => Math.max(max, Number(d.id) || 0), 0);
           newDishObj = {
@@ -966,20 +887,6 @@ export default function MenuManager({ className = '' }) {
           }
         }
 
-        // 2. Update in SQLite Local Server
-        try {
-          await fetch(`${serverUrl}/api/menu/${editingDishId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ...payload,
-              making_video_url: finalVideoUrl
-            })
-          });
-        } catch (putErr) {
-          console.warn('[MenuManager] Server PUT failed, saving locally:', putErr.message);
-        }
-
         updatedList = updatedList.map((d) => 
           d.id === editingDishId ? normalizeDish({ ...d, ...payload, id: editingDishId, convexId: targetConvexId }) : d
         );
@@ -1012,16 +919,6 @@ export default function MenuManager({ className = '' }) {
       } catch (convexErr) {
         console.warn('[MenuManager] Convex delete failed:', convexErr.message);
       }
-    }
-
-    // 2. Send DELETE to SQLite server
-    try {
-      const serverUrl = resolveServerUrl();
-      await fetch(`${serverUrl}/api/menu/${id}`, {
-        method: 'DELETE'
-      });
-    } catch (err) {
-      console.warn('[MenuManager] Server delete failed, deleted from local cache:', err.message);
     }
 
     setDishToDelete(null);

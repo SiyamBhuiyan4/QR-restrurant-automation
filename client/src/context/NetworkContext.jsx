@@ -18,8 +18,54 @@ import {
   getCachedMenu
 } from '../db/indexedDb.js';
 import { Wifi, WifiOff, RefreshCw, CheckCircle2, AlertCircle, Clock, X } from 'lucide-react';
+import { convex } from '../convexClient.js';
+import { api } from '../convexApi';
 
 export const NetworkContext = createContext(null);
+
+const PING_TIMEOUT_MS = 3500;
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+/** Maps a queued/local order payload onto the orders:createOrder Convex args. */
+async function submitOrderToConvex(p) {
+  const items = (p.items || []).map((i) => ({
+    name: String(i.name || i.title || 'Dish'),
+    price: Number(i.price) || 0,
+    quantity: Number(i.quantity) || 1,
+    note: (i.note || i.itemNote || '') || undefined
+  }));
+  const args = {
+    tableNumber: Number(p.tableNumber || p.table_number || 1) || 1,
+    items,
+    totalAmount: Number(p.totalAmount) || 0,
+    generalNote: p.generalNote || undefined
+  };
+  const blob = p.voiceBlob instanceof Blob ? p.voiceBlob : p.voiceNote instanceof Blob ? p.voiceNote : null;
+  if (blob) {
+    args.voiceNoteUrl = await blobToDataUrl(blob);
+  } else if (typeof p.voiceNote === 'string' && p.voiceNote) {
+    args.voiceNoteUrl = p.voiceNote;
+  }
+  return convex.mutation(api.orders.createOrder, args);
+}
+
+/** Maps a waiter call (or table note) onto waiter:createCall; notes are folded into the reason. */
+function submitWaiterCallToConvex({ tableNumber, reason, notes }) {
+  const base = String(reason || 'waiter');
+  const text = notes ? `${base} — "${notes}"` : base;
+  return convex.mutation(api.waiter.createCall, {
+    tableNumber: Number(tableNumber) || 1,
+    reason: text
+  });
+}
 
 /**
  * Web Audio pleasant chime for sync completion
@@ -136,18 +182,19 @@ export function NetworkProvider({ children }) {
     }
 
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 3500);
-
-      // Ping lightweight route with cache-busting timestamp
-      const res = await fetch(`/api/menu?_ping=${Date.now()}`, {
-        method: 'GET',
-        headers: { Accept: 'application/json' },
-        signal: controller.signal
+      let timer;
+      // Lightweight Convex query as the reachability ping
+      const ping = convex.query(api.menu.getCategories, {});
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Convex ping timed out')), PING_TIMEOUT_MS);
       });
-      clearTimeout(timer);
+      try {
+        await Promise.race([ping, timeout]);
+      } finally {
+        clearTimeout(timer);
+      }
 
-      const reachable = res.ok || res.status < 500;
+      const reachable = true;
       setIsOnline(reachable);
       setConnectionStatus(reachable ? 'online' : 'offline');
       return reachable;
@@ -178,64 +225,15 @@ export function NetworkProvider({ children }) {
 
       for (const order of pendingOrders) {
         try {
-          let response;
-
-          // Prepare payload: support both multipart FormData (with audio Blob) and standard JSON
-          const hasVoiceBlob =
-            order.voiceBlob instanceof Blob ||
-            (order.voiceNote && typeof order.voiceNote === 'object' && order.voiceNote instanceof Blob);
-
-          if (hasVoiceBlob) {
-            const formData = new FormData();
-            formData.append('tableNumber', String(order.tableNumber || order.table_number || '1'));
-            formData.append('items', JSON.stringify(order.items || []));
-            if (order.generalNote) formData.append('generalNote', order.generalNote);
-            if (order.customerName) formData.append('customerName', order.customerName);
-            if (order.totalAmount) formData.append('totalAmount', String(order.totalAmount));
-            formData.append('offlineQueuedAt', String(order.queuedAt || Date.now()));
-
-            const blob = order.voiceBlob || order.voiceNote;
-            formData.append('voiceNote', blob, 'voicenote.webm');
-
-            response = await fetch('/api/orders', {
-              method: 'POST',
-              body: formData
-            });
-          } else {
-            const payload = {
-              tableNumber: order.tableNumber || order.table_number || 1,
-              items: order.items || [],
-              generalNote: order.generalNote || '',
-              customerName: order.customerName || '',
-              totalAmount: order.totalAmount || 0,
-              voiceNote: typeof order.voiceNote === 'string' ? order.voiceNote : undefined,
-              offlineQueuedAt: order.queuedAt || Date.now()
-            };
-
-            response = await fetch('/api/orders', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json'
-              },
-              body: JSON.stringify(payload)
-            });
-          }
-
-          if (response && (response.ok || response.status === 200 || response.status === 201)) {
-            await removePendingOrder(order.localId);
-            syncedOrdersCount++;
-          } else {
-            // Server error: bump attempts and stop to prevent spamming
-            order.syncAttempts = (order.syncAttempts || 0) + 1;
-            order.lastError = `Server returned HTTP ${response ? response.status : 'error'}`;
-            await updatePendingOrder(order);
-            console.warn(`[NetworkContext] Order sync deferred (HTTP ${response ? response.status : 'ERR'})`);
-            break; // Stop syncing queue until next retry
-          }
+          await submitOrderToConvex(order);
+          await removePendingOrder(order.localId);
+          syncedOrdersCount++;
         } catch (fetchErr) {
-          console.warn('[NetworkContext] Order sync network error:', fetchErr);
-          // Network failed mid-sync: stop and mark offline
+          // Convex unreachable or rejected the order: keep it queued, stop and retry later
+          console.warn('[NetworkContext] Order sync failed:', fetchErr);
+          order.syncAttempts = (order.syncAttempts || 0) + 1;
+          order.lastError = fetchErr?.message || 'Convex mutation failed';
+          await updatePendingOrder(order);
           setIsOnline(false);
           setConnectionStatus('offline');
           break;
@@ -247,31 +245,18 @@ export function NetworkProvider({ children }) {
 
       for (const call of pendingCalls) {
         try {
-          const response = await fetch('/api/waiter/call', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Accept: 'application/json'
-            },
-            body: JSON.stringify({
-              tableNumber: call.tableNumber || call.table_number || 1,
-              reason: call.reason || 'waiter',
-              notes: call.notes || call.message || '',
-              queuedAt: call.queuedAt || Date.now()
-            })
+          await submitWaiterCallToConvex({
+            tableNumber: call.tableNumber || call.table_number || 1,
+            reason: call.reason || 'waiter',
+            notes: call.notes || call.message || ''
           });
-
-          if (response.ok || response.status === 200 || response.status === 201) {
-            await removePendingWaiterCall(call.localId);
-            syncedWaiterCount++;
-          } else {
-            call.syncAttempts = (call.syncAttempts || 0) + 1;
-            call.lastError = `Server returned HTTP ${response.status}`;
-            await updatePendingWaiterCall(call);
-            break;
-          }
+          await removePendingWaiterCall(call.localId);
+          syncedWaiterCount++;
         } catch (callErr) {
-          console.warn('[NetworkContext] Waiter call sync network error:', callErr);
+          console.warn('[NetworkContext] Waiter call sync failed:', callErr);
+          call.syncAttempts = (call.syncAttempts || 0) + 1;
+          call.lastError = callErr?.message || 'Convex mutation failed';
+          await updatePendingWaiterCall(call);
           setIsOnline(false);
           setConnectionStatus('offline');
           break;
@@ -284,31 +269,18 @@ export function NetworkProvider({ children }) {
 
       for (const note of pendingNotes) {
         try {
-          const response = await fetch('/api/waiter/call', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Accept: 'application/json'
-            },
-            body: JSON.stringify({
-              tableNumber: note.tableNumber || 1,
-              reason: note.category || 'Table Note',
-              notes: note.note || note.complaintText || '',
-              queuedAt: note.queuedAt || Date.now()
-            })
+          await submitWaiterCallToConvex({
+            tableNumber: note.tableNumber || 1,
+            reason: note.category || 'Table Note',
+            notes: note.note || note.complaintText || ''
           });
-
-          if (response.ok || response.status === 200 || response.status === 201) {
-            await removeTableNote(note.localId);
-            syncedNotesCount++;
-          } else {
-            note.syncAttempts = (note.syncAttempts || 0) + 1;
-            note.lastError = `Server returned HTTP ${response.status}`;
-            await updateTableNote(note);
-            break;
-          }
+          await removeTableNote(note.localId);
+          syncedNotesCount++;
         } catch (noteErr) {
-          console.warn('[NetworkContext] Table note sync network error:', noteErr);
+          console.warn('[NetworkContext] Table note sync failed:', noteErr);
+          note.syncAttempts = (note.syncAttempts || 0) + 1;
+          note.lastError = noteErr?.message || 'Convex mutation failed';
+          await updateTableNote(note);
           setIsOnline(false);
           setConnectionStatus('offline');
           break;
@@ -350,46 +322,14 @@ export function NetworkProvider({ children }) {
       // If we are currently online, try direct dispatch
       if (isOnline) {
         try {
-          const hasVoiceBlob =
-            orderPayload.voiceBlob instanceof Blob ||
-            (orderPayload.voiceNote &&
-              typeof orderPayload.voiceNote === 'object' &&
-              orderPayload.voiceNote instanceof Blob);
-
-          let res;
-          if (hasVoiceBlob) {
-            const formData = new FormData();
-            formData.append('tableNumber', String(orderPayload.tableNumber || orderPayload.table_number || '1'));
-            formData.append('items', JSON.stringify(orderPayload.items || []));
-            if (orderPayload.generalNote) formData.append('generalNote', orderPayload.generalNote);
-            if (orderPayload.customerName) formData.append('customerName', orderPayload.customerName);
-            if (orderPayload.totalAmount) formData.append('totalAmount', String(orderPayload.totalAmount));
-
-            const blob = orderPayload.voiceBlob || orderPayload.voiceNote;
-            formData.append('voiceNote', blob, 'voicenote.webm');
-
-            res = await fetch('/api/orders', {
-              method: 'POST',
-              body: formData
-            });
-          } else {
-            res = await fetch('/api/orders', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-              body: JSON.stringify(orderPayload)
-            });
-          }
-
-          if (res.ok) {
-            const data = await res.json().catch(() => ({}));
-            playChime('success');
-            addToast({
-              type: 'success',
-              title: 'Order Sent to Kitchen!',
-              message: `Table ${orderPayload.tableNumber || 1} order has been received.`
-            });
-            return { success: true, offline: false, data };
-          }
+          const data = await submitOrderToConvex(orderPayload);
+          playChime('success');
+          addToast({
+            type: 'success',
+            title: 'Order Sent to Kitchen!',
+            message: `Table ${orderPayload.tableNumber || 1} order has been received.`
+          });
+          return { success: true, offline: false, data };
         } catch (networkErr) {
           console.warn('[NetworkContext] Online submit failed, falling back to offline queue:', networkErr);
           setIsOnline(false);
@@ -429,21 +369,18 @@ export function NetworkProvider({ children }) {
     async (callPayload) => {
       if (isOnline) {
         try {
-          const res = await fetch('/api/waiter/call', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify(callPayload)
+          const data = await submitWaiterCallToConvex({
+            tableNumber: callPayload.tableNumber || callPayload.table_number || 1,
+            reason: callPayload.reason || 'waiter',
+            notes: callPayload.notes || callPayload.message || ''
           });
-          if (res.ok) {
-            const data = await res.json().catch(() => ({}));
-            playChime('success');
-            addToast({
-              type: 'success',
-              title: 'Waiter Notified',
-              message: `Staff alerted for Table ${callPayload.tableNumber || 1}.`
-            });
-            return { success: true, offline: false, data };
-          }
+          playChime('success');
+          addToast({
+            type: 'success',
+            title: 'Waiter Notified',
+            message: `Staff alerted for Table ${callPayload.tableNumber || 1}.`
+          });
+          return { success: true, offline: false, data };
         } catch (err) {
           setIsOnline(false);
           setConnectionStatus('offline');
@@ -476,26 +413,18 @@ export function NetworkProvider({ children }) {
     async (notePayload) => {
       if (isOnline) {
         try {
-          const res = await fetch('/api/waiter/call', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify({
-              tableNumber: notePayload.tableNumber || 1,
-              reason: notePayload.category || 'Table Note',
-              notes: notePayload.note || notePayload.complaintText || '',
-              queuedAt: Date.now()
-            })
+          const data = await submitWaiterCallToConvex({
+            tableNumber: notePayload.tableNumber || 1,
+            reason: notePayload.category || 'Table Note',
+            notes: notePayload.note || notePayload.complaintText || ''
           });
-          if (res.ok) {
-            const data = await res.json().catch(() => ({}));
-            playChime('success');
-            addToast({
-              type: 'success',
-              title: 'Note Submitted',
-              message: `Note for Table ${notePayload.tableNumber || 1} has been received.`
-            });
-            return { success: true, offline: false, data };
-          }
+          playChime('success');
+          addToast({
+            type: 'success',
+            title: 'Note Submitted',
+            message: `Note for Table ${notePayload.tableNumber || 1} has been received.`
+          });
+          return { success: true, offline: false, data };
         } catch (err) {
           setIsOnline(false);
           setConnectionStatus('offline');
@@ -527,16 +456,10 @@ export function NetworkProvider({ children }) {
    */
   const fetchMenuWithCache = useCallback(async () => {
     try {
-      const res = await fetch('/api/menu', {
-        headers: { Accept: 'application/json' }
-      });
-      if (res.ok) {
-        const payload = await res.json();
-        const data = payload.data || payload;
-        // Cache to IndexedDB in background
-        cacheMenu(data).catch((e) => console.warn('[NetworkContext] cacheMenu failed:', e));
-        return { data, fromCache: false };
-      }
+      const data = await convex.query(api.menu.getMenu, {});
+      // Cache to IndexedDB in background
+      cacheMenu(data).catch((e) => console.warn('[NetworkContext] cacheMenu failed:', e));
+      return { data, fromCache: false };
     } catch (networkErr) {
       console.warn('[NetworkContext] fetchMenu failed, reading from IndexedDB:', networkErr);
     }

@@ -1,36 +1,37 @@
 import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 
+const ORDER_STATUSES = ["pending", "preparing", "ready", "served", "completed", "cancelled"];
+
+// Express /api/orders GET: `status` may be a comma list, `table` (alias tableNumber) filters
+// by table, `limit` defaults to 50 (max 500).
 export const getOrders = query({
   args: {
-    status: v.optional(v.string()),
+    status: v.optional(v.string()), // single or comma-separated list, e.g. "pending,preparing"
     tableNumber: v.optional(v.number()),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let orders;
+    const limit = Math.max(1, Math.min(Number(args.limit) || 50, 500));
+    const statuses = args.status
+      ? args.status.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)
+      : [];
 
+    let builder;
     if (args.tableNumber !== undefined) {
-      orders = await ctx.db
+      builder = ctx.db
         .query("orders")
         .withIndex("by_table", (q) => q.eq("tableNumber", args.tableNumber))
-        .order("desc")
-        .take(50);
-      if (args.status) {
-        orders = orders.filter((o) => o.status === args.status);
-      }
-    } else if (args.status) {
-      orders = await ctx.db
-        .query("orders")
-        .withIndex("by_status", (q) => q.eq("status", args.status))
-        .order("desc")
-        .take(50);
+        .order("desc");
     } else {
-      orders = await ctx.db
-        .query("orders")
-        .withIndex("by_created_at")
-        .order("desc")
-        .take(50);
+      builder = ctx.db.query("orders").withIndex("by_created_at").order("desc");
     }
+    if (statuses.length > 0) {
+      builder = builder.filter((q) =>
+        q.or(...statuses.map((s) => q.eq(q.field("status"), s)))
+      );
+    }
+    const orders = await builder.take(limit);
 
     const ordersWithItems = await Promise.all(
       orders.map(async (order) => {
@@ -118,9 +119,30 @@ export const createOrder = mutation({
     voiceStorageId: v.optional(v.string()),
     voiceNoteUrl: v.optional(v.string()),
     generalNote: v.optional(v.string()),
-    totalAmount: v.number(),
+    totalAmount: v.optional(v.number()), // computed from items when omitted (Express behaviour)
   },
   handler: async (ctx, args) => {
+    if (!args.tableNumber || args.tableNumber <= 0 || !Number.isFinite(args.tableNumber)) {
+      throw new ConvexError("Valid table number is required");
+    }
+    if (!Array.isArray(args.items) || args.items.length === 0) {
+      throw new ConvexError("Order must contain at least one item");
+    }
+
+    const items = args.items.map((it) => ({
+      menuItemId: it.menuItemId ? ctx.db.normalizeId("menuItems", it.menuItemId) ?? undefined : undefined,
+      name: it.name || "Menu Item",
+      price: Number(it.price) || 0,
+      quantity: Number(it.quantity) || 1,
+      note: it.note || undefined,
+    }));
+
+    let totalAmount = args.totalAmount;
+    if (totalAmount === undefined || totalAmount === null) {
+      totalAmount = items.reduce((sum, it) => sum + it.price * it.quantity, 0);
+    }
+    totalAmount = Math.round(Number(totalAmount) * 100) / 100;
+
     const now = Date.now();
     const rand = Math.floor(1000 + Math.random() * 9000);
     const orderNumber = `ORD-T${args.tableNumber}-${rand}`;
@@ -129,17 +151,18 @@ export const createOrder = mutation({
       orderNumber,
       tableNumber: args.tableNumber,
       status: "pending",
-      totalAmount: args.totalAmount,
+      totalAmount,
       voiceStorageId: args.voiceStorageId,
       voiceNoteUrl: args.voiceNoteUrl,
-      generalNote: args.generalNote,
+      generalNote: args.generalNote?.trim() || undefined,
       createdAt: now,
       updatedAt: now,
     });
 
-    for (const item of args.items) {
+    for (const item of items) {
       await ctx.db.insert("orderItems", {
         orderId,
+        menuItemId: item.menuItemId,
         name: item.name,
         price: item.price,
         quantity: item.quantity,
@@ -157,33 +180,37 @@ export const updateOrderStatus = mutation({
     status: v.string(),
   },
   handler: async (ctx, { orderId, status }) => {
-    // 1. Try finding by Convex ID directly
-    try {
-      const existing = await ctx.db.get(orderId);
-      if (existing) {
-        await ctx.db.patch(existing._id, {
-          status,
-          updatedAt: Date.now(),
-        });
-        return true;
-      }
-    } catch (_) {}
-
-    // 2. Try finding by orderNumber (e.g. ORD-T1-1234 or SD-1234)
-    const byOrderNum = await ctx.db
-      .query("orders")
-      .filter((q) => q.eq(q.field("orderNumber"), orderId))
-      .first();
-
-    if (byOrderNum) {
-      await ctx.db.patch(byOrderNum._id, {
-        status,
-        updatedAt: Date.now(),
-      });
-      return true;
+    if (!status || typeof status !== "string") {
+      throw new ConvexError("Status is required");
+    }
+    const normalizedStatus = status.trim().toLowerCase();
+    if (!ORDER_STATUSES.includes(normalizedStatus)) {
+      throw new ConvexError(`Invalid status '${status}'. Must be one of: ${ORDER_STATUSES.join(", ")}`);
     }
 
-    return false;
+    let target = null;
+    // 1. Try finding by Convex ID directly
+    try {
+      target = await ctx.db.get(orderId);
+    } catch (_) {}
+
+    // 2. Try finding by orderNumber (e.g. ORD-T1-1234)
+    if (!target) {
+      target = await ctx.db
+        .query("orders")
+        .filter((q) => q.eq(q.field("orderNumber"), orderId))
+        .first();
+    }
+
+    if (!target) {
+      throw new ConvexError("Order not found");
+    }
+
+    await ctx.db.patch(target._id, {
+      status: normalizedStatus,
+      updatedAt: Date.now(),
+    });
+    return true;
   },
 });
 
