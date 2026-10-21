@@ -102,3 +102,30 @@
   .vb-root * { animation: none !important; }
   .vb-seed { opacity: 0.6; }
 }
+
+/* ---------------------------------------------------------------------------
+   Depth (2.5D parallax). Each layer shifts by its depth:
+   - transform: camera offset from pointer / phone tilt (--vb-x, --vb-y in -1..1)
+   - translate: a slow automatic sway, so the scene has depth even when still
+   Both are plain transforms on four layer groups, so this stays cheap.
+   --------------------------------------------------------------------------- */
+.vb-root {
+  --vb-x: 0;
+  --vb-y: 0;
+}
+.vb-layer {
+  --vb-depth: 0;
+  transform: translate(
+    calc(var(--vb-x) * -1px * var(--vb-depth)),
+    calc(var(--vb-y) * -0.5px * var(--vb-depth))
+  );
+  animation: vb-camera 18s ease-in-out infinite;
+}
+@keyframes vb-camera {
+  0%, 100% { translate: calc(-0.6px * var(--vb-depth)) 0; }
+  50% { translate: calc(0.6px * var(--vb-depth)) 0; }
+}
+.vb-layer--far { --vb-depth: 8; }
+.vb-layer--mid { --vb-depth: 18; }
+.vb-layer--near { --vb-depth: 30; }
+.vb-layer--front { --vb-depth: 46; }

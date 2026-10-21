@@ -71,6 +71,38 @@ function KashClump({ x, y, s, delay }) {
 export default function VillageBackground() {
   const rootRef = useRef(null);
 
+  // Depth: pointer (desktop) or phone tilt (where allowed without a prompt) nudges the
+  // camera; nearer layers move more. Updates are batched to one per animation frame.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    let tx = 0, ty = 0, frame = 0;
+    const apply = () => {
+      frame = 0;
+      root.style.setProperty('--vb-x', tx.toFixed(3));
+      root.style.setProperty('--vb-y', ty.toFixed(3));
+    };
+    const queue = () => { if (!frame) frame = requestAnimationFrame(apply); };
+    const onPointer = (e) => {
+      tx = (e.clientX / window.innerWidth) * 2 - 1;
+      ty = (e.clientY / window.innerHeight) * 2 - 1;
+      queue();
+    };
+    const onTilt = (e) => {
+      if (e.gamma == null || e.beta == null) return;
+      tx = Math.max(-1, Math.min(1, e.gamma / 25));
+      ty = Math.max(-1, Math.min(1, (e.beta - 45) / 25));
+      queue();
+    };
+    window.addEventListener('pointermove', onPointer, { passive: true });
+    window.addEventListener('deviceorientation', onTilt, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onPointer);
+      window.removeEventListener('deviceorientation', onTilt);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+
   // Pause all animation while scrolling (the menu is what people look at then)
   useEffect(() => {
     const root = rootRef.current;
@@ -112,6 +144,38 @@ export default function VillageBackground() {
             <stop offset="0" stopColor="#e9e2cf" />
             <stop offset="1" stopColor="#ffffff" />
           </linearGradient>
+          {/* rounded, lit-from-the-sun shading for canopies and the cow */}
+          <radialGradient id="vb-canopy" cx="0.38" cy="0.32" r="0.75">
+            <stop offset="0" stopColor="#5f9a4c" />
+            <stop offset="0.55" stopColor="#36652f" />
+            <stop offset="1" stopColor="#1f3d1d" />
+          </radialGradient>
+          <radialGradient id="vb-canopy-light" cx="0.35" cy="0.3" r="0.7">
+            <stop offset="0" stopColor="#7cb85f" />
+            <stop offset="1" stopColor="#3d7038" />
+          </radialGradient>
+          <linearGradient id="vb-frond" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#5d8f45" />
+            <stop offset="1" stopColor="#2c5226" />
+          </linearGradient>
+          <radialGradient id="vb-cow" cx="0.4" cy="0.3" r="0.8">
+            <stop offset="0" stopColor="#fffaf1" />
+            <stop offset="0.7" stopColor="#ece1cf" />
+            <stop offset="1" stopColor="#c9b89c" />
+          </radialGradient>
+          <linearGradient id="vb-trunk" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#3b2a1e" />
+            <stop offset="0.45" stopColor="#6b4e36" />
+            <stop offset="1" stopColor="#3b2a1e" />
+          </linearGradient>
+          <radialGradient id="vb-shadow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stopColor="#0d1f0c" stopOpacity="0.55" />
+            <stop offset="1" stopColor="#0d1f0c" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id="vb-haze" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#9fc4c4" stopOpacity="0" />
+            <stop offset="1" stopColor="#d9b88a" stopOpacity="0.35" />
+          </linearGradient>
           <radialGradient id="vb-seed" cx="0.5" cy="0.5" r="0.5">
             <stop offset="0" stopColor="#ffffff" stopOpacity="1" />
             <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
@@ -120,6 +184,8 @@ export default function VillageBackground() {
 
         {/* Sky and setting sun */}
         <rect width="1200" height="860" fill="url(#vb-sky)" />
+        {/* FAR layer: sun, birds, hills (moves least) */}
+        <g className="vb-layer vb-layer--far">
         <circle cx="800" cy="610" r="150" fill="url(#vb-sun)" />
         <circle cx="800" cy="612" r="34" fill="#ffe2a6" opacity="0.9" />
 
@@ -131,7 +197,7 @@ export default function VillageBackground() {
         </g>
 
         {/* Far hills and village huts */}
-        <path d="M0 640 Q 160 580 330 615 T 650 610 T 960 600 T 1200 615 V 700 H 0 Z" fill="#2b4f45" opacity="0.85" />
+        <path d="M-80 645 L 0 640 Q 160 580 330 615 T 650 610 T 960 600 T 1200 615 L 1280 620 V 700 H -80 Z" fill="#2b4f45" opacity="0.85" />
         <g fill="#1e3a33">
           <path d="M300 622 l 26 -22 l 26 22 z" /><rect x="306" y="621" width="40" height="16" />
           <path d="M352 626 l 20 -17 l 20 17 z" /><rect x="357" y="625" width="30" height="12" />
@@ -142,16 +208,23 @@ export default function VillageBackground() {
           <circle cx="150" cy="624" r="14" /><circle cx="168" cy="618" r="18" />
         </g>
 
+          {/* atmospheric haze: distant things fade toward the sky colour */}
+          <rect x="-80" y="560" width="1360" height="100" fill="url(#vb-haze)" />
+        </g>
+
+        {/* MID layer: field and trees */}
+        <g className="vb-layer vb-layer--mid">
         {/* Field */}
-        <path d="M0 670 Q 300 640 600 660 T 1200 650 V 860 H 0 Z" fill="url(#vb-field)" />
-        <path d="M0 720 Q 280 700 620 716 T 1200 708 V 860 H 0 Z" fill="#2f5229" opacity="0.7" />
+        <path d="M-80 674 L 0 670 Q 300 640 600 660 T 1200 650 L 1280 652 V 900 H -80 Z" fill="url(#vb-field)" />
+        <path d="M-80 722 L 0 720 Q 280 700 620 716 T 1200 708 L 1280 708 V 900 H -80 Z" fill="#2f5229" opacity="0.7" />
 
         {/* Left: coconut palm */}
         <g transform="translate(120 760)">
-          <path d="M0 0 C 10 -120 -10 -250 34 -360" stroke="#5b4330" strokeWidth="16" fill="none" strokeLinecap="round" />
+          <ellipse cx="20" cy="4" rx="90" ry="14" fill="url(#vb-shadow)" />
+          <path d="M0 0 C 10 -120 -10 -250 34 -360" stroke="url(#vb-trunk)" strokeWidth="16" fill="none" strokeLinecap="round" />
           <path d="M0 0 C 10 -120 -10 -250 34 -360" stroke="#7a5a3e" strokeWidth="6" fill="none" strokeDasharray="4 10" />
           <g className="vb-sway vb-sway--palm" style={{ transformOrigin: '48% 50%' }}>
-            <g fill="#3f6b33">
+            <g fill="url(#vb-frond)">
               <path d="M34 -360 Q -40 -400 -110 -350 Q -40 -380 34 -352 Z" />
               <path d="M34 -360 Q -20 -440 -60 -470 Q -6 -420 38 -356 Z" />
               <path d="M34 -360 Q 90 -440 150 -450 Q 90 -410 36 -354 Z" />
@@ -165,16 +238,17 @@ export default function VillageBackground() {
 
         {/* Right: big banyan-like tree */}
         <g transform="translate(1080 770)">
+          <ellipse cx="0" cy="4" rx="170" ry="20" fill="url(#vb-shadow)" />
           <path d="M-14 0 C -10 -80 -20 -150 0 -210 L 18 -210 C 30 -150 20 -80 26 0 Z" fill="#4a3627" />
           <path d="M2 -150 C -40 -170 -70 -190 -90 -230" stroke="#4a3627" strokeWidth="10" fill="none" />
           <path d="M14 -170 C 50 -190 80 -205 100 -240" stroke="#4a3627" strokeWidth="9" fill="none" />
           <g className="vb-sway vb-sway--tree" style={{ transformOrigin: '49% 84%' }}>
-            <g fill="#2f5a2e">
+            <g fill="url(#vb-canopy)">
               <circle cx="-90" cy="-260" r="62" /><circle cx="-20" cy="-300" r="78" />
               <circle cx="70" cy="-280" r="70" /><circle cx="120" cy="-230" r="52" />
               <circle cx="-130" cy="-210" r="44" />
             </g>
-            <g fill="#3d7038">
+            <g fill="url(#vb-canopy-light)" opacity="0.9">
               <circle cx="-60" cy="-290" r="40" /><circle cx="20" cy="-330" r="44" /><circle cx="90" cy="-300" r="36" />
             </g>
             {/* little flowers on the tree */}
@@ -185,6 +259,10 @@ export default function VillageBackground() {
           </g>
         </g>
 
+        </g>
+
+        {/* NEAR layer: cow and wildflowers */}
+        <g className="vb-layer vb-layer--near">
         {/* Cow grazing */}
         <g transform="translate(600 712)">
           <ellipse cx="0" cy="48" rx="70" ry="9" fill="#1d3518" opacity="0.5" />
@@ -203,7 +281,7 @@ export default function VillageBackground() {
             <rect x="22" y="40" width="9" height="5" /><rect x="36" y="40" width="9" height="5" />
           </g>
           {/* body */}
-          <ellipse cx="4" cy="0" rx="54" ry="26" fill="#f1e8d9" />
+          <ellipse cx="4" cy="0" rx="54" ry="26" fill="url(#vb-cow)" />
           <ellipse cx="-8" cy="-8" rx="14" ry="9" fill="#7a5638" />
           <ellipse cx="26" cy="6" rx="10" ry="7" fill="#7a5638" />
           <ellipse cx="14" cy="22" rx="8" ry="4" fill="#e6b4ae" />
@@ -243,6 +321,10 @@ export default function VillageBackground() {
           ))}
         </g>
 
+        </g>
+
+        {/* FRONT layer: kash flowers and drifting seeds (moves most) */}
+        <g className="vb-layer vb-layer--front">
         {/* Kash flower clumps */}
         {KASH.map(([x, y, s, d], i) => <KashClump key={i} x={x} y={y} s={s} delay={d} />)}
 
@@ -259,6 +341,8 @@ export default function VillageBackground() {
               </g>
             </g>
           ))}
+        </g>
+
         </g>
 
         {/* Soft darkening at the top so menu text stays easy to read */}
