@@ -27,7 +27,6 @@ import {
 } from 'lucide-react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
-import { uploadPhotoToTelegram, uploadVideoToTelegram } from '../services/telegramClient';
 import { convex } from '../convexClient.js';
 import { getCachedMenu, cacheMenu } from '../db/indexedDb.js';
 import '../styles/admin.css';
@@ -445,7 +444,20 @@ export default function MenuManager({ className = '' }) {
     return { total, inStock, outOfStock, vegCount, tgMediaCount };
   }, [dishes]);
 
-  // Upload Dish Photo to Telegram Channel Media CDN
+  // Upload a dish photo or video to Convex file storage and return its public URL
+  const uploadMediaToConvex = async (file) => {
+    const uploadUrl = await convex.mutation(api.orders.generateUploadUrl, {});
+    const res = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      body: file,
+    });
+    if (!res.ok) throw new Error('Upload failed. Please try again.');
+    const { storageId } = await res.json();
+    return await convex.mutation(api.files.getFileUrl, { storageId });
+  };
+
+  // Upload Dish Photo
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -458,11 +470,9 @@ export default function MenuManager({ className = '' }) {
     setUploadingPhoto(true);
     setUploadError('');
     try {
-      const result = await uploadPhotoToTelegram(file);
-      if (result.cdnUrl) {
-        setFormData((prev) => ({ ...prev, image_url: result.cdnUrl }));
-        triggerSuccess('Photo hosted on Telegram Channel (@Restaurant Media)! 📸');
-      }
+      const url = await uploadMediaToConvex(file);
+      setFormData((prev) => ({ ...prev, image_url: url }));
+      triggerSuccess('Photo uploaded! 📸');
     } catch (err) {
       console.error('[MenuManager] Telegram photo upload failed:', err);
       setUploadError(err.message || 'Failed to upload photo to Telegram Channel');
@@ -472,7 +482,7 @@ export default function MenuManager({ className = '' }) {
     }
   };
 
-  // Upload 360° Profile Video to Telegram Channel Media CDN
+  // Upload 360° Profile Video
   const handleVideoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -480,15 +490,15 @@ export default function MenuManager({ className = '' }) {
     setUploadingVideo(true);
     setUploadError('');
     try {
-      const result = await uploadVideoToTelegram(file);
-      if (result.cdnUrl) {
+      const url = await uploadMediaToConvex(file);
+      {
         // Sync so both image_url and making_video_url recognize the 360° video
         setFormData((prev) => ({
           ...prev,
-          making_video_url: result.cdnUrl,
-          image_url: prev.image_url && !isVideoUrl(prev.image_url) ? prev.image_url : result.cdnUrl
+          making_video_url: url,
+          image_url: prev.image_url && !isVideoUrl(prev.image_url) ? prev.image_url : url
         }));
-        triggerSuccess('360° Profile Video hosted on Telegram Channel (@Restaurant Media)! 🎥');
+        triggerSuccess('360° Profile Video uploaded! 🎥');
       }
     } catch (err) {
       console.error('[MenuManager] Telegram video upload failed:', err);

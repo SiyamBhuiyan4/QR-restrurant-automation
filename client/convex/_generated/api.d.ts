@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as corrections from "../corrections.js";
+import type * as files from "../files.js";
 import type * as menu from "../menu.js";
 import type * as orders from "../orders.js";
 import type * as reviews from "../reviews.js";
@@ -28,6 +29,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   corrections: typeof corrections;
+  files: typeof files;
   menu: typeof menu;
   orders: typeof orders;
   reviews: typeof reviews;
