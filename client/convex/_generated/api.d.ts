@@ -8,9 +8,15 @@
  * @module
  */
 
+import type * as auth from "../auth.js";
+import type * as corrections from "../corrections.js";
 import type * as menu from "../menu.js";
 import type * as orders from "../orders.js";
 import type * as reviews from "../reviews.js";
+import type * as seed from "../seed.js";
+import type * as settlements from "../settlements.js";
+import type * as staff from "../staff.js";
+import type * as stats from "../stats.js";
 import type * as waiter from "../waiter.js";
 
 import type {
@@ -20,9 +26,15 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auth: typeof auth;
+  corrections: typeof corrections;
   menu: typeof menu;
   orders: typeof orders;
   reviews: typeof reviews;
+  seed: typeof seed;
+  settlements: typeof settlements;
+  staff: typeof staff;
+  stats: typeof stats;
   waiter: typeof waiter;
 }>;
 
