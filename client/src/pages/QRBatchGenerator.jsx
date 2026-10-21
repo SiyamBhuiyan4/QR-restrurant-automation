@@ -13,7 +13,6 @@ import {
   Mic, 
   ChevronDown
 } from 'lucide-react';
-import { resolveServerUrl } from '../context/SocketContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import '../styles/admin.css';
 import '../styles/qr-generator.css';
@@ -125,7 +124,8 @@ export default function QRBatchGenerator({
   const [copiedTable, setCopiedTable] = useState(null);
   const [layoutMode, setLayoutMode] = useState('grid-2'); // 'grid-2' (2 columns) | 'grid-3' (3 columns)
 
-  // Auto-detect Server URL silently in the background
+  // Base URL for QR codes: the current site origin (the dev server on port 5173 maps to :3000).
+  // The LAN IP lookup was removed; the site origin is used instead.
   useEffect(() => {
     let defaultUrl = '';
     if (typeof window !== 'undefined') {
@@ -136,24 +136,7 @@ export default function QRBatchGenerator({
         defaultUrl = window.location.origin;
       }
     }
-
-    const fetchLanIp = async () => {
-      try {
-        const serverUrl = resolveServerUrl();
-        const res = await fetch(`${serverUrl}/api/network`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.ip || data?.lanUrl) {
-            const serverLan = data.lanUrl || `https://${data.ip}:${data.port || 3000}`;
-            setBaseUrl(serverLan);
-            return;
-          }
-        }
-      } catch (_) {}
-      setBaseUrl(defaultUrl || 'http://localhost:3000');
-    };
-
-    fetchLanIp();
+    setBaseUrl(defaultUrl || 'http://localhost:3000');
   }, []);
 
   // Compute active range
@@ -438,26 +421,26 @@ export default function QRBatchGenerator({
       
       {/* =========================================================================
           MINIMAL, SINGLE-CARD DARK MODE CONFIGURATION PANEL (Hidden during print)
-          Matches exact design: #0F141C background, #18202C surface, #F59E0B accent
+          Matches exact design: #0F141C background, #18202C surface, var(--adm-primary) accent
           ========================================================================= */}
       <div 
-        className="admin-enter no-print rounded-3xl border border-[#222F3E] p-5 sm:p-6 shadow-2xl space-y-5 text-[#f8fafc]"
-        style={{ backgroundColor: '#0F141C' }}
+        className="admin-enter no-print rounded-3xl border border-[var(--adm-border)] p-5 sm:p-6 shadow-lg space-y-5 text-[var(--adm-text)]"
+        style={{ backgroundColor: 'var(--adm-surface)' }}
       >
         
         {/* ROW 1: HEADER ROW */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#1E293B]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[var(--adm-border)]">
           
           {/* Left: QR Icon + Title (No subtitle, no scope badge) */}
           <div className="flex items-center gap-3">
             <div 
               className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg shrink-0"
               style={{ 
-                backgroundColor: '#F59E0B',
+                backgroundColor: 'var(--adm-primary)',
                 boxShadow: '0 8px 20px -4px rgba(245, 158, 11, 0.35)'
               }}
             >
-              <QrCode className="w-6 h-6 text-[#0F141C]" />
+              <QrCode className="w-6 h-6 text-[var(--adm-primary-fg)]" />
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
               Table QR Code Generator
@@ -472,10 +455,10 @@ export default function QRBatchGenerator({
               type="button"
               onClick={handlePrint}
               disabled={generatedCards.length === 0}
-              className="px-4 py-2.5 rounded-2xl border border-[#2A384C] hover:bg-[#18202C] active:scale-95 text-slate-200 text-xs sm:text-sm font-bold transition cursor-pointer flex items-center gap-2 shadow-xs"
-              style={{ backgroundColor: '#18202C' }}
+              className="px-4 py-2.5 rounded-2xl border border-[var(--adm-border)] hover:bg-[var(--adm-surface-2)] active:scale-95 text-[var(--adm-text)] text-xs sm:text-sm font-bold transition cursor-pointer flex items-center gap-2 shadow-xs"
+              style={{ backgroundColor: 'var(--adm-surface-2)' }}
             >
-              <Printer className="w-4 h-4 text-slate-400" />
+              <Printer className="w-4 h-4 text-[var(--adm-text-muted)]" />
               <span>Print Stickers</span>
             </button>
 
@@ -484,10 +467,10 @@ export default function QRBatchGenerator({
               type="button"
               onClick={handleDownloadAllPngs}
               disabled={isGeneratingPdf || generatedCards.length === 0}
-              className="px-5 py-2.5 rounded-2xl active:scale-95 text-[#f8fafc] text-xs sm:text-sm font-bold transition cursor-pointer flex items-center gap-2 border border-[#2A384C] hover:border-[#F59E0B] disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#18202C' }}
+              className="px-5 py-2.5 rounded-2xl active:scale-95 text-[var(--adm-text)] text-xs sm:text-sm font-bold transition cursor-pointer flex items-center gap-2 border border-[var(--adm-border)] hover:border-[var(--adm-primary)] disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ backgroundColor: 'var(--adm-surface-2)' }}
             >
-              <Download className="w-4 h-4 text-slate-400" />
+              <Download className="w-4 h-4 text-[var(--adm-text-muted)]" />
               <span>Download PNGs</span>
             </button>
 
@@ -496,16 +479,16 @@ export default function QRBatchGenerator({
               type="button"
               onClick={handleDynamicDownloadPdf}
               disabled={isGeneratingPdf || generatedCards.length === 0}
-              className="px-5 py-2.5 rounded-2xl active:scale-95 text-[#0F141C] text-xs sm:text-sm font-black transition cursor-pointer flex items-center gap-2 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 rounded-2xl active:scale-95 text-[var(--adm-primary-fg)] text-xs sm:text-sm font-black transition cursor-pointer flex items-center gap-2 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ 
-                backgroundColor: '#F59E0B',
+                backgroundColor: 'var(--adm-primary)',
                 boxShadow: '0 8px 24px -4px rgba(245, 158, 11, 0.4)'
               }}
             >
               {isGeneratingPdf ? (
-                <RefreshCw className="w-4 h-4 text-[#0F141C] animate-spin" />
+                <RefreshCw className="w-4 h-4 text-[var(--adm-primary-fg)] animate-spin" />
               ) : (
-                <Download className="w-4 h-4 text-[#0F141C]" />
+                <Download className="w-4 h-4 text-[var(--adm-primary-fg)]" />
               )}
               <span>{isGeneratingPdf ? 'Building PDF...' : 'Download PDF'}</span>
             </button>
@@ -518,8 +501,8 @@ export default function QRBatchGenerator({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 items-start">
             
             {/* Column 1: Restaurant Brand Name */}
-            <div>
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+            <div className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface-2)] p-4 space-y-1">
+              <label className="block text-[11px] font-bold text-[var(--adm-text-muted)] uppercase tracking-wider mb-2">
                 Restaurant Brand Name
               </label>
               <input
@@ -527,33 +510,33 @@ export default function QRBatchGenerator({
                 value={restaurantName}
                 onChange={(e) => setRestaurantName(e.target.value)}
                 placeholder="SmartDine Bistro"
-                className="w-full text-[#f8fafc] border border-[#2A384C] rounded-2xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#F59E0B] transition placeholder-slate-500"
-                style={{ backgroundColor: '#18202C' }}
+                className="w-full text-[var(--adm-text)] border border-[var(--adm-border)] rounded-2xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-[var(--adm-primary)] transition placeholder-[var(--adm-text-muted)]"
+                style={{ backgroundColor: 'var(--adm-surface-2)' }}
               />
             </div>
 
-            {/* Column 2: Table Scope Toggle (All vs Custom Range) */}
-            <div>
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+            {/* Column 2: Table range card */}
+            <div className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface-2)] p-4 space-y-1">
+              <label className="block text-[11px] font-bold text-[var(--adm-text-muted)] uppercase tracking-wider mb-2">
                 Table Scope
               </label>
 
               {/* Segmented Toggle */}
               <div 
-                className="inline-flex w-full p-1 rounded-2xl border border-[#2A384C]"
-                style={{ backgroundColor: '#18202C' }}
+                className="inline-flex w-full p-1 rounded-2xl border border-[var(--adm-border)]"
+                style={{ backgroundColor: 'var(--adm-surface-2)' }}
               >
                 <button
                   type="button"
                   onClick={() => setSelectionMode('all')}
                   className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer text-center ${
                     selectionMode === 'all'
-                      ? 'text-white font-black shadow-md'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'text-[var(--adm-text)] font-black shadow-md'
+                      : 'text-[var(--adm-text-muted)] hover:text-[var(--adm-text)]'
                   }`}
                   style={selectionMode === 'all' ? {
-                    backgroundColor: '#0F141C',
-                    border: '1px solid rgba(245, 158, 11, 0.6)',
+                    backgroundColor: 'var(--adm-surface)',
+                    border: '1px solid color-mix(in srgb, var(--adm-primary) 60%, transparent)',
                     boxShadow: '0 0 12px -2px rgba(245, 158, 11, 0.25)'
                   } : {}}
                 >
@@ -565,12 +548,12 @@ export default function QRBatchGenerator({
                   onClick={() => setSelectionMode('range')}
                   className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer text-center ${
                     selectionMode === 'range'
-                      ? 'text-white font-black shadow-md'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'text-[var(--adm-text)] font-black shadow-md'
+                      : 'text-[var(--adm-text-muted)] hover:text-[var(--adm-text)]'
                   }`}
                   style={selectionMode === 'range' ? {
-                    backgroundColor: '#0F141C',
-                    border: '1px solid rgba(245, 158, 11, 0.6)',
+                    backgroundColor: 'var(--adm-surface)',
+                    border: '1px solid color-mix(in srgb, var(--adm-primary) 60%, transparent)',
                     boxShadow: '0 0 12px -2px rgba(245, 158, 11, 0.25)'
                   } : {}}
                 >
@@ -581,7 +564,7 @@ export default function QRBatchGenerator({
               {/* Compact inline From / To inputs (Only shown when Custom Range is active, no status confirmation box) */}
               {selectionMode === 'range' && (
                 <div className="flex items-center gap-2 mt-2.5 pt-0.5 animate-fadeIn">
-                  <span className="text-[11px] font-bold text-slate-400">From</span>
+                  <span className="text-[11px] font-bold text-[var(--adm-text-muted)]">From</span>
                   <input
                     type="number"
                     min="1"
@@ -589,10 +572,10 @@ export default function QRBatchGenerator({
                     value={tableStart}
                     onKeyDown={handleKeyDown}
                     onChange={(e) => handleStartChange(e.target.value)}
-                    className="w-16 text-center text-xs font-bold text-[#f8fafc] border border-[#2A384C] rounded-xl py-1.5 focus:outline-none focus:border-[#F59E0B]"
-                    style={{ backgroundColor: '#18202C' }}
+                    className="w-16 text-center text-xs font-bold text-[var(--adm-text)] border border-[var(--adm-border)] rounded-xl py-1.5 focus:outline-none focus:border-[var(--adm-primary)]"
+                    style={{ backgroundColor: 'var(--adm-surface-2)' }}
                   />
-                  <span className="text-[11px] font-bold text-slate-400">to</span>
+                  <span className="text-[11px] font-bold text-[var(--adm-text-muted)]">to</span>
                   <input
                     type="number"
                     min={tableStart}
@@ -600,35 +583,35 @@ export default function QRBatchGenerator({
                     value={tableEnd}
                     onKeyDown={handleKeyDown}
                     onChange={(e) => handleEndChange(e.target.value)}
-                    className="w-16 text-center text-xs font-bold text-[#f8fafc] border border-[#2A384C] rounded-xl py-1.5 focus:outline-none focus:border-[#F59E0B]"
-                    style={{ backgroundColor: '#18202C' }}
+                    className="w-16 text-center text-xs font-bold text-[var(--adm-text)] border border-[var(--adm-border)] rounded-xl py-1.5 focus:outline-none focus:border-[var(--adm-primary)]"
+                    style={{ backgroundColor: 'var(--adm-surface-2)' }}
                   />
-                  <span className="text-[11px] text-slate-500 font-medium">
+                  <span className="text-[11px] text-[var(--adm-text-muted)] font-medium">
                     (1 to {venueTableCount})
                   </span>
                 </div>
               )}
-              <p className="mt-2.5 text-[11px] text-slate-400 font-medium">
+              <p className="mt-2.5 text-[11px] text-[var(--adm-text-muted)] font-medium">
                 {generatedCards.length} sticker{generatedCards.length === 1 ? '' : 's'} ready &bull; prints on A4
               </p>
             </div>
 
             {/* Column 3: Print Layout */}
-            <div>
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+            <div className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface-2)] p-4 space-y-1">
+              <label className="block text-[11px] font-bold text-[var(--adm-text-muted)] uppercase tracking-wider mb-2">
                 Print Card Layout
               </label>
               <div className="relative">
                 <select
                   value={layoutMode}
                   onChange={(e) => setLayoutMode(e.target.value)}
-                  className="w-full appearance-none text-[#f8fafc] border border-[#2A384C] rounded-2xl px-4 py-2.5 pr-9 text-xs font-semibold focus:outline-none focus:border-[#F59E0B] cursor-pointer"
-                  style={{ backgroundColor: '#18202C' }}
+                  className="w-full appearance-none text-[var(--adm-text)] border border-[var(--adm-border)] rounded-2xl px-4 py-2.5 pr-9 text-xs font-semibold focus:outline-none focus:border-[var(--adm-primary)] cursor-pointer"
+                  style={{ backgroundColor: 'var(--adm-surface-2)' }}
                 >
                   <option value="grid-2">2 Columns (Standard Table Tents)</option>
                   <option value="grid-3">3 Columns (Compact Stickers)</option>
                 </select>
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-4 h-4 text-[var(--adm-text-muted)] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
@@ -645,12 +628,12 @@ export default function QRBatchGenerator({
         {/* On-Screen Preview Bar (Hidden during print) */}
         <div className="no-print flex items-center justify-between pb-3 px-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--adm-text-muted)]">
               Live Preview &bull; {generatedCards.length} Cards (Table {effectiveRange.start} to {effectiveRange.end})
             </span>
           </div>
-          <span className="text-xs text-slate-400">
-            Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-[#18202C] border border-[#2A384C] text-[11px] font-mono text-[#f8fafc]">Ctrl/Cmd + P</kbd> or click Print
+          <span className="text-xs text-[var(--adm-text-muted)]">
+            Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-[var(--adm-surface-2)] border border-[var(--adm-border)] text-[11px] font-mono text-[var(--adm-text)]">Ctrl/Cmd + P</kbd> or click Print
           </span>
         </div>
 
@@ -683,7 +666,7 @@ export default function QRBatchGenerator({
                   </div>
 
                   {/* Table Badge */}
-                  <div className="px-3 py-1 rounded-xl bg-neutral-900 text-white font-black text-xs tracking-wider uppercase">
+                  <div className="px-3 py-1 rounded-xl bg-neutral-900 text-[var(--adm-text)] font-black text-xs tracking-wider uppercase">
                     Table {card.tableNum}
                   </div>
                 </div>

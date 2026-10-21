@@ -10,12 +10,13 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import '../../styles/admin.css';
+import { resolveAdminTheme } from '../../hooks/useAdminTheme';
+import { verifyAdminPin } from '../../utils/adminAuth';
 
 /**
  * Master Admin Access Key
- * Strictly required: '808080'
+ * Checked on the server (Convex api.auth.verifyAdminPin).
  */
-const MASTER_ADMIN_PIN = '808080';
 const PIN_LENGTH = 6;
 
 /**
@@ -29,6 +30,7 @@ export default function AdminLoginGate({ onLoginSuccess }) {
   const [error, setError] = useState('');
   const [isShaking, setIsShaking] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const inputRef = useRef(null);
 
   // Autofocus input on initial mount
@@ -37,9 +39,13 @@ export default function AdminLoginGate({ onLoginSuccess }) {
   }, []);
 
   // Validation routine
-  const handleValidate = (candidatePin) => {
+  const handleValidate = async (candidatePin) => {
+    if (isChecking || isSuccess) return;
     const entered = (candidatePin !== undefined ? candidatePin : pin).trim();
-    if (entered === MASTER_ADMIN_PIN) {
+    setIsChecking(true);
+    const valid = await verifyAdminPin(entered);
+    setIsChecking(false);
+    if (valid) {
       setError('');
       setIsSuccess(true);
       try {
@@ -65,7 +71,7 @@ export default function AdminLoginGate({ onLoginSuccess }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (isSuccess) return;
+    if (isSuccess || isChecking) return;
     if (!pin) {
       setError('Please enter the 6-digit Master PIN.');
       inputRef.current?.focus();
@@ -77,7 +83,7 @@ export default function AdminLoginGate({ onLoginSuccess }) {
   const hasError = Boolean(error);
 
   return (
-    <div className="admin-root admin-login">
+    <div className="admin-root admin-shell admin-login" data-theme={resolveAdminTheme()}>
       <div className={`admin-login-card ${isShaking ? 'animate-gate-shake is-error' : ''} ${isSuccess ? 'is-success' : ''}`}>
         <div className="admin-login-brand">
           <span className="admin-login-icon">
@@ -113,7 +119,7 @@ export default function AdminLoginGate({ onLoginSuccess }) {
               }}
               placeholder="••••••"
               maxLength={12}
-              disabled={isSuccess}
+              disabled={isSuccess || isChecking}
               autoComplete="current-password"
               aria-invalid={hasError}
               aria-describedby="admin-pin-help"
@@ -143,6 +149,8 @@ export default function AdminLoginGate({ onLoginSuccess }) {
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>{error}</span>
               </>
+            ) : isChecking ? (
+              <span>Checking PIN...</span>
             ) : isSuccess ? (
               <>
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
@@ -153,12 +161,14 @@ export default function AdminLoginGate({ onLoginSuccess }) {
             )}
           </p>
 
-          <button type="submit" disabled={isSuccess} className="admin-login-submit">
+          <button type="submit" disabled={isSuccess || isChecking} className="admin-login-submit">
             {isSuccess ? (
               <>
                 <Unlock className="w-4 h-4" />
                 <span>Access granted</span>
               </>
+            ) : isChecking ? (
+              <span>Checking PIN...</span>
             ) : (
               <>
                 <span>Unlock dashboard</span>

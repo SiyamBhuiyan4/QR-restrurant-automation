@@ -3,7 +3,8 @@ const path = require('path');
 const fs = require('fs');
 
 // Ensure database directory exists
-const dbDir = __dirname;
+// DATA_DIR lets a hosted deployment keep the database on a persistent disk
+const dbDir = process.env.DATA_DIR || __dirname;
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
@@ -98,6 +99,33 @@ db.exec(`
     timestamp INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS idx_staff_messages_recipient ON staff_messages(to_waiter_id, timestamp);
+`);
+
+// Order corrections (voids, discounts, void requests) shared across devices.
+// Full record lives in `payload` JSON; type/status/order_id are indexed columns.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS order_corrections (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL,
+    status TEXT NOT NULL,
+    order_id TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_order_corrections_order ON order_corrections(order_id, created_at);
+
+  CREATE TABLE IF NOT EXISTS bill_settlements (
+    id TEXT PRIMARY KEY,
+    bill_number TEXT NOT NULL,
+    table_number INTEGER NOT NULL,
+    order_ids TEXT NOT NULL,
+    total REAL NOT NULL,
+    payment_method TEXT NOT NULL,
+    paid_at TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_bill_settlements_table ON bill_settlements(table_number, created_at);
 `);
 
 /**
@@ -566,8 +594,67 @@ function getRestaurantStats() {
   };
 }
 
+// Order corrections: payload is stored as JSON, returned as the parsed record
+function rowToOrderCorrection(row) {
+  if (!row) return null;
+  return { ...JSON.parse(row.payload), id: row.id, type: row.type, status: row.status, orderId: row.order_id, createdAt: row.created_at, updatedAt: row.updated_at };
+}
+
+function listOrderCorrections(limit = 500) {
+  return db.prepare('SELECT * FROM order_corrections ORDER BY created_at DESC, id DESC LIMIT ?')
+    .all(Number(limit)).map(rowToOrderCorrection);
+}
+
+function getOrderCorrectionById(id) {
+  return rowToOrderCorrection(db.prepare('SELECT * FROM order_corrections WHERE id = ?').get(String(id)));
+}
+
+function upsertOrderCorrection({ id, type, status, orderId, payload, createdAt, updatedAt }) {
+  db.prepare(`
+    INSERT INTO order_corrections (id, type, status, order_id, payload, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET type = excluded.type, status = excluded.status, order_id = excluded.order_id,
+      payload = excluded.payload, updated_at = excluded.updated_at
+  `).run(String(id), type, status, String(orderId), JSON.stringify(payload || {}), createdAt, updatedAt);
+  return getOrderCorrectionById(id);
+}
+
+function updateOrderCorrectionStatus(id, status, payloadPatch = {}, updatedAt = Date.now()) {
+  const current = getOrderCorrectionById(id);
+  if (!current) return null;
+  const { id: _i, type: _t, status: _s, orderId: _o, createdAt: _c, updatedAt: _u, ...base } = current;
+  db.prepare('UPDATE order_corrections SET status = ?, payload = ?, updated_at = ? WHERE id = ?')
+    .run(status, JSON.stringify({ ...base, ...payloadPatch, status }), updatedAt, String(id));
+  return getOrderCorrectionById(id);
+}
+
+// Bill settlements
+function createBillSettlement(record) {
+  db.prepare(`
+    INSERT OR REPLACE INTO bill_settlements (id, bill_number, table_number, order_ids, total, payment_method, paid_at, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(String(record.id), record.billNumber, Number(record.tableNumber), JSON.stringify(record.orderIds),
+    Number(record.total), record.paymentMethod, record.paidAt, record.createdAt);
+  return getBillSettlementById(record.id);
+}
+
+function getBillSettlementById(id) {
+  const row = db.prepare('SELECT * FROM bill_settlements WHERE id = ?').get(String(id));
+  if (!row) return null;
+  return {
+    id: row.id, billNumber: row.bill_number, tableNumber: row.table_number, orderIds: JSON.parse(row.order_ids),
+    total: row.total, paymentMethod: row.payment_method, paidAt: row.paid_at, createdAt: row.created_at
+  };
+}
+
 module.exports = {
   db,
+  listOrderCorrections,
+  getOrderCorrectionById,
+  upsertOrderCorrection,
+  updateOrderCorrectionStatus,
+  createBillSettlement,
+  getBillSettlementById,
   getCategories,
   getCategoryBySlug,
   createCategory,

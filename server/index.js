@@ -60,6 +60,8 @@ app.use('/api/orders', safeRouteRequire('./routes/orders'));
 app.use('/api/waiter', safeRouteRequire('./routes/waiter'));
 app.use('/api/tables', safeRouteRequire('./routes/tables'));
 app.use('/api/staff', safeRouteRequire('./routes/staff'));
+app.use('/api', safeRouteRequire('./routes/corrections'));
+app.use('/api/auth', safeRouteRequire('./routes/auth'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -138,7 +140,11 @@ app.use((err, req, res, next) => {
 let server;
 let protocol = 'https';
 
+// A hosting platform terminates TLS itself, so serve plain HTTP when told to
+const useHttpOnly = process.env.TLS_DISABLED === '1' || !!process.env.RENDER;
+
 try {
+  if (useHttpOnly) throw new Error('TLS disabled by environment');
   const { key, cert } = getOrCreateCertificates();
   server = https.createServer({ key, cert }, app);
 } catch (sslErr) {

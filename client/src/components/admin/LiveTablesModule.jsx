@@ -58,7 +58,11 @@ import {
 } from '../../data/adminMockData';
 
 import AudioPlayer from '../AudioPlayer';
+import BillPreviewModal, { settleTableOrders, formatMoney } from './BillReceipt';
+import { useRestaurant } from '../../context/RestaurantContext';
+import OrderCorrectionModal, { computeOrderBill } from './OrderCorrectionModal';
 import '../../styles/admin-tables.css';
+import '../../styles/admin-floor.css';
 
 /**
  * High-fidelity restaurant desk calling chime synthesizer using Web Audio API.
@@ -187,6 +191,7 @@ export default function LiveTablesModule({
   tables: propTables,
   employees: propEmployees,
   orders: propOrders,
+  onSettleTable = null,
   customerNotes: propCustomerNotes,
   tableCount: propTableCount,
   onTableCountChange,
@@ -267,6 +272,8 @@ export default function LiveTablesModule({
 
   // Modals & Active Selections
   const [selectedOrderModal, setSelectedOrderModal] = useState(null);
+  const [billCorrectionOrder, setBillCorrectionOrder] = useState(null);
+  const { getOrderCorrection } = useRestaurant();
   const [activeIssueModal, setActiveIssueModal] = useState(null);
   const [activeEmployeeDropdownTableId, setActiveEmployeeDropdownTableId] = useState(null);
   const [isAddTableModalOpen, setIsAddTableModalOpen] = useState(false);
@@ -280,6 +287,7 @@ export default function LiveTablesModule({
   // 1-Click Action Animation States
   const [dispatchedTables, setDispatchedTables] = useState({});
   const [advancingOrderIds, setAdvancingOrderIds] = useState({});
+  const [billTarget, setBillTarget] = useState(null); // { tableNumber } while the bill preview is open
 
   // Sync props if parent updates
   useEffect(() => {
@@ -308,7 +316,7 @@ export default function LiveTablesModule({
   }, []);
 
   // ---------------------------------------------------------------------------
-  // PROTECTED TABLE MANAGEMENT (Requires PIN: 808080 via TableSecurityModal)
+  // PROTECTED TABLE MANAGEMENT (Requires admin PIN via TableSecurityModal)
   // ---------------------------------------------------------------------------
   const [customTableCount, setCustomTableCount] = useState(() => (propTables ? propTables.length.toString() : '12'));
   const [securityModalState, setSecurityModalState] = useState({
@@ -421,7 +429,7 @@ export default function LiveTablesModule({
     }
   }, [onUpdateTables, onTableCountChange, triggerToast]);
 
-  // Request handlers that open TableSecurityModal with password 808080 confirmation
+  // Request handlers that open TableSecurityModal for admin PIN confirmation
   const requestTableCountChange = useCallback((newCount) => {
     const target = parseInt(newCount, 10);
     if (isNaN(target) || target < 1) {
@@ -645,6 +653,20 @@ export default function LiveTablesModule({
     }
   }, [triggerToast, onResetTable]);
 
+  // Bill printing / settlement: a table's bill is built from its orders that are not yet completed
+  // With a parent handler the shared order/table state is updated there; otherwise settle locally
+  const handleSettleTable = useCallback(async (bill, paymentMethod) => {
+    if (typeof onSettleTable === 'function') {
+      await onSettleTable(bill, paymentMethod);
+    } else {
+      const billOrders = orders.filter(o => bill.orderIds.includes(String(o.id)));
+      await settleTableOrders({ bill, paymentMethod, orders: billOrders });
+      handleResetTable(bill.tableNumber);
+    }
+    triggerToast(`Table ${bill.tableNumber} settled by ${paymentMethod} (${formatMoney(bill.total)})`, 'success');
+    setBillTarget(null);
+  }, [onSettleTable, orders, handleResetTable, triggerToast]);
+
   // Reassign Employee to a Table (Rule 2)
   const handleReassignEmployee = useCallback((tableNumber, newEmployeeId) => {
     playChimeSound();
@@ -664,7 +686,7 @@ export default function LiveTablesModule({
     triggerToast(`Table ${tableNumber} assigned to ${empName}`, 'success');
   }, [employees, onAssignEmployee, triggerToast]);
 
-  // Request Employee Reassignment with Admin PIN (808080) verification
+  // Request Employee Reassignment with Admin PIN verification
   const requestReassignEmployee = useCallback((tableNumber, newEmployeeId, onModalConfirmedCallback) => {
     const targetTable = tables.find(t => t.tableNumber === tableNumber);
     const currentEmpId = targetTable?.assignedEmployeeId ? String(targetTable.assignedEmployeeId) : '';
@@ -687,7 +709,7 @@ export default function LiveTablesModule({
       actionDescription: targetEmpId
         ? `Assign Table #${tableNumber} to ${targetEmpName}. Real-time waiter dispatch, kitchen pickup alerts, and table management for Table #${tableNumber} will route to ${targetEmp?.name || 'this staff member'}.`
         : `Unassign Table #${tableNumber} (currently assigned to ${currentEmpName}) and return to the unassigned floor pool.`,
-      actionNotice: 'Admin PIN verification (808080) required to update floor staff table routing.',
+      actionNotice: 'Admin PIN verification required to update floor staff table routing.',
       pendingAction: () => {
         handleReassignEmployee(tableNumber, newEmployeeId);
         if (typeof onModalConfirmedCallback === 'function') {
@@ -754,124 +776,153 @@ export default function LiveTablesModule({
   // RENDER
   // ---------------------------------------------------------------------------
   return (
-    <div className="space-y-6">
-      
-      {/* =======================================================================
-          HERO BANNER: DYNAMIC FLOOR CAPACITY & TABLE MANAGER (VERY TOP OF PAGE)
-          ======================================================================= */}
-      <div className="bg-gradient-to-r from-orange-600 via-[#FF5A26] to-amber-500 rounded-3xl p-5 sm:p-6 shadow-2xl shadow-orange-950/40 border border-orange-400/40 flex flex-col xl:flex-row xl:items-center justify-between gap-5 text-white">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner shrink-0 border border-white/30">
-            <Grid3X3 className="w-8 h-8 text-white stroke-[2.5]" />
+    <div className="flr-root">
+
+      {/* HERO: floor capacity. Table count change stays behind the admin PIN via requestTableCountChange */}
+      <div className="flr-hero">
+        <div className="flr-row" style={{ flexWrap: 'nowrap', minWidth: 0 }}>
+          <div className="flr-avatar" style={{ width: '2.5rem', height: '2.5rem', background: 'var(--adm-primary)', color: 'var(--adm-primary-fg)' }}>
+            <Grid3X3 className="w-5 h-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white drop-shadow-sm">
-                Floor Capacity &amp; Table Scaling
-              </h2>
-              <span className="bg-black/30 backdrop-blur-sm text-white px-3.5 py-1 rounded-full text-xs font-black border border-white/30 tracking-wide">
-                {tables.length} Total Tables
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-orange-100 font-medium mt-1">
-              Add or remove tables dynamically &bull; Real-time sync across Diner QR stickers &amp; Employee handsets
+          <div style={{ minWidth: 0 }}>
+            <h2 className="flr-hero__title">Floor &amp; tables</h2>
+            <p className="flr-hero__sub">
+              {tables.length} tables &middot; changes sync to guest QR codes and staff handsets
             </p>
           </div>
         </div>
 
-        {/* Action Controls: Direct Write & Protected by PIN 808080 */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Direct Write Input (NO + / - Stepper, NO presets, NO loose buttons) */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              requestTableCountChange(customTableCount);
-            }}
-            className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-white/30 px-3.5 py-2 rounded-2xl shadow-inner"
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            requestTableCountChange(customTableCount);
+          }}
+          className="flr-count-form"
+        >
+          <label htmlFor="hero-table-count-input" className="flr-label">Total tables</label>
+          <input
+            id="hero-table-count-input"
+            type="number"
+            min="1"
+            max="60"
+            value={customTableCount}
+            onChange={(e) => setCustomTableCount(e.target.value)}
+            placeholder={String(tables.length)}
+            className="flr-input"
+            title="Type desired total table count (1-60)"
+          />
+          <button
+            type="submit"
+            className="flr-btn flr-btn--primary"
+            title="Apply desired table count (requires admin PIN)"
           >
-            <label htmlFor="hero-table-count-input" className="text-xs font-black text-orange-200 uppercase tracking-wider whitespace-nowrap">
-              Tables:
-            </label>
-            <input
-              id="hero-table-count-input"
-              type="number"
-              min="1"
-              max="60"
-              value={customTableCount}
-              onChange={(e) => setCustomTableCount(e.target.value)}
-              placeholder={String(tables.length)}
-              className="w-16 text-center bg-black/40 text-white font-black text-sm py-1.5 px-2 rounded-xl border border-white/30 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition"
-              title="Type desired total table count (1-60)"
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-xl bg-white hover:bg-orange-50 text-orange-600 font-black text-xs sm:text-sm shadow-md transition active:scale-95 cursor-pointer flex items-center gap-1.5"
-              title="Apply desired table count (Requires PIN 808080)"
-            >
-              <Lock className="w-3.5 h-3.5" />
-              <span>Apply</span>
-            </button>
-          </form>
-        </div>
+            <Lock className="w-3.5 h-3.5" />
+            <span>Apply</span>
+          </button>
+        </form>
       </div>
 
-      {/* =======================================================================
-          TOP TELEMETRY & STATUS FILTER CONTROLS BAR
-          ======================================================================= */}
-      <div className="bg-[#111827]/95 backdrop-blur-2xl admin-card border border-slate-700/80 p-5 sm:p-6 space-y-6">
-        
-        {/* Row 1: Header, Search & View Toggle */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF5A26] to-[#FF7A45] text-white flex items-center justify-center shadow-lg shadow-[#FF5A26]/30 ring-1 ring-white/20 shrink-0">
-              <UtensilsCrossed className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="admin-section-title text-lg sm:text-xl font-black text-[#f8fafc] tracking-tight leading-none">
-                  Live Orders &amp; Table Tracking
-                </h2>
-                <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
-                  Floor Matrix
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 font-medium mt-1">
-                Real-time {tables.length}-table floor matrix &bull; 4-stage kitchen pipeline &bull; Instant staff dispatch
-              </p>
-            </div>
+      {/* KPI row: each tile filters the grid. Colours: green free, amber ordering, blue ready, red assistance */}
+      <div className="flr-kpis">
+        <button
+          type="button"
+          className="flr-kpi-btn"
+          data-tone="success"
+          aria-pressed={activeFilter === TABLE_STATUS.AVAILABLE}
+          onClick={() => setActiveFilter(activeFilter === TABLE_STATUS.AVAILABLE ? 'all' : TABLE_STATUS.AVAILABLE)}
+        >
+          <div className="flr-kpi__label">Available</div>
+          <div className="flr-kpi__value">{counts.available}</div>
+          <div className="flr-kpi__hint">of {counts.all} tables, ready to seat</div>
+        </button>
+
+        <button
+          type="button"
+          className="flr-kpi-btn"
+          data-tone="warning"
+          aria-pressed={activeFilter === TABLE_STATUS.ORDER_RUNNING}
+          onClick={() => setActiveFilter(activeFilter === TABLE_STATUS.ORDER_RUNNING ? 'all' : TABLE_STATUS.ORDER_RUNNING)}
+        >
+          <div className="flr-kpi__label">Ordering</div>
+          <div className="flr-kpi__value">{counts.orderRunning}</div>
+          <div className="flr-kpi__hint">Placed or cooking</div>
+        </button>
+
+        <button
+          type="button"
+          className="flr-kpi-btn"
+          data-tone="info"
+          aria-pressed={activeFilter === TABLE_STATUS.READY_IN_KITCHEN}
+          onClick={() => setActiveFilter(activeFilter === TABLE_STATUS.READY_IN_KITCHEN ? 'all' : TABLE_STATUS.READY_IN_KITCHEN)}
+        >
+          <div className="flr-kpi__label">Ready</div>
+          <div className="flr-kpi__value">{counts.readyInKitchen}</div>
+          <div className="flr-kpi__hint">Ready in kitchen for pickup</div>
+        </button>
+
+        <button
+          type="button"
+          className="flr-kpi-btn"
+          data-tone="danger"
+          aria-pressed={activeFilter === TABLE_STATUS.NEED_ASSISTANCE}
+          onClick={() => setActiveFilter(activeFilter === TABLE_STATUS.NEED_ASSISTANCE ? 'all' : TABLE_STATUS.NEED_ASSISTANCE)}
+        >
+          <div className="flr-kpi__label">Needs assistance</div>
+          <div className="flr-kpi__value">{counts.needAssistance}</div>
+          <div className="flr-kpi__hint">Guest calls waiting</div>
+        </button>
+      </div>
+
+      {/* TOOLBAR: filter chips, view mode, staff balance, add table */}
+      <div className="flr-panel flr-stack">
+        <div className="flr-toolbar">
+          <div className="flr-tabs" role="group" aria-label="Filter tables by status">
+            {[
+              { id: 'all', label: 'All tables', count: counts.all, tone: 'neutral' },
+              { id: TABLE_STATUS.AVAILABLE, label: 'Available', count: counts.available, tone: 'success' },
+              { id: TABLE_STATUS.ORDER_RUNNING, label: 'Ordering', count: counts.orderRunning, tone: 'warning' },
+              { id: TABLE_STATUS.READY_IN_KITCHEN, label: 'Ready', count: counts.readyInKitchen, tone: 'info' },
+              { id: TABLE_STATUS.NEED_ASSISTANCE, label: 'Needs assistance', count: counts.needAssistance, tone: 'danger' }
+            ].map(chip => (
+              <button
+                key={chip.id}
+                type="button"
+                data-tone={chip.tone}
+                aria-pressed={activeFilter === chip.id}
+                onClick={() => setActiveFilter(chip.id)}
+                className="flr-tab"
+              >
+                {chip.id !== 'all' && <span className="flr-dot" />}
+                <span>{chip.label}</span>
+                <span className="flr-tab__count">{chip.count}</span>
+              </button>
+            ))}
           </div>
 
-          {/* Quick Search & Controls */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700">
+          <div className="flr-toolbar__right">
+            <div className="flr-tabs" role="group" aria-label="View mode" style={{ overflow: 'visible' }}>
               <button
                 type="button"
+                aria-pressed={viewMode === 'grid'}
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  viewMode === 'grid'
-                    ? 'bg-[#FF5A26] text-white shadow-md'
-                    : 'text-slate-400 hover:text-[#f8fafc]'
-                }`}
-                title="Grid Card View"
+                className="flr-tab"
+                title="Grid view"
               >
                 <Layers className="w-4 h-4" />
+                <span>Grid</span>
               </button>
               <button
                 type="button"
+                aria-pressed={viewMode === 'compact'}
                 onClick={() => setViewMode('compact')}
-                className={`p-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  viewMode === 'compact'
-                    ? 'bg-[#FF5A26] text-white shadow-md'
-                    : 'text-slate-400 hover:text-[#f8fafc]'
-                }`}
-                title="Compact List View"
+                className="flr-tab"
+                title="Compact list view"
               >
                 <Filter className="w-4 h-4" />
+                <span>List</span>
               </button>
             </div>
 
-            {/* Auto-Balance Tables Button */}
             {onAutoBalanceTables && (
               <button
                 type="button"
@@ -880,362 +931,81 @@ export default function LiveTablesModule({
                     isOpen: true,
                     actionTitle: 'Authorize Floor Staff Auto-Balance',
                     actionDescription: `Automatically redistribute all ${tables.length} floor tables evenly across all active floor staff. Existing table assignments will be reallocated.`,
-                    actionNotice: 'Admin PIN verification (808080) required to rebalance table assignments.',
+                    actionNotice: 'Admin PIN verification required to rebalance table assignments.',
                     pendingAction: () => {
                       onAutoBalanceTables();
                       triggerToast('Tables balanced evenly across all active floor employees!', 'success');
                     }
                   });
                 }}
-                className="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 hover:text-white text-xs font-bold transition flex items-center gap-2 border border-slate-700 shadow-sm cursor-pointer active:scale-95 shrink-0"
-                title="Distribute tables evenly across active employees (Requires PIN 808080)"
+                className="flr-btn"
+                title="Distribute tables evenly across active employees (requires admin PIN)"
               >
-                <Scale className="w-3.5 h-3.5 text-amber-400" />
-                <span>Balance Staff</span>
+                <Scale className="w-3.5 h-3.5" />
+                <span>Balance staff</span>
               </button>
             )}
 
-            {/* Add Table Modal Trigger */}
             <button
               type="button"
               onClick={() => setIsAddTableModalOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 hover:text-white text-xs font-bold transition flex items-center gap-1.5 border border-slate-700 shadow-sm cursor-pointer active:scale-95 shrink-0"
-              title="Add a custom table (Requires Admin PIN 808080)"
+              className="flr-btn flr-btn--primary"
+              title="Add a custom table (requires admin PIN)"
             >
-              <Plus className="w-3.5 h-3.5 text-[#FF7A45]" />
-              <span>Add Table</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add table</span>
             </button>
-
           </div>
         </div>
 
-        {/* Row 2: Executive Summary Metrics Telemetry Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          
-          {/* 1. Available Metric Card */}
-          <button
-            type="button"
-            onClick={() => setActiveFilter(activeFilter === TABLE_STATUS.AVAILABLE ? 'all' : TABLE_STATUS.AVAILABLE)}
-            className={`group p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden ${
-              activeFilter === TABLE_STATUS.AVAILABLE
-                ? 'bg-gradient-to-br from-emerald-950/50 via-slate-900 to-slate-900 border-emerald-500/50 shadow-lg shadow-emerald-950/40 ring-1 ring-emerald-500/40'
-                : 'bg-gradient-to-br from-emerald-950/20 via-slate-900/60 to-slate-900/90 border-slate-800 hover:border-emerald-500/30 hover:bg-slate-800/40'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                Available
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
-                <CheckCircle2 className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight">
-                {counts.available}
-              </span>
-              <span className="text-xs text-slate-500 font-semibold">
-                / {counts.all} tables
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 font-medium mt-1 truncate">
-              Vacant &amp; ready to seat
-            </p>
-            {activeFilter === TABLE_STATUS.AVAILABLE && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 to-teal-400" />
-            )}
-          </button>
-
-          {/* 2. Order Running Metric Card */}
-          <button
-            type="button"
-            onClick={() => setActiveFilter(activeFilter === TABLE_STATUS.ORDER_RUNNING ? 'all' : TABLE_STATUS.ORDER_RUNNING)}
-            className={`group p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden ${
-              activeFilter === TABLE_STATUS.ORDER_RUNNING
-                ? 'bg-gradient-to-br from-amber-950/50 via-slate-900 to-slate-900 border-amber-500/50 shadow-lg shadow-amber-950/40 ring-1 ring-amber-500/40'
-                : 'bg-gradient-to-br from-amber-950/20 via-slate-900/60 to-slate-900/90 border-slate-800 hover:border-amber-500/30 hover:bg-slate-800/40'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                Orders Running
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-                <Flame className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight">
-                {counts.orderRunning}
-              </span>
-              <span className="text-xs text-slate-500 font-semibold">
-                active
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 font-medium mt-1 truncate">
-              Placed &amp; prep underway
-            </p>
-            {activeFilter === TABLE_STATUS.ORDER_RUNNING && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 to-orange-400" />
-            )}
-          </button>
-
-          {/* 3. Ready in Kitchen Metric Card */}
-          <button
-            type="button"
-            onClick={() => setActiveFilter(activeFilter === TABLE_STATUS.READY_IN_KITCHEN ? 'all' : TABLE_STATUS.READY_IN_KITCHEN)}
-            className={`group p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden ${
-              activeFilter === TABLE_STATUS.READY_IN_KITCHEN
-                ? 'bg-gradient-to-br from-cyan-950/50 via-slate-900 to-slate-900 border-cyan-500/50 shadow-lg shadow-cyan-950/40 ring-1 ring-cyan-500/40'
-                : 'bg-gradient-to-br from-cyan-950/20 via-slate-900/60 to-slate-900/90 border-slate-800 hover:border-cyan-500/30 hover:bg-slate-800/40'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                Ready in Kitchen
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
-                <ConciergeBell className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-cyan-400 tracking-tight">
-                {counts.readyInKitchen}
-              </span>
-              <span className="text-xs text-slate-500 font-semibold">
-                for pickup
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 font-medium mt-1 truncate">
-              Plated hot • Alerted staff
-            </p>
-            {activeFilter === TABLE_STATUS.READY_IN_KITCHEN && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-400" />
-            )}
-          </button>
-
-          {/* 4. Need Assistance Metric Card */}
-          <button
-            type="button"
-            onClick={() => setActiveFilter(activeFilter === TABLE_STATUS.NEED_ASSISTANCE ? 'all' : TABLE_STATUS.NEED_ASSISTANCE)}
-            className={`group p-4 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden ${
-              activeFilter === TABLE_STATUS.NEED_ASSISTANCE
-                ? 'bg-gradient-to-br from-rose-950/50 via-slate-900 to-slate-900 border-rose-500/50 shadow-lg shadow-rose-950/40 ring-1 ring-rose-500/40'
-                : 'bg-gradient-to-br from-rose-950/20 via-slate-900/60 to-slate-900/90 border-slate-800 hover:border-rose-500/30 hover:bg-slate-800/40'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                Need Assistance
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-rose-400 tracking-tight">
-                {counts.needAssistance}
-              </span>
-              <span className="text-xs text-slate-500 font-semibold">
-                call alert
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 font-medium mt-1 truncate">
-              Guest assistance calls
-            </p>
-            {activeFilter === TABLE_STATUS.NEED_ASSISTANCE && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-rose-500 to-red-500" />
-            )}
-          </button>
-
-        </div>
-
-        {/* Row 3: Modern Glassmorphic Status Tab Bar */}
-        <div className="pt-4 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
-          
-          {/* Tab: ALL */}
-          <button
-            type="button"
-            onClick={() => setActiveFilter('all')}
-            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-              activeFilter === 'all'
-                ? 'bg-slate-800 text-white border border-slate-600 shadow-lg shadow-black/40 ring-1 ring-slate-500/40'
-                : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800'
-            }`}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shadow-[0_0_6px_rgba(255,255,255,0.7)]" />
-            <span>All Tables</span>
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
-              activeFilter === 'all' ? 'bg-[#FF5A26] text-white' : 'bg-slate-800 text-slate-300 border border-slate-700/60'
-            }`}>
-              {counts.all}
-            </span>
-          </button>
-
-          {/* Tab: Available - Emerald theme */}
-          <button
-            type="button"
-            onClick={() => setActiveFilter(TABLE_STATUS.AVAILABLE)}
-            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-              activeFilter === TABLE_STATUS.AVAILABLE
-                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-950/30 ring-1 ring-emerald-500/30'
-                : 'bg-slate-900/80 text-slate-400 hover:text-emerald-400 hover:bg-slate-800/60 border border-slate-800'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-            <span>Available</span>
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
-              activeFilter === TABLE_STATUS.AVAILABLE
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                : 'bg-slate-800 text-emerald-400/80 border border-slate-700/60'
-            }`}>
-              {counts.available}
-            </span>
-          </button>
-
-          {/* Tab: Order Running - Amber theme with Flame icon */}
-          <button
-            type="button"
-            onClick={() => setActiveFilter(TABLE_STATUS.ORDER_RUNNING)}
-            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-              activeFilter === TABLE_STATUS.ORDER_RUNNING
-                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30 shadow-lg shadow-amber-950/30 ring-1 ring-amber-500/30'
-                : 'bg-slate-900/80 text-slate-400 hover:text-amber-400 hover:bg-slate-800/60 border border-slate-800'
-            }`}
-          >
-            <Flame className="w-3.5 h-3.5 text-amber-400" />
-            <span>Order Running</span>
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
-              activeFilter === TABLE_STATUS.ORDER_RUNNING
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                : 'bg-slate-800 text-amber-400/80 border border-slate-700/60'
-            }`}>
-              {counts.orderRunning}
-            </span>
-          </button>
-
-          {/* Tab: Ready in Kitchen - Cyan theme with ConciergeBell icon */}
-          <button
-            type="button"
-            onClick={() => setActiveFilter(TABLE_STATUS.READY_IN_KITCHEN)}
-            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-              activeFilter === TABLE_STATUS.READY_IN_KITCHEN
-                ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 shadow-lg shadow-cyan-950/30 ring-1 ring-cyan-500/30'
-                : 'bg-slate-900/80 text-slate-400 hover:text-cyan-400 hover:bg-slate-800/60 border border-slate-800'
-            }`}
-          >
-            <ConciergeBell className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Ready in Kitchen</span>
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
-              activeFilter === TABLE_STATUS.READY_IN_KITCHEN
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                : 'bg-slate-800 text-cyan-400/80 border border-slate-700/60'
-            }`}>
-              {counts.readyInKitchen}
-            </span>
-          </button>
-
-          {/* Tab: Need Assistance - Rose theme with pulsing red dot and AlertTriangle */}
-          <button
-            type="button"
-            onClick={() => setActiveFilter(TABLE_STATUS.NEED_ASSISTANCE)}
-            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-              activeFilter === TABLE_STATUS.NEED_ASSISTANCE
-                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30 shadow-lg shadow-rose-950/30 ring-1 ring-rose-500/30'
-                : 'bg-slate-900/80 text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 border border-slate-800'
-            }`}
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-            </span>
-            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-            <span>Need Assistance</span>
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
-              activeFilter === TABLE_STATUS.NEED_ASSISTANCE
-                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                : 'bg-slate-800 text-rose-400/80 border border-slate-700/60'
-            }`}>
-              {counts.needAssistance}
-            </span>
-          </button>
-
-          {/* Reset Filters Shortcut */}
-          {activeFilter !== 'all' && (
-            <button
-              type="button"
-              onClick={() => setActiveFilter('all')}
-              className="ml-auto text-xs text-slate-400 hover:text-[#FF7A45] font-semibold flex items-center gap-1.5 transition cursor-pointer px-3 py-1.5 rounded-xl hover:bg-slate-800/60 border border-transparent hover:border-slate-700"
-            >
+        {activeFilter !== 'all' && (
+          <div className="flr-row flr-row--between" style={{ borderTop: '1px solid var(--adm-border)', paddingTop: '0.6rem' }}>
+            <span className="flr-muted">Showing {filteredTables.length} of {tables.length} tables</span>
+            <button type="button" className="flr-btn flr-btn--ghost" style={{ minHeight: '2rem', color: 'var(--adm-primary)' }} onClick={() => setActiveFilter('all')}>
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset Filter</span>
+              <span>Reset filter</span>
             </button>
-          )}
-
-        </div>
-
+          </div>
+        )}
       </div>
 
-      {/* =======================================================================
-          NOTIFICATION TOAST ALERT (Dispatches & Updates)
-          ======================================================================= */}
+      {/* Toast (dispatch and update notices) */}
       {notificationToast && (
-        <div className="fixed bottom-6 right-6 z-50 animate-bounce">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-zinc-900/95 border border-[#FF5A26]/50 text-white shadow-2xl shadow-black/80 backdrop-blur-xl">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#FF5A26] animate-ping" />
-            <span className="text-xs font-bold">{notificationToast.message}</span>
-            <button
-              type="button"
-              onClick={() => setNotificationToast(null)}
-              className="text-zinc-400 hover:text-white ml-2"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
+        <div className="flr-toast" role="status">
+          <span className="flr-dot" style={{ background: 'var(--adm-primary)' }} />
+          <span>{notificationToast.message}</span>
+          <button
+            type="button"
+            onClick={() => setNotificationToast(null)}
+            className="flr-btn flr-btn--ghost flr-btn--icon"
+            aria-label="Dismiss notice"
+            style={{ minHeight: '2rem', width: '2rem' }}
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 
-      {/* Status legend: what each table colour means */}
-      <div className="admin-legend mb-3 px-1" aria-label="Table status legend">
-        <span className="admin-legend-item"><span className="admin-legend-dot bg-emerald-400" />Available</span>
-        <span className="admin-legend-item"><span className="admin-legend-dot bg-amber-400" />Order running</span>
-        <span className="admin-legend-item"><span className="admin-legend-dot bg-cyan-400" />Ready in kitchen</span>
-        <span className="admin-legend-item"><span className="admin-legend-dot bg-rose-500" />Needs assistance</span>
+      {/* Legend: one meaning per colour */}
+      <div className="flr-row flr-muted" aria-label="Table status legend">
+        <span className="flr-tone-chip" data-tone="success"><span className="flr-dot" />Available</span>
+        <span className="flr-tone-chip" data-tone="warning"><span className="flr-dot" />Ordering</span>
+        <span className="flr-tone-chip" data-tone="info"><span className="flr-dot" />Ready for pickup</span>
+        <span className="flr-tone-chip" data-tone="danger"><span className="flr-dot" />Needs assistance</span>
       </div>
 
-      {/* =======================================================================
-          TABLES GRID VIEW (DISPLAY ALL 12 TABLES)
-          ======================================================================= */}
+      {/* TABLE GRID */}
       {filteredTables.length === 0 ? (
-        <div className="admin-empty">
-          <UtensilsCrossed className="w-10 h-10 text-slate-500" />
-          <h3 className="text-base font-bold text-slate-200">No tables match this filter</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            Choose another status above, or show every table again.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveFilter('all');
-            }}
-            className="mt-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition cursor-pointer admin-focusable"
-          >
-            Show All {tables.length} Tables
+        <div className="flr-empty">
+          <UtensilsCrossed className="w-8 h-8" style={{ opacity: 0.6 }} />
+          <h3 className="flr-empty__title">No tables match this filter</h3>
+          <p className="flr-muted" style={{ margin: 0 }}>Choose another status, or show every table again.</p>
+          <button type="button" className="flr-btn flr-btn--primary" onClick={() => setActiveFilter('all')}>
+            Show all {tables.length} tables
           </button>
         </div>
       ) : (
-        <div
-          className={viewMode === 'grid' 
-            ? "grid grid-cols-[repeat(auto-fill,minmax(310px,1fr))] gap-5 w-full" 
-            : "space-y-3 w-full"
-          }
-          style={viewMode === 'grid' ? {
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))',
-            gap: '20px',
-            width: '100%'
-          } : { width: '100%' }}
-        >
+        <div className={viewMode === 'grid' ? 'flr-tables' : 'flr-stack'}>
           {filteredTables.map(table => {
             const activeOrder = getOrderForTable(table);
             const assignedEmp = getAssignedEmployee(table.assignedEmployeeId);
@@ -1243,501 +1013,342 @@ export default function LiveTablesModule({
             const isDispatched = dispatchedTables[table.tableNumber];
             const isAdvancing = activeOrder && advancingOrderIds[activeOrder.id];
 
-            // -----------------------------------------------------------------
-            // STATUS BADGE CONFIGURATION
-            // Available: Soft emerald/slate glow
-            // Order Running: Amber flame theme
-            // Ready in Kitchen: Cyan concierge theme
-            // Customer Call / Issue: Crimson / rose alert glow
-            // -----------------------------------------------------------------
-            let statusBadge = null;
-            let cardAccentClass = 'border-slate-800 hover:border-slate-700 bg-slate-900/80';
-
-            if (table.status === TABLE_STATUS.AVAILABLE) {
-              cardAccentClass = 'border-slate-800/80 hover:border-emerald-500/40 bg-gradient-to-b from-[#0f172a] via-[#0f172a] to-emerald-950/10';
-              statusBadge = (
-                <span className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 px-2.5 py-1 rounded-full text-[11px] shadow-xs shadow-emerald-500/10 shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] shrink-0" />
-                  <span>Available</span>
-                </span>
-              );
-            } else if (table.status === TABLE_STATUS.ORDER_RUNNING) {
-              cardAccentClass = 'border-amber-500/30 hover:border-amber-500/50 shadow-lg shadow-amber-950/20 bg-gradient-to-b from-[#0f172a] via-[#0f172a] to-amber-950/15';
-              statusBadge = (
-                <span className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-full text-[11px] shadow-xs shadow-amber-500/10 shrink-0">
-                  <Flame className="w-3 h-3 text-amber-400 shrink-0" />
-                  <span>Order Running</span>
-                </span>
-              );
+            // One tone per status: success = available, warning = ordering,
+            // info = ready for pickup, danger = needs assistance.
+            let statusLabel = 'Available';
+            let statusTone = 'success';
+            if (table.status === TABLE_STATUS.ORDER_RUNNING) {
+              statusLabel = 'Ordering';
+              statusTone = 'warning';
             } else if (table.status === TABLE_STATUS.READY_IN_KITCHEN) {
-              cardAccentClass = 'border-cyan-500/40 hover:border-cyan-400 shadow-xl shadow-cyan-950/30 ring-1 ring-cyan-500/20 bg-gradient-to-b from-[#0f172a] via-[#0f172a] to-cyan-950/15';
-              statusBadge = (
-                <span className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-2.5 py-1 rounded-full text-[11px] shadow-xs shadow-cyan-500/10 shrink-0">
-                  <ConciergeBell className="w-3 h-3 text-cyan-400 shrink-0 animate-pulse" />
-                  <span>Ready in Kitchen</span>
-                </span>
-              );
+              statusLabel = 'Ready';
+              statusTone = 'info';
             } else if (table.status === TABLE_STATUS.NEED_ASSISTANCE) {
-              cardAccentClass = 'border-rose-500/50 hover:border-rose-400 shadow-2xl shadow-rose-950/40 ring-1 ring-rose-500/30 bg-gradient-to-b from-[#0f172a] via-[#0f172a] to-rose-950/20';
-              statusBadge = (
-                <span className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2.5 py-1 rounded-full text-[11px] shadow-xs shadow-rose-500/20 shrink-0">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-                  </span>
-                  <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0 animate-bounce" />
-                  <span>Need Assistance</span>
-                </span>
-              );
+              statusLabel = 'Needs assistance';
+              statusTone = 'danger';
             }
+
+            const stageIdx = activeOrder ? ORDER_PIPELINE_STAGES.map(s => s.key).indexOf(activeOrder.kitchenFlowStage) : -1;
 
             return (
               <div
                 key={table.id}
-                className={`admin-card admin-table-card border p-5 backdrop-blur-2xl flex flex-col justify-between relative group overflow-hidden ${cardAccentClass}`}
+                className="flr-table"
+                data-tone={statusTone}
+                style={{ cursor: 'default' }}
               >
-                {/* -----------------------------------------------------------
-                    CARD TOP HEADER: Table #, Capacity, Status Badge & Remove
-                    ----------------------------------------------------------- */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start gap-2 flex-wrap">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-10 h-10 rounded-2xl bg-slate-800/90 border border-slate-700/80 flex items-center justify-center font-black text-sm text-slate-100 shadow-inner shrink-0 group-hover:border-[#FF5A26]/40 transition-colors">
-                        {table.tableNumber}
+                {/* Header: number, name, seats, status */}
+                <div className="flr-table__top">
+                  <div className="flr-row" style={{ flexWrap: 'nowrap', minWidth: 0 }}>
+                    <div className="flr-table__num">#{table.tableNumber}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div className="flr-strong flr-ellipsis">{table.name}</div>
+                      <div className="flr-table__meta">
+                        {table.capacity || table.seats || 4} seats &middot; {table.location || table.zone || 'Main Hall'}
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="font-black text-slate-100 text-base tracking-tight leading-none whitespace-normal break-words">
-                          {table.name}
-                        </h3>
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium mt-1">
-                          <span>{table.capacity || table.seats || 4} Seats</span>
-                          <span className="text-slate-600">&bull;</span>
-                          <span className="text-slate-300">{table.location || table.zone || 'Main Hall'}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Visual Status Badge */}
-                    <div className="shrink-0 max-w-full flex items-center gap-1.5">
-                      {statusBadge}
                     </div>
                   </div>
+                  <span className="flr-tone-chip" data-tone={statusTone}>
+                    {statusTone === 'danger' ? <AlertTriangle className="w-3 h-3" /> : <span className="flr-dot" />}
+                    <span>{statusLabel}</span>
+                  </span>
+                </div>
 
-                  {/* -----------------------------------------------------------
-                      ASSIGNED EMPLOYEE SELECTOR (Direct Interactive Dropdown - Rule 2)
-                      ----------------------------------------------------------- */}
-                  <div className="relative pt-2.5 pb-1 border-t border-slate-800/80 space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                          Assigned Staff
-                        </span>
-                        <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-amber-400/90 bg-amber-500/10 border border-amber-500/20 px-1 py-0.5 rounded" title="Assignment protected by Admin PIN (808080)">
-                          <Lock className="w-2.5 h-2.5" />
-                          <span>PIN</span>
-                        </span>
-                      </div>
-                      {assignedEmp && (
-                        <span className="text-[10px] font-bold text-slate-400 truncate max-w-[130px]">
-                          {assignedEmp.role}
+                {/* Assigned staff (reassignment is PIN-free in the original logic; unchanged) */}
+                <div className="flr-box flr-stack" style={{ gap: '0.4rem' }}>
+                  <div className="flr-row flr-row--between">
+                    <span className="flr-label">Assigned staff</span>
+                    <span className="flr-muted flr-ellipsis" style={{ maxWidth: '50%' }}>{assignedEmp?.role || ''}</span>
+                  </div>
+                  <div className="flr-row" style={{ flexWrap: 'nowrap' }}>
+                    <div
+                      className="flr-avatar"
+                      style={{ backgroundColor: assignedEmp?.avatarColor || assignedEmp?.color || 'var(--adm-primary)' }}
+                    >
+                      {assignedEmp?.initials || assignedEmp?.avatar?.initials || 'FE'}
+                    </div>
+                    <select
+                      aria-label={`Assigned Employee for Table ${table.tableNumber}`}
+                      value={table.assignedEmployeeId ? String(table.assignedEmployeeId) : ''}
+                      onChange={(e) => {
+                        const val = e.target.value ? e.target.value : null;
+                        requestReassignEmployee(table.tableNumber, val);
+                      }}
+                      className="flr-select flr-grow"
+                    >
+                      <option value="">Unassigned (floor pool)</option>
+                      {employees.map(emp => (
+                        <option key={emp.id} value={emp.id}>
+                          {emp.name} ({emp.role?.split(' ')[0] || 'Staff'}) {emp.status === 'Active' || emp.status === 'active' ? '· Active' : `· ${emp.status}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Assistance alert */}
+                {table.status === TABLE_STATUS.NEED_ASSISTANCE && (
+                  <div className="flr-alert flr-stack" data-tone="danger" style={{ gap: '0.4rem' }}>
+                    <div className="flr-row flr-row--between">
+                      <span className="flr-strong flr-row" style={{ gap: 6, color: 'var(--adm-danger)' }}>
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>Guest asked for help</span>
+                      </span>
+                      {issueNote?.severity && (
+                        <span className="flr-tone-chip" data-tone={issueNote.severity === ISSUE_SEVERITY.CRITICAL ? 'danger' : 'warning'}>
+                          {issueNote.severity}
                         </span>
                       )}
                     </div>
-
-                    <div className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-800/60 border border-slate-700/60">
-                      <div
-                        className="w-7 h-7 rounded-lg text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm"
-                        style={{ backgroundColor: assignedEmp?.avatarColor || assignedEmp?.color || '#FF5A26' }}
-                      >
-                        {assignedEmp?.initials || assignedEmp?.avatar?.initials || 'FE'}
-                      </div>
-                      
-                      <select
-                        aria-label={`Assigned Employee for Table ${table.tableNumber}`}
-                        value={table.assignedEmployeeId ? String(table.assignedEmployeeId) : ''}
-                        onChange={(e) => {
-                          const val = e.target.value ? e.target.value : null;
-                          requestReassignEmployee(table.tableNumber, val);
-                        }}
-                        className="flex-1 bg-transparent text-xs font-bold text-slate-200 focus:outline-none cursor-pointer py-1 truncate"
-                      >
-                        <option value="" className="bg-[#0f172a] text-zinc-400">
-                          -- Unassigned (Floor Pool) --
-                        </option>
-                        {employees.map(emp => (
-                          <option key={emp.id} value={emp.id} className="bg-[#0f172a] text-[#f8fafc]">
-                            {emp.name} ({emp.role?.split(' ')[0] || 'Staff'}) {emp.status === 'Active' || emp.status === 'active' ? '• Active' : `• ${emp.status}`}
-                          </option>
-                        ))}
-                      </select>
+                    <p className="flr-clamp" style={{ margin: 0, fontSize: '0.82rem', color: 'var(--adm-text)' }}>
+                      &quot;{issueNote ? issueNote.complaintText : 'Guest requested prompt employee assistance at table.'}&quot;
+                    </p>
+                    <div className="flr-muted">
+                      Guest: <span className="flr-strong">{issueNote?.customerName || 'Dining guest'}</span>
                     </div>
                   </div>
+                )}
 
-                  {/* -----------------------------------------------------------
-                      CASE 1: TABLE HAS ACTIVE ASSISTANCE / ISSUE
-                      ----------------------------------------------------------- */}
-                  {table.status === TABLE_STATUS.NEED_ASSISTANCE && (
-                    <div className="p-3.5 rounded-2xl bg-rose-950/30 border border-rose-500/40 space-y-2.5 shadow-inner">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-black text-rose-300 flex items-center gap-1.5">
-                          <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-                          <span>Customer Assistance Alert</span>
+                {/* Order summary + stage progression */}
+                {activeOrder && table.status !== TABLE_STATUS.AVAILABLE && (
+                  <div className="flr-stack" style={{ gap: '0.5rem' }}>
+                    <div className="flr-box flr-stack" style={{ gap: '0.35rem' }}>
+                      <div className="flr-row flr-row--between">
+                        <span className="flr-strong flr-ellipsis">
+                          {activeOrder.orderNumber} &middot; {activeOrder.customerName}
                         </span>
-                        {issueNote?.severity && (
-                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
-                            issueNote.severity === ISSUE_SEVERITY.CRITICAL 
-                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' 
-                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                          }`}>
-                            {issueNote.severity}
-                          </span>
-                        )}
+                        <span className="flr-muted flr-row" style={{ gap: 4, flexWrap: 'nowrap' }}>
+                          <Clock className="w-3 h-3" />
+                          <span>{formatElapsed(activeOrder.timeElapsedMinutes)}</span>
+                        </span>
                       </div>
-
-                      <p className="text-xs text-slate-200 font-medium leading-snug line-clamp-2">
-                        "{issueNote ? issueNote.complaintText : 'Guest requested prompt employee assistance at table.'}"
-                      </p>
-
-                      <div className="flex items-center justify-between text-[10px] text-rose-300/80 pt-1.5 border-t border-rose-500/20">
-                        <span>Guest: <strong className="text-slate-200">{issueNote?.customerName || 'Dining Guest'}</strong></span>
-                        <span>{issueNote ? formatElapsed(15) : 'Active'}</span>
+                      {activeOrder.items.slice(0, 2).map((item, idx) => (
+                        <div key={item.id || idx} className="flr-row flr-row--between" style={{ fontSize: '0.82rem', flexWrap: 'nowrap' }}>
+                          <span className="flr-ellipsis">
+                            <span style={{ color: 'var(--adm-primary)', fontWeight: 700, marginRight: 4 }}>{item.quantity}x</span>
+                            {item.name}
+                          </span>
+                          <span className="flr-amount" style={{ flexShrink: 0 }}>{formatCurrency(item.price * item.quantity)}</span>
+                        </div>
+                      ))}
+                      {activeOrder.items.length > 2 && (
+                        <div className="flr-muted">+{activeOrder.items.length - 2} more item(s)</div>
+                      )}
+                      <div className="flr-row flr-row--between" style={{ borderTop: '1px solid var(--adm-border)', paddingTop: '0.4rem' }}>
+                        <span className="flr-muted">Total</span>
+                        <span className="flr-amount">{formatCurrency(computeOrderBill(activeOrder, getOrderCorrection(activeOrder.id)).total || activeOrder.total)}</span>
                       </div>
                     </div>
-                  )}
 
-                  {/* -----------------------------------------------------------
-                      CASE 2: TABLE HAS ACTIVE ORDER RUNNING / READY
-                      ----------------------------------------------------------- */}
-                  {activeOrder && table.status !== TABLE_STATUS.AVAILABLE && (
-                    <div className="space-y-3 pt-2">
-                      
-                      {/* Live Order Summary Box */}
-                      <div className="p-3 rounded-2xl bg-slate-800/50 border border-slate-700/60 space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-1.5 font-bold text-slate-100">
-                            <span className="px-1.5 py-0.5 rounded-md bg-[#FF5A26]/15 text-[#FF7A45] font-black text-[11px] border border-[#FF5A26]/30">
-                              {activeOrder.orderNumber}
-                            </span>
-                            <span className="text-slate-500">&bull;</span>
-                            <span className="text-slate-200 font-semibold truncate max-w-[120px]">{activeOrder.customerName}</span>
-                          </div>
-                          <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1 shrink-0">
-                            <Clock className="w-3 h-3 text-slate-400" />
-                            <span>{formatElapsed(activeOrder.timeElapsedMinutes)}</span>
-                          </span>
-                        </div>
-
-                        {/* Items Preview with Quantities & Prices */}
-                        <div className="space-y-1.5 text-xs">
-                          {activeOrder.items.slice(0, 2).map((item, idx) => (
-                            <div key={item.id || idx} className="flex items-start justify-between gap-2 text-slate-200">
-                              <span className="pr-1 text-slate-200 leading-snug whitespace-normal break-words">
-                                <span className="font-bold text-[#FF7A45] mr-1">{item.quantity}×</span>
-                                <span>{item.name}</span>
-                              </span>
-                              <span className="font-semibold text-slate-300 shrink-0 text-right">
-                                {formatCurrency(item.price * item.quantity)}
-                              </span>
+                    <div>
+                      <div className="flr-row flr-row--between" style={{ marginBottom: 4 }}>
+                        <span className="flr-label">Kitchen to table</span>
+                        <span className="flr-muted">{stageIdx + 1} of 4</span>
+                      </div>
+                      <div className="flr-stepper">
+                        {ORDER_PIPELINE_STAGES.map((stage, sIdx) => {
+                          const isDone = sIdx < stageIdx;
+                          const isCurr = sIdx === stageIdx;
+                          return (
+                            <div
+                              key={stage.key}
+                              className={`flr-step${isDone ? ' is-done' : ''}${isCurr ? ' is-current' : ''}`}
+                              title={stage.description}
+                            >
+                              {isDone ? <Check className="w-3 h-3" /> : <span>{sIdx + 1}</span>}
+                              <span>{stage.shortLabel}</span>
                             </div>
-                          ))}
-                          {activeOrder.items.length > 2 && (
-                            <p className="text-[10px] text-slate-400 font-bold">
-                              +{activeOrder.items.length - 2} more item(s) ordered
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Total Bill */}
-                        <div className="pt-2 border-t border-slate-700/60 flex items-center justify-between">
-                          <span className="text-[11px] font-medium text-slate-400">
-                            Total Bill ({activeOrder.items.reduce((s, i) => s + i.quantity, 0)} items)
-                          </span>
-                          <span className="text-sm font-black text-emerald-400">
-                            {formatCurrency(activeOrder.total)}
-                          </span>
-                        </div>
+                          );
+                        })}
                       </div>
-
-                      {/* Kitchen-to-Employee Stepper / Progress Bar */}
-                      <div className="space-y-1.5 pt-1">
-                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-400">
-                          <span>Kitchen &rarr; Waiter Pipeline</span>
-                          <span className="text-[#FF7A45] font-extrabold">
-                            {activeOrder.kitchenFlowStage === KITCHEN_STAGE.PLACED ? '1/4 Placed' :
-                             activeOrder.kitchenFlowStage === KITCHEN_STAGE.PREPARING ? '2/4 Prep' :
-                             activeOrder.kitchenFlowStage === KITCHEN_STAGE.READY_PICKUP ? '3/4 Ready' : '4/4 Served'}
-                          </span>
-                        </div>
-
-                        {/* Stepper Grid */}
-                        <div className="grid grid-cols-4 gap-1.5">
-                          {ORDER_PIPELINE_STAGES.map((stage, sIdx) => {
-                            const stageKeys = ORDER_PIPELINE_STAGES.map(s => s.key);
-                            const currentIdx = stageKeys.indexOf(activeOrder.kitchenFlowStage);
-                            const isCompleted = sIdx < currentIdx;
-                            const isCurrent = sIdx === currentIdx;
-
-                            return (
-                              <div
-                                key={stage.key}
-                                className={`p-1.5 rounded-xl border text-center transition-all ${
-                                  isCurrent
-                                    ? 'bg-[#FF5A26]/20 border-[#FF5A26] text-white shadow-md shadow-[#FF5A26]/20 ring-1 ring-[#FF7A45]'
-                                    : isCompleted
-                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                                    : 'bg-slate-800/40 border-slate-700/50 text-slate-500'
-                                }`}
-                                title={stage.description}
-                              >
-                                <div className="flex items-center justify-center mb-0.5">
-                                  {isCompleted ? (
-                                    <Check className="w-3 h-3 text-emerald-400" />
-                                  ) : isCurrent ? (
-                                    <stage.icon className="w-3 h-3 text-[#FF7A45] animate-pulse" />
-                                  ) : (
-                                    <span className="text-[10px] font-bold text-slate-500">{sIdx + 1}</span>
-                                  )}
-                                </div>
-                                <span className="text-[9px] font-black block truncate leading-tight">
-                                  {stage.shortLabel}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* -----------------------------------------------------------
-                      CASE 3: TABLE IS AVAILABLE
-                      ----------------------------------------------------------- */}
-                  {table.status === TABLE_STATUS.AVAILABLE && (
-                    <div className="py-7 px-3 rounded-2xl bg-slate-800/40 border border-slate-700/50 text-center space-y-2">
-                      <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                      </div>
-                      <p className="text-xs font-bold text-slate-200">Table Clean &amp; Vacant</p>
-                      <p className="text-[11px] text-slate-400">
-                        Ready for guest seating &bull; Capacity {table.capacity || 4} diners
-                      </p>
-                    </div>
-                  )}
+                {/* Empty table */}
+                {table.status === TABLE_STATUS.AVAILABLE && (
+                  <div className="flr-box" style={{ textAlign: 'center', padding: '1rem 0.7rem' }}>
+                    <div className="flr-strong">Clean and vacant</div>
+                    <div className="flr-muted">Seats {table.capacity || 4} guests</div>
+                  </div>
+                )}
 
-                </div>
-
-                {/* -----------------------------------------------------------
-                    ACTION TOOLBAR ON EACH CARD
-                    ----------------------------------------------------------- */}
-                <div className="pt-4 mt-4 border-t border-slate-800/80 space-y-2">
-                  
-                  {/* Advance Kitchen Stage 1-Click Action */}
+                {/* Actions */}
+                <div className="flr-stack" style={{ gap: '0.45rem', marginTop: 'auto' }}>
                   {activeOrder && activeOrder.kitchenFlowStage !== KITCHEN_STAGE.SERVED && (
                     <button
                       type="button"
                       disabled={isAdvancing}
                       onClick={() => handleAdvanceStage(activeOrder.id, table.tableNumber)}
-                      className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:from-[#ff6b3d] hover:to-[#ff8d5c] text-white text-xs font-black shadow-md shadow-[#FF5A26]/30 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer disabled:opacity-50"
+                      className="flr-btn flr-btn--primary flr-full"
                     >
                       {activeOrder.kitchenFlowStage === KITCHEN_STAGE.PLACED && (
                         <>
                           <Flame className="w-3.5 h-3.5" />
-                          <span>Advance: Send to Kitchen</span>
+                          <span>Send to kitchen</span>
                         </>
                       )}
                       {activeOrder.kitchenFlowStage === KITCHEN_STAGE.PREPARING && (
                         <>
                           <ConciergeBell className="w-3.5 h-3.5" />
-                          <span>Advance: Mark Ready &amp; Alert Staff</span>
+                          <span>Mark ready &amp; alert staff</span>
                         </>
                       )}
                       {activeOrder.kitchenFlowStage === KITCHEN_STAGE.READY_PICKUP && (
                         <>
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Advance: Confirm Served to Table</span>
+                          <span>Confirm served to table</span>
                         </>
                       )}
                     </button>
                   )}
 
-                  {/* Reset Table Button (when served) */}
                   {activeOrder && activeOrder.kitchenFlowStage === KITCHEN_STAGE.SERVED && (
                     <button
                       type="button"
                       onClick={() => handleResetTable(table.tableNumber)}
-                      className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-md shadow-emerald-950/40 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+                      className="flr-btn flr-btn--primary flr-full"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Clear &amp; Reset Table (Served)</span>
+                      <span>Clear and reset table</span>
                     </button>
                   )}
 
-                  {/* Handle Issue Button (Crimson Glow) */}
+                  {activeOrder && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setBillTarget({ tableNumber: table.tableNumber })}
+                        className="flr-btn flr-full"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>Print bill</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBillTarget({ tableNumber: table.tableNumber })}
+                        className="flr-btn flr-full"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Settle &amp; close table</span>
+                      </button>
+                    </>
+                  )}
+
                   {table.status === TABLE_STATUS.NEED_ASSISTANCE && (
                     <button
                       type="button"
                       onClick={() => setActiveIssueModal({ table, note: issueNote })}
-                      className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-xs font-black shadow-lg shadow-rose-950/50 ring-1 ring-rose-400/50 flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer animate-pulse"
+                      className="flr-btn flr-full"
+                      style={{ background: 'var(--adm-danger)', borderColor: 'transparent', color: '#fff' }}
                     >
-                      <AlertTriangle className="w-4 h-4 text-white" />
-                      <span>Handle Issue &bull; Resolve Alert</span>
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>Handle request</span>
                     </button>
                   )}
 
-                  {/* Secondary Toolbar Actions */}
-                  <div className="flex items-center gap-2">
-                    {/* 1-Click Dispatch / Notify Employee */}
+                  <div className="flr-table-actions">
                     <button
                       type="button"
                       onClick={() => handleDispatchEmployee(table.tableNumber, table.assignedEmployeeId)}
-                      className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border ${
-                        isDispatched
-                          ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm'
-                          : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border-slate-700/80'
-                      }`}
+                      className="flr-btn"
                       title="Dispatch alert to assigned employee handset"
+                      style={isDispatched ? { background: 'var(--adm-success)', color: '#fff', borderColor: 'transparent' } : undefined}
                     >
                       {isDispatched ? (
                         <>
-                          <Check className="w-3.5 h-3.5 text-white" />
-                          <span>Dispatched!</span>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Dispatched</span>
                         </>
                       ) : (
                         <>
-                          <Send className="w-3.5 h-3.5 text-[#FF7A45]" />
-                          <span>Notify Staff</span>
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Notify staff</span>
                         </>
                       )}
                     </button>
 
-                    {/* View Order Receipt / Breakdown Modal */}
-                    {activeOrder && (
+                    {activeOrder ? (
                       <button
                         type="button"
                         onClick={() => setSelectedOrderModal({ order: activeOrder, table, employee: assignedEmp })}
-                        className="py-1.5 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1 border border-slate-700/80 cursor-pointer"
-                        title="View Full Order Receipt Modal"
+                        className="flr-btn"
+                        title="View full order receipt"
                       >
-                        <Eye className="w-3.5 h-3.5 text-slate-400" />
+                        <Eye className="w-3.5 h-3.5" />
                         <span>Receipt</span>
                       </button>
-                    )}
-
-                    {/* Table Reset shortcut if already clean */}
-                    {table.status === TABLE_STATUS.AVAILABLE && (
+                    ) : table.status === TABLE_STATUS.AVAILABLE ? (
                       <button
                         type="button"
                         onClick={() => triggerToast(`Table ${table.tableNumber} is ready. Guest QR code active.`, 'info')}
-                        className="flex-1 py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-emerald-400 text-xs font-bold transition border border-slate-700/80 flex items-center justify-center gap-1 cursor-pointer"
+                        className="flr-btn"
                       >
                         <Users className="w-3.5 h-3.5" />
-                        <span>Seat Table</span>
+                        <span>Seat table</span>
                       </button>
-                    )}
-
+                    ) : <span />}
                   </div>
 
-                  {/* Destructive Card Footer Action: separated, PIN-confirmed (docs/admin-actions.md) */}
-                  <div className="pt-2 border-t border-slate-800/80">
+                  <div style={{ borderTop: '1px solid var(--adm-border)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
                     <button
                       type="button"
                       onClick={() => requestRemoveSpecificTable(table.tableNumber)}
-                      className="admin-danger-action"
+                      className="flr-danger-link"
                       title={`Remove Table #${table.tableNumber} (requires Admin PIN)`}
                       aria-label={`Remove Table #${table.tableNumber} from floor, requires admin PIN`}
                     >
                       <Trash2 className="w-3 h-3" />
-                      <span>Remove table</span>
+                      <span>Remove table (PIN)</span>
                     </button>
                   </div>
-
                 </div>
-
               </div>
             );
           })}
         </div>
       )}
 
-      {/* =======================================================================
-          MODAL: ADD NEW TABLE (Dynamic Table Scaling - Rule 1)
-          ======================================================================= */}
+      {/* MODAL: ADD TABLE */}
       {isAddTableModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-[#111827] border border-[#334155] w-full max-w-lg rounded-3xl p-6 shadow-2xl shadow-black space-y-5 animate-scaleUp">
-            
-            {/* Modal Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-[#334155]">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#FF5A26] to-amber-500 text-white flex items-center justify-center shadow-lg shadow-[#FF5A26]/30">
-                  <Grid3X3 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-[#f8fafc] tracking-tight">
-                    Add New Table to Floor
-                  </h3>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    Will be created as <span className="text-[#FF7A45] font-bold">Table #{tables.length + 1}</span> with printable QR code
-                  </p>
-                </div>
-              </div>
+        <div className="flr-backdrop" onClick={() => setIsAddTableModalOpen(false)}>
+          <div className="flr-modal" role="dialog" aria-modal="true" aria-label="Add table" style={{ maxWidth: '34rem' }} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="flr-btn flr-btn--ghost flr-btn--icon flr-modal__close" onClick={() => setIsAddTableModalOpen(false)} aria-label="Close">
+              <X className="w-4 h-4" />
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setIsAddTableModalOpen(false)}
-                className="w-8 h-8 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-zinc-400 hover:text-[#f8fafc] border border-[#334155] flex items-center justify-center transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+            <div style={{ paddingBottom: '0.9rem', borderBottom: '1px solid var(--adm-border)' }}>
+              <h3 className="flr-title" style={{ fontSize: '1.05rem' }}>Add table to floor</h3>
+              <p className="flr-muted" style={{ margin: '0.25rem 0 0' }}>
+                Will be created as table #{tables.length + 1} with a printable QR code.
+              </p>
             </div>
 
-            {/* Form Fields */}
-            <div className="space-y-4">
-              {/* Seating Capacity */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-300 flex items-center justify-between">
-                  <span>Seating Capacity</span>
-                  <span className="text-[#FF7A45] font-black">{newTableSeats} Seats</span>
-                </label>
-                <div className="grid grid-cols-4 gap-2">
+            <div className="flr-stack" style={{ padding: '1rem 0', gap: '1rem' }}>
+              <div className="flr-stack" style={{ gap: '0.4rem' }}>
+                <div className="flr-row flr-row--between">
+                  <span className="flr-label">Seats</span>
+                  <span className="flr-strong">{newTableSeats} seats</span>
+                </div>
+                <div className="flr-choice-grid">
                   {[2, 4, 6, 8].map((seats) => (
-                    <button
-                      key={seats}
-                      type="button"
-                      onClick={() => setNewTableSeats(seats)}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border cursor-pointer ${
-                        newTableSeats === seats
-                          ? 'bg-[#FF5A26] border-[#FF5A26] text-white shadow-md shadow-[#FF5A26]/30'
-                          : 'bg-[#1e293b] border-[#334155] text-zinc-300 hover:text-white hover:bg-[#334155]'
-                      }`}
-                    >
+                    <button key={seats} type="button" className="flr-choice" aria-pressed={newTableSeats === seats} onClick={() => setNewTableSeats(seats)}>
                       <Users className="w-3.5 h-3.5" />
-                      <span>{seats} Seats</span>
+                      <span>{seats}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Dining Zone */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-300">Dining Zone / Location</label>
-                <div className="grid grid-cols-3 gap-2">
+              <div className="flr-stack" style={{ gap: '0.4rem' }}>
+                <span className="flr-label">Dining zone</span>
+                <div className="flr-choice-grid flr-choice-grid--3">
                   {[
-                    { id: 'Main Hall', label: 'Main Hall' },
-                    { id: 'Window', label: 'Window Side' },
-                    { id: 'Patio', label: 'Patio Terrace' }
+                    { id: 'Main Hall', label: 'Main hall' },
+                    { id: 'Window', label: 'Window side' },
+                    { id: 'Patio', label: 'Patio' }
                   ].map((zone) => (
-                    <button
-                      key={zone.id}
-                      type="button"
-                      onClick={() => setNewTableZone(zone.id)}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 border cursor-pointer ${
-                        newTableZone === zone.id
-                          ? 'bg-amber-500 border-amber-500 text-slate-950 font-black shadow-md'
-                          : 'bg-[#1e293b] border-[#334155] text-zinc-300 hover:text-white hover:bg-[#334155]'
-                      }`}
-                    >
+                    <button key={zone.id} type="button" className="flr-choice" aria-pressed={newTableZone === zone.id} onClick={() => setNewTableZone(zone.id)}>
                       <MapPin className="w-3.5 h-3.5" />
                       <span>{zone.label}</span>
                     </button>
@@ -1745,264 +1356,246 @@ export default function LiveTablesModule({
                 </div>
               </div>
 
-              {/* Assigned Floor Employee */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-300">Assign Dedicated Floor Employee</label>
+              <div className="flr-stack" style={{ gap: '0.4rem' }}>
+                <label className="flr-label" htmlFor="new-table-staff">Assigned staff</label>
                 <select
+                  id="new-table-staff"
                   value={newTableAssignedEmpId}
                   onChange={(e) => setNewTableAssignedEmpId(e.target.value)}
-                  className="w-full py-2.5 px-3 rounded-xl bg-[#1e293b] border border-[#334155] text-xs text-[#f8fafc] font-semibold focus:outline-none focus:border-[#FF5A26] cursor-pointer"
+                  className="flr-select"
                 >
-                  <option value="" className="bg-[#111827] text-zinc-400">-- None (Unassigned / Auto-balance later) --</option>
+                  <option value="">Unassigned (auto-balance later)</option>
                   {employees
                     .filter(emp => emp.status === EMPLOYEE_STATUS.ACTIVE)
                     .map(emp => (
-                      <option key={emp.id} value={emp.id} className="bg-[#111827] text-[#f8fafc]">
-                        {emp.name} &bull; {emp.role}
+                      <option key={emp.id} value={emp.id}>
+                        {emp.name} · {emp.role}
                       </option>
                     ))}
                 </select>
-                <p className="text-[11px] text-zinc-400">
-                  Guest calls from this table will route directly to this employee's handset.
-                </p>
+                <span className="flr-muted">Guest calls from this table route to this employee.</span>
               </div>
             </div>
 
-            {/* Modal Actions (Protected by PIN 808080) */}
-            <div className="pt-2 border-t border-[#334155] flex flex-col sm:flex-row items-center justify-between gap-2.5">
+            <div className="flr-row flr-row--between" style={{ borderTop: '1px solid var(--adm-border)', paddingTop: '0.9rem' }}>
               <button
                 type="button"
                 onClick={() => requestAddNewTable({ seats: 4, zone: 'Main Hall', assignedEmployeeId: null })}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-amber-300 border border-[#334155] text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                title="Quickly add default 4-seat table (Requires PIN 808080)"
+                className="flr-btn"
+                title="Quickly add default 4-seat table (requires admin PIN)"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Quick Add (4-Seat)</span>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Quick add (4 seats)</span>
               </button>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => setIsAddTableModalOpen(false)}
-                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-transparent hover:bg-[#1e293b] text-zinc-400 hover:text-zinc-200 border border-[#334155] text-xs font-bold transition cursor-pointer"
-                >
+              <div className="flr-row">
+                <button type="button" onClick={() => setIsAddTableModalOpen(false)} className="flr-btn flr-btn--ghost">
                   Cancel
                 </button>
-                <button
-                  type="button"
-                  onClick={() => requestAddNewTable()}
-                  className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A26] via-orange-500 to-amber-500 hover:from-[#e04f20] hover:to-amber-400 text-white text-xs font-black shadow-lg shadow-[#FF5A26]/30 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4 stroke-[3]" />
-                  <span>Confirm &amp; Add Table</span>
+                <button type="button" onClick={() => requestAddNewTable()} className="flr-btn flr-btn--primary">
+                  <Plus className="w-4 h-4" />
+                  <span>Add table</span>
                 </button>
               </div>
             </div>
-
           </div>
         </div>
       )}
 
-      {/* =======================================================================
-          MODAL: FULL ORDER BREAKDOWN & RECEIPT (Exact Requirement)
-          ======================================================================= */}
+      {/* MODAL: ORDER RECEIPT */}
+      {billTarget && (
+        <BillPreviewModal
+          open
+          tableNumber={billTarget.tableNumber}
+          orders={orders.filter(o => o.tableNumber === billTarget.tableNumber && !o.completed)}
+          onClose={() => setBillTarget(null)}
+          onSettle={handleSettleTable}
+        />
+      )}
+
+      <OrderCorrectionModal
+        isOpen={Boolean(billCorrectionOrder)}
+        order={billCorrectionOrder}
+        mode="admin"
+        onClose={() => setBillCorrectionOrder(null)}
+      />
+
       {selectedOrderModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-[#111827] border border-[#334155] w-full max-w-2xl rounded-3xl p-6 shadow-2xl shadow-black max-h-[90vh] overflow-y-auto space-y-6 animate-scaleUp">
-            
-            {/* Modal Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-[#334155]">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-black text-[#f8fafc] tracking-tight">
-                    Order Invoice {selectedOrderModal.order.orderNumber}
-                  </h3>
-                  <span className="px-2.5 py-0.5 rounded-lg text-xs font-black bg-[#FF5A26]/15 text-[#FF7A45] border border-[#FF5A26]/30">
-                    Table {selectedOrderModal.table.tableNumber}
-                  </span>
-                </div>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Guest: <span className="text-[#f8fafc] font-bold">{selectedOrderModal.order.customerName}</span> &bull; Placed {formatElapsed(selectedOrderModal.order.timeElapsedMinutes)} ({selectedOrderModal.table.location})
-                </p>
-              </div>
+        <div className="flr-backdrop" onClick={() => setSelectedOrderModal(null)}>
+          <div className="flr-modal" role="dialog" aria-modal="true" aria-label="Order receipt" style={{ maxWidth: '44rem' }} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="flr-btn flr-btn--ghost flr-btn--icon flr-modal__close" onClick={() => setSelectedOrderModal(null)} aria-label="Close">
+              <X className="w-4 h-4" />
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setSelectedOrderModal(null)}
-                className="w-8 h-8 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-zinc-400 hover:text-[#f8fafc] border border-[#334155] flex items-center justify-center transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+            <div style={{ paddingBottom: '0.9rem', borderBottom: '1px solid var(--adm-border)', paddingRight: '2.5rem' }}>
+              <div className="flr-row">
+                <h3 className="flr-title" style={{ fontSize: '1.05rem' }}>Order {selectedOrderModal.order.orderNumber}</h3>
+                <span className="flr-tone-chip" data-tone="neutral">Table {selectedOrderModal.table.tableNumber}</span>
+              </div>
+              <p className="flr-muted" style={{ margin: '0.3rem 0 0' }}>
+                Guest: <span className="flr-strong">{selectedOrderModal.order.customerName}</span> &middot; placed {formatElapsed(selectedOrderModal.order.timeElapsedMinutes)} &middot; {selectedOrderModal.table.location}
+              </p>
             </div>
 
-            {/* Pipeline Stage Progress in Modal */}
-            <div className="p-4 rounded-2xl bg-[#1e293b] border border-[#334155] space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
-                Current Kitchen Pipeline Stage
-              </span>
-              <div className="grid grid-cols-4 gap-2 pt-1">
-                {ORDER_PIPELINE_STAGES.map((s, idx) => {
-                  const stageKeys = ORDER_PIPELINE_STAGES.map(st => st.key);
-                  const currIdx = stageKeys.indexOf(selectedOrderModal.order.kitchenFlowStage);
-                  const isDone = idx < currIdx;
-                  const isCurr = idx === currIdx;
+            <div className="flr-stack" style={{ padding: '1rem 0', gap: '1rem' }}>
+              <div className="flr-stack" style={{ gap: '0.4rem' }}>
+                <span className="flr-label">Kitchen stage</span>
+                <div className="flr-stepper">
+                  {ORDER_PIPELINE_STAGES.map((s, idx) => {
+                    const currIdx = ORDER_PIPELINE_STAGES.map(st => st.key).indexOf(selectedOrderModal.order.kitchenFlowStage);
+                    const isDone = idx < currIdx;
+                    const isCurr = idx === currIdx;
+                    return (
+                      <div key={s.key} className={`flr-step${isDone ? ' is-done' : ''}${isCurr ? ' is-current' : ''}`} style={{ padding: '0.6rem 0.3rem' }}>
+                        <span style={{ fontWeight: 700 }}>{s.shortLabel}</span>
+                        <span style={{ fontWeight: 400 }}>{s.description.split('•')[0]}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
-                  return (
-                    <div
-                      key={s.key}
-                      className={`p-2.5 rounded-xl border text-center ${
-                        isCurr
-                          ? 'bg-[#FF5A26]/20 border-[#FF5A26] text-[#f8fafc] ring-1 ring-[#FF7A45]'
-                          : isDone
-                          ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
-                          : 'bg-[#111827] border-[#334155] text-zinc-400'
-                      }`}
-                    >
-                      <span className="text-xs font-black block">{s.shortLabel}</span>
-                      <span className="text-[9px] text-zinc-400 block mt-0.5">{s.description.split('•')[0]}</span>
+              <div className="flr-box flr-row flr-row--between">
+                <div className="flr-row" style={{ flexWrap: 'nowrap', minWidth: 0 }}>
+                  <div
+                    className="flr-avatar"
+                    style={{ backgroundColor: selectedOrderModal.employee?.avatarColor || 'var(--adm-primary)', width: '2.2rem', height: '2.2rem' }}
+                  >
+                    {selectedOrderModal.employee?.initials || 'EM'}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="flr-label">Assigned employee</div>
+                    <div className="flr-strong">{selectedOrderModal.employee?.name || 'Unassigned'}</div>
+                    <div className="flr-muted">
+                      {selectedOrderModal.employee?.role || 'Floor specialist'} &middot; {selectedOrderModal.employee?.shift || 'Morning'}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Assigned Staff Card with Reassignment Option */}
-            <div className="p-3.5 rounded-2xl bg-[#1e293b] border border-[#334155] flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl text-white font-black text-sm flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: selectedOrderModal.employee?.avatarColor || '#FF5A26' }}
+                  </div>
+                </div>
+                <select
+                  aria-label="Reassign table staff"
+                  value={selectedOrderModal.table.assignedEmployeeId ? String(selectedOrderModal.table.assignedEmployeeId) : ''}
+                  onChange={(e) => {
+                    const val = e.target.value ? e.target.value : null;
+                    requestReassignEmployee(selectedOrderModal.table.tableNumber, val, () => {
+                      const newEmp = employees.find(emp => String(emp.id) === String(val) || (emp.numericId && String(emp.numericId) === String(val)));
+                      setSelectedOrderModal(prev => prev ? ({
+                        ...prev,
+                        employee: newEmp,
+                        table: { ...prev.table, assignedEmployeeId: val }
+                      }) : null);
+                    });
+                  }}
+                  className="flr-select"
                 >
-                  {selectedOrderModal.employee?.initials || 'EM'}
-                </div>
-                <div>
-                  <span className="text-xs text-zinc-400 block font-medium">Assigned Employee</span>
-                  <span className="text-sm font-bold text-[#f8fafc]">
-                    {selectedOrderModal.employee?.name || 'Unassigned'}
-                  </span>
-                  <span className="text-[10px] text-zinc-400 block">
-                    {selectedOrderModal.employee?.role || 'Floor Specialist'} &bull; {selectedOrderModal.employee?.shift || 'Morning'}
-                  </span>
-                </div>
+                  {employees.map(emp => (
+                    <option key={emp.id} value={emp.id}>
+                      Assign to: {emp.name} ({emp.role})
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* Quick Reassign dropdown inside modal (Protected by PIN 808080) */}
-              <select
-                aria-label="Reassign Table Staff"
-                value={selectedOrderModal.table.assignedEmployeeId ? String(selectedOrderModal.table.assignedEmployeeId) : ''}
-                onChange={(e) => {
-                  const val = e.target.value ? e.target.value : null;
-                  requestReassignEmployee(selectedOrderModal.table.tableNumber, val, () => {
-                    const newEmp = employees.find(emp => String(emp.id) === String(val) || (emp.numericId && String(emp.numericId) === String(val)));
-                    setSelectedOrderModal(prev => prev ? ({
-                      ...prev,
-                      employee: newEmp,
-                      table: { ...prev.table, assignedEmployeeId: val }
-                    }) : null);
-                  });
-                }}
-                className="bg-[#111827] border border-[#334155] text-xs text-[#f8fafc] px-3 py-1.5 rounded-xl font-bold cursor-pointer focus:outline-none"
-              >
-                {employees.map(emp => (
-                  <option key={emp.id} value={emp.id}>
-                    Assign to: {emp.name} ({emp.role})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Itemized Order Breakdown Table */}
-            <div className="space-y-2">
-              <span className="text-xs font-black uppercase tracking-wider text-zinc-400 block">
-                Ordered Items ({selectedOrderModal.order.items.length})
-              </span>
-              <div className="border border-[#334155] rounded-2xl overflow-hidden bg-[#1e293b]">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-[#111827] text-zinc-300 border-b border-[#334155]">
-                    <tr>
-                      <th className="py-2.5 px-3 font-black">Item Description</th>
-                      <th className="py-2.5 px-3 font-black text-center">Qty</th>
-                      <th className="py-2.5 px-3 font-black text-right">Unit Price</th>
-                      <th className="py-2.5 px-3 font-black text-right">Line Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#334155]">
-                    {selectedOrderModal.order.items.map((item, idx) => (
-                      <tr key={item.id || idx} className="hover:bg-[#334155]/40">
-                        <td className="py-2.5 px-3 text-[#f8fafc]">
-                          <span className="font-bold text-[#f8fafc] block">{item.name}</span>
-                          {item.notes && (
-                            <span className="text-[10px] text-[#FF7A45] italic block mt-0.5">
-                              "{item.notes}"
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-3 text-center font-bold text-[#FF7A45]">
-                          {item.quantity}×
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-medium text-zinc-400">
-                          {formatCurrency(item.price)}
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-bold text-[#f8fafc]">
-                          {formatCurrency(item.price * item.quantity)}
-                        </td>
+              <div className="flr-stack" style={{ gap: '0.4rem' }}>
+                <span className="flr-label">Ordered items ({selectedOrderModal.order.items.length})</span>
+                <div className="flr-table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th className="ctr">Qty</th>
+                        <th className="num">Unit</th>
+                        <th className="num">Line total</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Voice Note Simulation / Player if applicable */}
-            {selectedOrderModal.order.voiceNoteUrl && (
-              <div className="p-3 rounded-2xl bg-[#1e293b] border border-[#334155] space-y-2">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-[#FF7A45]">
-                  <Mic className="w-3.5 h-3.5 text-[#FF5A26] animate-pulse" />
-                  <span>Customer Voice Recording Note</span>
+                    </thead>
+                    <tbody>
+                      {selectedOrderModal.order.items.map((item, idx) => (
+                        <tr key={item.id || idx}>
+                          <td>
+                            <span className="flr-strong" style={{ display: 'block' }}>{item.name}</span>
+                            {item.notes && <span className="flr-muted" style={{ fontStyle: 'italic' }}>&quot;{item.notes}&quot;</span>}
+                          </td>
+                          <td className="ctr">{item.quantity}</td>
+                          <td className="num">{formatCurrency(item.price)}</td>
+                          <td className="num flr-strong">{formatCurrency(item.price * item.quantity)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <AudioPlayer src={selectedOrderModal.order.voiceNoteUrl} title="Customer Note" />
               </div>
-            )}
 
-            {/* Financial Summary */}
-            <div className="p-4 rounded-2xl bg-[#1e293b] border border-[#334155] space-y-1.5 text-xs">
-              <div className="flex items-center justify-between text-zinc-400">
-                <span>Subtotal</span>
-                <span className="font-semibold text-zinc-200">{formatCurrency(selectedOrderModal.order.subtotal)}</span>
+              {selectedOrderModal.order.voiceNoteUrl && (
+                <div className="flr-voice">
+                  <div className="flr-voice__label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Mic className="w-3.5 h-3.5" />
+                    <span>Customer voice note</span>
+                  </div>
+                  <AudioPlayer src={selectedOrderModal.order.voiceNoteUrl} title="Customer Note" />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setBillCorrectionOrder(selectedOrderModal.order)}
+                  className="flr-btn flr-btn--ghost"
+                  style={{ fontSize: '0.8rem' }}
+                >
+                  Void items / discount
+                </button>
               </div>
-              <div className="flex items-center justify-between text-zinc-400">
-                <span>Sales Tax (10%)</span>
-                <span className="font-semibold text-zinc-200">{formatCurrency(selectedOrderModal.order.tax)}</span>
-              </div>
-              <div className="pt-2 border-t border-[#334155] flex items-center justify-between text-sm">
-                <span className="font-black text-[#f8fafc]">Total Amount</span>
-                <span className="font-black text-emerald-400 text-base">{formatCurrency(selectedOrderModal.order.total)}</span>
+
+              <div className="flr-receipt-sum">
+                {(() => {
+                  const bill = computeOrderBill(selectedOrderModal.order, getOrderCorrection(selectedOrderModal.order.id));
+                  const discount = getOrderCorrection(selectedOrderModal.order.id).discount;
+                  return (
+                    <>
+                      <div className="flr-receipt-line">
+                        <span>Subtotal</span>
+                        <span>{formatCurrency(bill.hasCorrections ? bill.subtotal : selectedOrderModal.order.subtotal)}</span>
+                      </div>
+                      {bill.voidedAmount > 0 && (
+                        <div className="flr-receipt-line">
+                          <span>Voided items</span>
+                          <span>-{formatCurrency(bill.voidedAmount)}</span>
+                        </div>
+                      )}
+                      {bill.discountAmount > 0 && (
+                        <div className="flr-receipt-line">
+                          <span>Discount {discount.type === 'percent' ? `(${discount.value}%)` : ''} &middot; {discount.reason}</span>
+                          <span>-{formatCurrency(bill.discountAmount)}</span>
+                        </div>
+                      )}
+                      <div className="flr-receipt-line">
+                        <span>Sales tax (10%)</span>
+                        <span>{formatCurrency(bill.hasCorrections ? bill.tax : selectedOrderModal.order.tax)}</span>
+                      </div>
+                      <div className="flr-receipt-line flr-receipt-line--total">
+                        <span>Total</span>
+                        <span>{formatCurrency(bill.hasCorrections ? bill.total : selectedOrderModal.order.total)}</span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
-            {/* Modal Bottom Actions */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  window.print();
-                }}
-                className="px-4 py-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-[#f8fafc] border border-[#334155] text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-              >
+            <div className="flr-row flr-row--between" style={{ borderTop: '1px solid var(--adm-border)', paddingTop: '0.9rem' }}>
+              <button type="button" onClick={() => { window.print(); }} className="flr-btn">
                 <Printer className="w-3.5 h-3.5" />
-                <span>Print Bill Receipt</span>
+                <span>Print bill</span>
               </button>
 
-              <div className="flex items-center gap-2">
+              <div className="flr-row">
                 <button
                   type="button"
                   onClick={() => {
                     handleDispatchEmployee(selectedOrderModal.table.tableNumber, selectedOrderModal.table.assignedEmployeeId);
                   }}
-                  className="px-4 py-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-[#FF7A45] border border-[#334155] text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                  className="flr-btn"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>Alert Employee</span>
+                  <span>Alert employee</span>
                 </button>
 
                 {selectedOrderModal.order.kitchenFlowStage !== KITCHEN_STAGE.SERVED ? (
@@ -2012,10 +1605,10 @@ export default function LiveTablesModule({
                       handleAdvanceStage(selectedOrderModal.order.id, selectedOrderModal.table.tableNumber);
                       setSelectedOrderModal(null);
                     }}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF5A26] to-[#FF7A45] hover:from-[#ff6b3d] hover:to-[#ff8d5c] text-white text-xs font-black shadow-md shadow-[#FF5A26]/30 flex items-center gap-1.5 transition cursor-pointer"
+                    className="flr-btn flr-btn--primary"
                   >
                     <Flame className="w-3.5 h-3.5" />
-                    <span>Advance Pipeline Stage</span>
+                    <span>Advance stage</span>
                   </button>
                 ) : (
                   <button
@@ -2024,79 +1617,53 @@ export default function LiveTablesModule({
                       handleResetTable(selectedOrderModal.table.tableNumber);
                       setSelectedOrderModal(null);
                     }}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition cursor-pointer"
+                    className="flr-btn flr-btn--primary"
                   >
                     <Check className="w-3.5 h-3.5" />
-                    <span>Clear &amp; Reset Table</span>
+                    <span>Clear and reset table</span>
                   </button>
                 )}
               </div>
             </div>
-
           </div>
         </div>
       )}
 
-      {/* =======================================================================
-          MODAL: ISSUE RESOLUTION & HANDLING DIALOG
-          ======================================================================= */}
+      {/* MODAL: ASSISTANCE REQUEST */}
       {activeIssueModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-[#111827] border border-red-500/50 w-full max-w-lg rounded-3xl p-6 shadow-2xl shadow-red-950/50 space-y-5 animate-scaleUp">
-            
-            <div className="flex items-start justify-between pb-3 border-b border-[#334155]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center border border-red-500/30">
-                  <AlertTriangle className="w-5 h-5 text-red-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-[#f8fafc]">
-                    Table {activeIssueModal.table.tableNumber} Assistance Call
-                  </h3>
-                  <p className="text-xs text-red-300">
-                    Priority Alert &bull; Zone: {activeIssueModal.table.location}
-                  </p>
-                </div>
-              </div>
+        <div className="flr-backdrop" onClick={() => setActiveIssueModal(null)}>
+          <div className="flr-modal" role="dialog" aria-modal="true" aria-label="Assistance request" style={{ borderColor: 'var(--adm-danger)' }} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="flr-btn flr-btn--ghost flr-btn--icon flr-modal__close" onClick={() => setActiveIssueModal(null)} aria-label="Close">
+              <X className="w-4 h-4" />
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveIssueModal(null)}
-                className="text-zinc-400 hover:text-[#f8fafc]"
-              >
-                <X className="w-4 h-4" />
-              </button>
+            <div style={{ paddingBottom: '0.9rem', borderBottom: '1px solid var(--adm-border)', paddingRight: '2.5rem' }}>
+              <h3 className="flr-title" style={{ fontSize: '1.05rem' }}>Table {activeIssueModal.table.tableNumber}: assistance request</h3>
+              <p className="flr-muted" style={{ margin: '0.25rem 0 0' }}>Zone: {activeIssueModal.table.location}</p>
             </div>
 
-            {/* Complaint details */}
-            <div className="p-4 rounded-2xl bg-red-950/40 border border-red-500/40 space-y-2">
-              <div className="flex items-center justify-between text-xs text-red-300 font-bold">
-                <span>Guest: {activeIssueModal.note?.customerName || 'Dining Customer'}</span>
-                <span className="uppercase text-[10px] bg-red-500 text-white px-2 py-0.5 rounded">
-                  {activeIssueModal.note?.severity || 'Critical'}
-                </span>
+            <div className="flr-alert flr-stack" data-tone="danger" style={{ margin: '1rem 0', gap: '0.4rem' }}>
+              <div className="flr-row flr-row--between">
+                <span className="flr-muted">Guest: <span className="flr-strong">{activeIssueModal.note?.customerName || 'Dining customer'}</span></span>
+                <span className="flr-tone-chip" data-tone="danger">{activeIssueModal.note?.severity || 'Critical'}</span>
               </div>
-              <p className="text-sm text-[#f8fafc] font-medium leading-relaxed">
-                "{activeIssueModal.note ? activeIssueModal.note.complaintText : 'Table has pressed the assistance call button requesting prompt floor service.'}"
+              <p style={{ margin: 0, color: 'var(--adm-text)' }}>
+                &quot;{activeIssueModal.note ? activeIssueModal.note.complaintText : 'Table has pressed the assistance call button requesting prompt floor service.'}&quot;
               </p>
             </div>
 
-            {/* Resolution Form / Actions */}
-            <div className="space-y-3">
-              <label className="text-xs font-black uppercase tracking-wider text-[#f8fafc] block">
-                Floor Manager Action
-              </label>
-
-              <div className="grid grid-cols-2 gap-2">
+            <div className="flr-stack" style={{ gap: '0.6rem' }}>
+              <span className="flr-label">Floor action</span>
+              <div className="flr-choice-grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
                 <button
                   type="button"
                   onClick={() => {
                     handleDispatchEmployee(activeIssueModal.table.tableNumber, activeIssueModal.table.assignedEmployeeId);
                   }}
-                  className="py-2.5 px-3 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-[#f8fafc] text-xs font-bold border border-[#334155] flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  className="flr-btn"
                 >
-                  <Send className="w-3.5 h-3.5 text-[#FF7A45]" />
-                  <span>Dispatch Employee to Table</span>
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Send staff</span>
                 </button>
 
                 {onSelectReportsTab ? (
@@ -2106,10 +1673,10 @@ export default function LiveTablesModule({
                       setActiveIssueModal(null);
                       onSelectReportsTab();
                     }}
-                    className="py-2.5 px-3 rounded-xl bg-[#1e293b] hover:bg-[#334155] text-zinc-300 hover:text-[#f8fafc] text-xs font-bold border border-[#334155] flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    className="flr-btn"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Open in Reports</span>
+                    <span>Open in reports</span>
                   </button>
                 ) : (
                   <button
@@ -2117,10 +1684,10 @@ export default function LiveTablesModule({
                     onClick={() => {
                       handleResolveIssue(activeIssueModal.note?.id, activeIssueModal.table.tableNumber, 'Staff attended to table call immediately');
                     }}
-                    className="py-2.5 px-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-black shadow-md shadow-red-700/40 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    className="flr-btn"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Quick Resolve</span>
+                    <span>Quick resolve</span>
                   </button>
                 )}
               </div>
@@ -2134,20 +1701,17 @@ export default function LiveTablesModule({
                     'Issue handled and resolved on floor by Admin'
                   );
                 }}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer"
+                className="flr-btn flr-btn--primary flr-full"
               >
-                <Check className="w-4 h-4 text-white" />
-                <span>Mark Issue Resolved &amp; Clear Table Alert</span>
+                <Check className="w-4 h-4" />
+                <span>Mark resolved and clear alert</span>
               </button>
             </div>
-
           </div>
         </div>
       )}
 
-      {/* =======================================================================
-          ADMIN TABLE SECURITY CONFIRMATION MODAL (PIN: 808080)
-          ======================================================================= */}
+      {/* ADMIN TABLE SECURITY CONFIRMATION MODAL (PIN), unchanged */}
       <TableSecurityModal
         isOpen={securityModalState.isOpen}
         onClose={() => setSecurityModalState(prev => ({ ...prev, isOpen: false }))}

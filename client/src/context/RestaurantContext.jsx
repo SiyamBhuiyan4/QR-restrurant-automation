@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { verifyStaffSecret, stripPlainCredentials } from '../utils/staffCredentials';
 import {
   TABLE_STATUS,
   TABLE_LOCATION,
@@ -8,10 +9,83 @@ import {
   mockEmployees as defaultMockEmployees
 } from '../data/adminMockData';
 import { useSocket, useSocketListener } from './SocketContext';
+import { verifyAdminPin } from '../utils/adminAuth';
+import { useQuery } from 'convex/react';
+import { api } from '../convexApi';
+import {
+  fetchStaffMessagesFor,
+  sendStaffMessageToConvex,
+  createCorrectionInConvex,
+  patchCorrectionStatusInConvex
+} from '../utils/convexServices';
 
 const RestaurantContext = createContext(null);
 
+// ---------------------------------------------------------------------------
+// Server sync helpers for order corrections (localStorage stays the offline fallback)
+// ---------------------------------------------------------------------------
+/** Fire-and-forget write to Convex; the localStorage copy remains if it fails. */
+const sendCorrectionCreate = (body) => {
+  try {
+    createCorrectionInConvex(body).catch(() => {});
+  } catch (_) { /* offline: localStorage copy remains */ }
+};
+
+const sendCorrectionPatch = (id, fields) => {
+  try {
+    patchCorrectionStatusInConvex({ id, ...fields }).catch(() => {});
+  } catch (_) { /* offline: localStorage copy remains */ }
+};
+
+/** Converts server correction rows (newest first) into the local snapshot shape. */
+const correctionRowsToSnapshot = (rows = []) => {
+  const voids = {};
+  const discounts = {};
+  const requests = [];
+  const latestDiscount = {};
+  for (const row of rows) {
+    if (!row || !row.type) continue;
+    const key = String(row.orderId);
+    const isAppliedVoid = row.type === 'void' && row.status === 'applied';
+    const isApprovedRequest = row.type === 'void_request' && row.status === 'approved';
+    if (isAppliedVoid || isApprovedRequest) {
+      voids[key] = Array.from(new Set([...(voids[key] || []), ...(row.itemIndexes || [])]));
+    }
+    if (row.type === 'void_request') {
+      const { type: _type, ...request } = row;
+      requests.push(request);
+    }
+    if (row.type === 'discount' && !latestDiscount[key]) {
+      latestDiscount[key] = row;
+    }
+  }
+  for (const [key, row] of Object.entries(latestDiscount)) {
+    discounts[key] = row.status === 'applied'
+      ? { id: row.id, type: row.discountType, value: row.value, reason: row.reason, note: row.note, appliedBy: row.appliedBy, appliedAt: row.appliedAt }
+      : null;
+  }
+  return { voids, discounts, requests: requests.slice(0, 200) };
+};
+
+/** Merges server truth over local state: voids and requests union, server wins on conflicts. */
+const mergeCorrectionSnapshots = (local, server) => {
+  const voids = { ...local.voids };
+  for (const [key, items] of Object.entries(server.voids)) {
+    voids[key] = Array.from(new Set([...(voids[key] || []), ...items]));
+  }
+  const byId = new Map();
+  for (const request of local.requests) byId.set(request.id, request);
+  for (const request of server.requests) byId.set(request.id, request);
+  const requests = [...byId.values()]
+    .sort((a, b) => (b.requestedAt || 0) - (a.requestedAt || 0))
+    .slice(0, 200);
+  // Server-known discount keys (including null = cleared) override local values
+  const discounts = { ...local.discounts, ...server.discounts };
+  return { voids, discounts, requests };
+};
+
 export const STORAGE_KEYS = {
+  ORDER_CORRECTIONS: 'smartdine_order_corrections',
   TABLES: 'smartdine_restaurant_tables',
   EMPLOYEES: 'smartdine_restaurant_employees',
   TABLE_COUNT: 'smartdine_table_count',
@@ -601,14 +675,8 @@ export function matchesEmployeePasscode(emp, rawPass) {
   const cleanPass = String(rawPass).trim();
   if (!cleanPass) return false;
 
-  const validPasscodes = [
-    emp.passcode,
-    emp.password,
-    emp.pin,
-    emp.waiterPin
-  ].filter(Boolean).map(p => String(p).trim());
-
-  return validPasscodes.includes(cleanPass);
+  // Hashed (admin-reset) accounts verify against the salted digest; legacy plain accounts fall back.
+  return verifyStaffSecret(emp, cleanPass);
 }
 
 /**
@@ -979,6 +1047,8 @@ export function RestaurantProvider({ children }) {
         setStaffMessagesState(msg.data);
       } else if (msg.type === 'ACTIVITY_LOG_UPDATED' && Array.isArray(msg.data)) {
         setActivityLogsState(msg.data);
+      } else if (msg.type === 'ORDER_CORRECTIONS_UPDATED' && msg.data) {
+        setOrderCorrectionsState(msg.data);
       }
     };
     broadcastChannel.addEventListener('message', handleMessage);
@@ -1014,6 +1084,9 @@ export function RestaurantProvider({ children }) {
       }
       if (e.key === STORAGE_KEYS.ACTIVITY && e.newValue) {
         try { setActivityLogsState(JSON.parse(e.newValue)); } catch (_) {}
+      }
+      if (e.key === STORAGE_KEYS.ORDER_CORRECTIONS && e.newValue) {
+        try { setOrderCorrectionsState(JSON.parse(e.newValue)); } catch (_) {}
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -1330,12 +1403,16 @@ export function RestaurantProvider({ children }) {
     setEmployeesState(prevEmps => {
       const nextEmps = prevEmps.map(emp => {
         if (emp.id === idStr || String(emp.numericId) === idStr || emp.accountCode === idStr) {
-          const updated = {
+          const merged = {
             ...emp,
             ...(credentials.accountCode ? { accountCode: String(credentials.accountCode).trim().toUpperCase() } : {}),
-            ...(credentials.passcode ? { passcode: String(credentials.passcode).trim() } : {}),
+            ...(credentials.passwordHash && credentials.passwordSalt
+              ? { passwordHash: credentials.passwordHash, passwordSalt: credentials.passwordSalt, passwordUpdatedAt: credentials.passwordUpdatedAt }
+              : {}),
             ...(credentials.hiredAt ? { hiredAt: String(credentials.hiredAt).trim() } : {})
           };
+          // Hashed credential: drop any legacy plain-text secret from the record
+          const updated = credentials.passwordHash ? stripPlainCredentials(merged) : merged;
           updatedEmployee = updated;
           return updated;
         }
@@ -1372,7 +1449,8 @@ export function RestaurantProvider({ children }) {
       const status = employeeData.status || 'Active';
       const assignedTables = Array.isArray(employeeData.assignedTables) ? employeeData.assignedTables : [];
       const accountCode = employeeData.accountCode ? String(employeeData.accountCode).trim().toUpperCase() : `WAIT-10${nextNumId}`;
-      const passcode = employeeData.passcode ? String(employeeData.passcode).trim() : `100${nextNumId}`;
+      const hasHash = !!(employeeData.passwordHash && employeeData.passwordSalt);
+      const passcode = hasHash ? undefined : (employeeData.passcode ? String(employeeData.passcode).trim() : `100${nextNumId}`);
       const hiredAt = employeeData.hiredAt || new Date().toISOString().split('T')[0];
 
       const palette = [
@@ -1403,6 +1481,9 @@ export function RestaurantProvider({ children }) {
         email: employeeData.email || `${name.toLowerCase().replace(/\s+/g, '.') || 'waiter'}@restaurant.local`,
         accountCode,
         passcode,
+        passwordHash: hasHash ? employeeData.passwordHash : undefined,
+        passwordSalt: hasHash ? employeeData.passwordSalt : undefined,
+        passwordUpdatedAt: hasHash ? (employeeData.passwordUpdatedAt || new Date().toISOString()) : undefined,
         hiredAt,
         avgResponseTime: '12s',
         onTimeRate: '99%'
@@ -1631,7 +1712,7 @@ export function RestaurantProvider({ children }) {
   // while this device was closed still appear. Filters elsewhere match on id,
   // numericId or username, so query each identifier and merge deduped by id.
   useEffect(() => {
-    if (typeof localStorage === 'undefined' || typeof fetch === 'undefined') return;
+    if (typeof localStorage === 'undefined') return;
     let ids = [];
     try {
       const raw = localStorage.getItem('smartdine_logged_in_employee')
@@ -1650,9 +1731,9 @@ export function RestaurantProvider({ children }) {
 
     let cancelled = false;
     Promise.all(ids.map(id =>
-      fetch(`/api/staff/messages?recipient=${encodeURIComponent(id)}`)
-        .then(res => (res.ok ? res.json() : null))
-        .then(json => (json?.success && Array.isArray(json.data) ? json.data : []))
+      Promise.resolve()
+        .then(() => fetchStaffMessagesFor(id))
+        .then(data => (Array.isArray(data) ? data : []))
         .catch(() => [])
     )).then(results => {
       if (cancelled) return;
@@ -1950,6 +2031,258 @@ export function RestaurantProvider({ children }) {
     broadcastState('ACTIVITY_LOG_UPDATED', []);
   }, [broadcastState]);
 
+  // ---------------------------------------------------------------------------
+  // ORDER CORRECTIONS: VOIDS, DISCOUNTS & VOID REQUESTS (audited via recordActivity)
+  // ---------------------------------------------------------------------------
+  const [orderCorrections, setOrderCorrectionsState] = useState(() => {
+    const empty = { voids: {}, discounts: {}, requests: [] };
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEYS.ORDER_CORRECTIONS);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed === 'object') {
+            return {
+              voids: parsed.voids || {},
+              discounts: parsed.discounts || {},
+              requests: Array.isArray(parsed.requests) ? parsed.requests : []
+            };
+          }
+        }
+      } catch (_) {}
+    }
+    return empty;
+  });
+
+  const commitOrderCorrections = useCallback((mutator) => {
+    setOrderCorrectionsState(prev => {
+      const next = mutator(prev);
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEYS.ORDER_CORRECTIONS, JSON.stringify(next)); } catch (_) {}
+      }
+      broadcastState('ORDER_CORRECTIONS_UPDATED', next);
+      return next;
+    });
+  }, [broadcastState]);
+
+  const ADMIN_ACTOR = useMemo(() => ({
+    actorType: 'admin',
+    actorId: 'admin',
+    actorName: 'Head Desk / Admin',
+    actorRole: 'Admin',
+    actorStaffId: 'ADMIN'
+  }), []);
+
+  // Merge server-known corrections into local state (server wins, local kept as offline fallback)
+  const applyServerCorrections = useCallback((serverSnapshot) => {
+    setOrderCorrectionsState(prev => {
+      const next = mergeCorrectionSnapshots(prev, serverSnapshot);
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEYS.ORDER_CORRECTIONS, JSON.stringify(next)); } catch (_) {}
+      }
+      return next;
+    });
+  }, []);
+
+  // Live corrections from Convex (every device sees changes). Undefined while loading
+  // or when Convex is unreachable, in which case the local copy stays in place.
+  const serverCorrectionRows = useQuery(api.corrections.listAll);
+
+  useEffect(() => {
+    if (!Array.isArray(serverCorrectionRows)) return;
+    applyServerCorrections(correctionRowsToSnapshot(serverCorrectionRows));
+  }, [serverCorrectionRows, applyServerCorrections]);
+
+  const getOrderCorrection = useCallback((orderId) => {
+    const key = String(orderId);
+    return {
+      voidedItems: orderCorrections.voids[key] || [],
+      discount: orderCorrections.discounts[key] || null
+    };
+  }, [orderCorrections]);
+
+  const getPendingVoidRequests = useCallback(
+    () => orderCorrections.requests.filter(r => r.status === 'pending'),
+    [orderCorrections]
+  );
+
+  const describeVoidTarget = (target) => {
+    const itemPart = target.itemNames?.length ? target.itemNames.join(', ') : 'whole order';
+    return `${target.orderLabel} (Table ${target.tableNumber ?? '-'}): ${itemPart}`;
+  };
+
+  /** Applies item voids to an orderCorrections snapshot (pure). */
+  const applyVoidsToSnapshot = (snapshot, orderId, itemIndexes) => {
+    const key = String(orderId);
+    const merged = Array.from(new Set([...(snapshot.voids[key] || []), ...itemIndexes]));
+    return { ...snapshot, voids: { ...snapshot.voids, [key]: merged } };
+  };
+
+  /** Admin void with master PIN. itemIndexes: array of item positions, or 'all'. */
+  const voidOrderItems = useCallback(async ({ orderId, orderLabel, tableNumber, items = [], itemIndexes, reason, note = '', pin, actor = ADMIN_ACTOR }) => {
+    if (!(await verifyAdminPin(pin))) {
+      return { success: false, error: 'Invalid admin PIN' };
+    }
+    if (!reason) return { success: false, error: 'A reason is required' };
+    const indexes = itemIndexes === 'all' ? items.map((_, i) => i) : itemIndexes;
+    if (!indexes.length) return { success: false, error: 'Select at least one item' };
+    const itemNames = indexes.map(i => items[i]?.name).filter(Boolean);
+    commitOrderCorrections(prev => applyVoidsToSnapshot(prev, orderId, indexes));
+    sendCorrectionCreate({
+      type: 'void', orderId, orderLabel, tableNumber, itemIndexes: indexes, itemNames,
+      wholeOrder: itemIndexes === 'all', reason, note, appliedBy: actor?.actorName || ADMIN_ACTOR.actorName
+    });
+    recordActivity({
+      ...actor,
+      actionType: 'VOID',
+      description: `Voided ${itemIndexes === 'all' ? 'whole order' : `${indexes.length} item(s)`} on ${orderLabel}: ${reason}${note ? ` - ${note}` : ''}`,
+      target: orderLabel,
+      details: describeVoidTarget({ orderLabel, tableNumber, itemNames })
+    });
+    return { success: true };
+  }, [commitOrderCorrections, recordActivity, ADMIN_ACTOR]);
+
+  /** Waiter (or any staff) requests a void; admin approves it later. */
+  const requestOrderVoid = useCallback(({ orderId, orderLabel, tableNumber, items = [], itemIndexes, reason, note = '', actor }) => {
+    if (!reason) return { success: false, error: 'A reason is required' };
+    const indexes = itemIndexes === 'all' ? items.map((_, i) => i) : itemIndexes;
+    if (!indexes.length) return { success: false, error: 'Select at least one item' };
+    const itemNames = indexes.map(i => items[i]?.name).filter(Boolean);
+    const request = {
+      id: `vreq-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      status: 'pending',
+      orderId: String(orderId),
+      orderLabel,
+      tableNumber,
+      itemIndexes: indexes,
+      itemNames,
+      wholeOrder: itemIndexes === 'all',
+      reason,
+      note,
+      requestedBy: actor?.actorName || 'Waiter',
+      requestedById: actor?.actorStaffId || '',
+      requestedAt: Date.now()
+    };
+    commitOrderCorrections(prev => ({ ...prev, requests: [request, ...prev.requests].slice(0, 200) }));
+    sendCorrectionCreate({
+      id: request.id, type: 'void_request', orderId: request.orderId, orderLabel, tableNumber,
+      itemIndexes: indexes, itemNames, wholeOrder: request.wholeOrder, reason, note,
+      requestedBy: request.requestedBy, requestedById: request.requestedById
+    });
+    recordActivity({
+      actorType: 'employee',
+      ...(actor || {}),
+      actionType: 'VOID_REQUEST',
+      description: `Requested void on ${orderLabel}: ${reason}${note ? ` - ${note}` : ''}`,
+      target: orderLabel,
+      details: describeVoidTarget({ orderLabel, tableNumber, itemNames })
+    });
+    return { success: true, request };
+  }, [commitOrderCorrections, recordActivity]);
+
+  /** Admin approves a pending request; requires master PIN. */
+  const approveVoidRequest = useCallback(async (requestId, pin, admin = ADMIN_ACTOR) => {
+    if (!(await verifyAdminPin(pin))) {
+      return { success: false, error: 'Invalid admin PIN' };
+    }
+    const request = orderCorrections.requests.find(r => r.id === requestId);
+    if (!request || request.status !== 'pending') {
+      return { success: false, error: 'Request is no longer pending' };
+    }
+    commitOrderCorrections(prev => {
+      const withVoids = applyVoidsToSnapshot(prev, request.orderId, request.itemIndexes);
+      return {
+        ...withVoids,
+        requests: withVoids.requests.map(r => (r.id === requestId
+          ? { ...r, status: 'approved', resolvedBy: admin.actorName, resolvedAt: Date.now() }
+          : r))
+      };
+    });
+    sendCorrectionPatch(requestId, { status: 'approved', resolvedBy: admin.actorName });
+    recordActivity({
+      ...admin,
+      actionType: 'VOID_APPROVED',
+      description: `Approved void request from ${request.requestedBy} on ${request.orderLabel}: ${request.reason}`,
+      target: request.orderLabel,
+      details: describeVoidTarget(request)
+    });
+    return { success: true };
+  }, [orderCorrections, commitOrderCorrections, recordActivity, ADMIN_ACTOR]);
+
+  /** Admin rejects a pending request (no PIN needed to reject). */
+  const rejectVoidRequest = useCallback((requestId, admin = ADMIN_ACTOR) => {
+    const request = orderCorrections.requests.find(r => r.id === requestId);
+    if (!request || request.status !== 'pending') {
+      return { success: false, error: 'Request is no longer pending' };
+    }
+    commitOrderCorrections(prev => ({
+      ...prev,
+      requests: prev.requests.map(r => (r.id === requestId
+        ? { ...r, status: 'rejected', resolvedBy: admin.actorName, resolvedAt: Date.now() }
+        : r))
+    }));
+    sendCorrectionPatch(requestId, { status: 'rejected', resolvedBy: admin.actorName });
+    recordActivity({
+      ...admin,
+      actionType: 'VOID_REJECTED',
+      description: `Rejected void request from ${request.requestedBy} on ${request.orderLabel}: ${request.reason}`,
+      target: request.orderLabel,
+      details: describeVoidTarget(request)
+    });
+    return { success: true };
+  }, [orderCorrections, commitOrderCorrections, recordActivity, ADMIN_ACTOR]);
+
+  /** Discount on an order or table bill: 'percent' (0-100) or 'fixed' amount. Requires master PIN. */
+  const applyOrderDiscount = useCallback(async ({ orderId, orderLabel, tableNumber, discountType, value, reason, note = '', pin, actor = ADMIN_ACTOR }) => {
+    if (!(await verifyAdminPin(pin))) {
+      return { success: false, error: 'Invalid admin PIN' };
+    }
+    const amount = Number(value);
+    if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: 'Enter a discount above zero' };
+    if (discountType === 'percent' && amount > 100) return { success: false, error: 'Percent cannot exceed 100' };
+    if (!reason) return { success: false, error: 'A reason is required' };
+    const key = String(orderId);
+    const discount = { id: `disc-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`, type: discountType === 'percent' ? 'percent' : 'fixed', value: amount, reason, note, appliedBy: actor.actorName, appliedAt: Date.now() };
+    commitOrderCorrections(prev => ({ ...prev, discounts: { ...prev.discounts, [key]: discount } }));
+    sendCorrectionCreate({
+      id: discount.id, type: 'discount', orderId: key, orderLabel, tableNumber,
+      discountType: discount.type, value: amount, reason, note, appliedBy: actor.actorName
+    });
+    recordActivity({
+      ...actor,
+      actionType: 'DISCOUNT',
+      description: `Applied ${discount.type === 'percent' ? `${amount}%` : `${amount} fixed`} discount on ${orderLabel}: ${reason}${note ? ` - ${note}` : ''}`,
+      target: orderLabel,
+      details: `Table ${tableNumber ?? '-'}`
+    });
+    return { success: true };
+  }, [commitOrderCorrections, recordActivity, ADMIN_ACTOR]);
+
+  /** Removes a discount from an order or table bill. Requires master PIN. */
+  const clearOrderDiscount = useCallback(async ({ orderId, orderLabel, pin, actor = ADMIN_ACTOR }) => {
+    if (!(await verifyAdminPin(pin))) {
+      return { success: false, error: 'Invalid admin PIN' };
+    }
+    const key = String(orderId);
+    const activeDiscountId = orderCorrections.discounts[key]?.id;
+    commitOrderCorrections(prev => {
+      const discounts = { ...prev.discounts };
+      delete discounts[key];
+      return { ...prev, discounts };
+    });
+    if (activeDiscountId) {
+      sendCorrectionPatch(activeDiscountId, { status: 'cleared', resolvedBy: actor.actorName });
+    }
+    recordActivity({
+      ...actor,
+      actionType: 'DISCOUNT_REMOVED',
+      description: `Removed discount from ${orderLabel}`,
+      target: orderLabel,
+      details: ''
+    });
+    return { success: true };
+  }, [orderCorrections, commitOrderCorrections, recordActivity, ADMIN_ACTOR]);
+
   const authenticateEmployee = useCallback((username, password) => {
     if (!username || !password) return null;
     const cleanUser = username.trim().toLowerCase();
@@ -1957,8 +2290,7 @@ export function RestaurantProvider({ children }) {
 
     const found = employees.find(e => {
       const u = (e.username || e.accountCode || '').toLowerCase();
-      const p = String(e.password || e.passcode || e.pin || e.waiterPin || '');
-      return u === cleanUser && p === cleanPass;
+      return u === cleanUser && verifyStaffSecret(e, cleanPass);
     });
 
     if (found) {
@@ -2043,19 +2375,13 @@ export function RestaurantProvider({ children }) {
     // Persist on the server so staff on other devices receive it.
     // If the server is unreachable the message stays in local state (offline fallback).
     try {
-      fetch('/api/staff/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newMsg)
-      }).then(res => res.ok ? res.json() : null)
-        .then(json => {
-          if (json?.success && json.data) {
-            mergeIncomingStaffMessage(json.data);
-          }
+      sendStaffMessageToConvex(newMsg)
+        .then(saved => {
+          if (saved && saved.id) mergeIncomingStaffMessage(saved);
         })
         .catch(() => { /* offline: keep local copy only */ });
     } catch {
-      /* fetch unavailable: keep local copy only */
+      /* Convex unavailable: keep local copy only */
     }
 
     return newMsg;
@@ -2128,6 +2454,17 @@ export function RestaurantProvider({ children }) {
     // Activity & Audit History
     recordActivity,
     clearActivityLogs,
+
+    // Order corrections (voids, discounts, void requests)
+    orderCorrections,
+    getOrderCorrection,
+    getPendingVoidRequests,
+    voidOrderItems,
+    requestOrderVoid,
+    approveVoidRequest,
+    rejectVoidRequest,
+    applyOrderDiscount,
+    clearOrderDiscount,
 
     // Direct Staff Messaging / Dispatch
     sendStaffMessage,

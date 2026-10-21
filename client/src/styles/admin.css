@@ -1,3 +1,60 @@
+/*
+ * ==========================================================================
+ * ADMIN DESIGN TOKENS
+ * --------------------------------------------------------------------------
+ * Scoped to .admin-shell (set on the admin wrapper, data-theme="dark|light").
+ * Palette: ink-slate neutrals + one warm amber accent. Contrast targets WCAG AA.
+ *
+ *  token            dark       light      notes
+ *  --adm-bg         #0b1120    #f5f6f8    page canvas
+ *  --adm-surface    #111a2c    #ffffff    cards, sidebar, header
+ *  --adm-surface-2  #18233a    #eef1f5    hover, inputs, table head, wells
+ *  --adm-border     #273452    #dfe4ec    hairlines
+ *  --adm-text       #e8edf6    #111827    body + headings
+ *  --adm-text-muted #9aa8c0    #566275    secondary text (>= 4.5:1 on surface-2)
+ *  --adm-primary    #f5a524    #b45309    amber accent (light darkened for text contrast)
+ *  --adm-primary-fg #1a1205    #ffffff    text on primary
+ *  --adm-success    #34d399    #047857
+ *  --adm-warning    #fbbf24    #a16207
+ *  --adm-danger     #f87171    #b91c1c
+ *  --adm-info       #60a5fa    #1d4ed8
+ *
+ * Use tokens, never raw hex, in admin code. Status colors are for text/icons/
+ * borders; tint backgrounds with color-mix(in srgb, var(--adm-x) 14%, transparent).
+ * ========================================================================== */
+.admin-shell,
+.admin-shell[data-theme="dark"] {
+  --adm-bg: #0b1120;
+  --adm-surface: #111a2c;
+  --adm-surface-2: #18233a;
+  --adm-border: #273452;
+  --adm-text: #e8edf6;
+  --adm-text-muted: #9aa8c0;
+  --adm-primary: #f5a524;
+  --adm-primary-fg: #1a1205;
+  --adm-success: #34d399;
+  --adm-warning: #fbbf24;
+  --adm-danger: #f87171;
+  --adm-info: #60a5fa;
+  color-scheme: dark;
+}
+
+.admin-shell[data-theme="light"] {
+  --adm-bg: #f5f6f8;
+  --adm-surface: #ffffff;
+  --adm-surface-2: #eef1f5;
+  --adm-border: #dfe4ec;
+  --adm-text: #111827;
+  --adm-text-muted: #566275;
+  --adm-primary: #b45309;
+  --adm-primary-fg: #ffffff;
+  --adm-success: #047857;
+  --adm-warning: #a16207;
+  --adm-danger: #b91c1c;
+  --adm-info: #1d4ed8;
+  color-scheme: light;
+}
+
 /* Admin side polish: scoped to .admin-root so customer-facing pages are untouched. */
 
 /* Ensure proper background on html, body, and outer canvas when admin is loaded (screen only) */
@@ -6,13 +63,13 @@
   body.admin-active.dark,
   html:has(.admin-root.dark),
   body:has(.admin-root.dark) {
-    background-color: #0b0f19 !important;
+    background-color: #0b1120 !important;
   }
   html.admin-active:not(.dark),
   body.admin-active:not(.dark),
   html:has(.admin-root:not(.dark)),
   body:has(.admin-root:not(.dark)) {
-    background-color: #f8fafc !important;
+    background-color: #f5f6f8 !important;
   }
 }
 
@@ -41,42 +98,24 @@
 }
 
 /* Global input/select rules */
-.admin-root.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
-.admin-root.dark select,
-.admin-root.dark textarea {
-  background-color: #0f172a !important;
-  color: #f8fafc !important;
-  border: 1px solid #334155 !important;
+.admin-root input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.admin-root select,
+.admin-root textarea {
+  background-color: var(--adm-surface-2) !important;
+  color: var(--adm-text) !important;
+  border: 1px solid var(--adm-border) !important;
   border-radius: 8px !important;
 }
 
-.admin-root.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"])::placeholder,
-.admin-root.dark textarea::placeholder {
-  color: #64748b;
+.admin-root input:not([type="checkbox"]):not([type="radio"]):not([type="range"])::placeholder,
+.admin-root textarea::placeholder {
+  color: var(--adm-text-muted);
+  opacity: 0.8;
 }
 
-.admin-root.dark select option {
-  background-color: #0f172a;
-  color: #f8fafc;
-}
-
-.admin-root:not(.dark) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
-.admin-root:not(.dark) select,
-.admin-root:not(.dark) textarea {
-  background-color: #ffffff;
-  color: #0f172a;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-}
-
-.admin-root:not(.dark) input:not([type="checkbox"]):not([type="radio"]):not([type="range"])::placeholder,
-.admin-root:not(.dark) textarea::placeholder {
-  color: #94a3b8;
-}
-
-.admin-root:not(.dark) select option {
-  background-color: #ffffff;
-  color: #0f172a;
+.admin-root select option {
+  background-color: var(--adm-surface);
+  color: var(--adm-text);
 }
 
 /* ---------- Entrance animations (short, staggered via --i) ---------- */
@@ -238,7 +277,7 @@
 }
 
 .admin-root.dark .admin-viewport {
-  background-color: #0b0f19;
+  background-color: #0b1120;
 }
 
 .admin-root:not(.dark) .admin-viewport {
@@ -367,7 +406,7 @@
 }
 
 .admin-sidebar.dark {
-  --sb-bg: #0b0f19;
+  --sb-bg: #0b1120;
   --sb-border: #1e293b;
   --sb-text: #cbd5e1;
   --sb-muted: #64748b;
@@ -878,7 +917,7 @@
 }
 
 .admin-header.dark .admin-bell-count {
-  box-shadow: 0 0 0 2px #0b0f19;
+  box-shadow: 0 0 0 2px #0b1120;
 }
 
 .admin-profile-btn {
@@ -1011,7 +1050,7 @@
   align-items: center;
   justify-content: center;
   padding: 32px 16px;
-  background: #0b0f19;
+  background: #0b1120;
   color: #f8fafc;
 }
 
@@ -1697,4 +1736,107 @@
 
 .admin-root.dark .admin-kpi-sub {
   color: #94a3b8;
+}
+
+/* =====================================================================
+ * SHELL THEME (token-driven). Loaded last so it overrides the legacy
+ * hard-coded .dark rules above. Selectors carry extra specificity on purpose.
+ * ===================================================================== */
+.admin-shell {
+  background: var(--adm-bg);
+  color: var(--adm-text);
+}
+
+/* Sidebar */
+.admin-shell .admin-sidebar {
+  --sb-bg: var(--adm-surface);
+  --sb-border: var(--adm-border);
+  --sb-text: var(--adm-text);
+  --sb-muted: var(--adm-text-muted);
+  background: var(--adm-surface);
+  border-right: 1px solid var(--adm-border);
+  color: var(--adm-text);
+}
+.admin-shell .admin-sidebar .admin-sidebar-brand-name { color: var(--adm-text); }
+.admin-shell .admin-sidebar .admin-sidebar-role { color: var(--adm-primary); }
+.admin-shell .admin-sidebar .admin-sidebar-brand-sub,
+.admin-shell .admin-sidebar .admin-sidebar-group-title { color: var(--adm-text-muted); }
+.admin-shell .admin-sidebar .admin-sidebar-logo {
+  background: var(--adm-primary);
+  color: var(--adm-primary-fg);
+}
+.admin-shell .admin-sidebar .admin-nav-item {
+  color: var(--adm-text-muted);
+}
+.admin-shell .admin-sidebar .admin-nav-item:hover {
+  background: var(--adm-surface-2);
+  color: var(--adm-text);
+}
+.admin-shell .admin-sidebar .admin-nav-item.is-active {
+  background: color-mix(in srgb, var(--adm-primary) 14%, transparent);
+  color: var(--adm-text);
+  box-shadow: inset 2px 0 0 var(--adm-primary);
+}
+.admin-shell .admin-sidebar .admin-nav-item.is-active svg { color: var(--adm-primary); }
+.admin-shell .admin-sidebar .admin-nav-external { color: var(--adm-text-muted); }
+.admin-shell .admin-sidebar .admin-sidebar-footer {
+  border-top: 1px solid var(--adm-border);
+  color: var(--adm-text-muted);
+}
+.admin-shell .admin-sidebar .admin-nav-badge--success { color: var(--adm-success); }
+.admin-shell .admin-sidebar .admin-nav-badge--warning { color: var(--adm-warning); }
+.admin-shell .admin-sidebar .admin-nav-badge--danger { color: var(--adm-danger); }
+.admin-shell .admin-sidebar .admin-nav-badge--neutral { color: var(--adm-text-muted); }
+.admin-shell .admin-sidebar .admin-nav-badge--primary { color: var(--adm-primary); }
+
+/* Header */
+.admin-shell .admin-header {
+  background: color-mix(in srgb, var(--adm-surface) 92%, transparent);
+  border-bottom: 1px solid var(--adm-border);
+  color: var(--adm-text);
+  box-shadow: none;
+}
+.admin-shell .admin-header .admin-header-input {
+  background: var(--adm-surface-2);
+  border-color: var(--adm-border);
+  color: var(--adm-text);
+}
+.admin-shell .admin-header .admin-header-input::placeholder { color: var(--adm-text-muted); }
+.admin-shell .admin-header .admin-icon-btn {
+  color: var(--adm-text-muted);
+  background: transparent;
+}
+.admin-shell .admin-header .admin-icon-btn:hover {
+  background: var(--adm-surface-2);
+  color: var(--adm-text);
+}
+.admin-shell .admin-header .admin-profile-name,
+.admin-shell .admin-header .admin-profile-menu-name { color: var(--adm-text); }
+
+/* Login gate */
+.admin-shell.admin-login {
+  background: var(--adm-bg);
+  color: var(--adm-text);
+}
+.admin-shell .admin-login-title { color: var(--adm-text); }
+.admin-shell .admin-login-sub,
+.admin-shell .admin-login-footer,
+.admin-shell .admin-login-help { color: var(--adm-text-muted); }
+.admin-shell .admin-login-icon {
+  background: color-mix(in srgb, var(--adm-primary) 16%, transparent);
+  color: var(--adm-primary);
+}
+.admin-shell .admin-login-input {
+  background: var(--adm-surface);
+  border-color: var(--adm-border);
+  color: var(--adm-text);
+}
+.admin-shell .admin-login-input::placeholder { color: var(--adm-text-muted); }
+.admin-shell .admin-login-input:focus { border-color: var(--adm-primary); }
+.admin-shell .admin-login-field-icon,
+.admin-shell .admin-login-toggle { color: var(--adm-text-muted); }
+.admin-shell .admin-login-help.is-error { color: var(--adm-danger); }
+.admin-shell .admin-login-submit {
+  background: var(--adm-primary);
+  color: var(--adm-primary-fg);
 }

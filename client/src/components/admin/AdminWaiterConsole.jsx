@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { verifyAdminPin } from '../../utils/adminAuth';
+import { STAFF_PASSWORD_MASK, isValidStaffPassword, createStaffCredential, stripPlainCredentials } from '../../utils/staffCredentials';
 import {
   Users,
   User,
@@ -34,9 +36,13 @@ import {
 import { useRestaurant } from '../../context/RestaurantContext';
 import { useSocket, useSocketListener } from '../../context/SocketContext';
 import { useQuery, useMutation } from 'convex/react';
+import { mapConvexOrders } from '../../utils/convexOrders.js';
 import { api } from '../../convexApi';
 import TableSecurityModal, { TableSecurityModal as PasscodeConfirmDialog } from './TableSecurityModal';
+import OrderCorrectionModal from './OrderCorrectionModal';
+import { TableBillLookup } from './BillReceipt';
 import '../../styles/staff.css';
+import '../../styles/admin-floor.css';
 
 /**
  * Format relative elapsed time
@@ -68,6 +74,16 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
   const restaurant = useRestaurant();
   const { socket } = useSocket();
 
+  // Open server orders per table (live Convex subscription), used for waiter void requests
+  const [waiterCorrectionOrder, setWaiterCorrectionOrder] = useState(null);
+  let convexRecentOrders = undefined;
+  try {
+    convexRecentOrders = useQuery(api.orders.getOrders, {});
+  } catch (_) {}
+  const serverTableOrders = useMemo(() => mapConvexOrders(convexRecentOrders)
+    .filter(o => !['completed', 'cancelled'].includes(String(o.status || '').toLowerCase())),
+    [convexRecentOrders]);
+
   // Active Tab: 'all' = All Waiters Overview, or employee.id = Specific Waiter Console
   const [selectedWaiterId, setSelectedWaiterId] = useState('all');
 
@@ -86,6 +102,9 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [showModalPassword, setShowModalPassword] = useState(false);
+  // Inline 'Set new password' panel (edit mode). The current password is never displayed.
+  const [pwReset, setPwReset] = useState({ open: false, next: '', confirm: '', masterPin: '', error: '' });
+  const [pwResetChecking, setPwResetChecking] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -259,9 +278,6 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
       } catch (_) {}
     }
 
-    // 4. Update backend REST API
-    fetch(`/api/waiter/calls/${callId}/resolve`, { method: 'PATCH' }).catch(() => {});
-
     showToast(`Table ${finalTable || ''} call marked as resolved venue-wide.`, 'success');
   };
 
@@ -269,34 +285,70 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
   const handleOpenAddModal = () => {
     const nextNum = employees.length + 1;
     const defaultUser = `waiter${nextNum}`;
-    const defaultPin = generateRandomPin();
-
     setEditingEmployee(null);
+    setPwReset({ open: false, next: '', confirm: '', masterPin: '', error: '' });
     setFormData({
       name: '',
       role: 'Floor Specialist',
       shift: 'Morning Shift (08:00 - 16:00)',
       username: defaultUser,
-      password: defaultPin,
+      password: '',
       assignedTables: []
     });
-    setShowModalPassword(true);
+    setShowModalPassword(false);
     setIsModalOpen(true);
   };
 
   // Open Modal to Edit Waiter
   const handleOpenEditModal = (waiter) => {
     setEditingEmployee(waiter);
+    setPwReset({ open: false, next: '', confirm: '', masterPin: '', error: '' });
     setFormData({
       name: waiter.name || '',
       role: waiter.role || 'Floor Specialist',
       shift: waiter.shift || 'Morning Shift (08:00 - 16:00)',
       username: waiter.username || waiter.accountCode?.toLowerCase() || '',
-      password: waiter.password || waiter.passcode || waiter.waiterPin || '1234',
+      password: '',
       assignedTables: (waiter.assignedTables || waiter.tables || []).map(Number)
     });
     setShowModalPassword(false);
     setIsModalOpen(true);
+  };
+
+  // Set a new password for an existing waiter (master PIN required). Old value is never shown.
+  const submitPwReset = async (e) => {
+    e.preventDefault();
+    if (!editingEmployee || pwResetChecking) return;
+    const next = pwReset.next.trim();
+    if (!isValidStaffPassword(next)) {
+      setPwReset(p => ({ ...p, error: 'Password must be 4 to 8 digits.' }));
+      return;
+    }
+    if (next !== pwReset.confirm.trim()) {
+      setPwReset(p => ({ ...p, error: 'The two passwords do not match.' }));
+      return;
+    }
+    setPwResetChecking(true);
+    const pinOk = await verifyAdminPin(pwReset.masterPin.trim());
+    setPwResetChecking(false);
+    if (!pinOk) {
+      setPwReset(p => ({ ...p, error: 'Admin master PIN is incorrect. Password was not changed.' }));
+      return;
+    }
+    const patch = createStaffCredential(next);
+    const targetId = editingEmployee.id;
+    if (restaurant?.setEmployees) {
+      restaurant.setEmployees(prev => prev.map(emp =>
+        (emp.id === targetId || String(emp.numericId) === String(editingEmployee.numericId))
+          ? stripPlainCredentials({ ...emp, ...patch })
+          : emp
+      ));
+    }
+    if (restaurant?.updateEmployeeCredentials) {
+      restaurant.updateEmployeeCredentials(targetId, patch);
+    }
+    setPwReset({ open: false, next: '', confirm: '', masterPin: '', error: '' });
+    showToast(`Password updated for ${formData.name || 'waiter'}. It cannot be viewed again.`, 'success');
   };
 
   // Save Add/Edit Form
@@ -311,13 +363,17 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
       showToast('Please set a login username', 'error');
       return;
     }
-    if (!formData.password.trim()) {
-      showToast('Please set a login password', 'error');
-      return;
+    let credential = null;
+    if (!editingEmployee) {
+      const pw = String(formData.password || '').trim();
+      if (!isValidStaffPassword(pw)) {
+        showToast('Password must be 4 to 8 digits', 'error');
+        return;
+      }
+      credential = createStaffCredential(pw);
     }
 
     const cleanUsername = formData.username.trim().toLowerCase();
-    const cleanPassword = formData.password.trim();
     const cleanTables = formData.assignedTables.map(Number).sort((a, b) => a - b);
 
     if (editingEmployee) {
@@ -332,12 +388,8 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
                 role: formData.role,
                 shift: formData.shift,
                 username: cleanUsername,
-                password: cleanPassword,
                 accountCode: cleanUsername.toUpperCase(),
                 waiterCode: cleanUsername.toUpperCase(),
-                passcode: cleanPassword,
-                pin: cleanPassword,
-                waiterPin: cleanPassword,
                 assignedTables: cleanTables
               };
             }
@@ -369,9 +421,10 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
           role: formData.role,
           shift: formData.shift,
           username: cleanUsername,
-          password: cleanPassword,
           accountCode: cleanUsername.toUpperCase(),
-          passcode: cleanPassword,
+          passwordHash: credential.passwordHash,
+          passwordSalt: credential.passwordSalt,
+          passwordUpdatedAt: credential.passwordUpdatedAt,
           assignedTables: cleanTables
         });
 
@@ -382,13 +435,13 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
         }
       }
 
-      showToast(`Added waiter ${formData.name}! Credentials: ${cleanUsername} / ${cleanPassword}`, 'success');
+      showToast(`Added waiter ${formData.name} with login ID ${cleanUsername}. The password is not shown again.`, 'success');
     }
 
     setIsModalOpen(false);
   };
 
-  // Security Confirmation Modal State (Requires Admin PIN 808080)
+  // Security Confirmation Modal State (Requires admin PIN)
   const [securityModalState, setSecurityModalState] = useState({
     isOpen: false,
     actionTitle: '',
@@ -413,7 +466,7 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
       isOpen: true,
       actionTitle: `Authorize Delete Waiter • ${waiterName}`,
       actionDescription: `Permanently delete waiter account for ${waiterName} from the roster.`,
-      actionNotice: 'Admin PIN verification (808080) required to delete staff.',
+      actionNotice: 'Admin PIN verification required to delete staff.',
       pendingAction: () => {
         setIsModalOpen(false);
         handleDeleteWaiter(waiterId, waiterName);
@@ -534,96 +587,72 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
   };
 
   return (
-    <div className="bg-[#080B10] text-slate-100 min-h-[600px] flex flex-col font-sans select-none antialiased">
-      {/* =======================================================================
-          TOP BAR: GOD-MODE CONSOLE HEADER
-          ======================================================================= */}
-      <div className="p-5 sm:p-6 bg-slate-900/95 border-b border-white/[0.08] backdrop-blur-md">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/20">
-                <ConciergeBell className="w-5 h-5" />
-              </div>
-              <div>
-                <h1 className="admin-section-title text-lg sm:text-xl text-white flex items-center gap-2">
-                  <span>On-Field Waiter Console</span>
-                  <span className="bg-slate-800 text-amber-400 text-[10px] tracking-wider font-bold uppercase px-2 py-0.5 rounded-full border border-white/[0.06]">
-                    {isEmployeeMode ? 'Kitchen Hub Dispatch' : 'Admin God-Mode'}
-                  </span>
-                </h1>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {isEmployeeMode
-                    ? `Kitchen & Staff console active for ${currentEmployee?.name || 'Staff'}. Real-time waiter oversight & pass dispatch.`
-                    : 'Live God-mode oversight across all floor waiters, table custody, and customer assistance calls. Zero login required.'}
-                </p>
-              </div>
+    <div className="flr-root" style={{ minHeight: 0 }}>
+
+      {/* BILL: print a table's open bill (preview, print, settle) */}
+      <TableBillLookup />
+
+      {/* HEADER: title, live status and waiter switcher */}
+      <div className="flr-panel flr-stack" style={{ gap: '0.9rem' }}>
+        <div className="flr-toolbar">
+          <div className="flr-row" style={{ flexWrap: 'nowrap', minWidth: 0 }}>
+            <div className="flr-avatar" style={{ width: '2.5rem', height: '2.5rem', background: 'var(--adm-primary)', color: 'var(--adm-primary-fg)' }}>
+              <ConciergeBell className="w-5 h-5" />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <h1 className="flr-title" style={{ fontSize: '1.05rem' }}>Waiter console</h1>
+              <p className="flr-muted" style={{ margin: '0.15rem 0 0' }}>
+                {isEmployeeMode
+                  ? `Signed in as ${currentEmployee?.name || 'staff'}. Watch calls and send instructions to waiters.`
+                  : 'Live view of every floor waiter, their tables and customer calls.'}
+              </p>
             </div>
           </div>
 
-          {/* Quick Metrics Bar */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Live Synced Badge */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-white/[0.06] text-xs text-slate-200">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Real-Time Synced</span>
-            </div>
-
-            {/* Total Waiters Count */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-white/[0.06] text-xs text-slate-200">
-              <Users className="w-3.5 h-3.5 text-amber-400" />
-              <span>{waiters.length} Waiters Roster</span>
-            </div>
-
-            {/* Active Calls Badge */}
-            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-white/[0.06] text-xs ${
-              calls.length > 0 ? 'text-rose-400' : 'text-slate-200'
-            }`}>
-              <ConciergeBell className={`w-3.5 h-3.5 ${calls.length > 0 ? 'text-rose-400' : 'text-slate-400'}`} />
-              <span>{calls.length} Active {calls.length === 1 ? 'Call' : 'Calls'}</span>
-            </div>
-
-            {/* Quick Link to open /waiter */}
+          <div className="flr-row">
+            <span className="flr-tone-chip" data-tone="success">
+              <span className="flr-dot flr-dot--pulse" />
+              Live
+            </span>
+            <span className="flr-tone-chip" data-tone="neutral">
+              <Users className="w-3.5 h-3.5" />
+              {waiters.length} waiters
+            </span>
+            <span className="flr-tone-chip" data-tone={calls.length > 0 ? 'danger' : 'neutral'}>
+              <ConciergeBell className="w-3.5 h-3.5" />
+              {calls.length} active {calls.length === 1 ? 'call' : 'calls'}
+            </span>
             <a
               href="/waiter"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-white/[0.06] text-xs text-slate-200 hover:text-white transition cursor-pointer"
+              className="flr-btn"
               title="Open the standalone waiter login page in a new window"
+              style={{ minHeight: '2rem', padding: '0.3rem 0.6rem', fontSize: '0.78rem' }}
             >
               <span>Open /waiter</span>
-              <ExternalLink className="w-3 h-3 text-slate-400" />
+              <ExternalLink className="w-3 h-3" />
             </a>
           </div>
         </div>
 
-        {/* =====================================================================
-            HORIZONTAL TABS (LIVE WAITER SWITCHER & MONITOR)
-            [ All Waiters Overview ] [ Rakib Ahmed (T1, T2, T3) ] [ Hasan Mahmud (T4, T5, T6) ] ... [ + Add Waiter ]
-            ===================================================================== */}
-        <div className="mt-5 pt-4 border-t border-white/[0.08] flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-          {/* Tab 1: All Waiters Overview */}
+        {/* Waiter switcher: all waiters or one waiter's live console */}
+        <div className="flr-tabs" role="tablist" aria-label="Choose waiter">
           <button
             type="button"
+            role="tab"
+            aria-selected={selectedWaiterId === 'all'}
+            aria-pressed={selectedWaiterId === 'all'}
             onClick={() => setSelectedWaiterId('all')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition shrink-0 cursor-pointer ${
-              selectedWaiterId === 'all'
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-white/[0.06] hover:text-white'
-            }`}
+            className="flr-tab"
           >
             <Users className="w-3.5 h-3.5" />
-            <span>All Waiters Overview</span>
+            <span>All waiters</span>
             {calls.length > 0 && (
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                selectedWaiterId === 'all' ? 'bg-slate-950 text-amber-400' : 'bg-rose-500 text-white animate-pulse'
-              }`}>
-                {calls.length}
-              </span>
+              <span className="flr-tab__count" style={{ background: 'var(--adm-danger)', color: '#fff' }}>{calls.length}</span>
             )}
           </button>
 
-          {/* Waiter Tabs */}
           {waiters.map(waiter => {
             const isSelected = selectedWaiterId === waiter.id || String(selectedWaiterId) === String(waiter.numericId);
             const waiterCalls = getCallsForWaiter(waiter);
@@ -635,186 +664,189 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
               <button
                 key={waiter.id}
                 type="button"
+                role="tab"
+                aria-selected={isSelected}
+                aria-pressed={isSelected}
                 onClick={() => setSelectedWaiterId(waiter.id)}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-xs font-black transition shrink-0 cursor-pointer ${
-                  isSelected
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                    : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-white/[0.06] hover:text-white'
-                }`}
+                className="flr-tab"
               >
-                <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 ${
-                  isSelected ? 'bg-slate-950 text-amber-400' : 'bg-slate-700 text-slate-200'
-                }`}>
+                <span className="flr-avatar" style={{ width: '1.4rem', height: '1.4rem', fontSize: '0.6rem', borderRadius: 6, background: 'var(--adm-surface-2)', color: 'var(--adm-text)', border: '1px solid var(--adm-border)' }}>
                   {waiter.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
-                </div>
-                <span>{waiter.name}</span>
-                <span className={`text-[10px] font-bold opacity-80 ${
-                  isSelected ? 'text-slate-950' : 'text-slate-400'
-                }`}>
-                  ({tablesSummary || 'No Tbls'})
                 </span>
+                <span>{waiter.name}</span>
+                <span className="flr-muted" style={{ fontSize: '0.7rem' }}>({tablesSummary || 'no tables'})</span>
                 {waiterCalls.length > 0 && (
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black animate-pulse ${
-                    isSelected ? 'bg-slate-950 text-rose-400' : 'bg-rose-500 text-white'
-                  }`}>
-                    🚨 {waiterCalls.length}
-                  </span>
+                  <span className="flr-tab__count" style={{ background: 'var(--adm-danger)', color: '#fff' }}>{waiterCalls.length}</span>
                 )}
               </button>
             );
           })}
 
-          {/* Tab: + Add Waiter */}
-          <button
-            type="button"
-            onClick={handleOpenAddModal}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-black transition shrink-0 cursor-pointer shadow-sm active:scale-95"
-          >
-            <Plus className="w-3.5 h-3.5 text-amber-400" />
-            <span>+ Add Waiter</span>
+          <button type="button" onClick={handleOpenAddModal} className="flr-tab" style={{ borderStyle: 'dashed' }}>
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add waiter</span>
           </button>
         </div>
       </div>
 
-      {/* Toast Notification */}
+      {/* Toast */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 animate-bounce">
-          <div className={`px-4 py-3 rounded-2xl text-xs font-black shadow-2xl flex items-center gap-2.5 ${
-            toastMessage.type === 'error'
-              ? 'bg-rose-500 text-white shadow-rose-500/30'
-              : toastMessage.type === 'info'
-              ? 'bg-blue-600 text-white shadow-blue-500/30'
-              : 'bg-emerald-600 text-white shadow-emerald-500/30'
-          }`}>
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>{toastMessage.text}</span>
-          </div>
+        <div className="flr-toast" role="status" style={{
+          borderLeftColor: toastMessage.type === 'error'
+            ? 'var(--adm-danger)'
+            : toastMessage.type === 'warning'
+            ? 'var(--adm-warning)'
+            : toastMessage.type === 'info'
+            ? 'var(--adm-info)'
+            : 'var(--adm-success)'
+        }}>
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>{toastMessage.text}</span>
         </div>
       )}
 
-      {/* =======================================================================
-          VIEW 1: ALL WAITERS OVERVIEW (selectedWaiterId === 'all')
-          ======================================================================= */}
+      {/* VIEW 1: ALL WAITERS OVERVIEW */}
       {selectedWaiterId === 'all' && (
-        <div className="p-5 sm:p-6 space-y-6">
-          {/* Quick Notice Banner */}
-          <div className="p-4 rounded-3xl bg-slate-900 border border-white/[0.07] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-white">
-                  Full Waiter Fleet Overview (God-Mode)
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Click on any waiter's tab or card to view their personal live console, or give them their Username & Password to log in on their mobile phone.
-                </p>
+        <div className="flr-stack" style={{ gap: '1rem' }}>
+          <div className="flr-panel flr-row flr-row--between" style={{ gap: '0.75rem' }}>
+            <div className="flr-row" style={{ flexWrap: 'nowrap', minWidth: 0 }}>
+              <ShieldCheck className="w-4 h-4" style={{ color: 'var(--adm-text-muted)', flexShrink: 0 }} />
+              <div style={{ minWidth: 0 }}>
+                <div className="flr-strong">Waiter fleet</div>
+                <div className="flr-muted">Open a waiter to see their live console, or share their login with them.</div>
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={handleOpenAddModal}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 self-start sm:self-auto"
-            >
+            <button type="button" onClick={handleOpenAddModal} className="flr-btn flr-btn--primary">
               <Plus className="w-4 h-4" />
-              <span>Create Waiter Account</span>
+              <span>Create waiter account</span>
             </button>
           </div>
 
-          {/* Waiters Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {/* Venue-wide call queue, first so unanswered calls are visible on phones */}
+          {calls.length > 0 && (
+            <section className="flr-panel flr-stack" data-tone="danger" style={{ borderLeft: '4px solid var(--adm-danger)' }}>
+              <div className="flr-row flr-row--between">
+                <h3 className="flr-title">Call queue ({calls.length})</h3>
+                <span className="flr-tone-chip" data-tone="danger">Needs a waiter</span>
+              </div>
+              <div className="flr-console" style={{ gap: '0.6rem' }}>
+                {calls.map(call => {
+                  const callId = call.id || call._id || `c-${Math.random()}`;
+                  const tbl = Number(call.table_number || call.tableNumber || call.table);
+                  const reason = call.reason || 'Assistance requested';
+                  const msg = call.custom_message || call.message || call.note;
+
+                  const assignedEmp = waiters.find(w =>
+                    (w.assignedTables || w.tables || []).map(Number).includes(tbl)
+                  );
+
+                  return (
+                    <div key={`global-call-${callId}`} className="flr-req" data-tone="danger">
+                      <div className="flr-req__row">
+                        <span className="flr-strong">Table {tbl}</span>
+                        <span className="flr-muted flr-row" style={{ gap: 4, flexWrap: 'nowrap' }}>
+                          <Clock className="w-3 h-3" />
+                          <span>{formatCallTime(call.created_at || call.createdAt, currentTime)}</span>
+                        </span>
+                      </div>
+                      <div>
+                        <div style={{ color: 'var(--adm-text)', fontWeight: 600 }}>{reason}</div>
+                        {msg && <div className="flr-muted" style={{ fontStyle: 'italic', marginTop: 2 }}>&quot;{msg}&quot;</div>}
+                      </div>
+                      <div className="flr-req__row">
+                        <span className="flr-muted">Assigned: <span className="flr-strong">{assignedEmp ? assignedEmp.name : 'Unassigned'}</span></span>
+                        <button
+                          type="button"
+                          onClick={() => handleResolveCall(callId, tbl)}
+                          className="flr-btn flr-btn--primary"
+                          style={{ minHeight: '2.75rem' }}
+                        >
+                          <Check className="w-4 h-4" />
+                          <span>Resolve</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Waiter cards */}
+          <div className="flr-tables" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))' }}>
             {waiters.map(waiter => {
               const waiterCalls = getCallsForWaiter(waiter);
               const assignedTables = (waiter.assignedTables || waiter.tables || []).map(Number).sort((a, b) => a - b);
               const username = waiter.username || waiter.accountCode?.toLowerCase() || 'waiter';
+              const initials = waiter.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
               return (
-                <div
+                <article
                   key={waiter.id}
-                  className={`p-5 transition flex flex-col justify-between ${
-                    waiterCalls.length > 0
-                      ? 'admin-card bg-slate-900 border border-amber-500/40'
-                      : 'admin-card bg-slate-900 border border-white/[0.08] hover:border-slate-700'
-                  }`}
+                  className="flr-panel flr-stack"
+                  data-tone={waiterCalls.length > 0 ? 'danger' : 'success'}
+                  style={{ justifyContent: 'space-between', borderLeft: `4px solid ${waiterCalls.length > 0 ? 'var(--adm-danger)' : 'var(--adm-border)'}` }}
                 >
-                  <div className="space-y-4">
-                    {/* Waiter Card Header */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-slate-800 text-amber-400 font-bold text-sm flex items-center justify-center shrink-0">
-                        {waiter.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                  <div className="flr-stack" style={{ gap: '0.75rem' }}>
+                    <div className="flr-row" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+                      <div className="flr-avatar" style={{ width: '2.4rem', height: '2.4rem', background: 'var(--adm-surface-2)', color: 'var(--adm-text)', border: '1px solid var(--adm-border)' }}>
+                        {initials}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-white truncate text-sm">{waiter.name}</p>
-                        <p className="text-xs text-slate-400 truncate">{waiter.role || 'Floor Specialist'} &bull; {waiter.shift || 'Morning Shift'}</p>
-                        <p className="text-[10px] font-mono text-slate-500">{waiter.staffId || waiter.accountCode || `WAIT-${waiter.numericId || '101'}`}</p>
+                      <div className="flr-grow">
+                        <div className="flr-strong flr-ellipsis">{waiter.name}</div>
+                        <div className="flr-muted flr-ellipsis">{waiter.role || 'Floor Specialist'} &middot; {waiter.shift || 'Morning Shift'}</div>
+                        <div className="flr-muted" style={{ fontFamily: 'monospace', fontSize: '0.7rem' }}>{waiter.staffId || waiter.accountCode || `WAIT-${waiter.numericId || '101'}`}</div>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleOpenEditModal(waiter)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition cursor-pointer"
-                        title="Edit waiter details & credentials"
+                        className="flr-btn flr-btn--ghost flr-btn--icon"
+                        title="Edit waiter details and credentials"
+                        aria-label={`Edit ${waiter.name}`}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
 
-                    {/* Waiter Login Credentials Box (For Admin Reference) */}
-                    <details className="p-3 rounded-xl bg-slate-950/40 border border-white/[0.06] space-y-2">
-                      <summary className="cursor-pointer select-none text-xs font-medium text-slate-400 hover:text-slate-300 flex items-center justify-between">
-                        <span className="flex items-center gap-1.5">
-                          <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Login details</span>
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-mono">Use at /waiter</span>
+                    {/* Login details (password stays masked, as in the original) */}
+                    <details className="flr-box">
+                      <summary style={{ cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, color: 'var(--adm-text-muted)' }}>
+                        Login details (for /waiter)
                       </summary>
-
-                      <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-2">
-                        {/* Username */}
-                        <div className="p-2 rounded-xl bg-slate-900 border border-white/[0.06] flex items-center justify-between">
-                          <div>
-                            <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-sans">Username</span>
-                            <span className="font-bold text-amber-400">{username}</span>
+                      <div className="flr-row" style={{ marginTop: '0.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                        <div className="flr-box flr-row flr-row--between" style={{ padding: '0.4rem 0.5rem' }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div className="flr-label" style={{ fontSize: '0.6rem' }}>Username</div>
+                            <div className="flr-strong flr-ellipsis" style={{ fontFamily: 'monospace' }}>{username}</div>
                           </div>
                           <button
                             type="button"
                             onClick={() => handleCopy(username, `user-${waiter.id}`)}
-                            className="text-slate-400 hover:text-white p-1"
-                            title="Copy Username"
+                            className="flr-btn flr-btn--ghost flr-btn--icon"
+                            title="Copy username"
+                            aria-label="Copy username"
+                            style={{ minHeight: '1.8rem', width: '1.8rem' }}
                           >
-                            {copiedKey === `user-${waiter.id}` ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                            {copiedKey === `user-${waiter.id}` ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                           </button>
                         </div>
-
-                        {/* Password */}
-                        <div className="p-2 rounded-xl bg-slate-900 border border-white/[0.06] flex items-center justify-between">
-                          <div>
-                            <p className="text-[9px] font-bold uppercase text-slate-500">Password</p>
-                            <p className="text-slate-500 tracking-widest">••••••••</p>
-                          </div>
+                        <div className="flr-box" style={{ padding: '0.4rem 0.5rem' }}>
+                          <div className="flr-label" style={{ fontSize: '0.6rem' }}>Password</div>
+                          <div className="flr-muted" style={{ letterSpacing: '0.2em' }}>••••••••</div>
                         </div>
                       </div>
                     </details>
 
-                    {/* Assigned Tables */}
-                    <div>
-                      <div className="flex items-center justify-between text-xs font-bold text-slate-400 mb-1.5">
-                        <span className="flex items-center gap-1.5">
-                          <Layers className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Assigned Tables</span>
-                        </span>
-                        <span className="text-[11px] text-slate-400">
-                          {assignedTables.length} Tables
-                        </span>
+                    {/* Assigned tables */}
+                    <div className="flr-stack" style={{ gap: '0.4rem' }}>
+                      <div className="flr-row flr-row--between">
+                        <span className="flr-label">Tables</span>
+                        <span className="flr-muted">{assignedTables.length} assigned</span>
                       </div>
-
                       {assignedTables.length === 0 ? (
-                        <div className="py-2 px-3 rounded-xl bg-slate-950/50 border border-dashed border-slate-800 text-xs text-slate-400">
-                          No tables currently assigned.
-                        </div>
+                        <div className="flr-muted">No tables assigned.</div>
                       ) : (
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flr-row" style={{ gap: 6 }}>
                           {assignedTables.map(tblNum => {
                             const isCalling = waiterCalls.some(
                               c => Number(c.table_number || c.tableNumber || c.table) === tblNum
@@ -822,13 +854,11 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
                             return (
                               <span
                                 key={`badge-${waiter.id}-${tblNum}`}
-                                className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono transition gap-1 ${
-                                  isCalling
-                                    ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-                                    : 'bg-slate-800 text-slate-300 border border-white/[0.06]'
-                                }`}
+                                className="flr-tone-chip"
+                                data-tone={isCalling ? 'danger' : 'neutral'}
+                                style={{ fontFamily: 'monospace' }}
                               >
-                                <span>T{tblNum}</span>
+                                T{tblNum}
                                 {isCalling && <ConciergeBell className="w-3 h-3" />}
                               </span>
                             );
@@ -837,404 +867,228 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
                       )}
                     </div>
 
-                    {/* Live Assistance Calls for this waiter */}
-                    <div>
-                      <div className="flex items-center justify-between text-xs font-bold text-slate-400 mb-1.5">
-                        <span className="flex items-center gap-1.5">
-                          <ConciergeBell className="w-3.5 h-3.5 text-rose-400" />
-                          <span className="admin-section-title text-sm">Live Customer Calls</span>
-                        </span>
-                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
-                          waiterCalls.length > 0 ? 'bg-rose-500 text-white' : 'bg-emerald-500/20 text-emerald-400'
-                        }`}>
-                          {waiterCalls.length} Pending
+                    {/* Live calls for this waiter */}
+                    <div className="flr-stack" style={{ gap: '0.4rem' }}>
+                      <div className="flr-row flr-row--between">
+                        <span className="flr-label">Calls</span>
+                        <span className="flr-tone-chip" data-tone={waiterCalls.length > 0 ? 'danger' : 'success'}>
+                          {waiterCalls.length > 0 ? `${waiterCalls.length} pending` : 'None pending'}
                         </span>
                       </div>
 
-                      {waiterCalls.length === 0 ? (
-                        <div className="py-2 flex items-center gap-1.5 text-xs text-slate-500">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                          <span>No pending calls</span>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {waiterCalls.map(call => {
-                            const callId = call.id || call._id || `c-${Math.random()}`;
-                            const tbl = Number(call.table_number || call.tableNumber || call.table);
-                            const reason = call.reason || 'Assistance requested';
-                            const msg = call.custom_message || call.message || call.note;
+                      {waiterCalls.map(call => {
+                        const callId = call.id || call._id || `c-${Math.random()}`;
+                        const tbl = Number(call.table_number || call.tableNumber || call.table);
+                        const reason = call.reason || 'Assistance requested';
+                        const msg = call.custom_message || call.message || call.note;
 
-                            return (
-                              <div
-                                key={callId}
-                                className="p-3 rounded-xl bg-slate-800/40 border border-white/[0.06] space-y-2"
+                        return (
+                          <div key={callId} className="flr-req" data-tone="danger" style={{ padding: '0.6rem 0.7rem' }}>
+                            <div className="flr-req__row">
+                              <span className="flr-strong">Table {tbl}</span>
+                              <span className="flr-muted">{formatCallTime(call.created_at || call.createdAt, currentTime)}</span>
+                            </div>
+                            <div style={{ fontSize: '0.82rem' }}>{reason}</div>
+                            {msg && <div className="flr-muted" style={{ fontStyle: 'italic' }}>&quot;{msg}&quot;</div>}
+                            <div className="flr-req__row" style={{ justifyContent: 'flex-end' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleResolveCall(callId, tbl)}
+                                className="flr-btn flr-btn--primary"
                               >
-                                <div className="flex items-center justify-between gap-2 text-xs">
-                                  <div className="flex items-center gap-1.5 min-w-0">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                                    <span className="font-mono font-bold text-white shrink-0">T{tbl}</span>
-                                    <span className="text-slate-300 truncate font-medium">{reason}</span>
-                                  </div>
-                                  <span className="text-[10px] text-slate-400 font-mono shrink-0">
-                                    {formatCallTime(call.created_at || call.createdAt, currentTime)}
-                                  </span>
-                                </div>
-
-                                {msg && (
-                                  <p className="text-xs text-slate-300 italic bg-slate-800/60 p-2 rounded-lg">
-                                    "{msg}"
-                                  </p>
-                                )}
-
-                                <div className="flex items-center justify-end gap-1.5 pt-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleResolveCall(callId, tbl)}
-                                    className="admin-btn bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 flex items-center gap-1 cursor-pointer"
-                                  >
-                                    <Check className="w-3 h-3" />
-                                    <span>Resolve Call</span>
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Resolve</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Card Bottom CTA */}
-                  <div className="pt-4 mt-4 border-t border-white/[0.08] flex items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSendNudge(waiter)}
-                      className="admin-btn bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Text Waiter</span>
+                  <div className="flr-row flr-row--between" style={{ borderTop: '1px solid var(--adm-border)', paddingTop: '0.75rem' }}>
+                    <button type="button" onClick={() => handleSendNudge(waiter)} className="flr-btn">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>Text waiter</span>
                     </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSelectedWaiterId(waiter.id)}
-                      className="admin-btn bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span>Open Live Console</span>
+                    <button type="button" onClick={() => setSelectedWaiterId(waiter.id)} className="flr-btn flr-btn--primary">
+                      <span>Open console</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
-
-          {/* Global Venue-Wide Customer Calls Feed */}
-          {calls.length > 0 && (
-            <div className="p-5 rounded-3xl bg-slate-900 border border-rose-500/30 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
-                    <ConciergeBell className="w-4 h-4 animate-bounce" />
-                  </div>
-                  <h3 className="text-sm font-black text-white">
-                    Live Venue-Wide Assistance Calls Feed ({calls.length})
-                  </h3>
-                </div>
-                <span className="text-xs text-rose-400 font-bold">
-                  Instant Floor Dispatch
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {calls.map(call => {
-                  const callId = call.id || call._id || `c-${Math.random()}`;
-                  const tbl = Number(call.table_number || call.tableNumber || call.table);
-                  const reason = call.reason || 'Assistance requested';
-                  const msg = call.custom_message || call.message || call.note;
-
-                  // Find assigned waiter
-                  const assignedEmp = waiters.find(w =>
-                    (w.assignedTables || w.tables || []).map(Number).includes(tbl)
-                  );
-
-                  return (
-                    <div
-                      key={`global-call-${callId}`}
-                      className="p-4 rounded-2xl bg-slate-950/80 border border-rose-500/40 space-y-2.5 shadow-lg"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="px-2.5 py-1 rounded-xl bg-rose-500 text-white text-xs font-black flex items-center gap-1.5">
-                          <ConciergeBell className="w-3.5 h-3.5" />
-                          <span>TABLE {tbl}</span>
-                        </span>
-                        <span className="text-xs text-slate-400 font-mono">
-                          {formatCallTime(call.created_at || call.createdAt, currentTime)}
-                        </span>
-                      </div>
-
-                      <div>
-                        <h4 className="text-sm font-bold text-white">{reason}</h4>
-                        {msg && (
-                          <p className="text-xs text-slate-300 italic bg-slate-900 p-2 rounded-xl border border-white/[0.06] mt-1">
-                            "{msg}"
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] text-xs">
-                        <span className="text-slate-400">
-                          Assigned: <strong className="text-amber-400 font-bold">{assignedEmp ? assignedEmp.name : 'Unassigned'}</strong>
-                        </span>
-
-                        <button
-                          type="button"
-                          onClick={() => handleResolveCall(callId, tbl)}
-                          className="staff-action staff-touch px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 text-slate-950 text-sm font-black active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-                        >
-                          <Check className="w-3 h-3" strokeWidth={3} />
-                          <span>Resolve</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
-      {/* =======================================================================
-          VIEW 2: SPECIFIC WAITER LIVE PERSONAL CONSOLE (selectedWaiterId !== 'all')
-          Admin can watch everything live for this waiter without any login!
-          ======================================================================= */}
+      {/* VIEW 2: ONE WAITER'S LIVE CONSOLE */}
       {selectedWaiterId !== 'all' && activeWaiter && (
-        <div className="p-5 sm:p-6 space-y-6">
-          {/* Back button & Waiter Profile Bar */}
-          <div className="p-4 sm:p-5 rounded-3xl bg-slate-900 border border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setSelectedWaiterId('all')}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
-                title="Return to fleet overview"
-              >
-                <ArrowRight className="w-4 h-4 rotate-180" />
-              </button>
-
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-slate-950 font-black text-base flex items-center justify-center shrink-0 shadow-lg">
-                {activeWaiter.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-black text-white">
-                    {activeWaiter.name}
-                  </h2>
-                  <span className="text-xs font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    Live Console (God-Mode)
-                  </span>
+        <div className="flr-console">
+          <div className="flr-stack" style={{ gap: '1rem', minWidth: 0 }}>
+            {/* Profile bar */}
+            <div className="flr-panel flr-row flr-row--between" style={{ gap: '0.75rem' }}>
+              <div className="flr-row" style={{ flexWrap: 'nowrap', minWidth: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedWaiterId('all')}
+                  className="flr-btn flr-btn--icon"
+                  title="Back to all waiters"
+                  aria-label="Back to all waiters"
+                >
+                  <ArrowRight className="w-4 h-4" style={{ transform: 'rotate(180deg)' }} />
+                </button>
+                <div className="flr-avatar" style={{ width: '2.5rem', height: '2.5rem', background: 'var(--adm-surface-2)', color: 'var(--adm-text)', border: '1px solid var(--adm-border)' }}>
+                  {activeWaiter.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
                 </div>
-                <p className="text-xs text-slate-400 font-medium mt-0.5">
-                  {activeWaiter.role || 'Floor Specialist'} &bull; Staff ID: {activeWaiter.staffId || activeWaiter.accountCode || `WAIT-${activeWaiter.numericId || '101'}`}
-                </p>
-              </div>
-            </div>
-
-            {/* Quick Actions & Credentials */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Credentials chip */}
-              <div className="px-3 py-1.5 rounded-xl bg-[#0B0F19] border border-amber-500/30 text-xs font-mono text-slate-300 flex items-center gap-2">
-                <span className="text-amber-400 font-bold">User:</span>
-                <span>{activeWaiter.username || activeWaiter.accountCode?.toLowerCase() || 'waiter'}</span>
-                <span className="text-slate-600">|</span>
-                <span className="text-emerald-400 font-bold">Pass:</span>
-                <span className="tracking-widest">••••••••</span>
-              </div>
-
-              {/* Edit Button */}
-              <button
-                type="button"
-                onClick={() => handleOpenEditModal(activeWaiter)}
-                className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-                <span>Edit Tables/Login</span>
-              </button>
-
-              {/* Nudge Button */}
-              <button
-                type="button"
-                onClick={() => handleSendNudge(activeWaiter)}
-                className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-              >
-                <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
-                <span>Nudge Phone</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Assigned Tables Section */}
-          <div className="p-5 rounded-3xl bg-slate-900 border border-white/[0.08] space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
-                  <Layers className="w-4 h-4" />
+                <div style={{ minWidth: 0 }}>
+                  <div className="flr-strong flr-ellipsis" style={{ fontSize: '1rem' }}>{activeWaiter.name}</div>
+                  <div className="flr-muted flr-ellipsis">
+                    {activeWaiter.role || 'Floor Specialist'} &middot; {activeWaiter.staffId || activeWaiter.accountCode || `WAIT-${activeWaiter.numericId || '101'}`}
+                  </div>
                 </div>
-                <h3 className="text-sm font-black text-white">
-                  Tables Assigned to {activeWaiter.name}
-                </h3>
               </div>
-
-              <span className="text-xs text-amber-400 font-bold">
-                {(activeWaiter.assignedTables || activeWaiter.tables || []).length} Tables Total
-              </span>
+              <div className="flr-row">
+                <button type="button" onClick={() => handleOpenEditModal(activeWaiter)} className="flr-btn">
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Edit tables / login</span>
+                </button>
+                <button type="button" onClick={() => handleSendNudge(activeWaiter)} className="flr-btn">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Nudge phone</span>
+                </button>
+              </div>
             </div>
 
-            {(!activeWaiter.assignedTables || activeWaiter.assignedTables.length === 0) ? (
-              <div className="py-4 text-center text-xs text-slate-400 bg-slate-950/60 rounded-2xl border border-dashed border-slate-800">
-                No tables assigned yet to this waiter. Use "Edit Tables/Login" above to assign tables.
+            {/* Tables assigned */}
+            <div className="flr-panel flr-stack" style={{ gap: '0.6rem' }}>
+              <div className="flr-row flr-row--between">
+                <span className="flr-title">Assigned tables</span>
+                <span className="flr-muted">{(activeWaiter.assignedTables || activeWaiter.tables || []).length} total</span>
               </div>
-            ) : (
-              <div className="flex flex-wrap items-center gap-2">
-                {(activeWaiter.assignedTables || activeWaiter.tables || []).map(Number).sort((a, b) => a - b).map(tblNum => {
-                  const isCalling = selectedWaiterCalls.some(
-                    c => Number(c.table_number || c.tableNumber || c.table) === tblNum
-                  );
 
-                  return (
-                    <div
-                      key={`active-waiter-tbl-${tblNum}`}
-                      className={`px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-black transition flex items-center gap-2 ${
-                        isCalling
-                          ? 'bg-rose-950/80 border-rose-500 text-rose-200 ring-2 ring-rose-500/30 animate-pulse'
-                          : 'bg-[#0B0F19] border-white/[0.07] text-slate-200'
-                      }`}
-                    >
-                      <span className={`w-2.5 h-2.5 rounded-full ${
-                        isCalling ? 'bg-rose-400 animate-ping' : 'bg-emerald-400'
-                      }`} />
-                      <span>Table {tblNum}</span>
-                      {isCalling && (
-                        <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded bg-rose-500 text-white">
-                          Calling
+              {(!activeWaiter.assignedTables || activeWaiter.assignedTables.length === 0) ? (
+                <div className="flr-box flr-muted" style={{ textAlign: 'center' }}>
+                  No tables assigned yet. Use &quot;Edit tables / login&quot; to assign tables.
+                </div>
+              ) : (
+                <div className="flr-tables" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))', gap: '0.5rem' }}>
+                  {(activeWaiter.assignedTables || activeWaiter.tables || []).map(Number).sort((a, b) => a - b).map(tblNum => {
+                    const isCalling = selectedWaiterCalls.some(
+                      c => Number(c.table_number || c.tableNumber || c.table) === tblNum
+                    );
+                    return (
+                      <div
+                        key={`active-waiter-tbl-${tblNum}`}
+                        className="flr-table"
+                        data-tone={isCalling ? 'danger' : 'success'}
+                        style={{ alignItems: 'center', textAlign: 'center', padding: '0.6rem 0.4rem' }}
+                      >
+                        <span className="flr-table__num">{tblNum}</span>
+                        <span className="flr-tone-chip" data-tone={isCalling ? 'danger' : 'success'}>
+                          {isCalling ? 'Calling' : 'Clear'}
                         </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Customer Calls List for this Waiter */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ConciergeBell className="w-4 h-4 text-amber-400" />
-                <h3 className="text-sm font-black text-white">
-                  Live Customer Calls ({selectedWaiterCalls.length})
-                </h3>
-              </div>
-              <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
-                selectedWaiterCalls.length > 0 ? 'bg-rose-950 text-rose-300 border border-rose-700 animate-pulse' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-              }`}>
-                {selectedWaiterCalls.length > 0 ? `${selectedWaiterCalls.length} Calling Now` : 'All Peaceful'}
-              </span>
-            </div>
-
-            {selectedWaiterCalls.length === 0 ? (
-              <div className="text-center py-12 px-4 rounded-3xl bg-slate-900/60 border border-dashed border-slate-800 space-y-2">
-                <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                  <Sparkles className="w-6 h-6" />
-                </div>
-                <h4 className="text-base font-black text-white">
-                  All assigned tables peaceful
-                </h4>
-                <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  When a customer at {activeWaiter.name}'s tables calls for assistance, the alert card will appear here in real time.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {selectedWaiterCalls.map(call => {
-                  const callId = call.id || call._id || `c-${Math.random()}`;
-                  const tbl = Number(call.table_number || call.tableNumber || call.table);
-                  const reason = call.reason || 'Assistance requested';
-                  const msg = call.custom_message || call.message || call.note;
-
-                  return (
-                    <div
-                      key={`personal-call-${callId}`}
-                      className="p-5 rounded-3xl bg-gradient-to-r from-rose-950/70 via-slate-900 to-slate-900 border-2 border-rose-500/80 shadow-2xl space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-rose-400 animate-ping" />
-                          <h4 className="text-base font-black text-white tracking-wide">
-                            TABLE {tbl}
-                          </h4>
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-500 text-white">
-                            Active Call
-                          </span>
-                        </div>
-
-                        <span className="text-xs text-slate-300 font-mono flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{formatCallTime(call.created_at || call.createdAt, currentTime)}</span>
-                        </span>
-                      </div>
-
-                      <div className="space-y-1">
-                        <p className="text-sm font-bold text-slate-100">{reason}</p>
-                        {msg && (
-                          <div className="p-3 rounded-2xl bg-black/40 border border-white/[0.06] text-xs text-slate-200 italic">
-                            "{msg}"
-                          </div>
+                        {serverTableOrders.some(o => o.tableNumber === tblNum) && (
+                          <button
+                            type="button"
+                            onClick={() => setWaiterCorrectionOrder(serverTableOrders.find(o => o.tableNumber === tblNum))}
+                            className="text-[11px] font-bold underline cursor-pointer"
+                            style={{ color: 'var(--adm-primary)', background: 'none', border: 'none', padding: 0 }}
+                          >
+                            Request void
+                          </button>
                         )}
                       </div>
-
-                      <div className="flex items-center justify-between pt-2 border-t border-white/[0.08]">
-                        <span className="text-xs text-slate-400">
-                          Waiter Phone Alert: <span className="text-emerald-400 font-bold">Ring &amp; Vibration Active</span>
-                        </span>
-
-                        <button
-                          type="button"
-                          onClick={() => handleResolveCall(callId, tbl)}
-                          className="staff-action staff-touch px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 text-slate-950 text-sm font-black shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
-                        >
-                          <Check className="w-4 h-4 text-slate-950" strokeWidth={3} />
-                          <span>Mark as Resolved</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Direct Text Dispatch & Live Chat Section */}
-          <div className="p-5 rounded-3xl bg-slate-900 border border-white/[0.08] space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
-                  <MessageSquare className="w-4 h-4" />
+                    );
+                  })}
                 </div>
-                <div>
-                  <h3 className="text-sm font-black text-white">
-                    Direct Text Dispatch to {activeWaiter.name}'s Phone
-                  </h3>
-                  <p className="text-[11px] text-slate-400">
-                    Text instructions appear instantly on {activeWaiter.name}'s mobile screen with sound &amp; vibration alert.
+              )}
+
+              <OrderCorrectionModal
+                isOpen={Boolean(waiterCorrectionOrder)}
+                order={waiterCorrectionOrder}
+                mode="waiter"
+                actor={{
+                  actorType: 'employee',
+                  actorId: String(activeWaiter.id),
+                  actorName: activeWaiter.name,
+                  actorRole: activeWaiter.role || 'Waiter',
+                  actorStaffId: String(activeWaiter.numericId || activeWaiter.id)
+                }}
+                onClose={() => setWaiterCorrectionOrder(null)}
+              />
+            </div>
+
+            {/* Calls for this waiter */}
+            <div className="flr-stack" style={{ gap: '0.6rem' }}>
+              <div className="flr-row flr-row--between">
+                <h3 className="flr-title">Calls ({selectedWaiterCalls.length})</h3>
+                <span className="flr-tone-chip" data-tone={selectedWaiterCalls.length > 0 ? 'danger' : 'success'}>
+                  {selectedWaiterCalls.length > 0 ? `${selectedWaiterCalls.length} waiting` : 'All clear'}
+                </span>
+              </div>
+
+              {selectedWaiterCalls.length === 0 ? (
+                <div className="flr-empty" style={{ padding: '1.5rem 1rem' }}>
+                  <CheckCircle2 className="w-7 h-7" style={{ color: 'var(--adm-success)' }} />
+                  <div className="flr-strong">No calls right now</div>
+                  <p className="flr-muted" style={{ margin: 0, maxWidth: '24rem' }}>
+                    When a guest at {activeWaiter.name}&apos;s tables calls for help, the call appears here in real time.
                   </p>
                 </div>
-              </div>
-              <span className="text-xs font-bold text-amber-400">
-                {waiterStaffMessages.length} {waiterStaffMessages.length === 1 ? 'Message' : 'Messages'}
-              </span>
+              ) : (
+                <div className="flr-queue">
+                  {selectedWaiterCalls.map(call => {
+                    const callId = call.id || call._id || `c-${Math.random()}`;
+                    const tbl = Number(call.table_number || call.tableNumber || call.table);
+                    const reason = call.reason || 'Assistance requested';
+                    const msg = call.custom_message || call.message || call.note;
+
+                    return (
+                      <div key={`personal-call-${callId}`} className="flr-req" data-tone="danger" style={{ padding: '0.9rem 1rem' }}>
+                        <div className="flr-req__row">
+                          <div className="flr-row" style={{ gap: 8 }}>
+                            <span className="flr-dot flr-dot--pulse" />
+                            <span className="flr-strong" style={{ fontSize: '1rem' }}>Table {tbl}</span>
+                            <span className="flr-tone-chip" data-tone="danger">Active call</span>
+                          </div>
+                          <span className="flr-muted flr-row" style={{ gap: 4, flexWrap: 'nowrap' }}>
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{formatCallTime(call.created_at || call.createdAt, currentTime)}</span>
+                          </span>
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, color: 'var(--adm-text)' }}>{reason}</div>
+                          {msg && <div className="flr-box" style={{ marginTop: 6, fontStyle: 'italic', fontSize: '0.82rem' }}>&quot;{msg}&quot;</div>}
+                        </div>
+                        <div className="flr-req__row">
+                          <span className="flr-muted">Waiter phone alert is active</span>
+                          <button
+                            type="button"
+                            onClick={() => handleResolveCall(callId, tbl)}
+                            className="flr-btn flr-btn--primary"
+                            style={{ minHeight: '2.75rem' }}
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>Mark resolved</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Messaging: instructions to this waiter and to colleagues */}
+          <div className="flr-panel flr-stack" style={{ gap: '0.8rem', minWidth: 0 }}>
+            <div>
+              <h3 className="flr-title">Messages for {activeWaiter.name}</h3>
+              <p className="flr-muted" style={{ margin: '0.2rem 0 0' }}>
+                Shows on the waiter&apos;s phone with a sound and vibration.
+              </p>
             </div>
 
             {/* Staff-to-staff contact: message a colleague from this waiter's account */}
@@ -1258,92 +1112,70 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
                   setPeerText('');
                   setPeerSent(`Sent to ${target.name}`);
                 }}
-                className="flex flex-col sm:flex-row gap-2"
+                className="flr-box flr-stack"
+                style={{ gap: '0.5rem' }}
               >
+                <span className="flr-label">Message a colleague</span>
                 <select
                   value={peerTargetId}
                   onChange={e => setPeerTargetId(e.target.value)}
-                  className="px-3 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-amber-500/60"
+                  className="flr-select"
                   aria-label="Choose colleague"
                 >
-                  <option value="">Message a colleague...</option>
+                  <option value="">Choose a colleague...</option>
                   {employees.filter(e => e.id !== activeWaiter.id).map(emp => (
                     <option key={emp.id} value={emp.id}>{emp.name}</option>
                   ))}
                 </select>
-                <input
-                  type="text"
-                  value={peerText}
-                  onChange={e => { setPeerText(e.target.value); setPeerSent(''); }}
-                  placeholder="Type a short message..."
-                  className="flex-1 px-3 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500/60"
-                  aria-label="Message to colleague"
-                />
-                <button
-                  type="submit"
-                  disabled={!peerTargetId || !peerText.trim()}
-                  className="staff-action staff-touch px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-black cursor-pointer"
-                >
-                  Send
-                </button>
-                {peerSent && <p className="text-xs text-emerald-400 self-center">{peerSent}</p>}
+                <div className="flr-row" style={{ flexWrap: 'nowrap' }}>
+                  <input
+                    type="text"
+                    value={peerText}
+                    onChange={e => { setPeerText(e.target.value); setPeerSent(''); }}
+                    placeholder="Short message"
+                    className="flr-input flr-grow"
+                    aria-label="Message to colleague"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!peerTargetId || !peerText.trim()}
+                    className="flr-btn"
+                  >
+                    Send
+                  </button>
+                </div>
+                {peerSent && <span className="flr-muted" style={{ color: 'var(--adm-success)' }}>{peerSent}</span>}
               </form>
             )}
 
-            {/* Messages Feed */}
+            {/* Message feed */}
             {waiterStaffMessages.length === 0 ? (
-              <div className="py-4 text-center text-xs text-slate-400 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">
-                No active text instructions sent to {activeWaiter.name} yet. Type a message below to dispatch!
+              <div className="flr-box flr-muted" style={{ textAlign: 'center' }}>
+                No messages sent to {activeWaiter.name} yet.
               </div>
             ) : (
-              <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+              <div className="flr-stack" style={{ gap: '0.5rem', maxHeight: '18rem', overflowY: 'auto' }}>
                 {waiterStaffMessages.map(msg => {
                   const isAlert = msg.isAlert || msg.category === 'alert';
+                  const acknowledged = msg.status === 'acknowledged';
+                  const tone = isAlert ? 'danger' : acknowledged ? 'success' : 'warning';
                   return (
-                    <div
-                      key={msg.id}
-                      className={`p-3.5 rounded-2xl border transition ${
-                        isAlert
-                          ? 'bg-rose-950/30 border-rose-500/50 shadow-lg shadow-rose-950/30'
-                          : msg.status === 'acknowledged'
-                            ? 'bg-emerald-950/30 border-emerald-500/30'
-                            : 'bg-[#0B0F19] border-amber-500/40'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className={`text-xs font-black flex items-center gap-1.5 ${
-                          isAlert ? 'text-rose-400' : 'text-amber-400'
-                        }`}>
-                          {isAlert ? <AlertTriangle className="w-3.5 h-3.5 text-rose-400 animate-pulse" /> : <MessageSquare className="w-3.5 h-3.5" />}
-                          <span>{isAlert ? '🚨 Urgent Call Alert / Reminder' : '💬 Normal Text Instruction'}</span>
+                    <div key={msg.id} className="flr-req" data-tone={tone} style={{ padding: '0.6rem 0.8rem' }}>
+                      <div className="flr-req__row">
+                        <span className="flr-tone-chip" data-tone={tone}>
+                          {isAlert ? 'Urgent alert' : 'Instruction'}
                         </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            {formatCallTime(msg.timestamp, currentTime)}
-                          </span>
-                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                            msg.status === 'acknowledged'
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                              : isAlert
-                                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse'
-                                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse'
-                          }`}>
-                            {msg.status === 'acknowledged' ? '✓ Acknowledged by Waiter' : 'Pending Acknowledgment'}
-                          </span>
-                        </div>
+                        <span className="flr-muted">{formatCallTime(msg.timestamp, currentTime)}</span>
                       </div>
-
-                      <p className={`text-xs font-semibold mt-1.5 ${isAlert ? 'text-rose-100 font-bold' : 'text-white'}`}>
-                        "{msg.text}"
-                      </p>
-
-                      {/* Waiter Replies */}
+                      <div style={{ fontSize: '0.85rem', color: 'var(--adm-text)' }}>&quot;{msg.text}&quot;</div>
+                      <div className="flr-muted">
+                        {acknowledged ? 'Acknowledged by waiter' : 'Waiting for acknowledgment'}
+                      </div>
                       {msg.replies && msg.replies.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-white/[0.06] space-y-1">
+                        <div className="flr-stack" style={{ gap: 2, borderTop: '1px solid var(--adm-border)', paddingTop: 6 }}>
                           {msg.replies.map((rep, idx) => (
-                            <div key={idx} className="flex items-center gap-2 text-[11px] text-emerald-300">
-                              <span className="font-bold">↳ {activeWaiter.name}:</span>
-                              <span className="italic">"{rep.text}"</span>
+                            <div key={idx} className="flr-muted">
+                              <span className="flr-strong">{activeWaiter.name}:</span> &quot;{rep.text}&quot;
                             </div>
                           ))}
                         </div>
@@ -1354,46 +1186,38 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
               </div>
             )}
 
-            {/* Message Type Selector: Normal vs Urgent Alert */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/[0.06]">
-              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/40 border border-white/[0.07]">
+            {/* Type selector: normal or urgent */}
+            <div className="flr-row flr-row--between">
+              <div className="flr-tabs" role="group" aria-label="Message type" style={{ overflow: 'visible' }}>
                 <button
                   type="button"
+                  aria-pressed={inlineMessageType === 'normal'}
                   onClick={() => setInlineMessageType('normal')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                    inlineMessageType === 'normal'
-                      ? 'bg-emerald-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
+                  className="flr-tab"
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
-                  <span>💬 Normal Text</span>
+                  <span>Normal</span>
                 </button>
                 <button
                   type="button"
+                  data-tone="danger"
+                  aria-pressed={inlineMessageType === 'alert'}
                   onClick={() => setInlineMessageType('alert')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
-                    inlineMessageType === 'alert'
-                      ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 animate-pulse'
-                      : 'text-rose-400 hover:text-rose-300'
-                  }`}
+                  className="flr-tab"
+                  style={inlineMessageType === 'alert' ? { background: 'var(--adm-danger)', borderColor: 'var(--adm-danger)', color: '#fff' } : undefined}
                 >
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  <span>🚨 Urgent Call Alert</span>
+                  <span>Urgent alert</span>
                 </button>
               </div>
-
               {inlineMessageType === 'alert' && (
-                <span className="text-[11px] font-semibold text-rose-400 animate-pulse flex items-center gap-1">
-                  <span>⚡ Phone will vibrate &amp; bounce badge on waiter's screen</span>
-                </span>
+                <span className="flr-muted" style={{ color: 'var(--adm-danger)' }}>Phone will vibrate</span>
               )}
             </div>
 
-            {/* Quick Chips when in Alert mode (e.g. for forgotten calls) */}
+            {/* Quick templates for urgent mode */}
             {inlineMessageType === 'alert' && (
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[11px] text-slate-400 font-semibold mr-1">Quick Alerts:</span>
+              <div className="flr-row" style={{ gap: 6 }}>
                 {selectedWaiterCalls.map(c => {
                   const t = c.table_number || c.tableNumber || c.table;
                   return (
@@ -1401,275 +1225,229 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
                       key={c.id || t}
                       type="button"
                       onClick={() => setInlineMessage(`Table ${t} call waiter korse, tumi jaoni keno? Taratari jao!`)}
-                      className="px-2.5 py-1 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-500/50 text-rose-300 text-[11px] font-bold transition cursor-pointer"
+                      className="flr-tone-chip flr-btn--ghost"
+                      data-tone="danger"
+                      style={{ cursor: 'pointer' }}
                     >
-                      🚨 Table {t} Waiter Forgotten Call!
+                      Table {t} waiting
                     </button>
                   );
                 })}
-                <button
-                  type="button"
-                  onClick={() => setInlineMessage('Customer assistance call pending! Please attend immediately.')}
-                  className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] font-semibold transition cursor-pointer"
-                >
-                  ⚠️ Assistance Call Pending
+                <button type="button" onClick={() => setInlineMessage('Customer assistance call pending! Please attend immediately.')} className="flr-btn" style={{ minHeight: '1.9rem', fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>
+                  Assistance pending
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setInlineMessage('Customer table e wait kortese, check koro taratari.')}
-                  className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] font-semibold transition cursor-pointer"
-                >
-                  🏃 Customer Waiting
+                <button type="button" onClick={() => setInlineMessage('Customer table e wait kortese, check koro taratari.')} className="flr-btn" style={{ minHeight: '1.9rem', fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>
+                  Customer waiting
                 </button>
               </div>
             )}
 
-            {/* Quick Send Input Form */}
-            <form onSubmit={handleSendInlineMessage} className="pt-2 flex items-center gap-2">
+            {/* Send form */}
+            <form onSubmit={handleSendInlineMessage} className="flr-row" style={{ flexWrap: 'nowrap' }}>
               <input
                 type="text"
                 required
                 placeholder={
                   inlineMessageType === 'alert'
-                    ? `Type urgent alert for ${activeWaiter.name} (e.g. "Table 4 call waiter korse, taratari jao")...`
-                    : `Type normal instruction for ${activeWaiter.name} (e.g. "Table 7 needs water" or "Side counter e jao")...`
+                    ? `Urgent message for ${activeWaiter.name}`
+                    : `Instruction for ${activeWaiter.name}`
                 }
                 value={inlineMessage}
                 onChange={e => setInlineMessage(e.target.value)}
-                className={`flex-1 bg-[#0B0F19] border rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none ${
-                  inlineMessageType === 'alert'
-                    ? 'border-rose-500/60 focus:border-rose-400'
-                    : 'border-white/[0.08] focus:border-amber-500'
-                }`}
+                className="flr-input flr-grow"
+                aria-label="Message to waiter"
               />
               <button
                 type="submit"
-                className={`px-4 py-2.5 rounded-xl text-xs font-black transition active:scale-95 cursor-pointer flex items-center gap-1.5 shrink-0 shadow-md ${
-                  inlineMessageType === 'alert'
-                    ? 'bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white shadow-rose-600/30'
-                    : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-amber-500/20'
-                }`}
+                className={inlineMessageType === 'alert' ? 'flr-btn' : 'flr-btn flr-btn--primary'}
+                style={inlineMessageType === 'alert' ? { background: 'var(--adm-danger)', borderColor: 'transparent', color: '#fff' } : undefined}
               >
-                {inlineMessageType === 'alert' ? (
-                  <>
-                    <AlertTriangle className="w-3.5 h-3.5 text-white" />
-                    <span>Send Urgent Alert</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-3.5 h-3.5 text-slate-950" />
-                    <span>Send Text</span>
-                  </>
-                )}
+                {inlineMessageType === 'alert' ? <AlertTriangle className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
+                <span>{inlineMessageType === 'alert' ? 'Send alert' : 'Send'}</span>
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* =======================================================================
-          MODAL 1: ADD / EDIT WAITER (Name, Role, Username, Password, Tables)
-          ======================================================================= */}
+      {/* MODAL: ADD / EDIT WAITER */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#111726] border border-white/[0.08] rounded-3xl w-full max-w-lg shadow-2xl p-6 relative text-slate-100 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
-                  <User className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-white">
-                    {editingEmployee ? `Edit Waiter: ${editingEmployee.name}` : 'Register New Floor Waiter'}
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Set login credentials and assign floor tables.
-                  </p>
-                </div>
-              </div>
+        <div className="flr-backdrop" onClick={() => setIsModalOpen(false)}>
+          <div className="flr-modal" role="dialog" aria-modal="true" aria-label="Waiter details" style={{ maxWidth: '32rem' }} onClick={e => e.stopPropagation()}>
+            <button type="button" className="flr-btn flr-btn--ghost flr-btn--icon flr-modal__close" onClick={() => setIsModalOpen(false)} aria-label="Close">
+              <X className="w-4 h-4" />
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+            <div style={{ paddingBottom: '0.8rem', borderBottom: '1px solid var(--adm-border)', paddingRight: '2.5rem' }}>
+              <h3 className="flr-title" style={{ fontSize: '1.05rem' }}>
+                {editingEmployee ? `Edit ${editingEmployee.name}` : 'Add a floor waiter'}
+              </h3>
+              <p className="flr-muted" style={{ margin: '0.2rem 0 0' }}>Set login details and assign tables.</p>
             </div>
 
-            <form onSubmit={handleSaveEmployee} className="mt-4 space-y-4">
-              {/* Name & Role */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Full Name *
-                  </label>
+            <form onSubmit={handleSaveEmployee} className="flr-stack" style={{ gap: '1rem', paddingTop: '1rem' }}>
+              <div className="flr-console" style={{ gap: '0.75rem' }}>
+                <label className="flr-stack" style={{ gap: '0.3rem' }}>
+                  <span className="flr-label">Full name *</span>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Rakib Ahmed"
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-[#0B0F19] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                    className="flr-input"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Role
-                  </label>
+                </label>
+                <label className="flr-stack" style={{ gap: '0.3rem' }}>
+                  <span className="flr-label">Role</span>
                   <select
                     value={formData.role}
                     onChange={e => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full bg-[#0B0F19] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                    className="flr-select"
                   >
                     <option value="Floor Specialist">Floor Specialist</option>
                     <option value="Senior Host">Senior Host</option>
                     <option value="Head Waiter">Head Waiter</option>
                     <option value="Operations Lead">Operations Lead</option>
                   </select>
-                </div>
+                </label>
               </div>
 
-              {/* Login Credentials Section */}
-              <div className="p-4 rounded-2xl bg-[#0B0F19] border border-amber-500/25 space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-white/[0.07]">
+              <div className="flr-box flr-stack" style={{ gap: '0.6rem', padding: '0.8rem' }}>
+                <div className="flr-row flr-row--between">
                   <div>
-                    <span className="text-xs font-bold text-white block">
-                      Waiter Login Credentials
-                    </span>
-                    <span className="text-[10px] text-slate-400 block">
-                      Used by the waiter to log into /waiter on their mobile device.
-                    </span>
+                    <div className="flr-strong">Login credentials</div>
+                    <div className="flr-muted">Used at /waiter on the waiter&apos;s phone.</div>
                   </div>
-
                   <button
                     type="button"
                     onClick={() => {
                       const autoUser = formData.name
                         ? formData.name.toLowerCase().replace(/\s+/g, '')
                         : `waiter${Math.floor(Math.random() * 900 + 100)}`;
-                      const pin = generateRandomPin();
-                      setFormData({ ...formData, username: autoUser, password: pin });
-                      showToast('Generated fresh Username & Password!', 'info');
+                      setFormData({ ...formData, username: autoUser });
+                      showToast('Generated a fresh username', 'info');
                     }}
-                    className="text-[10px] font-bold text-amber-400 hover:text-amber-300 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-1 cursor-pointer"
+                    className="flr-btn"
+                    style={{ minHeight: '2rem', fontSize: '0.78rem', padding: '0.25rem 0.6rem' }}
                   >
                     <RefreshCw className="w-3 h-3" />
-                    <span>Auto Generate</span>
+                    <span>Auto username</span>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1">
-                      Username *
-                    </label>
+                <div className="flr-console" style={{ gap: '0.75rem' }}>
+                  <label className="flr-stack" style={{ gap: '0.3rem' }}>
+                    <span className="flr-label">Username *</span>
                     <input
                       type="text"
                       required
                       placeholder="e.g. rakib"
                       value={formData.username}
                       onChange={e => setFormData({ ...formData, username: e.target.value.toLowerCase().trim() })}
-                      className="w-full bg-[#111726] border border-white/[0.08] text-amber-400 font-mono font-bold text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500"
+                      className="flr-input"
+                      style={{ fontFamily: 'monospace' }}
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center justify-between">
-                      <span>Password *</span>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, password: generateRandomPin() })}
-                        className="text-[10px] text-amber-400 hover:underline cursor-pointer"
-                      >
-                        Roll Random
-                      </button>
-                    </label>
-                    <div className="relative">
+                  </label>
+                  {!editingEmployee ? (
+                    <label className="flr-stack" style={{ gap: '0.3rem' }}>
+                      <span className="flr-label">Initial password * (4 to 8 digits)</span>
                       <input
-                        type={showModalPassword ? 'text' : 'password'}
+                        type="password"
+                        inputMode="numeric"
+                        autoComplete="new-password"
                         required
-                        placeholder="e.g. 1234"
+                        maxLength={8}
                         value={formData.password}
-                        onChange={e => setFormData({ ...formData, password: e.target.value })}
-                        className="w-full bg-[#111726] border border-white/[0.08] text-emerald-400 font-mono font-bold text-xs rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:border-amber-500"
+                        onChange={e => setFormData({ ...formData, password: e.target.value.replace(/\D/g, '') })}
+                        className="flr-input"
+                        style={{ fontFamily: 'monospace' }}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowModalPassword(!showModalPassword)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                      >
-                        {showModalPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
+                    </label>
+                  ) : (
+                    <div className="flr-stack" style={{ gap: '0.3rem' }}>
+                      <span className="flr-label">Password</span>
+                      <span className="flr-row flr-row--between">
+                        <span className="flr-muted" style={{ letterSpacing: '0.2em' }}>{STAFF_PASSWORD_MASK}</span>
+                        <button
+                          type="button"
+                          onClick={() => setPwReset(p => ({ ...p, open: true, error: '' }))}
+                          className="flr-btn"
+                          style={{ minHeight: '2rem', fontSize: '0.78rem', padding: '0.25rem 0.6rem' }}
+                        >
+                          Set new password
+                        </button>
+                      </span>
+                      {pwReset.open && (
+                        <form onSubmit={submitPwReset} className="flr-box flr-stack" style={{ gap: '0.4rem', padding: '0.6rem' }}>
+                          <input type="password" inputMode="numeric" autoComplete="new-password" maxLength={8} required placeholder="New password (4 to 8 digits)" value={pwReset.next}
+                            onChange={e => setPwReset(p => ({ ...p, next: e.target.value.replace(/\D/g, ''), error: '' }))} className="flr-input" />
+                          <input type="password" inputMode="numeric" autoComplete="new-password" maxLength={8} required placeholder="Confirm new password" value={pwReset.confirm}
+                            onChange={e => setPwReset(p => ({ ...p, confirm: e.target.value.replace(/\D/g, ''), error: '' }))} className="flr-input" />
+                          <input type="password" inputMode="numeric" autoComplete="off" maxLength={8} required placeholder="Admin master PIN" value={pwReset.masterPin}
+                            onChange={e => setPwReset(p => ({ ...p, masterPin: e.target.value, error: '' }))} className="flr-input" />
+                          {pwReset.error && <span role="alert" style={{ color: 'var(--adm-danger)', fontSize: '0.8rem', fontWeight: 600 }}>{pwReset.error}</span>}
+                          <span className="flr-row" style={{ justifyContent: 'flex-end', gap: '0.4rem' }}>
+                            <button type="button" className="flr-btn" onClick={() => setPwReset({ open: false, next: '', confirm: '', masterPin: '', error: '' })}>Cancel</button>
+                            <button type="submit" className="flr-btn flr-btn--primary" disabled={pwResetChecking}>{pwResetChecking ? 'Checking PIN...' : 'Save new password'}</button>
+                          </span>
+                        </form>
+                      )}
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
-              {/* Assigned Tables */}
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
-                  <span>Assigned Tables</span>
-                  <span className="text-[11px] text-slate-400">
-                    {formData.assignedTables.length} tables selected
-                  </span>
-                </label>
-                <div className="flex flex-wrap items-center gap-1.5 p-3 rounded-2xl bg-[#0B0F19] border border-white/[0.07]">
+              <div className="flr-stack" style={{ gap: '0.4rem' }}>
+                <div className="flr-row flr-row--between">
+                  <span className="flr-label">Assigned tables</span>
+                  <span className="flr-muted">{formData.assignedTables.length} selected</span>
+                </div>
+                <div className="flr-row" style={{ gap: 6 }}>
                   {allTableNumbers.map(tblNum => {
                     const isSelected = formData.assignedTables.includes(tblNum);
                     return (
                       <button
                         key={`form-tbl-${tblNum}`}
                         type="button"
+                        aria-pressed={isSelected}
                         onClick={() => {
                           const next = isSelected
                             ? formData.assignedTables.filter(t => t !== tblNum)
                             : [...formData.assignedTables, tblNum];
                           setFormData({ ...formData, assignedTables: next });
                         }}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                          isSelected
-                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-sm'
-                            : 'bg-[#131926] text-slate-400 border border-white/[0.06] hover:text-white'
-                        }`}
+                        className="flr-choice"
+                        style={{ minWidth: '3.2rem' }}
                       >
+                        {isSelected && <Check className="w-3 h-3" />}
                         <span>T{tblNum}</span>
-                        {isSelected && <Check className="w-3 h-3 text-slate-950" strokeWidth={3} />}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Modal Buttons */}
-              <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between gap-2">
+              <div className="flr-row flr-row--between" style={{ borderTop: '1px solid var(--adm-border)', paddingTop: '0.9rem' }}>
                 {editingEmployee ? (
                   <button
                     type="button"
                     onClick={() => {
                       requestDeleteWaiter(editingEmployee.id, editingEmployee.name);
                     }}
-                    className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                    className="flr-btn flr-btn--danger"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Delete waiter</span>
                   </button>
-                ) : <div />}
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-bold transition cursor-pointer"
-                  >
+                ) : <span />}
+                <div className="flr-row">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="flr-btn flr-btn--ghost">
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95 cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Check className="w-4 h-4 text-slate-950" />
-                    <span>{editingEmployee ? 'Save Changes' : 'Register Waiter'}</span>
+                  <button type="submit" className="flr-btn flr-btn--primary">
+                    <Check className="w-4 h-4" />
+                    <span>{editingEmployee ? 'Save changes' : 'Add waiter'}</span>
                   </button>
                 </div>
               </div>
@@ -1678,113 +1456,82 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
         </div>
       )}
 
-      {/* =======================================================================
-          MODAL 2: SEND URGENT NUDGE / MESSAGE TO WAITER PHONE
-          ======================================================================= */}
+      {/* MODAL: DISPATCH NUDGE / MESSAGE TO WAITER PHONE */}
       {messageTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#111726] border border-white/[0.08] rounded-3xl w-full max-w-md shadow-2xl p-6 relative text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-amber-400" />
-                <h3 className="text-sm font-black text-white">
-                  Send Dispatch Nudge to {messageTarget.name}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setMessageTarget(null)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <div className="flr-backdrop" onClick={() => setMessageTarget(null)}>
+          <div className="flr-modal" role="dialog" aria-modal="true" aria-label="Message waiter" onClick={e => e.stopPropagation()}>
+            <button type="button" className="flr-btn flr-btn--ghost flr-btn--icon flr-modal__close" onClick={() => setMessageTarget(null)} aria-label="Close">
+              <X className="w-4 h-4" />
+            </button>
+
+            <div style={{ paddingBottom: '0.8rem', borderBottom: '1px solid var(--adm-border)', paddingRight: '2.5rem' }}>
+              <h3 className="flr-title" style={{ fontSize: '1rem' }}>Message {messageTarget.name}</h3>
             </div>
 
-            <form onSubmit={handleDispatchMessage} className="mt-4 space-y-3">
-              {/* Type Switcher */}
-              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/40 border border-white/[0.07]">
+            <form onSubmit={handleDispatchMessage} className="flr-stack" style={{ gap: '0.8rem', paddingTop: '1rem' }}>
+              <div className="flr-tabs" role="group" aria-label="Message type" style={{ overflow: 'visible' }}>
                 <button
                   type="button"
+                  aria-pressed={modalMessageType === 'normal'}
                   onClick={() => setModalMessageType('normal')}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                    modalMessageType === 'normal'
-                      ? 'bg-emerald-600 text-white shadow'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
+                  className="flr-tab"
+                  style={{ flex: 1, justifyContent: 'center' }}
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
-                  <span>💬 Normal Text</span>
+                  <span>Normal</span>
                 </button>
                 <button
                   type="button"
+                  aria-pressed={modalMessageType === 'alert'}
                   onClick={() => setModalMessageType('alert')}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                    modalMessageType === 'alert'
-                      ? 'bg-rose-600 text-white shadow shadow-rose-600/30'
-                      : 'text-rose-400 hover:text-rose-300'
-                  }`}
+                  className="flr-tab"
+                  style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    ...(modalMessageType === 'alert' ? { background: 'var(--adm-danger)', borderColor: 'var(--adm-danger)', color: '#fff' } : { color: 'var(--adm-danger)' })
+                  }}
                 >
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  <span>🚨 Urgent Call Alert</span>
+                  <span>Urgent alert</span>
                 </button>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  {modalMessageType === 'alert' ? '🚨 Urgent Alert Message / Call Reminder' : 'Message / Task'}
-                </label>
+              <label className="flr-stack" style={{ gap: '0.3rem' }}>
+                <span className="flr-label">{modalMessageType === 'alert' ? 'Urgent message' : 'Message or task'}</span>
                 <textarea
                   rows={3}
                   required
                   placeholder={
                     modalMessageType === 'alert'
-                      ? "e.g. Table 4 call waiter korse, tumi jaoni keno? Taratari jao!"
-                      : "e.g. Table 3 has been waiting on appetizers for 15 mins. Please check-in."
+                      ? 'e.g. Table 4 is waiting for a waiter. Please go now.'
+                      : 'e.g. Table 3 has been waiting for appetizers for 15 minutes.'
                   }
                   value={messageText}
                   onChange={e => setMessageText(e.target.value)}
-                  className={`w-full bg-[#0B0F19] border rounded-xl p-3 text-xs text-white focus:outline-none ${
-                    modalMessageType === 'alert'
-                      ? 'border-rose-500/60 focus:border-rose-400'
-                      : 'border-white/[0.08] focus:border-amber-500'
-                  }`}
+                  className="flr-input"
+                  style={{ resize: 'vertical' }}
                 />
-              </div>
+              </label>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setMessageTarget(null)}
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold transition cursor-pointer"
-                >
+              <div className="flr-row" style={{ justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => setMessageTarget(null)} className="flr-btn flr-btn--ghost">
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className={`px-4 py-1.5 rounded-xl text-xs font-black shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer ${
-                    modalMessageType === 'alert'
-                      ? 'bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 text-white shadow-rose-600/30'
-                      : 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-amber-500/20'
-                  }`}
+                  className="flr-btn flr-btn--primary"
+                  style={modalMessageType === 'alert' ? { background: 'var(--adm-danger)', color: '#fff' } : undefined}
                 >
-                  {modalMessageType === 'alert' ? (
-                    <>
-                      <AlertTriangle className="w-3.5 h-3.5 text-white" />
-                      <span>Send Urgent Alert</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-3.5 h-3.5 text-slate-950" />
-                      <span>Send Nudge</span>
-                    </>
-                  )}
+                  {modalMessageType === 'alert' ? <AlertTriangle className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
+                  <span>{modalMessageType === 'alert' ? 'Send urgent alert' : 'Send'}</span>
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-      {/* Admin PIN Passcode Confirmation Modal */}
+
+      {/* Admin PIN passcode confirmation (verified on server), unchanged */}
       <TableSecurityModal
         isOpen={securityModalState.isOpen}
         onClose={() => setSecurityModalState(prev => ({ ...prev, isOpen: false }))}

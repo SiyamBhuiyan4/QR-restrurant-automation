@@ -39,3 +39,45 @@
     font-size: 20pt !important;
   }
 }
+
+/* ---------- Screen: range controls + sticker preview ---------- */
+.qr-generator .qr-sticker-card {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.qr-generator input[type='number']:focus-visible,
+.qr-generator select:focus-visible,
+.qr-generator button:focus-visible {
+  outline: 2px solid var(--adm-primary, #F59E0B);
+  outline-offset: 2px;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  .qr-generator {
+    background: #fff !important;
+  }
+
+  .qr-generator .qr-print-sheet {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .qr-generator .qr-print-sheet[data-layout='grid-3'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .qr-generator .qr-sticker-card {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 4mm !important;
+    background: #fff !important;
+    color: #0f172a !important;
+  }
+}

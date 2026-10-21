@@ -376,29 +376,9 @@ export default function CartDrawer({
         if (networkCtx?.submitOrder) {
           result = await networkCtx.submitOrder(orderPayload);
         } else {
-          const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-          if (isOnline) {
-            try {
-              const res = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(orderPayload)
-              });
-              if (res.ok) {
-                const data = await res.json().catch(() => ({}));
-                result = { success: true, offline: false, data };
-              } else {
-                throw new Error(`Server returned status ${res.status}`);
-              }
-            } catch (netErr) {
-              console.warn('[CartDrawer] Network submit failed, saving to IndexedDB:', netErr);
-              const queued = await idbEnqueueOrder(orderPayload);
-              result = { success: true, offline: true, localId: queued.localId };
-            }
-          } else {
-            const queued = await idbEnqueueOrder(orderPayload);
-            result = { success: true, offline: true, localId: queued.localId };
-          }
+          // Convex submit already failed (or is unavailable): keep the order in the IndexedDB queue
+          const queued = await idbEnqueueOrder(orderPayload);
+          result = { success: true, offline: true, localId: queued.localId };
         }
       }
 

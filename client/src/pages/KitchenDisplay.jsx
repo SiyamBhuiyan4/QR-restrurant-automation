@@ -24,6 +24,8 @@ import SocketContext, { resolveServerUrl } from '../context/SocketContext.jsx';
 import { io } from 'socket.io-client';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
+import { convex } from '../convexClient.js';
+import { mapConvexOrders } from '../utils/convexOrders.js';
 import { useRestaurant } from '../context/RestaurantContext';
 import '../styles/staff.css';
 import '../styles/kds.css';
@@ -280,11 +282,12 @@ export default function KitchenDisplay({
   }, [isMuted]);
 
   // 6. Sync Convex orders into KDS and trigger alerts on new incoming tickets
+  const kdsOrders = useMemo(() => (Array.isArray(convexOrders) ? mapConvexOrders(convexOrders) : null), [convexOrders]);
   useEffect(() => {
-    if (convexOrders && Array.isArray(convexOrders)) {
+    if (kdsOrders && Array.isArray(kdsOrders)) {
       if (prevOrderIdsRef.current.size > 0) {
         // Detect newly added tickets from Convex
-        convexOrders.forEach((o) => {
+        kdsOrders.forEach((o) => {
           const id = o.id || o._id;
           if (id && !prevOrderIdsRef.current.has(id)) {
             const rawStatus = (o.status || o.kitchenFlowStage || 'pending').toLowerCase();
@@ -295,11 +298,11 @@ export default function KitchenDisplay({
         });
       }
 
-      setOrders(convexOrders);
-      prevOrderIdsRef.current = new Set(convexOrders.map((o) => o.id || o._id));
+      setOrders(kdsOrders);
+      prevOrderIdsRef.current = new Set(kdsOrders.map((o) => o.id || o._id));
       setIsLoading(false);
     }
-  }, [convexOrders, triggerNewOrderAlert]);
+  }, [kdsOrders, triggerNewOrderAlert]);
 
   // 7. Socket.IO Listeners for real-time order events
   useEffect(() => {
@@ -360,23 +363,17 @@ export default function KitchenDisplay({
   // 8. Initial Fetch of Orders
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
-    const serverUrl = resolveServerUrl();
-    const apiUrl = `${serverUrl}/api/orders`;
 
     try {
-      const res = await fetch(apiUrl);
-      if (res.ok) {
-        const data = await res.json();
-        const list = Array.isArray(data) ? data : (data.orders || data.data || []);
-        if (list.length > 0) {
-          setOrders(list);
-          prevOrderIdsRef.current = new Set(list.map((o) => o.id || o._id || o.order_id));
-          setIsLoading(false);
-          return;
-        }
+      const list = mapConvexOrders(await convex.query(api.orders.getOrders, {}));
+      if (list.length > 0) {
+        setOrders(list);
+        prevOrderIdsRef.current = new Set(list.map((o) => o.id || o._id || o.order_id));
+        setIsLoading(false);
+        return;
       }
     } catch (err) {
-      console.warn('Could not fetch orders from API:', err);
+      console.warn('Could not fetch orders from Convex:', err);
     }
 
     // Default demonstration orders if API has no orders yet (guarantees stunning out-of-the-box preview!)
@@ -593,28 +590,7 @@ export default function KitchenDisplay({
       }
     } catch (_) {}
 
-    // Persist to REST API
-    try {
-      const serverUrl = resolveServerUrl();
-      const res = await fetch(`${serverUrl}/api/orders/${orderId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextStatus, kitchenFlowStage: stageEquivalent })
-      });
-
-      if (!res.ok) {
-        // Fallback to PUT
-        await fetch(`${serverUrl}/api/orders/${orderId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: nextStatus, kitchenFlowStage: stageEquivalent })
-        });
-      }
-    } catch (err) {
-      console.warn('Backend sync failed, saved in local state:', err);
-    } finally {
-      setUpdatingOrderId(null);
-    }
+    setUpdatingOrderId(null);
   };
 
   // 10. Audio Alert Mute / Unmute Toggle

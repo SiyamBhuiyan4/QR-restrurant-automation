@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { verifyStaffSecret, hasStaffCredentialHash } from '../utils/staffCredentials';
 import {
   Bell,
   Clock,
@@ -36,6 +37,7 @@ import { useSocket, useSocketListener } from '../context/SocketContext';
 import { useRestaurant, DEFAULT_EMPLOYEE_ROSTER } from '../context/RestaurantContext';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
+import { useShiftClock, formatClockTime } from '../utils/shiftClock';
 
 /**
  * 2-Second Notification Ringtone / Chime Synthesizer
@@ -454,6 +456,9 @@ export default function WaiterPanel() {
     restaurant.setEmployeeStatus(myLiveEmployee.id, isOnBreak ? 'Active' : 'On Break');
   }, [myLiveEmployee, isOnBreak, restaurant]);
 
+  // Shift clock: clock in / out for this waiter (stored in localStorage)
+  const shift = useShiftClock(currentWaiter);
+
   // Table cleaning flags (shared through RestaurantContext so Admin sees them too)
   const tableCleaningMap = useMemo(() => {
     const map = {};
@@ -658,18 +663,10 @@ export default function WaiterPanel() {
 
       if (!isUserMatch) return false;
 
-      // Match password / passcode / pin
-      const validPasscodes = [
-        emp.password,
-        emp.passcode,
-        emp.pin,
-        emp.waiterPin,
-        '1234' // Default demo fallback
-      ]
-        .filter(Boolean)
-        .map(p => String(p).trim());
-
-      return validPasscodes.includes(password);
+      // Hashed accounts (reset by admin) verify against the salted digest only.
+      // Legacy plain-text accounts keep working until their password is reset.
+      if (verifyStaffSecret(emp, password)) return true;
+      return !hasStaffCredentialHash(emp) && password === '1234'; // Legacy demo fallback
     });
 
     if (matched) {
@@ -736,9 +733,6 @@ export default function WaiterPanel() {
         await resolveConvexCall({ callId });
       } catch (_) {}
     }
-
-    // 5. Update backend REST API
-    fetch(`/api/waiter/calls/${callId}/resolve`, { method: 'PATCH' }).catch(() => {});
   };
 
   // ===========================================================================
@@ -863,6 +857,21 @@ export default function WaiterPanel() {
 
           {/* Right: Sound Toggle + Logout Button */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Shift clock in / out (time is recorded for the Staff roster) */}
+            <button
+              type="button"
+              onClick={shift.toggle}
+              className={`flex items-center gap-1.5 px-3 min-h-[40px] rounded-xl border text-xs font-bold transition active:scale-95 cursor-pointer ${
+                shift.clockedIn
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                  : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700'
+              }`}
+              title={shift.clockedIn ? `On shift since ${formatClockTime(shift.clockInAt)}` : 'Clock in'}
+            >
+              <Clock className="w-4 h-4" />
+              <span>{shift.clockedIn ? 'Clock out' : 'Clock in'}</span>
+            </button>
+
             {/* Break toggle (updates status shown to Admin) */}
             {myLiveEmployee && (
               <button

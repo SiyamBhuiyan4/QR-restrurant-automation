@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
-import { resolveServerUrl, useSocket } from '../context/SocketContext';
+import { convex } from '../convexClient.js';
+import { useSocket } from '../context/SocketContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import { getPendingOrders, getPendingWaiterCalls } from '../db/indexedDb.js';
 
@@ -22,6 +23,7 @@ import AdminWaiterConsole from '../components/admin/AdminWaiterConsole';
 import MenuManager from '../components/MenuManager';
 import QRBatchGenerator from './QRBatchGenerator';
 import { ExternalLink } from 'lucide-react';
+import { settleTableOrders } from '../components/admin/BillReceipt';
 
 // State Architecture & Realistic Mock Datasets
 import {
@@ -37,6 +39,8 @@ import {
 } from '../data/adminMockData';
 
 import '../styles/admin.css';
+import '../styles/admin-ui.css';
+import useAdminTheme from '../hooks/useAdminTheme';
 
 /**
  * Unified Master Restaurant Admin Dashboard
@@ -57,7 +61,7 @@ import '../styles/admin.css';
  *   10. Customer Reports & Notes (Direct-to-Admin Notes, Staff Dispatching & Audit Log)
  */
 export default function AdminDashboard({ className = '' }) {
-  // Session Authentication State (strictly gated by Master PIN '808080')
+  // Session Authentication State (gated by the server-verified Master PIN)
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem('smartdine_admin_auth') === 'true';
@@ -97,24 +101,8 @@ export default function AdminDashboard({ className = '' }) {
     return 'overview';
   });
 
-  // Dark/Light Theme state
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('smartdine_admin_theme');
-      if (saved) return saved === 'dark';
-    }
-    return true; // Noir / Dark Slate as default
-  });
-
-  const handleToggleDarkMode = () => {
-    setIsDarkMode(prev => {
-      const next = !prev;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('smartdine_admin_theme', next ? 'dark' : 'light');
-      }
-      return next;
-    });
-  };
+  // Dark/Light Theme: saved choice (localStorage) or OS preference. See hooks/useAdminTheme.js
+  const { theme: adminTheme, isDark: isDarkMode, toggleTheme: handleToggleDarkMode } = useAdminTheme();
 
   // Ensure admin-active is set on documentElement and body, and cleanup on unmount
   useEffect(() => {
@@ -137,8 +125,8 @@ export default function AdminDashboard({ className = '' }) {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode);
     document.body.classList.toggle('dark', isDarkMode);
-    document.documentElement.style.backgroundColor = isDarkMode ? '#0b0f19' : '#f8fafc';
-    document.body.style.backgroundColor = isDarkMode ? '#0b0f19' : '#f8fafc';
+    document.documentElement.style.backgroundColor = isDarkMode ? '#0b1120' : '#f5f6f8';
+    document.body.style.backgroundColor = isDarkMode ? '#0b1120' : '#f5f6f8';
   }, [isDarkMode]);
 
   // Sidebar Layout States
@@ -242,25 +230,26 @@ export default function AdminDashboard({ className = '' }) {
     resolveConvexCall = useMutation(api.waiter.resolveCall);
   } catch (_) {}
 
-  // Fetch live stats from server/DB
+  // Live restaurant stats (Convex subscription) and a manual refresh that re-reads them
+  let liveStats = undefined;
+  try {
+    liveStats = useQuery(api.orders.getStats, {});
+  } catch (_) {}
+
+  useEffect(() => {
+    if (liveStats) {
+      setServerStats(liveStats);
+      setIsOfflineMode(false);
+    }
+  }, [liveStats]);
+
+  // Re-read stats from Convex (refresh button)
   const fetchDashboardData = useCallback(async (isSilent = false) => {
     if (!isSilent) setIsRefreshing(true);
-    const serverUrl = resolveServerUrl();
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
-
-      const [statsRes, ordersRes] = await Promise.allSettled([
-        fetch(`${serverUrl}/api/stats`, { signal: controller.signal }),
-        fetch(`${serverUrl}/api/orders?limit=30`, { signal: controller.signal })
-      ]);
-      clearTimeout(timeoutId);
-
-      if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
-        const s = await statsRes.value.json();
-        setServerStats(s);
-      }
+      const s = await convex.query(api.orders.getStats, {});
+      setServerStats(s);
       setIsOfflineMode(false);
     } catch (err) {
       setIsOfflineMode(true);
@@ -268,12 +257,6 @@ export default function AdminDashboard({ className = '' }) {
       if (!isSilent) setIsRefreshing(false);
     }
   }, []);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchDashboardData(true);
-    }
-  }, [fetchDashboardData, isAuthenticated]);
 
   // ---------------------------------------------------------------------------
   // INTERACTIVE ACTION HANDLERS
@@ -324,6 +307,48 @@ export default function AdminDashboard({ className = '' }) {
       });
     }
   }, [liveOrders, updateConvexStatus, recordActivity]);
+
+  // Settle & close table: completes its orders in shared state and on the server, and records the payment
+  const handleSettleTableOrders = useCallback(async (bill, paymentMethod) => {
+    const ids = bill.orderIds.map(String);
+    const billOrders = liveOrders.filter(o => ids.includes(String(o.id)));
+    await settleTableOrders({ bill, paymentMethod, orders: billOrders });
+
+    const paidAt = new Date().toISOString();
+    setLiveOrders(prev => prev.map(o => (
+      ids.includes(String(o.id))
+        ? { ...o, completed: true, kitchenFlowStage: KITCHEN_STAGE.SERVED, paymentMethod, paidAt, billNumber: bill.billNumber, billTotal: bill.total }
+        : o
+    )));
+    setTables(prev => prev.map(t => (
+      t.tableNumber === bill.tableNumber ? { ...t, status: TABLE_STATUS.AVAILABLE, currentOrderId: null } : t
+    )));
+
+    if (updateConvexStatus) {
+      billOrders.forEach((o) => {
+        try {
+          updateConvexStatus({ orderId: String(o.id), status: 'completed' });
+        } catch (_) {}
+      });
+    }
+
+    if (recordActivity) {
+      recordActivity({
+        actorType: 'admin',
+        actorId: 'admin',
+        actorName: 'Head Desk / Admin',
+        actorRole: 'Admin',
+        actorStaffId: 'ADMIN',
+        actionType: 'TABLE_SETTLED',
+        description: `Settled Table ${bill.tableNumber} (${bill.billNumber}) by ${paymentMethod} for $${bill.total.toFixed(2)}`,
+        target: `Table ${bill.tableNumber}`,
+        details: `Bill ${bill.billNumber}, ${ids.length} order(s), payment ${paymentMethod}`
+      });
+    }
+  }, [liveOrders, updateConvexStatus, recordActivity]);
+
+  // Boards show open orders only; settled orders stay in liveOrders for the overview and reports
+  const activeOrders = useMemo(() => liveOrders.filter(o => !o.completed), [liveOrders]);
 
   // Update Table Status
   const handleUpdateTableStatus = useCallback((tableId, newStatus) => {
@@ -492,20 +517,21 @@ export default function AdminDashboard({ className = '' }) {
     return list;
   }, [assistanceCalls, customerNotes, liveOrders]);
 
-  // Gate dashboard behind Master Admin Password ('808080')
+  // Gate dashboard behind Master Admin Password (verified on server)
   if (!isAuthenticated) {
     return <AdminLoginGate onLoginSuccess={() => setIsAuthenticated(true)} />;
   }
 
   return (
     <div
-      className={`admin-root ${isDarkMode ? 'dark text-slate-100' : 'text-slate-900'} ${className}`}
+      className={`admin-root admin-shell ${isDarkMode ? 'dark text-slate-100' : 'text-slate-900'} ${className}`}
+      data-theme={adminTheme}
       style={{
         display: 'flex',
         width: '100vw',
         minHeight: '100vh',
-        backgroundColor: isDarkMode ? '#0b0f19' : '#f8fafc',
-        color: isDarkMode ? '#ffffff' : '#0f172a',
+        backgroundColor: 'var(--adm-bg)',
+        color: 'var(--adm-text)',
         overflowX: 'hidden',
         fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
         transition: 'background-color 0.2s ease, color 0.2s ease'
@@ -547,8 +573,8 @@ export default function AdminDashboard({ className = '' }) {
         style={{
           flex: 1,
           minWidth: 0,
-          backgroundColor: isDarkMode ? '#0b0f19' : '#f8fafc',
-          color: isDarkMode ? '#ffffff' : '#0f172a',
+          backgroundColor: 'var(--adm-bg)',
+          color: 'var(--adm-text)',
           padding: 0,
           display: 'flex',
           flexDirection: 'column',
@@ -583,8 +609,8 @@ export default function AdminDashboard({ className = '' }) {
         <main
           className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto"
           style={{
-            backgroundColor: isDarkMode ? '#0b0f19' : '#f8fafc',
-            color: isDarkMode ? '#ffffff' : '#0f172a',
+            backgroundColor: 'var(--adm-bg)',
+            color: 'var(--adm-text)',
             transition: 'background-color 0.2s ease, color 0.2s ease'
           }}
         >
@@ -606,7 +632,8 @@ export default function AdminDashboard({ className = '' }) {
               <LiveTablesModule
                 tables={tables}
                 employees={employees}
-                orders={liveOrders}
+                orders={activeOrders}
+                onSettleTable={handleSettleTableOrders}
                 customerNotes={customerNotes}
                 tableCount={tableCount}
                 onTableCountChange={setTableCount}
@@ -629,7 +656,7 @@ export default function AdminDashboard({ className = '' }) {
           {activeTab === 'orders' && (
             <div className="animate-fadeIn">
               <LiveOrdersModule
-                orders={liveOrders}
+                orders={activeOrders}
                 onAdvanceStage={handleAdvanceOrderStage}
               />
             </div>
@@ -637,7 +664,7 @@ export default function AdminDashboard({ className = '' }) {
 
           {/* TAB 4: EMPLOYEE & KITCHEN HUB (KDS) */}
           {activeTab === 'kds' && (
-            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-white/[0.06] shadow-md bg-[#0A0F1D]">
+            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-[color:var(--adm-border)] shadow-md bg-[color:var(--adm-surface)]">
               <KitchenDisplay isEmbedded={true} />
             </div>
           )}

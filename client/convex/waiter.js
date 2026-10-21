@@ -1,5 +1,5 @@
 import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 
 export const getCalls = query({
   args: {
@@ -36,52 +36,89 @@ export const getCalls = query({
   },
 });
 
-export const createCall = mutation({
-  args: {
-    tableNumber: v.number(),
-    reason: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const callId = await ctx.db.insert("waiterCalls", {
-      tableNumber: args.tableNumber,
-      reason: args.reason,
-      status: "pending",
-      createdAt: Date.now(),
-    });
-    return { callId, success: true };
+// Pending calls only, newest first (Express GET /api/waiter/calls).
+export const getActiveCalls = query({
+  args: {},
+  handler: async (ctx) => {
+    const calls = await ctx.db
+      .query("waiterCalls")
+      .withIndex("by_status", (q) => q.eq("status", "pending"))
+      .order("desc")
+      .collect();
+    return calls;
   },
 });
 
+// Express POST /api/waiter/call. `reason` defaults to "waiter" (Express default).
+// assignedEmployee* / routingDetail are echoed back in `data` only, not stored (same as Express).
+export const createCall = mutation({
+  args: {
+    tableNumber: v.number(),
+    reason: v.optional(v.string()),
+    assignedEmployeeId: v.optional(v.string()),
+    assignedEmployeeName: v.optional(v.string()),
+    assignedEmployeeRole: v.optional(v.string()),
+    routingDetail: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (!args.tableNumber || args.tableNumber <= 0 || !Number.isFinite(args.tableNumber)) {
+      throw new ConvexError("Valid table number is required");
+    }
+    const reason = (args.reason ?? "waiter").trim() || "waiter";
+    const createdAt = Date.now();
+
+    const callId = await ctx.db.insert("waiterCalls", {
+      tableNumber: args.tableNumber,
+      reason,
+      status: "pending",
+      createdAt,
+    });
+
+    const assignedEmployeeName = args.assignedEmployeeName ?? null;
+    const routingDetail =
+      args.routingDetail ??
+      (assignedEmployeeName
+        ? `Table #${args.tableNumber} requested assistance -> Routed to assigned employee: ${assignedEmployeeName}`
+        : null);
+
+    return {
+      callId,
+      success: true,
+      data: {
+        _id: callId,
+        tableNumber: args.tableNumber,
+        reason,
+        status: "pending",
+        createdAt,
+        assignedEmployeeId: args.assignedEmployeeId ?? null,
+        assignedEmployeeName,
+        assignedEmployeeRole: args.assignedEmployeeRole ?? null,
+        routingDetail,
+      },
+    };
+  },
+});
+
+// Express PATCH /api/waiter/calls/:id/resolve. Throws "Waiter call not found" like Express 404.
 export const resolveCall = mutation({
   args: {
     callId: v.string(),
   },
   handler: async (ctx, { callId }) => {
+    let existing = null;
     try {
-      const existing = await ctx.db.get(callId);
-      if (existing) {
-        await ctx.db.patch(existing._id, {
-          status: "resolved",
-          resolvedAt: Date.now(),
-        });
-        return true;
-      }
+      existing = await ctx.db.get(callId);
     } catch (_) {}
 
-    const match = await ctx.db
-      .query("waiterCalls")
-      .filter((q) => q.eq(q.field("_id"), callId))
-      .first();
-
-    if (match) {
-      await ctx.db.patch(match._id, {
-        status: "resolved",
-        resolvedAt: Date.now(),
-      });
-      return true;
+    if (!existing) {
+      throw new ConvexError("Waiter call not found");
     }
 
-    return false;
+    await ctx.db.patch(existing._id, {
+      status: "resolved",
+      resolvedAt: Date.now(),
+    });
+    return true;
   },
 });
 
