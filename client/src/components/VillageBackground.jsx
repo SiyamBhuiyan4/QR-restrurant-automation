@@ -30,7 +30,10 @@ function KashClump({ x, y, s, delay }) {
   // Stems fan out from one base; plumes are soft white feathers at the tips
   const stems = [-34, -22, -12, -3, 6, 15, 25, 36];
   return (
-    <g transform={`translate(${x} ${y}) scale(${s})`}>
+    <g
+      className={x < 400 ? 'vb-kash-left' : x > 800 ? 'vb-kash-right' : undefined}
+      transform={`translate(${x} ${y}) scale(${s})`}
+    >
       <g className="vb-sway vb-sway--kash" style={{ animationDelay: `${-delay}s` }}>
         {stems.map((a, i) => {
           const h = 120 + ((i * 37) % 50);
@@ -186,8 +189,10 @@ export default function VillageBackground() {
         <rect width="1200" height="860" fill="url(#vb-sky)" />
         {/* FAR layer: sun, birds, hills (moves least) */}
         <g className="vb-layer vb-layer--far">
-        <circle cx="800" cy="610" r="150" fill="url(#vb-sun)" />
-        <circle cx="800" cy="612" r="34" fill="#ffe2a6" opacity="0.9" />
+        <g className="vb-sunwrap">
+          <circle cx="800" cy="610" r="150" fill="url(#vb-sun)" />
+          <circle cx="800" cy="612" r="34" fill="#ffe2a6" opacity="0.9" />
+        </g>
 
         {/* Birds gliding home */}
         <g className="vb-birds" fill="none" stroke="#1d2f33" strokeWidth="2.4" strokeLinecap="round">
@@ -219,7 +224,7 @@ export default function VillageBackground() {
         <path d="M-80 722 L 0 720 Q 280 700 620 716 T 1200 708 L 1280 708 V 900 H -80 Z" fill="#2f5229" opacity="0.7" />
 
         {/* Left: coconut palm */}
-        <g transform="translate(120 760)">
+        <g className="vb-palm" transform="translate(120 760)">
           <ellipse cx="20" cy="4" rx="90" ry="14" fill="url(#vb-shadow)" />
           <path d="M0 0 C 10 -120 -10 -250 34 -360" stroke="url(#vb-trunk)" strokeWidth="16" fill="none" strokeLinecap="round" />
           <path d="M0 0 C 10 -120 -10 -250 34 -360" stroke="#7a5a3e" strokeWidth="6" fill="none" strokeDasharray="4 10" />
@@ -237,7 +242,7 @@ export default function VillageBackground() {
         </g>
 
         {/* Right: big banyan-like tree */}
-        <g transform="translate(1080 770)">
+        <g className="vb-banyan" transform="translate(1080 770)">
           <ellipse cx="0" cy="4" rx="170" ry="20" fill="url(#vb-shadow)" />
           <path d="M-14 0 C -10 -80 -20 -150 0 -210 L 18 -210 C 30 -150 20 -80 26 0 Z" fill="#4a3627" />
           <path d="M2 -150 C -40 -170 -70 -190 -90 -230" stroke="#4a3627" strokeWidth="10" fill="none" />

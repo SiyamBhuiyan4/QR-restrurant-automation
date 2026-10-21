@@ -129,3 +129,14 @@
 .vb-layer--mid { --vb-depth: 18; }
 .vb-layer--near { --vb-depth: 30; }
 .vb-layer--front { --vb-depth: 46; }
+
+/* Phones (portrait): only the middle third of the wide scene is on screen, so bring
+   the trees, kash clumps and sun in toward the centre. `translate` adds to each
+   group's own SVG transform; units are scene units. */
+@media (max-aspect-ratio: 4/5) {
+  .vb-palm { translate: 310px 0; }
+  .vb-banyan { translate: -300px 30px; scale: 0.85; }
+  .vb-kash-left { translate: 370px 0; }
+  .vb-kash-right { translate: -360px 0; }
+  .vb-sunwrap { translate: -130px 0; }
+}
