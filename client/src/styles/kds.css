@@ -328,12 +328,13 @@
 
 /* ---------- Board ---------- */
 .kds-board { display: grid; gap: 16px; align-items: start; width: 100%; }
-/* Desktop: each column keeps at least 300px so ticket titles and item names stay readable
-   (admin embed included). Phones fall back to a single column. */
+/* Desktop (900px+): multi-column board, each column keeps at least 300px so ticket titles
+   and item names stay readable (admin embed included). Below 900px the board shows one
+   status column at a time (see the tablet/phone block at the bottom of this file). */
 .kds-board--all,
 .kds-board--single { grid-template-columns: minmax(0, 1fr); }
 
-@media (min-width: 640px) {
+@media (min-width: 900px) {
   .kds-board--all,
   .kds-board--single { grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); }
 }
@@ -623,14 +624,66 @@
 
 @keyframes kds-spin { to { transform: rotate(360deg); } }
 
-/* ---------- Small screens ---------- */
-@media (max-width: 640px) {
+/* ---------- Tablet & phone (below 900px): one status column at a time ----------
+   The existing status tabs drive which column is shown. "All Active" puts the columns in a
+   horizontal snap row (swipe between them), so nothing ever stacks vertically. */
+@media (max-width: 899px) {
   .kds-main { padding: 10px; }
-  .kds-tab { min-height: 52px; padding: 0 12px; font-size: 15px; }
-  .kds-tab span:not(.kds-tab__count) { display: none; }
-  .kds-tabs__status { margin-left: 0; width: 100%; justify-content: space-between; }
+
+  /* Tabs: one scrollable row of large touch targets (min 44px) */
+  .kds-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    padding: 6px;
+  }
+  .kds-tabs::-webkit-scrollbar { display: none; }
+  .kds-tab {
+    flex: 0 0 auto;
+    min-height: 48px;
+    padding: 0 14px;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .kds-tab__count { min-width: 30px; padding: 2px 8px; }
+  .kds-tabs__status {
+    margin-left: 0;
+    flex: 0 0 auto;
+    gap: 8px;
+    padding-right: 0;
+  }
+  .kds-chip,
+  .kds-live-pill { min-height: 44px; }
+
   .kds-search { min-width: 0; flex: 1; }
   .kds-ticket__table { font-size: 22px; }
-  .kds-board--all,
-  .kds-board--single { grid-template-columns: minmax(0, 1fr); }
+
+  /* Board: a single column visible at a time */
+  .kds-board { gap: 12px; }
+  .kds-board--single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .kds-board--all {
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .kds-board--all::-webkit-scrollbar { display: none; }
+  .kds-board--all > .kds-col {
+    flex: 0 0 100%;
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+
+  /* Column & compact phone ticket */
+  .kds-col { padding: 10px; border-radius: 14px; }
+  .kds-col__list { gap: 10px; }
+  .kds-ticket { padding: 10px; gap: 8px; border-radius: 14px; }
+  .kds-ticket__items { gap: 4px; }
+  .kds-ticket__action { min-height: 52px; font-size: 17px; }
 }
