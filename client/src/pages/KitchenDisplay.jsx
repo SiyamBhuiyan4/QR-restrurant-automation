@@ -163,10 +163,20 @@ export default function KitchenDisplay({
   // Convex Cloud real-time orders query and status mutation
   let convexOrders = null;
   let updateConvexStatus = null;
+  let convexError = null;
   try {
     convexOrders = useQuery(api.orders.getOrders, {});
     updateConvexStatus = useMutation(api.orders.updateOrderStatus);
-  } catch (_) {}
+  } catch (err) {
+    convexError = err;
+  }
+  // Connection badge is driven by the Convex orders query, not the legacy socket:
+  // 'live' once the query has resolved, 'connecting' while loading, 'offline' on error.
+  const connectionState = convexError
+    ? 'offline'
+    : convexOrders === undefined
+      ? 'connecting'
+      : 'live';
 
   // 1. Digital Clock live updates
   const [currentTimeStr, setCurrentTimeStr] = useState('');
@@ -713,13 +723,20 @@ export default function KitchenDisplay({
               </div>
               <div className="min-w-0">
                 <h1 className="kds-brand__title">Kitchen Display</h1>
-                <div className={`kds-conn ${isConnected ? 'is-live' : 'is-off'}`}>
-                  {isConnected ? (
+                <div className={`kds-conn is-${connectionState}`}>
+                  {connectionState === 'live' && (
                     <>
                       <span className="kds-conn__dot" />
                       <span>Live</span>
                     </>
-                  ) : (
+                  )}
+                  {connectionState === 'connecting' && (
+                    <>
+                      <span className="kds-conn__dot" />
+                      <span>Connecting…</span>
+                    </>
+                  )}
+                  {connectionState === 'offline' && (
                     <>
                       <WifiOff className="w-3.5 h-3.5" />
                       <span>Offline</span>

@@ -99,7 +99,8 @@
 }
 
 .kds-conn.is-live { color: var(--kds-ready); }
-.kds-conn.is-off { color: var(--kds-critical); }
+.kds-conn.is-connecting { color: var(--kds-pending); }
+.kds-conn.is-offline { color: var(--kds-critical); }
 
 .kds-conn__dot {
   width: 10px;

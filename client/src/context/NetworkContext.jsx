@@ -20,21 +20,17 @@ import {
 import { Wifi, WifiOff, RefreshCw, CheckCircle2, AlertCircle, Clock, X } from 'lucide-react';
 import { convex } from '../convexClient.js';
 import { api } from '../convexApi';
+import { uploadVoiceBlob } from '../utils/voiceUpload.js';
 
 export const NetworkContext = createContext(null);
 
 const PING_TIMEOUT_MS = 3500;
 
-function blobToDataUrl(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-}
-
-/** Maps a queued/local order payload onto the orders:createOrder Convex args. */
+/**
+ * Maps a queued/local order payload onto the orders:createOrder Convex args.
+ * A voice Blob is uploaded to Convex file storage first; if that upload fails the error
+ * propagates so the order stays in the offline queue and is retried with its Blob.
+ */
 async function submitOrderToConvex(p) {
   const items = (p.items || []).map((i) => ({
     name: String(i.name || i.title || 'Dish'),
@@ -50,7 +46,7 @@ async function submitOrderToConvex(p) {
   };
   const blob = p.voiceBlob instanceof Blob ? p.voiceBlob : p.voiceNote instanceof Blob ? p.voiceNote : null;
   if (blob) {
-    args.voiceNoteUrl = await blobToDataUrl(blob);
+    args.voiceStorageId = await uploadVoiceBlob(blob, (a) => convex.mutation(api.orders.generateUploadUrl, a));
   } else if (typeof p.voiceNote === 'string' && p.voiceNote) {
     args.voiceNoteUrl = p.voiceNote;
   }

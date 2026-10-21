@@ -27,6 +27,7 @@ import { useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { enqueueOrder as idbEnqueueOrder } from '../db/indexedDb.js';
 import VoiceRecorder from './VoiceRecorder';
+import { uploadVoiceBlob } from '../utils/voiceUpload.js';
 import { sendOrderToTelegramChannel } from '../services/telegramClient';
 
 const TAX_RATE = 0.05; // 5% Estimated Tax
@@ -180,6 +181,12 @@ export default function CartDrawer({
     createConvexOrder = useMutation(api.orders.createOrder);
   } catch (_) {}
 
+  // Convex file-storage upload URL mutation (voice notes are uploaded as blobs)
+  let generateUploadUrl = null;
+  try {
+    generateUploadUrl = useMutation(api.orders.generateUploadUrl);
+  } catch (_) {}
+
   // Resolve Drawer Open/Close state
   const isOpen = propIsOpen !== undefined ? propIsOpen : (cartCtx?.isCartOpen ?? false);
   const handleClose = () => {
@@ -300,18 +307,7 @@ export default function CartDrawer({
     setIsSubmitting(true);
 
     try {
-      // 2. Convert voiceBlob to base64 if present
-      let base64Voice = null;
-      if (cartCtx?.voiceBlob) {
-        try {
-          base64Voice = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(cartCtx.voiceBlob);
-          });
-        } catch (_) {}
-      }
+      // 2. Voice blob is uploaded to Convex file storage in step 4 (never sent as base64)
 
       // 3. Assemble full order payload
       const orderPayload = {
@@ -332,7 +328,7 @@ export default function CartDrawer({
         totalAmount: parseFloat(grandTotal.toFixed(2)),
         generalNote: generalNote.trim(),
         voiceBlob: cartCtx?.voiceBlob || null,
-        voiceNote: base64Voice || cartCtx?.voiceUrl || null,
+        voiceNote: cartCtx?.voiceBlob ? null : (cartCtx?.voiceUrl || null),
         status: 'pending',
         createdAt: new Date().toISOString(),
         timestamp: Date.now()
@@ -345,7 +341,22 @@ export default function CartDrawer({
 
       // 4. Send via Convex Cloud, NetworkContext or offline IndexedDB fallback
       let result = null;
-      if (createConvexOrder) {
+      let voiceStorageId;
+      let voiceUploadFailed = false;
+      if (cartCtx?.voiceBlob) {
+        try {
+          if (!generateUploadUrl) throw new Error('Convex upload unavailable');
+          voiceStorageId = await uploadVoiceBlob(cartCtx.voiceBlob, generateUploadUrl);
+        } catch (uploadErr) {
+          voiceUploadFailed = true;
+          console.warn('[CartDrawer] Voice upload failed:', uploadErr);
+        }
+      }
+
+      // Offline with a failed voice upload: skip the direct call so the order (with its Blob)
+      // goes to the IndexedDB queue and the upload is retried on sync.
+      const skipDirectConvex = voiceUploadFailed && !navigator.onLine;
+      if (createConvexOrder && !skipDirectConvex) {
         try {
           const convexRes = await createConvexOrder({
             tableNumber: Number(finalTable) || 1,
@@ -357,7 +368,7 @@ export default function CartDrawer({
             })),
             totalAmount: parseFloat(grandTotal.toFixed(2)),
             generalNote: generalNote.trim() || undefined,
-            voiceNoteUrl: base64Voice || undefined
+            voiceStorageId // undefined when there is no voice or the upload failed (order is kept without voice)
           });
           result = { success: true, offline: false, data: convexRes };
           if (convexRes?.orderNumber) {
