@@ -23,6 +23,9 @@ import {
   X
 } from 'lucide-react';
 
+const APP_ROLE = import.meta.env?.VITE_APP_ROLE || 'all';
+const ROLE_VIEW = { admin: 'admin', employee: 'employee', waiter: 'waiter', customer: 'customer' };
+
 /**
  * Custom Error Boundary to capture any unexpected render errors
  */
@@ -177,6 +180,10 @@ function AppRouter() {
   }, [normalizedPath]);
 
   const activeView = useMemo(() => {
+    // Each deployment serves one panel: VITE_APP_ROLE = admin | employee | waiter | customer
+    if (APP_ROLE !== 'all') {
+      return ROLE_VIEW[APP_ROLE] || 'customer';
+    }
     if (
       normalizedPath === '/employee' ||
       normalizedPath.startsWith('/employee/') ||

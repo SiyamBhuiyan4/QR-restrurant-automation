@@ -28,5 +28,10 @@
         }
       ]
     }
-  ]
+  ],
+  "build": {
+    "env": {
+      "VITE_APP_ROLE": "customer"
+    }
+  }
 }
