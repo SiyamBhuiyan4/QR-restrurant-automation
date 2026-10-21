@@ -744,7 +744,7 @@ export default function OverviewModule({
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-black text-[#f8fafc] tracking-tight">
+                <h2 className="admin-section-title text-lg sm:text-xl font-black text-[#f8fafc] tracking-tight">
                   Executive Revenue &amp; Sales Telemetry
                 </h2>
                 <p className="text-xs text-slate-400">
@@ -879,16 +879,16 @@ export default function OverviewModule({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 w-full">
         
         {/* KPI 1: Total Sales (Orders Count) */}
-        <div className="bg-[#111827] border border-[#334155] admin-card p-5 text-[#f8fafc] hover:border-emerald-500/50 transition-all group min-w-0">
+        <div className="admin-kpi group min-w-0">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
+            <div className="admin-kpi-icon">
               <ShoppingBag className="w-5 h-5" />
             </div>
             <div
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black border shrink-0 ${
+              className={`admin-kpi-delta ${
                 currentMetrics.salesGrowth >= 0
-                  ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800'
-                  : 'bg-rose-950/70 text-rose-400 border-rose-800'
+                  ? 'is-up'
+                  : 'is-down'
               }`}
             >
               {currentMetrics.salesGrowth >= 0 ? (
@@ -899,11 +899,11 @@ export default function OverviewModule({
               <span>{currentMetrics.salesGrowth >= 0 ? `+${currentMetrics.salesGrowth}%` : `${currentMetrics.salesGrowth}%`}</span>
             </div>
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+          <p className="admin-kpi-label">
             Total Orders
           </p>
           <h3
-            className="font-black text-[#f8fafc] mt-1 tracking-tight text-2xl sm:text-3xl tabular-nums whitespace-nowrap"
+            className="admin-kpi-value"
             style={{
               fontVariantNumeric: 'tabular-nums',
               lineHeight: 1.2
@@ -911,22 +911,22 @@ export default function OverviewModule({
           >
             {currentMetrics.totalOrders.toLocaleString()}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+          <p className="admin-kpi-sub">
             <span>vs prev {previousMetrics.totalOrders} orders</span>
           </p>
         </div>
 
         {/* KPI 2: Total Revenue */}
-        <div className="bg-[#111827] border border-[#334155] admin-card p-5 text-[#f8fafc] hover:border-amber-500/50 transition-all group min-w-0">
+        <div className="admin-kpi admin-kpi--amber group min-w-0">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shrink-0">
+            <div className="admin-kpi-icon admin-kpi-icon--amber">
               <DollarSign className="w-5 h-5" />
             </div>
             <div
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black border shrink-0 ${
+              className={`admin-kpi-delta ${
                 currentMetrics.revenueGrowth >= 0
-                  ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800'
-                  : 'bg-rose-950/70 text-rose-400 border-rose-800'
+                  ? 'is-up'
+                  : 'is-down'
               }`}
             >
               {currentMetrics.revenueGrowth >= 0 ? (
@@ -937,11 +937,11 @@ export default function OverviewModule({
               <span>{currentMetrics.revenueGrowth >= 0 ? `+${currentMetrics.revenueGrowth}%` : `${currentMetrics.revenueGrowth}%`}</span>
             </div>
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+          <p className="admin-kpi-label">
             Total Revenue
           </p>
           <h3
-            className="font-black text-[#f8fafc] mt-1 tracking-tight text-2xl sm:text-3xl tabular-nums whitespace-nowrap"
+            className="admin-kpi-value"
             style={{
               fontVariantNumeric: 'tabular-nums',
               lineHeight: 1.2
@@ -949,26 +949,26 @@ export default function OverviewModule({
           >
             ${currentMetrics.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+          <p className="admin-kpi-sub">
             <span>vs prev ${previousMetrics.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
           </p>
         </div>
 
         {/* KPI 3: Net Profit */}
-        <div className="bg-[#111827] border border-[#334155] admin-card p-5 text-[#f8fafc] hover:border-emerald-500/50 transition-all group min-w-0">
+        <div className="admin-kpi group min-w-0">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
+            <div className="admin-kpi-icon">
               <TrendingUp className="w-5 h-5" />
             </div>
-            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black border bg-emerald-950/70 text-emerald-400 border-emerald-800 shrink-0">
+            <div className="admin-kpi-delta is-up">
               <span>{currentMetrics.grossMarginPercent}% margin</span>
             </div>
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+          <p className="admin-kpi-label">
             Net Profit
           </p>
           <h3
-            className="font-black text-[#f8fafc] mt-1 tracking-tight text-2xl sm:text-3xl tabular-nums whitespace-nowrap"
+            className="admin-kpi-value"
             style={{
               fontVariantNumeric: 'tabular-nums',
               lineHeight: 1.2
@@ -976,22 +976,22 @@ export default function OverviewModule({
           >
             ${currentMetrics.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+          <p className="admin-kpi-sub">
             <span>Estimated operational margin</span>
           </p>
         </div>
 
         {/* KPI 4: Average Order Value (AOV) */}
-        <div className="bg-[#111827] border border-[#334155] rounded-3xl p-5 text-[#f8fafc] shadow-lg hover:border-amber-500/50 transition-all group min-w-0">
+        <div className="admin-kpi admin-kpi--amber group min-w-0">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shrink-0">
+            <div className="admin-kpi-icon admin-kpi-icon--amber">
               <BarChart3 className="w-5 h-5" />
             </div>
             <div
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black border shrink-0 ${
+              className={`admin-kpi-delta ${
                 currentMetrics.aovGrowth >= 0
-                  ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800'
-                  : 'bg-rose-950/70 text-rose-400 border-rose-800'
+                  ? 'is-up'
+                  : 'is-down'
               }`}
             >
               {currentMetrics.aovGrowth >= 0 ? (
@@ -1002,11 +1002,11 @@ export default function OverviewModule({
               <span>{currentMetrics.aovGrowth >= 0 ? `+${currentMetrics.aovGrowth}%` : `${currentMetrics.aovGrowth}%`}</span>
             </div>
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+          <p className="admin-kpi-label">
             Average Order Value
           </p>
           <h3
-            className="font-black text-[#f8fafc] mt-1 tracking-tight text-2xl sm:text-3xl tabular-nums whitespace-nowrap"
+            className="admin-kpi-value"
             style={{
               fontVariantNumeric: 'tabular-nums',
               lineHeight: 1.2
@@ -1014,7 +1014,7 @@ export default function OverviewModule({
           >
             ${currentMetrics.aov.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+          <p className="admin-kpi-sub">
             <span>Avg spend per table</span>
           </p>
         </div>

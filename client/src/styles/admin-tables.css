@@ -1,0 +1,102 @@
+/* ==========================================================================
+   Admin tables, live orders & reports - shared admin-only styles
+   Scoped helpers used by LiveTablesModule, LiveOrdersModule and
+   CustomerReportsModule. Not used by the customer view.
+   ========================================================================== */
+
+/* Keyboard focus for interactive admin controls (visible, brand-tinted) */
+.admin-focusable:focus-visible,
+.admin-card button:focus-visible,
+.admin-kpi:focus-visible {
+  outline: 2px solid #FF5A26;
+  outline-offset: 2px;
+}
+
+/* Card hover: subtle lift so the whole card reads as one clickable unit */
+.admin-table-card {
+  transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+}
+
+@media (hover: hover) {
+  .admin-table-card:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Destructive footer action: separated from the primary actions by a divider */
+.admin-danger-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px dashed rgba(244, 63, 94, 0.35);
+  background: transparent;
+  color: #fb7185;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.admin-danger-action:hover {
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.6);
+  color: #fda4af;
+}
+
+/* Empty states: one consistent dashed panel across modules */
+.admin-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  border-radius: 1.5rem;
+  border: 1px dashed rgba(100, 116, 139, 0.45);
+  background: rgba(15, 23, 42, 0.4);
+}
+
+/* Horizontal scroll wrapper for wide tables on phones and tablets */
+.admin-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* Status legend chips (meaning of each table colour) */
+.admin-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.875rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.admin-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.admin-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-table-card,
+  .admin-danger-action {
+    transition: none;
+  }
+  .admin-table-card:hover {
+    transform: none;
+  }
+}

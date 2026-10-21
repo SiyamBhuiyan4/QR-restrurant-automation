@@ -1,0 +1,41 @@
+/* =============================================================================
+   QR Batch Generator - A4 print layout for table stickers / tent cards.
+   Scoped under .qr-generator so admin styles elsewhere are unaffected.
+   ============================================================================= */
+
+@page {
+  size: A4;
+  margin: 10mm;
+}
+
+@media print {
+  .qr-generator .qr-print-sheet {
+    gap: 6mm !important;
+    width: 100% !important;
+  }
+
+  .qr-generator .qr-print-sheet[data-layout='grid-2'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .qr-generator .qr-print-sheet[data-layout='grid-3'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .qr-generator .qr-sticker-card {
+    box-shadow: none !important;
+    border-width: 1.5px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    padding: 4mm !important;
+  }
+
+  .qr-generator .qr-sticker-card img {
+    width: 55mm !important;
+    height: 55mm !important;
+  }
+
+  .qr-generator .qr-table-title {
+    font-size: 20pt !important;
+  }
+}

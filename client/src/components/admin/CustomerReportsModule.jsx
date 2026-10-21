@@ -28,6 +28,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useRestaurant } from '../../context/RestaurantContext';
+import '../../styles/admin-tables.css';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Audio Synthesizer Chime
@@ -1314,7 +1315,7 @@ export default function CustomerReportsModule({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
+              <h2 className="admin-section-title text-lg sm:text-xl font-extrabold text-white tracking-tight">
                 {employeeMode ? 'Staff Floor Requests & Notes' : 'Customer Reports & Notes'}
               </h2>
               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-300">
@@ -1465,7 +1466,7 @@ export default function CustomerReportsModule({
       {/* ── Top Executive KPI Metrics ─────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
         {/* Metric 1: Total */}
-        <div className="p-4 rounded-2xl bg-[#111726]/90 border border-slate-800/80 backdrop-blur-md flex flex-col justify-between">
+        <div className="p-4 rounded-2xl bg-[#111726]/90 border border-slate-800/80 backdrop-blur-md flex flex-col justify-between transition-colors hover:border-slate-700">
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">Total Reports</span>
             <MessageSquare className="w-4 h-4 text-slate-500" />
@@ -1628,7 +1629,7 @@ export default function CustomerReportsModule({
       {/* ── Report Cards Container ────────────────────────────────────────── */}
       <div className="space-y-4">
         {filteredReports.length === 0 ? (
-          <div className="text-center py-16 px-4 rounded-3xl border border-dashed border-slate-800 bg-[#111726]/40 backdrop-blur-md">
+          <div className="admin-empty py-16">
             <MessageSquare className="w-12 h-12 text-slate-600 mx-auto mb-3" />
             <h3 className="text-sm font-bold text-slate-300">No customer reports match this view</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">

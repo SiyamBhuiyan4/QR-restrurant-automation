@@ -16,6 +16,7 @@ import {
 import { resolveServerUrl } from '../context/SocketContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import '../styles/admin.css';
+import '../styles/qr-generator.css';
 
 const DEFAULT_CARD_TAGLINE = 'Scan to order from your phone & leave voice notes!';
 
@@ -263,6 +264,17 @@ export default function QRBatchGenerator({
     document.body.removeChild(link);
   };
 
+  // Download every generated QR as a separate PNG (staggered to avoid browser download blocking)
+  const handleDownloadAllPngs = async () => {
+    const cards = generatedCards.filter((c) => c.qrDataUrl);
+    for (let i = 0; i < cards.length; i++) {
+      handleDownloadSinglePng(cards[i].tableNum, cards[i].qrDataUrl);
+      if (i < cards.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    }
+  };
+
   // Multi-page PDF Generator using jsPDF
   const handleDownloadPdf = async (startNum, endNum, modeName = 'range') => {
     const start = Math.max(1, Math.min(startNum, venueTableCount));
@@ -422,7 +434,7 @@ export default function QRBatchGenerator({
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`qr-generator space-y-6 ${className}`}>
       
       {/* =========================================================================
           MINIMAL, SINGLE-CARD DARK MODE CONFIGURATION PANEL (Hidden during print)
@@ -465,6 +477,18 @@ export default function QRBatchGenerator({
             >
               <Printer className="w-4 h-4 text-slate-400" />
               <span>Print Stickers</span>
+            </button>
+
+            {/* Secondary: Download every QR as a PNG file */}
+            <button
+              type="button"
+              onClick={handleDownloadAllPngs}
+              disabled={isGeneratingPdf || generatedCards.length === 0}
+              className="px-5 py-2.5 rounded-2xl active:scale-95 text-[#f8fafc] text-xs sm:text-sm font-bold transition cursor-pointer flex items-center gap-2 border border-[#2A384C] hover:border-[#F59E0B] disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ backgroundColor: '#18202C' }}
+            >
+              <Download className="w-4 h-4 text-slate-400" />
+              <span>Download PNGs</span>
             </button>
 
             {/* Dynamic Primary Button: Download PDF (Solid orange) */}
@@ -584,6 +608,9 @@ export default function QRBatchGenerator({
                   </span>
                 </div>
               )}
+              <p className="mt-2.5 text-[11px] text-slate-400 font-medium">
+                {generatedCards.length} sticker{generatedCards.length === 1 ? '' : 's'} ready &bull; prints on A4
+              </p>
             </div>
 
             {/* Column 3: Print Layout */}

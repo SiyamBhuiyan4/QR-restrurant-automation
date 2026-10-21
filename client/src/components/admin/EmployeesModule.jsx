@@ -38,6 +38,7 @@ import {
 
 import { useRestaurant } from '../../context/RestaurantContext';
 import TableSecurityModal, { TableSecurityModal as PasscodeConfirmDialog } from './TableSecurityModal';
+import '../../styles/staff.css';
 
 // Storage key for table custody lineage tracking across sessions and days
 const STORAGE_KEY_CUSTODY = 'smartdine_table_custody_v1';
@@ -317,6 +318,19 @@ export default function EmployeesModule({
   try {
     restaurantContext = useRestaurant();
   } catch (_) {}
+
+  // Staff-to-staff contact: the sender is the logged-in employee, or admin when no employee session exists
+  const [peerTargetId, setPeerTargetId] = useState('');
+  const [peerText, setPeerText] = useState('');
+  const [peerSent, setPeerSent] = useState('');
+  const loggedInStaff = useMemo(() => {
+    try {
+      const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('smartdine_logged_in_employee') : null;
+      return saved ? JSON.parse(saved) : null;
+    } catch (_) {
+      return null;
+    }
+  }, []);
 
   // Main State
   const [employees, setEmployees] = useState(() => {
@@ -1781,7 +1795,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
             <Users className="w-5 h-5 text-[#F59E0B]" />
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+            <h2 className="admin-section-title text-xl sm:text-2xl font-extrabold text-white tracking-tight">
               Employee Hub
             </h2>
             <p className="max-w-md text-slate-400 text-xs sm:text-sm mt-0.5">
@@ -3112,6 +3126,57 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
               </div>
             </div>
 
+            {/* Staff-to-staff contact form: any employee can message a colleague */}
+            {restaurantContext?.sendStaffMessage && employees.filter(e => e.id !== loggedInStaff?.id).length > 0 && (
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  const target = employees.find(emp => emp.id === peerTargetId);
+                  if (!target || !peerText.trim()) return;
+                  restaurantContext.sendStaffMessage(target.id, peerText.trim(), {
+                    from: loggedInStaff ? 'Employee' : 'Admin',
+                    fromName: loggedInStaff?.name || 'Head Desk / Admin',
+                    fromRole: loggedInStaff?.role || 'Admin',
+                    fromEmployeeId: loggedInStaff?.id || 'admin',
+                    fromStaffId: loggedInStaff
+                      ? String(loggedInStaff.staffId || loggedInStaff.numericId || loggedInStaff.accountCode || '')
+                      : 'ADMIN'
+                  });
+                  setPeerText('');
+                  setPeerSent(`Sent to ${target.name}`);
+                }}
+                className="flex flex-col sm:flex-row gap-2"
+              >
+                <select
+                  value={peerTargetId}
+                  onChange={e => setPeerTargetId(e.target.value)}
+                  className="px-3 py-3 rounded-xl bg-[#080B10] border border-slate-800 text-sm text-white focus:outline-none focus:border-amber-500/60"
+                  aria-label="Choose colleague"
+                >
+                  <option value="">Message a colleague...</option>
+                  {employees.filter(e => e.id !== loggedInStaff?.id).map(emp => (
+                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={peerText}
+                  onChange={e => { setPeerText(e.target.value); setPeerSent(''); }}
+                  placeholder="Type a short message..."
+                  className="flex-1 px-3 py-3 rounded-xl bg-[#080B10] border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500/60"
+                  aria-label="Message to colleague"
+                />
+                <button
+                  type="submit"
+                  disabled={!peerTargetId || !peerText.trim()}
+                  className="staff-action staff-touch px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-black cursor-pointer"
+                >
+                  Send
+                </button>
+                {peerSent && <p className="text-xs text-emerald-400 self-center">{peerSent}</p>}
+              </form>
+            )}
+
             {/* Quick Stats Metric Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3.5 rounded-xl bg-[#080B10] border border-slate-800">
@@ -3331,14 +3396,17 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
 
           {/* Danger Zone: Clear History */}
           {activityLogs.length > 0 && clearActivityLogs && (
-            <div className="mt-8 p-4 rounded-2xl border border-rose-500/40 bg-rose-950/10 space-y-3">
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-rose-400">Danger Zone</h4>
-                <p className="text-xs text-rose-300/80 mt-0.5">
-                  Irreversible action: This permanently erases all staff operational history and audit records.
-                </p>
+            <div className="mt-8 p-4 sm:p-5 rounded-2xl border border-rose-500/40 bg-rose-950/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-rose-400">Danger Zone</h4>
+                  <p className="text-xs text-rose-300/80 mt-0.5">
+                    Irreversible action: This permanently erases all staff operational history and audit records.
+                  </p>
+                </div>
               </div>
-              <div className="pt-1">
+              <div className="shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -3350,7 +3418,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
                       pendingAction: () => clearActivityLogs()
                     });
                   }}
-                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black transition cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-md shadow-rose-950/50"
+                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 text-white text-xs font-black transition cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-md shadow-rose-950/50"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Clear Entire History</span>

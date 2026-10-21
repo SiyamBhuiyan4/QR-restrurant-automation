@@ -1580,6 +1580,82 @@ export function RestaurantProvider({ children }) {
     };
   }, [socketContext, registerAssistanceCall, resolveAssistanceCall]);
 
+  // Live staff-to-staff messages from other devices
+  useEffect(() => {
+    if (!socketContext?.socket) return;
+    const socket = socketContext.socket;
+
+    const handleStaffMessage = (data) => {
+      if (data && data.id) mergeIncomingStaffMessage(data);
+    };
+    const handleStaffRead = (data) => {
+      if (!data?.id) return;
+      setStaffMessagesState(prev => {
+        const next = prev.map(m => (m.id === data.id ? { ...m, read: true } : m));
+        if (typeof localStorage !== 'undefined') {
+          try { localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(next)); } catch { /* quota */ }
+        }
+        return next;
+      });
+    };
+
+    socket.on('staff:message', handleStaffMessage);
+    socket.on('staff:message:read', handleStaffRead);
+
+    return () => {
+      socket.off('staff:message', handleStaffMessage);
+      socket.off('staff:message:read', handleStaffRead);
+    };
+  }, [socketContext, mergeIncomingStaffMessage]);
+
+  // On load, pull messages addressed to the logged-in employee so messages sent
+  // while this device was closed still appear. Filters elsewhere match on id,
+  // numericId or username, so query each identifier and merge deduped by id.
+  useEffect(() => {
+    if (typeof localStorage === 'undefined' || typeof fetch === 'undefined') return;
+    let ids = [];
+    try {
+      const raw = localStorage.getItem('smartdine_logged_in_employee')
+        || localStorage.getItem('smartdine_waiter_session');
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      const emp = parsed?.employee || parsed;
+      ids = [emp?.id, emp?.numericId, emp?.username]
+        .filter(v => v !== undefined && v !== null && String(v).trim() !== '')
+        .map(v => String(v).trim());
+      ids = [...new Set(ids)];
+    } catch {
+      return;
+    }
+    if (ids.length === 0) return;
+
+    let cancelled = false;
+    Promise.all(ids.map(id =>
+      fetch(`/api/staff/messages?recipient=${encodeURIComponent(id)}`)
+        .then(res => (res.ok ? res.json() : null))
+        .then(json => (json?.success && Array.isArray(json.data) ? json.data : []))
+        .catch(() => [])
+    )).then(results => {
+      if (cancelled) return;
+      const incoming = results.flat();
+      if (incoming.length === 0) return;
+      setStaffMessagesState(prev => {
+        const byId = new Map(prev.map(m => [m.id, m]));
+        for (const msg of incoming) {
+          if (!msg?.id) continue;
+          byId.set(msg.id, { ...byId.get(msg.id), ...msg });
+        }
+        const next = [...byId.values()].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        if (typeof localStorage !== 'undefined') {
+          try { localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(next)); } catch { /* quota */ }
+        }
+        return next;
+      });
+    });
+
+    return () => { cancelled = true; };
+  }, []);
+
   // Central synchronized setTables that keeps tableCount locked in 1:1 parity
   const setTables = useCallback((updater) => {
     setTablesState(prevTables => {
@@ -1885,6 +1961,25 @@ export function RestaurantProvider({ children }) {
   // ---------------------------------------------------------------------------
   // DIRECT ADMIN <-> WAITER DISPATCH & MESSAGING
   // ---------------------------------------------------------------------------
+  // Merge a message received from the server (or its echo of our own send) into state, deduped by id
+  const mergeIncomingStaffMessage = useCallback((incoming) => {
+    if (!incoming || !incoming.id) return;
+    setStaffMessagesState(prev => {
+      const idx = prev.findIndex(m => m.id === incoming.id);
+      let next;
+      if (idx >= 0) {
+        next = prev.slice();
+        next[idx] = { ...prev[idx], ...incoming };
+      } else {
+        next = [incoming, ...prev];
+      }
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(next)); } catch { /* quota */ }
+      }
+      return next;
+    });
+  }, []);
+
   const sendStaffMessage = useCallback((toWaiterId, text, options = {}) => {
     const targetEmp = employees.find(
       e => e.id === toWaiterId || String(e.numericId) === String(toWaiterId) || (e.username && e.username.toLowerCase() === String(toWaiterId).toLowerCase())
@@ -1944,8 +2039,26 @@ export function RestaurantProvider({ children }) {
       socketContext.socket.emit('waiter:admin_nudge', newMsg);
     }
 
+    // Persist on the server so staff on other devices receive it.
+    // If the server is unreachable the message stays in local state (offline fallback).
+    try {
+      fetch('/api/staff/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newMsg)
+      }).then(res => res.ok ? res.json() : null)
+        .then(json => {
+          if (json?.success && json.data) {
+            mergeIncomingStaffMessage(json.data);
+          }
+        })
+        .catch(() => { /* offline: keep local copy only */ });
+    } catch {
+      /* fetch unavailable: keep local copy only */
+    }
+
     return newMsg;
-  }, [employees, broadcastState, socketContext, recordActivity]);
+  }, [employees, broadcastState, socketContext, recordActivity, mergeIncomingStaffMessage]);
 
   const acknowledgeStaffMessage = useCallback((messageId, replyText = '') => {
     setStaffMessagesState(prev => {
