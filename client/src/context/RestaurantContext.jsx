@@ -1580,6 +1580,25 @@ export function RestaurantProvider({ children }) {
     };
   }, [socketContext, registerAssistanceCall, resolveAssistanceCall]);
 
+  // Merge a message received from the server (or its echo of our own send) into state, deduped by id
+  const mergeIncomingStaffMessage = useCallback((incoming) => {
+    if (!incoming || !incoming.id) return;
+    setStaffMessagesState(prev => {
+      const idx = prev.findIndex(m => m.id === incoming.id);
+      let next;
+      if (idx >= 0) {
+        next = prev.slice();
+        next[idx] = { ...prev[idx], ...incoming };
+      } else {
+        next = [incoming, ...prev];
+      }
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(next)); } catch { /* quota */ }
+      }
+      return next;
+    });
+  }, []);
+
   // Live staff-to-staff messages from other devices
   useEffect(() => {
     if (!socketContext?.socket) return;
@@ -1961,24 +1980,6 @@ export function RestaurantProvider({ children }) {
   // ---------------------------------------------------------------------------
   // DIRECT ADMIN <-> WAITER DISPATCH & MESSAGING
   // ---------------------------------------------------------------------------
-  // Merge a message received from the server (or its echo of our own send) into state, deduped by id
-  const mergeIncomingStaffMessage = useCallback((incoming) => {
-    if (!incoming || !incoming.id) return;
-    setStaffMessagesState(prev => {
-      const idx = prev.findIndex(m => m.id === incoming.id);
-      let next;
-      if (idx >= 0) {
-        next = prev.slice();
-        next[idx] = { ...prev[idx], ...incoming };
-      } else {
-        next = [incoming, ...prev];
-      }
-      if (typeof localStorage !== 'undefined') {
-        try { localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(next)); } catch { /* quota */ }
-      }
-      return next;
-    });
-  }, []);
 
   const sendStaffMessage = useCallback((toWaiterId, text, options = {}) => {
     const targetEmp = employees.find(
