@@ -8,12 +8,70 @@ import {
   mockTables as defaultMockTables,
   mockEmployees as defaultMockEmployees
 } from '../data/adminMockData';
-import { useSocket, useSocketListener } from './SocketContext';
+import { useSocket, useSocketListener, resolveServerUrl } from './SocketContext';
+import { verifyAdminPin } from '../utils/adminAuth';
 
 const RestaurantContext = createContext(null);
 
-/** Admin master PIN required for voids, discounts and void approvals (matches TableSecurityModal). */
-export const ADMIN_MASTER_PIN = '808080';
+// ---------------------------------------------------------------------------
+// Server sync helpers for order corrections (localStorage stays the offline fallback)
+// ---------------------------------------------------------------------------
+const sendCorrectionRequest = (method, path, body) => {
+  try {
+    fetch(`${resolveServerUrl()}${path}`, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).catch(() => {});
+  } catch (_) { /* offline or fetch unavailable: localStorage copy remains */ }
+};
+
+/** Converts server correction rows (newest first) into the local snapshot shape. */
+const correctionRowsToSnapshot = (rows = []) => {
+  const voids = {};
+  const discounts = {};
+  const requests = [];
+  const latestDiscount = {};
+  for (const row of rows) {
+    if (!row || !row.type) continue;
+    const key = String(row.orderId);
+    const isAppliedVoid = row.type === 'void' && row.status === 'applied';
+    const isApprovedRequest = row.type === 'void_request' && row.status === 'approved';
+    if (isAppliedVoid || isApprovedRequest) {
+      voids[key] = Array.from(new Set([...(voids[key] || []), ...(row.itemIndexes || [])]));
+    }
+    if (row.type === 'void_request') {
+      const { type: _type, ...request } = row;
+      requests.push(request);
+    }
+    if (row.type === 'discount' && !latestDiscount[key]) {
+      latestDiscount[key] = row;
+    }
+  }
+  for (const [key, row] of Object.entries(latestDiscount)) {
+    discounts[key] = row.status === 'applied'
+      ? { id: row.id, type: row.discountType, value: row.value, reason: row.reason, note: row.note, appliedBy: row.appliedBy, appliedAt: row.appliedAt }
+      : null;
+  }
+  return { voids, discounts, requests: requests.slice(0, 200) };
+};
+
+/** Merges server truth over local state: voids and requests union, server wins on conflicts. */
+const mergeCorrectionSnapshots = (local, server) => {
+  const voids = { ...local.voids };
+  for (const [key, items] of Object.entries(server.voids)) {
+    voids[key] = Array.from(new Set([...(voids[key] || []), ...items]));
+  }
+  const byId = new Map();
+  for (const request of local.requests) byId.set(request.id, request);
+  for (const request of server.requests) byId.set(request.id, request);
+  const requests = [...byId.values()]
+    .sort((a, b) => (b.requestedAt || 0) - (a.requestedAt || 0))
+    .slice(0, 200);
+  // Server-known discount keys (including null = cleared) override local values
+  const discounts = { ...local.discounts, ...server.discounts };
+  return { voids, discounts, requests };
+};
 
 export const STORAGE_KEYS = {
   ORDER_CORRECTIONS: 'smartdine_order_corrections',
@@ -2004,6 +2062,43 @@ export function RestaurantProvider({ children }) {
     actorStaffId: 'ADMIN'
   }), []);
 
+  // Merge server-known corrections into local state (server wins, local kept as offline fallback)
+  const applyServerCorrections = useCallback((serverSnapshot) => {
+    setOrderCorrectionsState(prev => {
+      const next = mergeCorrectionSnapshots(prev, serverSnapshot);
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEYS.ORDER_CORRECTIONS, JSON.stringify(next)); } catch (_) {}
+      }
+      return next;
+    });
+  }, []);
+
+  const refreshServerCorrections = useCallback(async () => {
+    if (typeof fetch === 'undefined') return;
+    try {
+      const res = await fetch(`${resolveServerUrl()}/api/corrections`);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json?.success && Array.isArray(json.data)) {
+        applyServerCorrections(correctionRowsToSnapshot(json.data));
+      }
+    } catch (_) { /* server unreachable: keep local copy */ }
+  }, [applyServerCorrections]);
+
+  // Load corrections from the server on mount
+  useEffect(() => {
+    refreshServerCorrections();
+  }, [refreshServerCorrections]);
+
+  // Re-sync whenever any device changes a correction
+  useEffect(() => {
+    if (!socketContext?.socket) return;
+    const socket = socketContext.socket;
+    const handleCorrectionChanged = () => { refreshServerCorrections(); };
+    socket.on('correction:changed', handleCorrectionChanged);
+    return () => { socket.off('correction:changed', handleCorrectionChanged); };
+  }, [socketContext, refreshServerCorrections]);
+
   const getOrderCorrection = useCallback((orderId) => {
     const key = String(orderId);
     return {
@@ -2030,8 +2125,8 @@ export function RestaurantProvider({ children }) {
   };
 
   /** Admin void with master PIN. itemIndexes: array of item positions, or 'all'. */
-  const voidOrderItems = useCallback(({ orderId, orderLabel, tableNumber, items = [], itemIndexes, reason, note = '', pin, actor = ADMIN_ACTOR }) => {
-    if (String(pin || '').trim() !== ADMIN_MASTER_PIN) {
+  const voidOrderItems = useCallback(async ({ orderId, orderLabel, tableNumber, items = [], itemIndexes, reason, note = '', pin, actor = ADMIN_ACTOR }) => {
+    if (!(await verifyAdminPin(pin))) {
       return { success: false, error: 'Invalid admin PIN' };
     }
     if (!reason) return { success: false, error: 'A reason is required' };
@@ -2039,6 +2134,10 @@ export function RestaurantProvider({ children }) {
     if (!indexes.length) return { success: false, error: 'Select at least one item' };
     const itemNames = indexes.map(i => items[i]?.name).filter(Boolean);
     commitOrderCorrections(prev => applyVoidsToSnapshot(prev, orderId, indexes));
+    sendCorrectionRequest('POST', '/api/corrections', {
+      type: 'void', orderId, orderLabel, tableNumber, itemIndexes: indexes, itemNames,
+      wholeOrder: itemIndexes === 'all', reason, note, appliedBy: actor?.actorName || ADMIN_ACTOR.actorName
+    });
     recordActivity({
       ...actor,
       actionType: 'VOID',
@@ -2071,6 +2170,11 @@ export function RestaurantProvider({ children }) {
       requestedAt: Date.now()
     };
     commitOrderCorrections(prev => ({ ...prev, requests: [request, ...prev.requests].slice(0, 200) }));
+    sendCorrectionRequest('POST', '/api/corrections', {
+      id: request.id, type: 'void_request', orderId: request.orderId, orderLabel, tableNumber,
+      itemIndexes: indexes, itemNames, wholeOrder: request.wholeOrder, reason, note,
+      requestedBy: request.requestedBy, requestedById: request.requestedById
+    });
     recordActivity({
       actorType: 'employee',
       ...(actor || {}),
@@ -2083,8 +2187,8 @@ export function RestaurantProvider({ children }) {
   }, [commitOrderCorrections, recordActivity]);
 
   /** Admin approves a pending request; requires master PIN. */
-  const approveVoidRequest = useCallback((requestId, pin, admin = ADMIN_ACTOR) => {
-    if (String(pin || '').trim() !== ADMIN_MASTER_PIN) {
+  const approveVoidRequest = useCallback(async (requestId, pin, admin = ADMIN_ACTOR) => {
+    if (!(await verifyAdminPin(pin))) {
       return { success: false, error: 'Invalid admin PIN' };
     }
     const request = orderCorrections.requests.find(r => r.id === requestId);
@@ -2100,6 +2204,7 @@ export function RestaurantProvider({ children }) {
           : r))
       };
     });
+    sendCorrectionRequest('PATCH', `/api/corrections/${encodeURIComponent(requestId)}`, { status: 'approved', resolvedBy: admin.actorName });
     recordActivity({
       ...admin,
       actionType: 'VOID_APPROVED',
@@ -2122,6 +2227,7 @@ export function RestaurantProvider({ children }) {
         ? { ...r, status: 'rejected', resolvedBy: admin.actorName, resolvedAt: Date.now() }
         : r))
     }));
+    sendCorrectionRequest('PATCH', `/api/corrections/${encodeURIComponent(requestId)}`, { status: 'rejected', resolvedBy: admin.actorName });
     recordActivity({
       ...admin,
       actionType: 'VOID_REJECTED',
@@ -2133,8 +2239,8 @@ export function RestaurantProvider({ children }) {
   }, [orderCorrections, commitOrderCorrections, recordActivity, ADMIN_ACTOR]);
 
   /** Discount on an order or table bill: 'percent' (0-100) or 'fixed' amount. Requires master PIN. */
-  const applyOrderDiscount = useCallback(({ orderId, orderLabel, tableNumber, discountType, value, reason, note = '', pin, actor = ADMIN_ACTOR }) => {
-    if (String(pin || '').trim() !== ADMIN_MASTER_PIN) {
+  const applyOrderDiscount = useCallback(async ({ orderId, orderLabel, tableNumber, discountType, value, reason, note = '', pin, actor = ADMIN_ACTOR }) => {
+    if (!(await verifyAdminPin(pin))) {
       return { success: false, error: 'Invalid admin PIN' };
     }
     const amount = Number(value);
@@ -2142,8 +2248,12 @@ export function RestaurantProvider({ children }) {
     if (discountType === 'percent' && amount > 100) return { success: false, error: 'Percent cannot exceed 100' };
     if (!reason) return { success: false, error: 'A reason is required' };
     const key = String(orderId);
-    const discount = { type: discountType === 'percent' ? 'percent' : 'fixed', value: amount, reason, note, appliedBy: actor.actorName, appliedAt: Date.now() };
+    const discount = { id: `disc-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`, type: discountType === 'percent' ? 'percent' : 'fixed', value: amount, reason, note, appliedBy: actor.actorName, appliedAt: Date.now() };
     commitOrderCorrections(prev => ({ ...prev, discounts: { ...prev.discounts, [key]: discount } }));
+    sendCorrectionRequest('POST', '/api/corrections', {
+      id: discount.id, type: 'discount', orderId: key, orderLabel, tableNumber,
+      discountType: discount.type, value: amount, reason, note, appliedBy: actor.actorName
+    });
     recordActivity({
       ...actor,
       actionType: 'DISCOUNT',
@@ -2155,16 +2265,20 @@ export function RestaurantProvider({ children }) {
   }, [commitOrderCorrections, recordActivity, ADMIN_ACTOR]);
 
   /** Removes a discount from an order or table bill. Requires master PIN. */
-  const clearOrderDiscount = useCallback(({ orderId, orderLabel, pin, actor = ADMIN_ACTOR }) => {
-    if (String(pin || '').trim() !== ADMIN_MASTER_PIN) {
+  const clearOrderDiscount = useCallback(async ({ orderId, orderLabel, pin, actor = ADMIN_ACTOR }) => {
+    if (!(await verifyAdminPin(pin))) {
       return { success: false, error: 'Invalid admin PIN' };
     }
     const key = String(orderId);
+    const activeDiscountId = orderCorrections.discounts[key]?.id;
     commitOrderCorrections(prev => {
       const discounts = { ...prev.discounts };
       delete discounts[key];
       return { ...prev, discounts };
     });
+    if (activeDiscountId) {
+      sendCorrectionRequest('PATCH', `/api/corrections/${encodeURIComponent(activeDiscountId)}`, { status: 'cleared', resolvedBy: actor.actorName });
+    }
     recordActivity({
       ...actor,
       actionType: 'DISCOUNT_REMOVED',
@@ -2173,7 +2287,7 @@ export function RestaurantProvider({ children }) {
       details: ''
     });
     return { success: true };
-  }, [commitOrderCorrections, recordActivity, ADMIN_ACTOR]);
+  }, [orderCorrections, commitOrderCorrections, recordActivity, ADMIN_ACTOR]);
 
   const authenticateEmployee = useCallback((username, password) => {
     if (!username || !password) return null;

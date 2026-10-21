@@ -1,0 +1,122 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Admin · Staff (EmployeesModule) theme bridge
+   Scoped to .staff-light-root. The module was written with hard-coded dark
+   Tailwind colours; these rules remap those utilities onto the admin tokens
+   (--adm-*) so the page follows the admin light/dark switch. Exact-token
+   attribute selectors are used so unrelated classes are not touched.
+   Colored buttons (emerald/rose/amber fills) keep their white text.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.staff-light-root {
+  background-color: var(--adm-bg);
+  color: var(--adm-text);
+}
+
+/* Page + panel surfaces */
+.staff-light-root [class~="bg-[#0B0F19]"],
+.staff-light-root [class~="bg-[#111726]"],
+.staff-light-root [class~="bg-[#131926]"],
+.staff-light-root [class~="bg-[#161F32]"],
+.staff-light-root [class~="bg-[#1A2234]"],
+.staff-light-root [class~="bg-[#0A0F1D]"],
+.staff-light-root [class~="bg-[#111726]/95"],
+.staff-light-root [class~="bg-[#111726]/90"],
+.staff-light-root [class~="bg-[#111726]/85"],
+.staff-light-root [class~="bg-[#111726]/80"],
+.staff-light-root [class~="bg-[#131926]/95"],
+.staff-light-root [class~="bg-[#0B0F19]/60"],
+.staff-light-root [class~="bg-[#0B0F19]/40"] {
+  background-color: var(--adm-surface);
+}
+
+/* Inputs, wells, chips */
+.staff-light-root [class~="bg-[#080B10]"],
+.staff-light-root [class~="bg-[#080B11]"],
+.staff-light-root [class~="bg-[#080B11]/90"],
+.staff-light-root [class~="bg-[#1E293B]"],
+.staff-light-root [class~="bg-black/40"],
+.staff-light-root [class~="bg-slate-800"],
+.staff-light-root [class~="bg-slate-700"],
+.staff-light-root [class~="bg-slate-800/80"],
+.staff-light-root [class~="bg-slate-700/60"] {
+  background-color: var(--adm-surface-2);
+}
+
+.staff-light-root [class~="hover:bg-[#1E293B]"]:hover,
+.staff-light-root [class~="hover:bg-slate-800"]:hover,
+.staff-light-root [class~="hover:bg-slate-700"]:hover {
+  background-color: var(--adm-surface-2);
+}
+
+.staff-light-root [class~="hover:bg-white/10"]:hover {
+  background-color: color-mix(in srgb, var(--adm-text) 10%, transparent);
+}
+
+/* Text */
+.staff-light-root [class~="text-slate-100"],
+.staff-light-root [class~="text-slate-200"],
+.staff-light-root [class~="text-slate-300"],
+.staff-light-root [class~="text-white"]:not([class*="bg-emerald-"]):not([class*="bg-rose-"]):not([class*="bg-amber-"]) {
+  color: var(--adm-text);
+}
+
+.staff-light-root [class~="text-slate-400"],
+.staff-light-root [class~="text-slate-500"],
+.staff-light-root [class~="text-slate-600"] {
+  color: var(--adm-text-muted);
+}
+
+.staff-light-root [class~="text-[#F59E0B]"] {
+  color: var(--adm-primary);
+}
+
+.staff-light-root [class~="hover:text-white"]:hover,
+.staff-light-root [class~="hover:text-slate-100"]:hover {
+  color: var(--adm-text);
+}
+
+.staff-light-root [class~="hover:text-slate-200"]:hover {
+  color: var(--adm-text);
+}
+
+.staff-light-root [class~="placeholder:text-slate-500"]::placeholder,
+.staff-light-root [class~="placeholder-slate-500"]::placeholder {
+  color: var(--adm-text-muted);
+}
+
+/* Borders */
+.staff-light-root [class~="border-slate-800"],
+.staff-light-root [class~="border-slate-800/80"],
+.staff-light-root [class~="border-slate-700"],
+.staff-light-root [class~="border-slate-700/60"],
+.staff-light-root [class~="border-slate-700/70"],
+.staff-light-root [class~="border-slate-600"],
+.staff-light-root [class~="border-slate-500/60"],
+.staff-light-root [class~="border-slate-500/30"],
+.staff-light-root [class~="border-[#2A384C]"],
+.staff-light-root [class~="border-[#1E293B]"],
+.staff-light-root [class~="border-white/[0.06]"],
+.staff-light-root [class~="border-white/[0.07]"] {
+  border-color: var(--adm-border);
+}
+
+.staff-light-root [class~="divide-slate-800/80"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--adm-border);
+}
+
+.staff-light-root [class~="hover:border-white/[0.15]"]:hover,
+.staff-light-root [class~="hover:border-white/10"]:hover,
+.staff-light-root [class~="hover:border-slate-700"]:hover,
+.staff-light-root [class~="hover:border-slate-600"]:hover,
+.staff-light-root [class~="hover:border-slate-500/50"]:hover,
+.staff-light-root [class~="hover:border-slate-500"]:hover {
+  border-color: color-mix(in srgb, var(--adm-text) 25%, var(--adm-border));
+}
+
+/* Gradients */
+.staff-light-root [class~="from-[#1A2234]"] {
+  --tw-gradient-from: var(--adm-surface);
+}
+.staff-light-root [class~="to-[#161F32]"] {
+  --tw-gradient-to: var(--adm-surface-2);
+}

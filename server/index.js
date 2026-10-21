@@ -60,6 +60,8 @@ app.use('/api/orders', safeRouteRequire('./routes/orders'));
 app.use('/api/waiter', safeRouteRequire('./routes/waiter'));
 app.use('/api/tables', safeRouteRequire('./routes/tables'));
 app.use('/api/staff', safeRouteRequire('./routes/staff'));
+app.use('/api', safeRouteRequire('./routes/corrections'));
+app.use('/api/auth', safeRouteRequire('./routes/auth'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

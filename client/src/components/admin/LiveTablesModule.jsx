@@ -316,7 +316,7 @@ export default function LiveTablesModule({
   }, []);
 
   // ---------------------------------------------------------------------------
-  // PROTECTED TABLE MANAGEMENT (Requires PIN: 808080 via TableSecurityModal)
+  // PROTECTED TABLE MANAGEMENT (Requires admin PIN via TableSecurityModal)
   // ---------------------------------------------------------------------------
   const [customTableCount, setCustomTableCount] = useState(() => (propTables ? propTables.length.toString() : '12'));
   const [securityModalState, setSecurityModalState] = useState({
@@ -429,7 +429,7 @@ export default function LiveTablesModule({
     }
   }, [onUpdateTables, onTableCountChange, triggerToast]);
 
-  // Request handlers that open TableSecurityModal with password 808080 confirmation
+  // Request handlers that open TableSecurityModal for admin PIN confirmation
   const requestTableCountChange = useCallback((newCount) => {
     const target = parseInt(newCount, 10);
     if (isNaN(target) || target < 1) {
@@ -686,7 +686,7 @@ export default function LiveTablesModule({
     triggerToast(`Table ${tableNumber} assigned to ${empName}`, 'success');
   }, [employees, onAssignEmployee, triggerToast]);
 
-  // Request Employee Reassignment with Admin PIN (808080) verification
+  // Request Employee Reassignment with Admin PIN verification
   const requestReassignEmployee = useCallback((tableNumber, newEmployeeId, onModalConfirmedCallback) => {
     const targetTable = tables.find(t => t.tableNumber === tableNumber);
     const currentEmpId = targetTable?.assignedEmployeeId ? String(targetTable.assignedEmployeeId) : '';
@@ -778,7 +778,7 @@ export default function LiveTablesModule({
   return (
     <div className="flr-root">
 
-      {/* HERO: floor capacity. Table count change stays behind PIN 808080 via requestTableCountChange */}
+      {/* HERO: floor capacity. Table count change stays behind the admin PIN via requestTableCountChange */}
       <div className="flr-hero">
         <div className="flr-row" style={{ flexWrap: 'nowrap', minWidth: 0 }}>
           <div className="flr-avatar" style={{ width: '2.5rem', height: '2.5rem', background: 'var(--adm-primary)', color: 'var(--adm-primary-fg)' }}>

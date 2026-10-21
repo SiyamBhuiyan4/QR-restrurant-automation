@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { verifyAdminPin } from '../../utils/adminAuth';
 import {
   Lock,
   ShieldAlert,
@@ -16,7 +17,7 @@ import {
  * Admin Table Security Confirmation Modal
  * 
  * Guards critical operations (e.g. changing total table count, adding tables, 
- * or removing tables) with admin password '808080' verification before execution.
+ * or removing tables) with admin PIN verification (checked on the server) before execution.
  * 
  * Props:
  * - isOpen (boolean): Modal visibility state
@@ -39,6 +40,7 @@ export default function TableSecurityModal({
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const inputRef = useRef(null);
 
   // Reset state when modal opens or closes
@@ -48,6 +50,7 @@ export default function TableSecurityModal({
       setShowPassword(false);
       setErrorMessage('');
       setIsSuccess(false);
+      setIsChecking(false);
 
       // Auto-focus the input field on open
       const timer = setTimeout(() => {
@@ -72,8 +75,9 @@ export default function TableSecurityModal({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     if (e) e.preventDefault();
+    if (isChecking || isSuccess) return;
 
     const trimmed = password.trim();
     if (!trimmed) {
@@ -82,7 +86,11 @@ export default function TableSecurityModal({
       return;
     }
 
-    if (trimmed !== '808080') {
+    setIsChecking(true);
+    const valid = await verifyAdminPin(trimmed);
+    setIsChecking(false);
+
+    if (!valid) {
       setErrorMessage('Access Denied: Incorrect PIN. Please try again.');
       if (inputRef.current) {
         inputRef.current.select();
@@ -238,7 +246,7 @@ export default function TableSecurityModal({
 
             <button
               type="submit"
-              disabled={isSuccess}
+              disabled={isSuccess || isChecking}
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
             >
               {isSuccess ? (
@@ -246,6 +254,8 @@ export default function TableSecurityModal({
                   <ShieldCheck className="w-4 h-4 text-slate-950" />
                   <span>Authorized</span>
                 </>
+              ) : isChecking ? (
+                <span>Checking PIN...</span>
               ) : (
                 <>
                   <span>Confirm &amp; Apply (Authorize)</span>

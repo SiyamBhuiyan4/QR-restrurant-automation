@@ -60,7 +60,7 @@ import useAdminTheme from '../hooks/useAdminTheme';
  *   10. Customer Reports & Notes (Direct-to-Admin Notes, Staff Dispatching & Audit Log)
  */
 export default function AdminDashboard({ className = '' }) {
-  // Session Authentication State (strictly gated by Master PIN '808080')
+  // Session Authentication State (gated by the server-verified Master PIN)
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem('smartdine_admin_auth') === 'true';
@@ -521,7 +521,7 @@ export default function AdminDashboard({ className = '' }) {
     return list;
   }, [assistanceCalls, customerNotes, liveOrders]);
 
-  // Gate dashboard behind Master Admin Password ('808080')
+  // Gate dashboard behind Master Admin Password (verified on server)
   if (!isAuthenticated) {
     return <AdminLoginGate onLoginSuccess={() => setIsAuthenticated(true)} />;
   }
@@ -668,7 +668,7 @@ export default function AdminDashboard({ className = '' }) {
 
           {/* TAB 4: EMPLOYEE & KITCHEN HUB (KDS) */}
           {activeTab === 'kds' && (
-            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-white/[0.06] shadow-md bg-[#0A0F1D]">
+            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-[color:var(--adm-border)] shadow-md bg-[color:var(--adm-surface)]">
               <KitchenDisplay isEmbedded={true} />
             </div>
           )}

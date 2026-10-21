@@ -14,10 +14,6 @@
  * plumbing. Both hashing and verification use this same function.
  */
 
-// Master PIN the admin must enter before a staff password can be reset.
-// Same value the existing TableSecurityModal flow uses.
-export const STAFF_MASTER_PIN = '808080';
-
 export const STAFF_PASSWORD_PATTERN = /^\d{4,8}$/;
 export const STAFF_PASSWORD_MASK = '••••••';
 const KEY_ITERATIONS = 2000;

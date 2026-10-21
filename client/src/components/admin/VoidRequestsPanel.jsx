@@ -18,11 +18,14 @@ export default function VoidRequestsPanel({ className = '' }) {
   const pending = getPendingVoidRequests();
   const [pins, setPins] = useState({});
   const [errors, setErrors] = useState({});
+  const [checkingId, setCheckingId] = useState(null);
 
   const setPinFor = (id, value) => setPins(prev => ({ ...prev, [id]: value }));
 
-  const handleApprove = (req) => {
-    const result = approveVoidRequest(req.id, pins[req.id]);
+  const handleApprove = async (req) => {
+    setCheckingId(req.id);
+    const result = await approveVoidRequest(req.id, pins[req.id]);
+    setCheckingId(null);
     if (!result.success) {
       setErrors(prev => ({ ...prev, [req.id]: result.error }));
       return;
@@ -92,10 +95,11 @@ export default function VoidRequestsPanel({ className = '' }) {
             <button
               type="button"
               onClick={() => handleApprove(req)}
+              disabled={checkingId === req.id}
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer"
-              style={{ background: 'var(--adm-success)', color: 'var(--adm-primary-fg)' }}
+              style={{ background: 'var(--adm-success)', color: 'var(--adm-primary-fg)', opacity: checkingId === req.id ? 0.6 : 1 }}
             >
-              <Check size={13} /> Approve
+              <Check size={13} /> {checkingId === req.id ? 'Checking PIN...' : 'Approve'}
             </button>
             <button
               type="button"

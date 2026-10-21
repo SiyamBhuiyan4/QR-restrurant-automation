@@ -130,7 +130,7 @@ export function formatMoney(amount) {
 
 /**
  * Records the settlement and marks the table's orders paid/completed.
- * The payment method is kept in the local ledger because the server has no payment field.
+ * The settlement is posted to the server (shared across devices); the local ledger stays as fallback.
  */
 export async function settleTableOrders({ bill, paymentMethod, orders }) {
   const record = {
@@ -144,8 +144,16 @@ export async function settleTableOrders({ bill, paymentMethod, orders }) {
   const ledger = readJson(BILL_SETTLEMENTS_KEY, []);
   writeJson(BILL_SETTLEMENTS_KEY, [record, ...(Array.isArray(ledger) ? ledger : [])].slice(0, 200));
 
-  // Best-effort: use the existing order status route for orders that exist on the server
   const base = resolveServerUrl();
+  try {
+    await fetch(`${base}/api/settlements`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record)
+    });
+  } catch (_) { /* offline: local ledger already holds the record */ }
+
+  // Best-effort: use the existing order status route for orders that exist on the server
   const serverOrders = orders.map(normalizeOrder).filter((o) => o.serverId);
   await Promise.allSettled(
     serverOrders.map((o) =>

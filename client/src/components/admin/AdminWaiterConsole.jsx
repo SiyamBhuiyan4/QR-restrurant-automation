@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { STAFF_MASTER_PIN, STAFF_PASSWORD_MASK, isValidStaffPassword, createStaffCredential, stripPlainCredentials } from '../../utils/staffCredentials';
+import { verifyAdminPin } from '../../utils/adminAuth';
+import { STAFF_PASSWORD_MASK, isValidStaffPassword, createStaffCredential, stripPlainCredentials } from '../../utils/staffCredentials';
 import {
   Users,
   User,
@@ -125,6 +126,7 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
   const [showModalPassword, setShowModalPassword] = useState(false);
   // Inline 'Set new password' panel (edit mode). The current password is never displayed.
   const [pwReset, setPwReset] = useState({ open: false, next: '', confirm: '', masterPin: '', error: '' });
+  const [pwResetChecking, setPwResetChecking] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -339,9 +341,9 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
   };
 
   // Set a new password for an existing waiter (master PIN required). Old value is never shown.
-  const submitPwReset = (e) => {
+  const submitPwReset = async (e) => {
     e.preventDefault();
-    if (!editingEmployee) return;
+    if (!editingEmployee || pwResetChecking) return;
     const next = pwReset.next.trim();
     if (!isValidStaffPassword(next)) {
       setPwReset(p => ({ ...p, error: 'Password must be 4 to 8 digits.' }));
@@ -351,7 +353,10 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
       setPwReset(p => ({ ...p, error: 'The two passwords do not match.' }));
       return;
     }
-    if (pwReset.masterPin.trim() !== STAFF_MASTER_PIN) {
+    setPwResetChecking(true);
+    const pinOk = await verifyAdminPin(pwReset.masterPin.trim());
+    setPwResetChecking(false);
+    if (!pinOk) {
       setPwReset(p => ({ ...p, error: 'Admin master PIN is incorrect. Password was not changed.' }));
       return;
     }
@@ -1409,7 +1414,7 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
                           {pwReset.error && <span role="alert" style={{ color: 'var(--adm-danger)', fontSize: '0.8rem', fontWeight: 600 }}>{pwReset.error}</span>}
                           <span className="flr-row" style={{ justifyContent: 'flex-end', gap: '0.4rem' }}>
                             <button type="button" className="flr-btn" onClick={() => setPwReset({ open: false, next: '', confirm: '', masterPin: '', error: '' })}>Cancel</button>
-                            <button type="submit" className="flr-btn flr-btn--primary">Save new password</button>
+                            <button type="submit" className="flr-btn flr-btn--primary" disabled={pwResetChecking}>{pwResetChecking ? 'Checking PIN...' : 'Save new password'}</button>
                           </span>
                         </form>
                       )}
@@ -1551,7 +1556,7 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
         </div>
       )}
 
-      {/* Admin PIN passcode confirmation (808080), unchanged */}
+      {/* Admin PIN passcode confirmation (verified on server), unchanged */}
       <TableSecurityModal
         isOpen={securityModalState.isOpen}
         onClose={() => setSecurityModalState(prev => ({ ...prev, isOpen: false }))}

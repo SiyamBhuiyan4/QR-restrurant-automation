@@ -40,9 +40,10 @@ import { useRestaurant } from '../../context/RestaurantContext';
 import TableSecurityModal, { TableSecurityModal as PasscodeConfirmDialog } from './TableSecurityModal';
 import '../../styles/staff.css';
 import '../../styles/staff-admin.css';
+import '../../styles/staff-light.css';
 import { staffKey, hoursTodayFor, formatHours, SHIFT_EVENT } from '../../utils/shiftClock';
+import { verifyAdminPin } from '../../utils/adminAuth';
 import {
-  STAFF_MASTER_PIN,
   STAFF_PASSWORD_MASK,
   isValidStaffPassword,
   createStaffCredential,
@@ -513,6 +514,7 @@ export default function EmployeesModule({
   }, []);
   const [resetPwTarget, setResetPwTarget] = useState(null);
   const [resetPwForm, setResetPwForm] = useState({ next: '', confirm: '', masterPin: '', error: '' });
+  const [resetPwChecking, setResetPwChecking] = useState(false);
   // Digital Keycard Modal preview
   const [keycardModalEmployee, setKeycardModalEmployee] = useState(null);
   // Password visibility toggle in Add/Edit modal
@@ -1406,9 +1408,9 @@ export default function EmployeesModule({
     setResetPwForm({ next: '', confirm: '', masterPin: '', error: '' });
   }, [employees]);
 
-  const submitPasswordReset = (e) => {
+  const submitPasswordReset = async (e) => {
     e.preventDefault();
-    if (!resetPwTarget) return;
+    if (!resetPwTarget || resetPwChecking) return;
     const next = resetPwForm.next.trim();
     const confirm = resetPwForm.confirm.trim();
     if (!isValidStaffPassword(next)) {
@@ -1419,7 +1421,10 @@ export default function EmployeesModule({
       setResetPwForm(f => ({ ...f, error: 'The two passwords do not match.' }));
       return;
     }
-    if (resetPwForm.masterPin.trim() !== STAFF_MASTER_PIN) {
+    setResetPwChecking(true);
+    const pinOk = await verifyAdminPin(resetPwForm.masterPin.trim());
+    setResetPwChecking(false);
+    if (!pinOk) {
       setResetPwForm(f => ({ ...f, error: 'Admin master PIN is incorrect. Password was not changed.' }));
       return;
     }
@@ -1752,8 +1757,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
 
   return (
     <div
-      className={`w-full min-h-screen bg-[#080B11] text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6 antialiased selection:bg-[#F59E0B] selection:text-slate-950 relative ${className}`}
-      style={{ backgroundColor: '#080B11' }}
+      className={`staff-light-root w-full min-h-screen p-4 sm:p-6 lg:p-8 space-y-6 antialiased selection:bg-[#F59E0B] selection:text-slate-950 relative ${className}`}
     >
       {/* Toast Notification Container with Undo Support & Anti-Premature Closing */}
       {toastMessage && (
@@ -3619,6 +3623,7 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
           form={resetPwForm}
           setForm={setResetPwForm}
           onSubmit={submitPasswordReset}
+          checking={resetPwChecking}
           onCancel={() => setResetPwTarget(null)}
         />
       )}
@@ -3901,7 +3906,7 @@ function StaffDetailDrawer({ emp, employees, tableCustody, activityLogs, onClose
 /* ---------------------------------------------------------------------------
  * Reset password dialog: new password x2 + admin master PIN. Old value is never shown.
  * ------------------------------------------------------------------------- */
-function ResetPasswordDialog({ target, form, setForm, onSubmit, onCancel }) {
+function ResetPasswordDialog({ target, form, setForm, onSubmit, onCancel, checking = false }) {
   return (
     <div className="staff-modal-backdrop" onClick={onCancel}>
       <form
@@ -3961,7 +3966,7 @@ function ResetPasswordDialog({ target, form, setForm, onSubmit, onCancel }) {
 
         <div className="staff-modal-actions">
           <button type="button" onClick={onCancel} className="staff-btn">Cancel</button>
-          <button type="submit" className="staff-btn staff-btn-primary">Save new password</button>
+          <button type="submit" className="staff-btn staff-btn-primary" disabled={checking}>{checking ? 'Checking PIN...' : 'Save new password'}</button>
         </div>
       </form>
     </div>

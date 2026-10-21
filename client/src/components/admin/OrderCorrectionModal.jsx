@@ -111,6 +111,7 @@ export default function OrderCorrectionModal({
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
+  const [checking, setChecking] = useState(false);
 
   const isAdmin = mode === 'admin';
   const orderId = order?.id;
@@ -154,7 +155,7 @@ export default function OrderCorrectionModal({
     return selected.filter(i => !alreadyVoided.has(i));
   };
 
-  const submitVoid = () => {
+  const submitVoid = async () => {
     setError('');
     if (!reason) return setError('Choose a reason for the void.');
     if (reason === 'Other' && !note.trim()) return setError('Describe the reason in the note.');
@@ -173,7 +174,9 @@ export default function OrderCorrectionModal({
     };
 
     if (isAdmin) {
-      const result = voidOrderItems({ ...base, pin });
+      setChecking(true);
+      const result = await voidOrderItems({ ...base, pin });
+      setChecking(false);
       if (!result.success) return setError(result.error);
       setDone('Void applied and logged.');
       setPin('');
@@ -191,9 +194,10 @@ export default function OrderCorrectionModal({
     return undefined;
   };
 
-  const submitDiscount = () => {
+  const submitDiscount = async () => {
     setError('');
-    const result = applyOrderDiscount({
+    setChecking(true);
+    const result = await applyOrderDiscount({
       orderId,
       orderLabel: label,
       tableNumber: order.tableNumber,
@@ -203,6 +207,7 @@ export default function OrderCorrectionModal({
       note: note.trim(),
       pin
     });
+    setChecking(false);
     if (!result.success) return setError(result.error);
     setDone('Discount applied and logged.');
     setPin('');
@@ -210,9 +215,11 @@ export default function OrderCorrectionModal({
     return undefined;
   };
 
-  const removeDiscount = () => {
+  const removeDiscount = async () => {
     setError('');
-    const result = clearOrderDiscount({ orderId, orderLabel: label, pin });
+    setChecking(true);
+    const result = await clearOrderDiscount({ orderId, orderLabel: label, pin });
+    setChecking(false);
     if (!result.success) return setError(result.error);
     setDone('Discount removed and logged.');
     setPin('');
@@ -418,11 +425,12 @@ export default function OrderCorrectionModal({
           <button
             type="button"
             onClick={tab === 'discount' && isAdmin ? submitDiscount : submitVoid}
+            disabled={checking}
             className="px-4 py-2 rounded-lg text-sm font-bold cursor-pointer flex items-center gap-1.5"
-            style={{ background: 'var(--adm-primary)', color: 'var(--adm-primary-fg)' }}
+            style={{ background: 'var(--adm-primary)', color: 'var(--adm-primary-fg)', opacity: checking ? 0.6 : 1 }}
           >
             {isAdmin ? <ShieldCheck size={14} /> : <Send size={14} />}
-            {tab === 'discount' && isAdmin ? 'Apply discount' : (isAdmin ? 'Apply void' : 'Send request')}
+            {checking ? 'Checking PIN...' : (tab === 'discount' && isAdmin ? 'Apply discount' : (isAdmin ? 'Apply void' : 'Send request'))}
           </button>
         </div>
       </div>
