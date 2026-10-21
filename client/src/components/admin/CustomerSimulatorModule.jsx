@@ -187,7 +187,7 @@ export default function CustomerSimulatorModule({ className = '' }) {
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Test dishes, order cart, customer call button &amp; river background live from the diner's view.
+              Test dishes, order cart, customer call button live from the diner's view.
             </p>
           </div>
         </div>

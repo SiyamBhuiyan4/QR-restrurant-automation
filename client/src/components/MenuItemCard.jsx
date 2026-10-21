@@ -2,6 +2,11 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { startVisibleVideos } from '../utils/visibleVideos';
 
+// Card thumbnails are small; ask Unsplash for a 480px image instead of the 800px original.
+const thumb = (url) => (typeof url === 'string' && url.includes('images.unsplash.com')
+  ? url.replace(/([?&])w=\d+/, '$1w=480')
+  : url);
+
 // Dish videos play only while on screen (see utils/visibleVideos.js)
 startVisibleVideos();
 import { 
@@ -657,7 +662,7 @@ export default function MenuItemCard({
             {dishVideo && !videoError ? (
               <video
                 src={dishVideo}
-                poster={safeDishImage}
+                poster={thumb(safeDishImage)}
                 data-play-when-visible
                 loop
                 muted
@@ -668,7 +673,7 @@ export default function MenuItemCard({
               />
             ) : safeDishImage && !imageError ? (
               <img
-                src={safeDishImage}
+                src={thumb(safeDishImage)}
                 alt={dishTitle}
                 onError={() => setImageError(true)}
                 loading="lazy"
@@ -858,7 +863,7 @@ export default function MenuItemCard({
               {dishVideo && !videoError ? (
                 <video
                   src={dishVideo}
-                  poster={safeDishImage}
+                  poster={thumb(safeDishImage)}
                   data-play-when-visible
                   loop
                   muted
@@ -869,7 +874,7 @@ export default function MenuItemCard({
                 />
               ) : safeDishImage && !imageError ? (
                 <img
-                  src={safeDishImage}
+                  src={thumb(safeDishImage)}
                   alt={dishTitle}
                   onError={() => setImageError(true)}
                   loading="lazy"
@@ -1035,7 +1040,7 @@ export default function MenuItemCard({
               {dishVideo && !videoError ? (
                 <video
                   src={dishVideo}
-                  poster={safeDishImage}
+                  poster={thumb(safeDishImage)}
                   data-play-when-visible
                   loop
                   muted
@@ -1046,7 +1051,7 @@ export default function MenuItemCard({
                 />
               ) : safeDishImage && !imageError ? (
                 <img
-                  src={safeDishImage}
+                  src={thumb(safeDishImage)}
                   alt={dishTitle}
                   onError={() => setImageError(true)}
                   loading="lazy"

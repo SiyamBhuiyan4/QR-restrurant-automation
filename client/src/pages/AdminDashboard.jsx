@@ -56,7 +56,7 @@ import StaffMessenger from '../components/admin/StaffMessenger';
  *   3. Live Orders Pipeline (Live Tickets, Customer Audio Notes, Status Advancement)
  *   4. Kitchen KDS Console (Direct Embedded Cook Station)
  *   5. Floor Staff Console (Direct Embedded Assistance Panel)
- *   6. Customer Menu Simulator (Live Embedded Diner View & River Background)
+ *   6. Customer Menu Simulator (Live Embedded Diner View)
  *   7. Menu Management (Dishes, Prices, Categories & 86 Toggles)
  *   8. Table QR Code Generator (Batch Generator & Printing)
  *   9. Employees Management Hub (Table Allocation, Shift Activity & Responsiveness)
