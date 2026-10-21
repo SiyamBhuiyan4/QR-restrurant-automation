@@ -59,6 +59,7 @@ app.use('/api/menu', safeRouteRequire('./routes/menu'));
 app.use('/api/orders', safeRouteRequire('./routes/orders'));
 app.use('/api/waiter', safeRouteRequire('./routes/waiter'));
 app.use('/api/tables', safeRouteRequire('./routes/tables'));
+app.use('/api/staff', safeRouteRequire('./routes/staff'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

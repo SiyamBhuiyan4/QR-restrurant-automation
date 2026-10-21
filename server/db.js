@@ -87,6 +87,19 @@ try {
   // Column already exists or table setup error
 }
 
+// Staff-to-staff messages (cross-device). Full message object is kept in `payload`
+// so the client shape stays identical; `read` is mirrored as a column for queries.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS staff_messages (
+    id TEXT PRIMARY KEY,
+    to_waiter_id TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    is_read INTEGER DEFAULT 0,
+    timestamp INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_staff_messages_recipient ON staff_messages(to_waiter_id, timestamp);
+`);
+
 /**
  * -------------------------------------------------------------
  * Query Functions
@@ -430,6 +443,48 @@ function resolveWaiterCall(id) {
   return getStmt.get(Number(id)) || null;
 }
 
+// Staff Messages
+function rowToStaffMessage(row) {
+  if (!row) return null;
+  const msg = JSON.parse(row.payload);
+  return { ...msg, read: !!row.is_read };
+}
+
+function createStaffMessage(message) {
+  const stmt = db.prepare(`
+    INSERT OR IGNORE INTO staff_messages (id, to_waiter_id, payload, is_read, timestamp)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+  stmt.run(
+    String(message.id),
+    String(message.toWaiterId),
+    JSON.stringify(message),
+    message.read ? 1 : 0,
+    Number(message.timestamp)
+  );
+  return getStaffMessageById(message.id);
+}
+
+function getStaffMessageById(id) {
+  const row = db.prepare('SELECT * FROM staff_messages WHERE id = ?').get(String(id));
+  return rowToStaffMessage(row);
+}
+
+function getStaffMessagesForRecipient(recipientId, limit = 200) {
+  const rows = db.prepare(`
+    SELECT * FROM staff_messages
+    WHERE to_waiter_id = ?
+    ORDER BY timestamp DESC
+    LIMIT ?
+  `).all(String(recipientId), Number(limit));
+  return rows.map(rowToStaffMessage);
+}
+
+function markStaffMessageRead(id) {
+  db.prepare('UPDATE staff_messages SET is_read = 1 WHERE id = ?').run(String(id));
+  return getStaffMessageById(id);
+}
+
 // Restaurant Statistics for Kitchen / Dashboard
 function getRestaurantStats() {
   const totals = db.prepare(`
@@ -529,6 +584,10 @@ module.exports = {
   createWaiterCall,
   getActiveWaiterCalls,
   resolveWaiterCall,
+  createStaffMessage,
+  getStaffMessageById,
+  getStaffMessagesForRecipient,
+  markStaffMessageRead,
   getRestaurantStats
 };
 

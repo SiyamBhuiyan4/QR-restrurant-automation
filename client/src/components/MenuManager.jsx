@@ -400,6 +400,17 @@ export default function MenuManager({ className = '' }) {
     });
   }, [dishes, selectedCategory, searchQuery, filterType]);
 
+  // Group filtered dishes by category for sectioned display (keeps filter order)
+  const groupedDishes = useMemo(() => {
+    const groups = new Map();
+    filteredDishes.forEach((dish) => {
+      const key = dish.category || 'Uncategorized';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(dish);
+    });
+    return Array.from(groups.entries());
+  }, [filteredDishes]);
+
   // Real-time synchronization with Convex Cloud Database
   useEffect(() => {
     if (convexMenu && Array.isArray(convexMenu) && convexMenu.length > 0) {
@@ -570,6 +581,63 @@ export default function MenuManager({ className = '' }) {
     }
 
     triggerSuccess(newStatus ? 'Item marked in stock' : 'Item marked out of stock');
+  };
+
+  // Inline price edit: reuses the same Convex + SQLite update paths as the edit modal
+  const [inlinePriceId, setInlinePriceId] = useState(null);
+  const [inlinePriceDraft, setInlinePriceDraft] = useState('');
+  const [inlinePriceSaving, setInlinePriceSaving] = useState(false);
+
+  const startInlinePriceEdit = (dish, e) => {
+    if (e) { e.stopPropagation(); e.preventDefault(); }
+    setInlinePriceId(dish.id);
+    setInlinePriceDraft(String(Number(dish.price) || 0));
+  };
+
+  const cancelInlinePriceEdit = () => {
+    setInlinePriceId(null);
+    setInlinePriceDraft('');
+  };
+
+  const saveInlinePrice = async (dish) => {
+    const parsed = parseFloat(inlinePriceDraft);
+    if (isNaN(parsed) || parsed < 0) {
+      setError('Please enter a valid positive price.');
+      return;
+    }
+    const price = Math.round(parsed * 100) / 100;
+    if (price === (Number(dish.price) || 0)) {
+      cancelInlinePriceEdit();
+      return;
+    }
+
+    setInlinePriceSaving(true);
+    const updatedDishes = dishes.map((d) => (d.id === dish.id ? { ...d, price } : d));
+    setDishes(updatedDishes);
+    await cacheMenu(updatedDishes);
+
+    if (updateConvexItem && dish.convexId) {
+      try {
+        await updateConvexItem({ id: dish.convexId, price });
+      } catch (convexErr) {
+        console.warn('[MenuManager] Convex inline price update failed:', convexErr.message);
+      }
+    }
+
+    try {
+      const serverUrl = resolveServerUrl();
+      await fetch(`${serverUrl}/api/menu/${dish.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ price })
+      });
+    } catch (err) {
+      console.warn('[MenuManager] Inline price saved locally (offline mode):', err.message);
+    }
+
+    setInlinePriceSaving(false);
+    cancelInlinePriceEdit();
+    triggerSuccess(`"${dish.name}" price updated`);
   };
 
   // Create Category Handler (Top banner & Toolbar)
@@ -1190,8 +1258,18 @@ export default function MenuManager({ className = '' }) {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
-          {filteredDishes.map((dish) => {
+        <div className="space-y-8">
+          {groupedDishes.map(([categoryName, categoryDishes]) => (
+          <section key={categoryName} aria-label={categoryName}>
+            <div className="flex items-center gap-3 mb-3">
+              <h3 className="text-sm font-black uppercase tracking-wider text-amber-400">{categoryName}</h3>
+              <span className="text-[11px] font-bold text-[#94a3b8] bg-[#1e293b] border border-[#334155] rounded-full px-2 py-0.5">
+                {categoryDishes.length} {categoryDishes.length === 1 ? 'dish' : 'dishes'}
+              </span>
+              <div className="flex-1 h-px bg-[#334155]" />
+            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
+          {categoryDishes.map((dish) => {
             const isAvailable = Boolean(dish.is_available);
             const dishVideo = dish.making_video_url || dish.makingVideoUrl || dish.videoUrl || (isVideoUrl(dish.image_url) ? dish.image_url : null);
             const hasVideo = Boolean(dishVideo);
@@ -1308,9 +1386,54 @@ export default function MenuManager({ className = '' }) {
                         <h3 className="font-bold text-[#f8fafc] text-base leading-snug line-clamp-1 group-hover:text-amber-400 transition-colors" title={dish.name}>
                           {dish.name}
                         </h3>
-                        <span className="text-base font-extrabold text-[#f8fafc] tracking-tight shrink-0">
-                          ${(Number(dish.price) || 0).toFixed(2)}
-                        </span>
+                        {inlinePriceId === dish.id ? (
+                          <div
+                            className="flex items-center gap-1 shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span className="text-sm font-bold text-[#f8fafc]">$</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              autoFocus
+                              aria-label={`Price for ${dish.name}`}
+                              value={inlinePriceDraft}
+                              onChange={(e) => setInlinePriceDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') saveInlinePrice(dish);
+                                if (e.key === 'Escape') cancelInlinePriceEdit();
+                              }}
+                              disabled={inlinePriceSaving}
+                              className="w-20 px-1.5 py-0.5 rounded-md bg-[#0f172a] border border-amber-500 text-sm font-bold text-[#f8fafc] focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => saveInlinePrice(dish)}
+                              disabled={inlinePriceSaving}
+                              className="px-1.5 py-0.5 rounded-md bg-amber-500 text-white text-[11px] font-bold disabled:opacity-50"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelInlinePriceEdit}
+                              className="px-1 py-0.5 rounded-md text-[11px] font-bold text-[#94a3b8] hover:text-white"
+                            >
+                              Esc
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => startInlinePriceEdit(dish, e)}
+                            className="text-base font-extrabold text-[#f8fafc] tracking-tight shrink-0 rounded px-1 -mx-1 hover:bg-[#1e293b] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                            title="Click to edit price"
+                            aria-label={`Edit price for ${dish.name}`}
+                          >
+                            ${(Number(dish.price) || 0).toFixed(2)}
+                          </button>
+                        )}
                       </div>
 
                       <p className="text-xs text-[#94a3b8] line-clamp-2 leading-relaxed h-9 overflow-hidden">
@@ -1324,20 +1447,22 @@ export default function MenuManager({ className = '' }) {
                 <div className="p-3.5 bg-[#1e293b] border-t border-[#334155] flex items-center justify-between gap-2 shrink-0 mt-auto">
                   
                   {/* Availability Toggle Switch */}
-                  <div className="flex items-center gap-2">
-                    <label className="relative inline-flex items-center cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={isAvailable}
-                        onChange={(e) => handleToggleAvailability(dish.id, dish.is_available, e)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-[#334155] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                    </label>
-                    <span className="text-[11px] font-semibold text-[#94a3b8]">
-                      {isAvailable ? 'Available' : 'Unavailable'}
+                  <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      role="switch"
+                      aria-checked={isAvailable}
+                      checked={isAvailable}
+                      onChange={(e) => handleToggleAvailability(dish.id, dish.is_available, e)}
+                      className="sr-only peer"
+                    />
+                    <span className={`relative inline-block w-11 h-6 rounded-full transition-colors ${isAvailable ? 'bg-emerald-500' : 'bg-[#475569]'}`}>
+                      <span className={`absolute top-[3px] left-[3px] h-[18px] w-[18px] rounded-full bg-white shadow transition-transform ${isAvailable ? 'translate-x-5' : ''}`} />
                     </span>
-                  </div>
+                    <span className={`text-xs font-black ${isAvailable ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {isAvailable ? 'In stock' : 'Out of stock'}
+                    </span>
+                  </label>
 
                   {/* Edit and Delete Actions */}
                   <div className="flex items-center gap-1">
@@ -1364,6 +1489,9 @@ export default function MenuManager({ className = '' }) {
               </div>
             );
           })}
+          </div>
+          </section>
+          ))}
         </div>
       )}
 

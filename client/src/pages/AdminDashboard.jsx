@@ -14,6 +14,7 @@ import LiveOrdersModule from '../components/admin/LiveOrdersModule';
 import EmployeesModule from '../components/admin/EmployeesModule';
 import CustomerReportsModule from '../components/admin/CustomerReportsModule';
 import AdminLoginGate from '../components/admin/AdminLoginGate';
+import useAdminShortcuts from '../hooks/useAdminShortcuts';
 
 // System Standalone Consoles (Directly Embedded into Master Admin)
 import KitchenDisplay from './KitchenDisplay';
@@ -354,9 +355,78 @@ export default function AdminDashboard({ className = '' }) {
   }, [customerNotes]);
 
   // Jump to table from any widget
+  // Alert acknowledge: waiter calls are resolved for real; other alerts open the screen that handles them
+  const handleResolveAlert = useCallback((alert) => {
+    if (alert?.type === 'assistance') {
+      resolveAssistanceCall(String(alert.id).replace(/^call-/, ''));
+    } else {
+      handleSelectTab(alert?.type === 'report' ? 'reports' : 'overview');
+    }
+  }, [resolveAssistanceCall]);
+
   const handleNavigateToTables = useCallback((tableNumber) => {
     setActiveTab('tables');
   }, []);
+
+  // ---------------------------------------------------------------------------
+  // GLOBAL SEARCH INDEX (tables, orders, staff) + KEYBOARD SHORTCUTS
+  // ---------------------------------------------------------------------------
+  const searchItems = useMemo(() => {
+    const items = [];
+    (tables || []).forEach((t) => {
+      items.push({
+        id: `table-${t.tableNumber}`,
+        type: 'table',
+        label: t.name || `Table ${t.tableNumber}`,
+        sub: `Table #${t.tableNumber}${t.status ? ` · ${String(t.status).replace(/_/g, ' ')}` : ''}`,
+        keywords: `table ${t.tableNumber}`,
+        target: 'tables'
+      });
+    });
+    (liveOrders || []).forEach((o) => {
+      items.push({
+        id: `order-${o.id}`,
+        type: 'order',
+        label: o.orderNumber || `Order ${o.id}`,
+        sub: [o.customerName, o.tableNumber ? `Table #${o.tableNumber}` : null].filter(Boolean).join(' · '),
+        keywords: `order ${o.orderNumber || ''} ${o.customerName || ''} ${o.tableNumber || ''}`,
+        target: 'orders'
+      });
+    });
+    (employees || []).forEach((e) => {
+      items.push({
+        id: `staff-${e.id || e.name}`,
+        type: 'staff',
+        label: e.name || 'Staff',
+        sub: e.role || 'Staff',
+        keywords: `staff ${e.name || ''} ${e.role || ''}`,
+        target: 'employees'
+      });
+    });
+    return items;
+  }, [tables, liveOrders, employees]);
+
+  const handleSearchSelect = (item) => {
+    if (!item) return;
+    setSearchQuery('');
+    handleSelectTab(item.target);
+  };
+
+  useAdminShortcuts({
+    enabled: true,
+    onFocusSearch: () => document.querySelector('.admin-header-input')?.focus(),
+    chords: {
+      o: () => handleSelectTab('overview'),
+      t: () => handleSelectTab('tables'),
+      r: () => handleSelectTab('orders'),
+      k: () => handleSelectTab('kds'),
+      w: () => handleSelectTab('floor'),
+      s: () => handleSelectTab('employees'),
+      m: () => handleSelectTab('menu'),
+      q: () => handleSelectTab('qr'),
+      c: () => handleSelectTab('reports')
+    }
+  });
 
   // ---------------------------------------------------------------------------
   // DERIVED COUNTS
@@ -458,6 +528,7 @@ export default function AdminDashboard({ className = '' }) {
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
         isDarkMode={isDarkMode}
+        isMobileOpen={isMobileSidebarOpen}
       />
 
       {/* Mobile Drawer Backdrop */}
@@ -475,8 +546,6 @@ export default function AdminDashboard({ className = '' }) {
         className="admin-viewport flex-1 min-w-0"
         style={{
           flex: 1,
-          marginLeft: '260px',
-          width: 'calc(100% - 260px)',
           minWidth: 0,
           backgroundColor: isDarkMode ? '#0b0f19' : '#f8fafc',
           color: isDarkMode ? '#ffffff' : '#0f172a',
@@ -493,6 +562,8 @@ export default function AdminDashboard({ className = '' }) {
           onSelectTab={handleSelectTab}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          searchItems={searchItems}
+          onSearchSelect={handleSearchSelect}
           reportsCount={pendingReportsCount}
           urgentAlerts={urgentAlerts}
           isDarkMode={isDarkMode}
@@ -505,6 +576,7 @@ export default function AdminDashboard({ className = '' }) {
           onRemoveTable={removeTable}
           onSetTableCount={setTableCount}
           onLogout={handleLogout}
+          onResolveAlert={handleResolveAlert}
         />
 
         {/* Scrollable Dynamic Workspace */}

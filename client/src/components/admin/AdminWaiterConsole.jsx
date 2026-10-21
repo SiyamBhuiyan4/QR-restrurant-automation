@@ -36,6 +36,7 @@ import { useSocket, useSocketListener } from '../../context/SocketContext';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convexApi';
 import TableSecurityModal, { TableSecurityModal as PasscodeConfirmDialog } from './TableSecurityModal';
+import '../../styles/staff.css';
 
 /**
  * Format relative elapsed time
@@ -102,6 +103,10 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
   const [modalMessageType, setModalMessageType] = useState('normal'); // 'normal' | 'alert'
   const [inlineMessage, setInlineMessage] = useState('');
   const [inlineMessageType, setInlineMessageType] = useState('normal'); // 'normal' | 'alert'
+  // Staff-to-staff contact: any waiter/employee can message a colleague
+  const [peerTargetId, setPeerTargetId] = useState('');
+  const [peerText, setPeerText] = useState('');
+  const [peerSent, setPeerSent] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
 
   // Convex mutations if available
@@ -985,7 +990,7 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
                         <button
                           type="button"
                           onClick={() => handleResolveCall(callId, tbl)}
-                          className="px-3 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black transition active:scale-95 cursor-pointer flex items-center gap-1"
+                          className="staff-action staff-touch px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 text-slate-950 text-sm font-black active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                         >
                           <Check className="w-3 h-3" strokeWidth={3} />
                           <span>Resolve</span>
@@ -1198,7 +1203,7 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
                         <button
                           type="button"
                           onClick={() => handleResolveCall(callId, tbl)}
-                          className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+                          className="staff-action staff-touch px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 text-slate-950 text-sm font-black shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
                         >
                           <Check className="w-4 h-4 text-slate-950" strokeWidth={3} />
                           <span>Mark as Resolved</span>
@@ -1231,6 +1236,59 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
                 {waiterStaffMessages.length} {waiterStaffMessages.length === 1 ? 'Message' : 'Messages'}
               </span>
             </div>
+
+            {/* Staff-to-staff contact: message a colleague from this waiter's account */}
+            {employees.filter(e => e.id !== activeWaiter.id).length > 0 && (
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  const target = employees.find(emp => emp.id === peerTargetId);
+                  if (!target || !peerText.trim() || !restaurant?.sendStaffMessage) return;
+                  // Sender is the real logged-in person (falls back to admin when no employee session)
+                  const sender = isEmployeeMode && currentEmployee ? currentEmployee : null;
+                  restaurant.sendStaffMessage(target.id, peerText.trim(), {
+                    from: sender ? 'Employee' : 'Admin',
+                    fromName: sender?.name || 'Head Desk / Admin',
+                    fromRole: sender?.role || 'Admin',
+                    fromEmployeeId: sender?.id || 'admin',
+                    fromStaffId: sender
+                      ? String(sender.staffId || sender.numericId || sender.accountCode || '')
+                      : 'ADMIN'
+                  });
+                  setPeerText('');
+                  setPeerSent(`Sent to ${target.name}`);
+                }}
+                className="flex flex-col sm:flex-row gap-2"
+              >
+                <select
+                  value={peerTargetId}
+                  onChange={e => setPeerTargetId(e.target.value)}
+                  className="px-3 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-amber-500/60"
+                  aria-label="Choose colleague"
+                >
+                  <option value="">Message a colleague...</option>
+                  {employees.filter(e => e.id !== activeWaiter.id).map(emp => (
+                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={peerText}
+                  onChange={e => { setPeerText(e.target.value); setPeerSent(''); }}
+                  placeholder="Type a short message..."
+                  className="flex-1 px-3 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500/60"
+                  aria-label="Message to colleague"
+                />
+                <button
+                  type="submit"
+                  disabled={!peerTargetId || !peerText.trim()}
+                  className="staff-action staff-touch px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-black cursor-pointer"
+                >
+                  Send
+                </button>
+                {peerSent && <p className="text-xs text-emerald-400 self-center">{peerSent}</p>}
+              </form>
+            )}
 
             {/* Messages Feed */}
             {waiterStaffMessages.length === 0 ? (

@@ -40,7 +40,7 @@ import {
  */
 export default function EmployeeView({ isEmbedded = false }) {
   const restaurant = useRestaurant();
-  const { authenticateEmployee, employees } = restaurant || {};
+  const { authenticateEmployee, employees, setEmployeeStatus } = restaurant || {};
 
   // ---------------------------------------------------------------------------
   // AUTHENTICATION STATE (Standalone Mode Only)
@@ -492,6 +492,28 @@ export default function EmployeeView({ isEmbedded = false }) {
                       </span>
                     )}
                   </div>
+                  {(() => {
+                    const liveEmp = (employees || []).find(
+                      e => String(e.id) === String(loggedInEmployee.id) || String(e.numericId) === String(loggedInEmployee.numericId)
+                    );
+                    if (!liveEmp || typeof setEmployeeStatus !== 'function') return null;
+                    const onBreak = liveEmp.status === 'On Break';
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => setEmployeeStatus(liveEmp.id, onBreak ? 'Active' : 'On Break')}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition cursor-pointer active:scale-95 ${
+                          onBreak
+                            ? 'bg-sky-500 text-slate-950 border-sky-400'
+                            : 'bg-slate-800/90 text-slate-200 border-slate-700 hover:bg-slate-700'
+                        }`}
+                        title={onBreak ? 'Back from break' : 'Go on break (admin sees your status)'}
+                      >
+                        <Coffee className="w-3.5 h-3.5" />
+                        <span>{onBreak ? 'Back from break' : 'On break'}</span>
+                      </button>
+                    );
+                  })()}
                   <button
                     type="button"
                     onClick={handleLogout}

@@ -26,6 +26,7 @@ import {
   SlidersHorizontal
 } from 'lucide-react';
 import AudioPlayer from '../AudioPlayer';
+import '../../styles/admin-tables.css';
 import { KITCHEN_STAGE, formatCurrency } from '../../data/adminMockData';
 
 /**
@@ -55,6 +56,14 @@ export function formatOrderCurrency(amount) {
   return '৳0';
 }
 
+/** Ordered kitchen pipeline shown as a step track on every ticket. */
+const PIPELINE_STEPS = [
+  { num: 1, short: 'Placed', label: 'Step 1: Just placed' },
+  { num: 2, short: 'Cooking', label: 'Step 2: Cooking in kitchen' },
+  { num: 3, short: 'Ready', label: 'Step 3: Ready for pickup' },
+  { num: 4, short: 'Served', label: 'Step 4: Served to guests' }
+];
+
 /**
  * Stage configuration mapping each kitchen stage to visual cues,
  * progression sequence, next actions, and tactile button styles.
@@ -70,7 +79,7 @@ const STAGE_CONFIG = {
     cardBorder: 'hover:border-amber-500/40',
     nextStage: KITCHEN_STAGE.PREPARING,
     nextLabel: 'Send to Kitchen',
-    btnGradient: 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:via-orange-400 hover:to-amber-500 text-white shadow-lg shadow-orange-500/25',
+    btnGradient: 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/25',
     nextIcon: ArrowRight
   },
   [KITCHEN_STAGE.PREPARING]: {
@@ -83,7 +92,7 @@ const STAGE_CONFIG = {
     cardBorder: 'hover:border-orange-500/40',
     nextStage: KITCHEN_STAGE.READY_PICKUP,
     nextLabel: 'Mark Food Ready',
-    btnGradient: 'bg-gradient-to-r from-orange-500 via-emerald-600 to-teal-600 hover:from-orange-400 hover:via-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/25',
+    btnGradient: 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/25',
     nextIcon: ConciergeBell
   },
   [KITCHEN_STAGE.READY_PICKUP]: {
@@ -91,12 +100,12 @@ const STAGE_CONFIG = {
     label: 'Ready for Pickup',
     accentColor: 'emerald',
     badgeClass: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    dotClass: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)] animate-ping',
+    dotClass: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)] animate-pulse',
     topHighlight: 'from-emerald-500/25 via-emerald-500/5 to-transparent',
     cardBorder: 'hover:border-emerald-500/40',
     nextStage: KITCHEN_STAGE.SERVED,
     nextLabel: 'Confirm Served',
-    btnGradient: 'bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:via-teal-500 hover:to-cyan-500 text-white shadow-lg shadow-teal-500/25',
+    btnGradient: 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/25',
     nextIcon: Check
   },
   [KITCHEN_STAGE.SERVED]: {
@@ -481,7 +490,7 @@ export default function LiveOrdersModule({
           3. ORDERS CARD GRID (Commercial-Grade Restaurant Pass Cards)
           ======================================================================= */}
       {filteredOrders.length === 0 ? (
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl p-14 text-center border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="admin-empty py-14 space-y-4">
           <div className="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto shadow-inner">
             <ShoppingBag className="w-8 h-8 opacity-60" />
           </div>
@@ -579,25 +588,33 @@ export default function LiveOrdersModule({
                     </span>
 
                     {/* 4-Step Pipeline Dots Progress Bar */}
-                    <div className="flex items-center gap-1" title={`Stage ${stageConfig.step} of 4`}>
-                      {[1, 2, 3, 4].map(stepNum => {
-                        const isCompleted = stepNum < stageConfig.step;
-                        const isCurrent = stepNum === stageConfig.step;
+                    <ol className="flex items-center gap-1" aria-label={`Stage ${stageConfig.step} of 4`}>
+                      {PIPELINE_STEPS.map(step => {
+                        const isCompleted = step.num < stageConfig.step;
+                        const isCurrent = step.num === stageConfig.step;
 
                         return (
-                          <div
-                            key={stepNum}
-                            className={`h-1.5 rounded-full transition-all duration-300 ${
+                          <li
+                            key={step.num}
+                            title={step.label}
+                            className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-colors ${
                               isCurrent
-                                ? 'w-5 bg-emerald-500'
+                                ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15'
                                 : isCompleted
-                                ? 'w-2 bg-emerald-500/60'
-                                : 'w-2 bg-slate-200 dark:bg-slate-800'
+                                ? 'text-emerald-600/70 dark:text-emerald-400/70'
+                                : 'text-slate-400 dark:text-slate-500'
                             }`}
-                          />
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                isCurrent || isCompleted ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                              }`}
+                            />
+                            <span className="hidden sm:inline">{step.short}</span>
+                          </li>
                         );
                       })}
-                    </div>
+                    </ol>
                   </div>
 
                   {/* ---------------- ITEM LIST: MODERN RECEIPT BREAKDOWN ---------------- */}
@@ -683,7 +700,7 @@ export default function LiveOrdersModule({
                       <button
                         type="button"
                         onClick={() => onAdvanceStage(order.id, stageConfig.nextStage)}
-                        className={`group/btn px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer ${stageConfig.btnGradient}`}
+                        className={`admin-focusable group/btn px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer ${stageConfig.btnGradient}`}
                       >
                         <span>{stageConfig.nextLabel}</span>
                         {NextIcon && (

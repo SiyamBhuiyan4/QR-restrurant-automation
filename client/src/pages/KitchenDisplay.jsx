@@ -14,19 +14,19 @@ import {
   Flame,
   Sparkles,
   Layers,
-  Wifi,
   WifiOff,
   BellRing,
-  RotateCcw,
+  Check,
   X
 } from 'lucide-react';
-import OrderCard from '../components/OrderCard.jsx';
+import AudioPlayer from '../components/AudioPlayer.jsx';
 import SocketContext, { resolveServerUrl } from '../context/SocketContext.jsx';
 import { io } from 'socket.io-client';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { useRestaurant } from '../context/RestaurantContext';
 import '../styles/staff.css';
+import '../styles/kds.css';
 
 // Module-scoped AudioContext singleton to prevent context leaks or hitting browser limits
 let sharedKitchenAudioCtx = null;
@@ -92,6 +92,13 @@ export const playKitchenChime = () => {
   }
 };
 
+/** Parse the order's start timestamp (ms), or null when unknown */
+const getStartMs = (o) => {
+  const raw = o?.created_at || o?.createdAt || o?.timestamp;
+  const ms = raw ? new Date(raw).getTime() : NaN;
+  return Number.isNaN(ms) ? null : ms;
+};
+
 /**
  * KitchenDisplay (KDS) Page & Embedded Component
  * 
@@ -145,6 +152,8 @@ export default function KitchenDisplay({
   const [isLoading, setIsLoading] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const [recentAlertMessage, setRecentAlertMessage] = useState(null);
+  // New orders stay flagged until a cook moves them forward (no timed dismiss)
+  const [unackedOrderIds, setUnackedOrderIds] = useState(() => new Set());
 
   // Reference to track previous order IDs for real-time chime alerts
   const prevOrderIdsRef = useRef(new Set());
@@ -160,12 +169,14 @@ export default function KitchenDisplay({
   // 1. Digital Clock live updates
   const [currentTimeStr, setCurrentTimeStr] = useState('');
   const [currentDateStr, setCurrentDateStr] = useState('');
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
       setCurrentTimeStr(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
       setCurrentDateStr(now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }));
+      setNowMs(now.getTime());
     };
     updateClock();
     const interval = setInterval(updateClock, 1000);
@@ -257,13 +268,10 @@ export default function KitchenDisplay({
   // 5. Trigger Sound & Visual Notification
   const triggerNewOrderAlert = useCallback((order) => {
     const tableNum = order?.table_no ?? order?.tableNumber ?? order?.table ?? 'Order';
-    const msg = `🔔 New Order received for Table ${tableNum}!`;
-
-    setRecentAlertMessage(msg);
-    if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
-    alertTimeoutRef.current = setTimeout(() => {
-      setRecentAlertMessage(null);
-    }, 6000);
+    const orderKey = order?.id || order?._id || order?.order_id;
+    if (orderKey) {
+      setUnackedOrderIds((prev) => new Set(prev).add(orderKey));
+    }
 
     // Play synthesized Web Audio chime if not muted
     if (!isMuted) {
@@ -516,6 +524,14 @@ export default function KitchenDisplay({
   // 9. Order Status Transition Handler with Dual Stage & Status Sync
   const handleStatusChange = async (orderId, nextStatus) => {
     setUpdatingOrderId(orderId);
+    if (nextStatus !== 'pending') {
+      setUnackedOrderIds((prev) => {
+        if (!prev.has(orderId)) return prev;
+        const next = new Set(prev);
+        next.delete(orderId);
+        return next;
+      });
+    }
 
     // Map nextStatus to kitchenFlowStage equivalent
     let stageEquivalent = nextStatus;
@@ -688,436 +704,321 @@ export default function KitchenDisplay({
     }
   }, [activeCount, pendingOrders.length, preparingOrders.length, readyOrders.length, completedOrders.length, onOrderCountChange]);
 
+  const TABS = [
+    { key: 'all', label: 'All Active', count: activeCount, icon: Layers },
+    { key: 'pending', label: 'Pending', count: pendingOrders.length, icon: BellRing },
+    { key: 'preparing', label: 'Preparing', count: preparingOrders.length, icon: Flame },
+    { key: 'ready', label: 'Ready', count: readyOrders.length, icon: Sparkles },
+    { key: 'completed', label: 'Served', count: completedOrders.length, icon: CheckCircle2 }
+  ];
+
+  // Board columns: one per kitchen status, each with its one-tap next step
+  const columns = [
+    { key: 'pending', title: 'Pending', list: pendingOrders, nextStatus: 'preparing', actionLabel: 'Start Cooking', icon: BellRing, empty: 'No new orders in the queue.' },
+    { key: 'preparing', title: 'Preparing', list: preparingOrders, nextStatus: 'ready', actionLabel: 'Mark Ready', icon: Flame, empty: 'Nothing on the grill right now.' },
+    { key: 'ready', title: 'Ready', list: readyOrders, nextStatus: 'served', actionLabel: 'Mark Served', icon: Sparkles, empty: 'No orders waiting for pickup.' },
+    { key: 'completed', title: 'Served', list: completedOrders, nextStatus: null, actionLabel: null, icon: CheckCircle2, empty: 'No served orders yet today.' }
+  ];
+
+  const visibleColumns = activeTab === 'all' ? columns : columns.filter((c) => c.key === activeTab);
+  const totalVisibleTickets = visibleColumns.reduce((sum, c) => sum + c.list.length, 0);
+
   return (
-    <div
-      className={`staff-root ${
-        isEmbedded ? 'w-full flex-1' : 'min-h-screen'
-      } text-slate-100 flex flex-col font-sans select-none antialiased ${className}`}
-      style={{ backgroundColor: '#0A0F1D', fontFamily: "'Inter', sans-serif" }}
-    >
+    <div className={`kds-root staff-root ${isEmbedded ? 'kds-root--embedded' : 'kds-root--page'} ${className}`}>
       {/* =========================================================================
-          TOP KITCHEN HEADER / TOOLBAR
+          HEADER: brand, live connection, clock, search and controls
           ========================================================================= */}
       {showHeader && (
-        <header
-          className={`sticky top-0 z-30 backdrop-blur-md border-b border-white/[0.06] ${
-            isEmbedded ? 'px-3 sm:px-4 py-2 shadow-md' : 'shadow-xl px-4 py-2.5 border-b'
-          }`}
-          style={{ backgroundColor: '#0E1424' }}
-        >
-          <div className="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-2.5 sm:gap-3">
-            
-            {/* Left: Brand Identity & Active Order Counts */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              {isEmbedded ? (
-                /* Sleek integrated Cook Station badge when embedded inside EmployeeView */
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-md shadow-amber-500/20">
-                    <ChefHat className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-black tracking-tight text-white">
-                        KDS Station
-                      </span>
-                      <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        Live
-                      </span>
-                    </div>
-                    {/* Socket Connection Pill */}
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold">
-                      {isConnected ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-400">
-                          <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                          </span>
-                          <span className="hidden sm:inline">Socket Live</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-rose-400">
-                          <WifiOff className="w-3 h-3 text-rose-500 animate-pulse" />
-                          <span className="hidden sm:inline">Offline</span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* Full Standalone KDS Brand Header */
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-md shadow-amber-500/20">
-                    <ChefHat className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h1 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2">
-                      KITCHEN DISPLAY
-                      <span className="hidden md:inline-block text-[11px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        KDS Live
-                      </span>
-                    </h1>
-                    <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-                      <span className="inline-flex items-center gap-1.5">
-                        {isConnected ? (
-                          <>
-                            <span className="relative flex h-2.5 w-2.5">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                            </span>
-                            <span className="text-emerald-400 font-semibold">Live Socket</span>
-                          </>
-                        ) : (
-                          <>
-                            <WifiOff className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
-                            <span className="text-rose-400 font-semibold">Offline Mode</span>
-                          </>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Active Tickets Summary Badge */}
-              <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-800">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active:</span>
-                <span className="text-base sm:text-lg font-black text-amber-400 font-mono">
-                  {activeCount}
-                </span>
-                <div className="hidden lg:flex items-center gap-1.5 ml-2 pl-2 border-l border-slate-800 text-[11px] font-bold">
-                  <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">
-                    {pendingOrders.length} New
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300">
-                    {preparingOrders.length} Cooking
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                    {readyOrders.length} Ready
-                  </span>
+        <header className="kds-header">
+          <div className="kds-header__row">
+            <div className="kds-brand">
+              <div className="kds-brand__mark">
+                <ChefHat className="w-6 h-6" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="kds-brand__title">Kitchen Display</h1>
+                <div className={`kds-conn ${isConnected ? 'is-live' : 'is-off'}`}>
+                  {isConnected ? (
+                    <>
+                      <span className="kds-conn__dot" />
+                      <span>Live</span>
+                    </>
+                  ) : (
+                    <>
+                      <WifiOff className="w-3.5 h-3.5" />
+                      <span>Offline</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Center: Live Digital Clock */}
-            <div className={`${isEmbedded ? 'hidden md:flex' : 'flex'} items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 shadow-inner`}>
-              <Clock className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
-              <div className="flex flex-col text-right">
-                <span className="text-sm sm:text-base font-black font-mono tracking-tight text-white leading-none">
-                  {currentTimeStr || '00:00:00'}
-                </span>
-                <span className="text-[10px] text-slate-400 font-mono font-medium leading-none mt-0.5">
-                  {currentDateStr}
-                </span>
-              </div>
+            <div className="kds-clock">
+              <Clock className="w-4 h-4" />
+              <span className="kds-clock__time">{currentTimeStr || '--:--:--'}</span>
+              <span className="kds-clock__date">{currentDateStr}</span>
             </div>
 
-            {/* Right: Search, Sound Alert Toggle, View Toggle & Actions */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* Quick Search Input with Clear Button */}
-              <div className="relative hidden sm:block w-36 md:w-48">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <div className="kds-tools">
+              <div className="kds-search">
+                <Search className="w-4 h-4" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Table / Order / Dish..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-7 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-hidden focus:border-amber-400 transition"
+                  placeholder="Table, order or dish"
+                  aria-label="Search tickets"
                 />
                 {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
-                  >
-                    <X className="w-3.5 h-3.5" />
+                  <button type="button" onClick={() => setSearchQuery('')} className="kds-search__clear" aria-label="Clear search">
+                    <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
 
-              {/* Sound Alert Toggle Button */}
+              <button type="button" onClick={fetchOrders} className="kds-icon-btn" title="Refresh orders" aria-label="Refresh orders">
+                <RefreshCw className="w-5 h-5" />
+              </button>
+
+              {!isEmbedded && (
+                <button type="button" onClick={toggleFullscreen} className="kds-icon-btn" title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'} aria-label="Toggle fullscreen">
+                  {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={toggleMute}
-                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-black tracking-wide transition-all active:scale-95 cursor-pointer shadow-md ${
-                  isMuted
-                    ? 'bg-rose-950/80 hover:bg-rose-900 border border-rose-800 text-rose-300'
-                    : 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-600/80 text-emerald-300 ring-1 ring-emerald-500/50'
-                }`}
-                title={isMuted ? 'Unmute Audio Alerts' : 'Mute Audio Alerts'}
+                className={`kds-sound ${isMuted ? 'is-muted' : 'is-on'}`}
+                title={isMuted ? 'Turn on audio alerts' : 'Turn off audio alerts'}
               >
-                {isMuted ? (
-                  <>
-                    <VolumeX className="w-4 h-4 text-rose-400" />
-                    <span className="hidden md:inline">Alerts OFF</span>
-                  </>
-                ) : (
-                  <>
-                    <Volume2 className="w-4 h-4 text-emerald-400 animate-pulse" />
-                    <span className="hidden md:inline">Alerts ON</span>
-                  </>
-                )}
+                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                <span>{isMuted ? 'Alerts Off' : 'Alerts On'}</span>
               </button>
             </div>
           </div>
 
-          {/* Real-time Visual Alert Toast Banner */}
-          {recentAlertMessage && (
-            <div className="mt-2 p-2.5 rounded-xl bg-amber-500 text-slate-950 font-black text-sm flex items-center justify-between shadow-xl animate-bounce">
-              <div className="flex items-center gap-2">
-                <BellRing className="w-5 h-5 text-slate-950 animate-wiggle" />
+          {recentAlertMessage && unackedOrderIds.size === 0 && (
+            <div className="kds-toast kds-toast--info" role="status">
+              <div className="kds-toast__msg">
+                <BellRing className="w-5 h-5" />
                 <span>{recentAlertMessage}</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setRecentAlertMessage(null)}
-                className="text-xs uppercase tracking-wider px-2 py-0.5 rounded bg-slate-900 text-amber-300 font-bold"
-              >
-                Dismiss
-              </button>
+            </div>
+          )}
+
+          {unackedOrderIds.size > 0 && (
+            <div className="kds-toast" role="alert" aria-live="assertive">
+              <div className="kds-toast__msg">
+                <BellRing className="w-5 h-5" />
+                <span>
+                  {unackedOrderIds.size} new {unackedOrderIds.size === 1 ? 'order' : 'orders'} waiting. Tap Start Cooking to acknowledge.
+                </span>
+              </div>
             </div>
           )}
         </header>
       )}
 
       {/* =========================================================================
-          MAIN DISPLAY AREA
+          MAIN: status filter tabs + board
           ========================================================================= */}
-      <main className={`flex-1 ${isEmbedded ? 'p-2 sm:p-4' : 'p-3 sm:p-5'} max-w-[1920px] w-full mx-auto flex flex-col`}>
-        {/* Loading State */}
+      <main className="kds-main">
         {isLoading && orders.length === 0 ? (
-          <div className="staff-empty flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-400">
-            <div className="staff-spinner w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full mb-4" />
-            <h2 className="text-xl font-bold text-white">Loading Kitchen Display...</h2>
-            <p className="text-xs text-slate-400 mt-1">Connecting to live order stream</p>
+          <div className="kds-loading">
+            <div className="kds-loading__spinner" />
+            <h2>Loading Kitchen Display...</h2>
+            <p>Connecting to live order stream</p>
           </div>
         ) : (
-          /* =====================================================================
-             TABBED STATUS STREAM VIEW (Permanent, high-efficiency kitchen workflow)
-             ===================================================================== */
-          <div className="flex flex-col gap-4 flex-1">
-            {/* Category Filter Navigation Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0E1424] p-2.5 sm:p-3 rounded-2xl border border-white/[0.06] shadow-md">
-              <div className="flex flex-wrap items-center gap-2">
-                {/* 1. All Active */}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('all')}
-                  className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
-                    activeTab === 'all'
-                      ? 'bg-white text-slate-950 shadow-md shadow-white/10 ring-2 ring-white/20'
-                      : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 border border-slate-800/80 hover:text-white'
-                  }`}
-                >
-                  <Layers className={`w-4 h-4 ${activeTab === 'all' ? 'text-slate-950' : 'text-slate-400'}`} />
-                  <span>All Active</span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-black ${
-                      activeTab === 'all'
-                        ? 'bg-slate-950 text-white'
-                        : 'bg-slate-800 text-slate-300'
-                    }`}
-                  >
-                    {activeCount}
-                  </span>
-                </button>
-
-                {/* 2. Active / Pending */}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('pending')}
-                  className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
-                    activeTab === 'pending'
-                      ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 ring-2 ring-amber-400/40'
-                      : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 border border-slate-800/80 hover:text-amber-300'
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${activeTab === 'pending' ? 'bg-slate-950' : 'bg-amber-400'} animate-ping`} />
-                  <span>Active / Pending</span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-black ${
-                      activeTab === 'pending'
-                        ? 'bg-slate-950 text-amber-300'
-                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                    }`}
-                  >
-                    {pendingOrders.length}
-                  </span>
-                </button>
-
-                {/* 3. In Kitchen */}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('preparing')}
-                  className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
-                    activeTab === 'preparing'
-                      ? 'bg-orange-500 text-slate-950 shadow-md shadow-orange-500/20 ring-2 ring-orange-400/40'
-                      : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 border border-slate-800/80 hover:text-orange-300'
-                  }`}
-                >
-                  <Flame className={`w-4 h-4 ${activeTab === 'preparing' ? 'text-slate-950 animate-bounce' : 'text-orange-400'}`} />
-                  <span>In Kitchen</span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-black ${
-                      activeTab === 'preparing'
-                        ? 'bg-slate-950 text-orange-300'
-                        : 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
-                    }`}
-                  >
-                    {preparingOrders.length}
-                  </span>
-                </button>
-
-                {/* 4. Ready for Pickup */}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('ready')}
-                  className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
-                    activeTab === 'ready'
-                      ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 ring-2 ring-emerald-400/40'
-                      : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 border border-slate-800/80 hover:text-emerald-300'
-                  }`}
-                >
-                  <Sparkles className={`w-4 h-4 ${activeTab === 'ready' ? 'text-slate-950' : 'text-emerald-400'}`} />
-                  <span>Ready for Pickup</span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-black ${
-                      activeTab === 'ready'
-                        ? 'bg-slate-950 text-emerald-300'
-                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                    }`}
-                  >
-                    {readyOrders.length}
-                  </span>
-                </button>
-
-                {/* 5. Completed */}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('completed')}
-                  className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
-                    activeTab === 'completed'
-                      ? 'bg-slate-700 text-white shadow-md shadow-slate-700/20 ring-2 ring-slate-500/40'
-                      : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300 border border-slate-800/80 hover:text-slate-100'
-                  }`}
-                >
-                  <CheckCircle2 className={`w-4 h-4 ${activeTab === 'completed' ? 'text-emerald-400' : 'text-slate-400'}`} />
-                  <span>Completed</span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-black ${
-                      activeTab === 'completed'
-                        ? 'bg-slate-950 text-slate-200'
-                        : 'bg-slate-800 text-slate-400 border border-slate-700'
-                    }`}
-                  >
-                    {completedOrders.length}
-                  </span>
-                </button>
-              </div>
-
-              {/* Right Indicator: Pulsing emerald dot + "Live Stream" label */}
-              <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-300">
-                {searchQuery && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold">
-                    <Filter className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Filtered: &quot;{searchQuery}&quot;</span>
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      className="ml-1 text-slate-400 hover:text-white cursor-pointer"
-                      title="Clear Filter"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 bg-[#0A0F1D] px-3 py-1.5 rounded-xl border border-white/[0.06]">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                  </span>
-                  <span className="text-emerald-400 font-bold tracking-wide">Live Stream</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Tabbed Ticket Grid */}
-            {(() => {
-              let displayList = [];
-              let tabLabel = '';
-              let emptyDescription = '';
-
-              if (activeTab === 'all') {
-                displayList = [...pendingOrders, ...preparingOrders, ...readyOrders];
-                tabLabel = 'Active Orders';
-                emptyDescription = 'All caught up! No active kitchen tickets at the moment.';
-              } else if (activeTab === 'pending') {
-                displayList = pendingOrders;
-                tabLabel = 'Active / Pending Orders';
-                emptyDescription = 'No new pending orders in the queue.';
-              } else if (activeTab === 'preparing') {
-                displayList = preparingOrders;
-                tabLabel = 'In Kitchen (Cooking)';
-                emptyDescription = 'No tickets currently on the grill or in preparation.';
-              } else if (activeTab === 'ready') {
-                displayList = readyOrders;
-                tabLabel = 'Ready for Pickup';
-                emptyDescription = 'No orders currently waiting for server pickup.';
-              } else {
-                displayList = completedOrders;
-                tabLabel = 'Completed Orders';
-                emptyDescription = 'No completed orders recorded today.';
-              }
-
-              if (displayList.length === 0) {
+          <>
+            <nav className="kds-tabs" aria-label="Filter by status">
+              {TABS.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.key;
                 return (
-                  <div className="flex-1 flex flex-col items-center justify-center p-12 sm:p-16 text-center rounded-3xl bg-slate-900/40 border border-slate-800/80">
-                    <div className="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center mb-4 text-3xl shadow-inner">
-                      {activeTab === 'all' && '🍽️'}
-                      {activeTab === 'pending' && '⏱️'}
-                      {activeTab === 'preparing' && '🍳'}
-                      {activeTab === 'ready' && '🛎️'}
-                      {activeTab === 'completed' && '✨'}
-                    </div>
-                    <h3 className="text-lg font-black text-white">{tabLabel} Empty</h3>
-                    <p className="text-xs sm:text-sm text-slate-400 mt-1.5 max-w-md">
-                      {searchQuery
-                        ? `No tickets match your search "${searchQuery}".`
-                        : emptyDescription}
-                    </p>
-                    {searchQuery ? (
-                      <button
-                        type="button"
-                        onClick={() => setSearchQuery('')}
-                        className="mt-4 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition cursor-pointer"
-                      >
-                        Clear Search Filter
-                      </button>
-                    ) : (
-                      <div className="mt-4 flex items-center gap-2 text-xs text-slate-500 font-mono">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>Listening for live orders</span>
-                      </div>
-                    )}
-                  </div>
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`kds-tab kds-tab--${tab.key} ${isActive ? 'is-active' : ''}`}
+                    aria-pressed={isActive}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span>{tab.label}</span>
+                    <span className="kds-tab__count">{tab.count}</span>
+                  </button>
                 );
-              }
+              })}
 
-              return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {displayList.map((order) => (
-                    <OrderCard
-                      key={order.id || order._id}
-                      order={order}
-                      onStatusChange={handleStatusChange}
-                      isUpdating={updatingOrderId === (order.id || order._id)}
-                    />
-                  ))}
-                </div>
-              );
-            })()}
-          </div>
+              <div className="kds-tabs__status">
+                {searchQuery && (
+                  <button type="button" onClick={() => setSearchQuery('')} className="kds-chip">
+                    <Filter className="w-4 h-4" />
+                    <span>&quot;{searchQuery}&quot;</span>
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+                <span className="kds-live-pill">
+                  <span className="kds-conn__dot" />
+                  Live Stream
+                </span>
+              </div>
+            </nav>
+
+            {totalVisibleTickets === 0 && (
+              <div className="kds-empty">
+                <h3>{searchQuery ? 'No matching tickets' : 'All caught up'}</h3>
+                <p>{searchQuery ? `Nothing matches "${searchQuery}".` : 'No tickets need attention right now. New orders appear here instantly.'}</p>
+                {searchQuery && (
+                  <button type="button" onClick={() => setSearchQuery('')} className="kds-empty__btn">
+                    Clear Search
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div className={`kds-board ${activeTab === 'all' ? 'kds-board--all' : 'kds-board--single'}`}>
+              {visibleColumns.map((col) => {
+                const Icon = col.icon;
+                const sorted = [...col.list].sort((a, b) => (getStartMs(a) ?? 0) - (getStartMs(b) ?? 0));
+                return (
+                  <section key={col.key} className={`kds-col kds-col--${col.key}`} aria-label={col.title}>
+                    <header className="kds-col__head">
+                      <Icon className="w-5 h-5" />
+                      <h2>{col.title}</h2>
+                      <span className="kds-col__count">{col.list.length}</span>
+                    </header>
+                    <div className="kds-col__list">
+                      {sorted.length === 0 ? (
+                        <p className="kds-col__empty">{col.empty}</p>
+                      ) : (
+                        sorted.map((order) => {
+                          const id = order.id || order._id || order.order_id;
+                          return (
+                            <KdsTicket
+                              key={id}
+                              order={order}
+                              tone={col.key}
+                              nextStatus={col.nextStatus}
+                              actionLabel={col.actionLabel}
+                              nowMs={nowMs}
+                              onAdvance={handleStatusChange}
+                              isUpdating={updatingOrderId === id}
+                            />
+                          );
+                        })
+                      )}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          </>
         )}
       </main>
     </div>
+  );
+}
+
+/**
+ * KdsTicket - single order card on the board.
+ * Urgency comes from elapsed time: under 10 min normal, 10-19 min warning, 20+ min critical.
+ * Served tickets stay neutral. Tapping an item marks it done on the line.
+ */
+function KdsTicket({ order, tone, nextStatus, actionLabel, nowMs, onAdvance, isUpdating }) {
+  const [checkedItems, setCheckedItems] = useState(() => new Set());
+
+  const orderId = order?.id || order?._id || order?.order_id;
+  const displayNum = order?.order_number || (typeof orderId === 'string' ? orderId.slice(-4).toUpperCase() : orderId || '-');
+  const isTakeaway = (order?.order_type || order?.type) === 'takeaway';
+  const tableNo = order?.table_no ?? order?.tableNumber ?? order?.table ?? '-';
+  const items = order?.items || order?.dishes || order?.order_items || [];
+  const voiceNoteUrl = order?.voice_note_url || order?.voiceNoteUrl || order?.voice_url || order?.audio_url;
+  const generalNote = order?.notes || order?.note || order?.special_instructions;
+
+  const startMs = getStartMs(order);
+  const elapsedMin = startMs
+    ? Math.max(0, Math.floor((nowMs - startMs) / 60000))
+    : (typeof order?.timeElapsedMinutes === 'number' ? order.timeElapsedMinutes : 0);
+  const urgency = tone === 'completed' ? 'done' : elapsedMin >= 20 ? 'critical' : elapsedMin >= 10 ? 'warning' : 'normal';
+  const urgencyLabel = { done: 'Served', critical: 'Overdue', warning: 'Check soon', normal: 'On time' }[urgency];
+  const placedAt = startMs
+    ? new Date(startMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : (order?.placedTime || '');
+
+  const toggleItem = (index) => {
+    setCheckedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  return (
+    <article className={`kds-ticket kds-ticket--${urgency}`} data-order-id={orderId} data-order-status={tone}>
+      <div className="kds-ticket__head">
+        <div className="min-w-0">
+          <div className="kds-ticket__table">{isTakeaway ? 'Takeaway' : `Table ${tableNo}`}</div>
+          <div className="kds-ticket__meta">#{displayNum}{placedAt ? ` · ${placedAt}` : ''}</div>
+        </div>
+        <div className="kds-ticket__timer">
+          <span className="kds-ticket__elapsed">{elapsedMin}<small>m</small></span>
+          <span className="kds-ticket__urgency">{urgencyLabel}</span>
+        </div>
+      </div>
+
+      {voiceNoteUrl && (
+        <div className="kds-ticket__voice">
+          <AudioPlayer src={voiceNoteUrl} />
+        </div>
+      )}
+
+      {generalNote && (
+        <p className="kds-ticket__note">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{generalNote}</span>
+        </p>
+      )}
+
+      <ul className="kds-ticket__items">
+        {items.map((item, index) => {
+          const name = item?.name || item?.dish_name || item?.title || 'Item';
+          const qty = item?.quantity ?? item?.qty ?? 1;
+          const note = item?.notes || item?.note || item?.special_instructions;
+          const done = checkedItems.has(index);
+          return (
+            <li key={index}>
+              <button
+                type="button"
+                onClick={() => toggleItem(index)}
+                className={`kds-item ${done ? 'is-done' : ''}`}
+                aria-pressed={done}
+              >
+                <span className="kds-item__qty">{qty}×</span>
+                <span className="kds-item__body">
+                  <span className="kds-item__name">{name}</span>
+                  {item?.category && <span className="kds-item__cat">{item.category}</span>}
+                  {note && <span className="kds-item__note">{note}</span>}
+                </span>
+                {done && <Check className="kds-item__check w-5 h-5" />}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      {nextStatus && (
+        <button
+          type="button"
+          className="kds-ticket__action"
+          disabled={isUpdating}
+          onClick={() => onAdvance(orderId, nextStatus)}
+        >
+          {isUpdating ? 'Saving...' : actionLabel}
+        </button>
+      )}
+    </article>
   );
 }

@@ -15,8 +15,23 @@ import {
   ShieldAlert,
   AlertTriangle,
   X,
-  Radio
+  Radio,
+  Coffee,
+  Brush,
+  FileText,
+  Pencil
 } from 'lucide-react';
+
+const SHIFT_HANDOVER_KEY = 'smartdine_shift_handover';
+
+function readShiftHandover() {
+  try {
+    const raw = localStorage.getItem(SHIFT_HANDOVER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
 import { useSocket, useSocketListener } from '../context/SocketContext';
 import { useRestaurant, DEFAULT_EMPLOYEE_ROSTER } from '../context/RestaurantContext';
 import { useQuery, useMutation } from 'convex/react';
@@ -420,6 +435,71 @@ export default function WaiterPanel() {
     return (currentWaiter.assignedTables || currentWaiter.tables || []).map(Number).sort((a, b) => a - b);
   }, [restaurant?.employees, currentWaiter]);
 
+  // Live roster record for this waiter (used by the break toggle)
+  const myLiveEmployee = useMemo(() => {
+    if (!currentWaiter || !Array.isArray(restaurant?.employees)) return null;
+    return (
+      restaurant.employees.find(
+        e =>
+          e.id === currentWaiter.id ||
+          String(e.numericId) === String(currentWaiter.numericId || currentWaiter.id)
+      ) || null
+    );
+  }, [restaurant?.employees, currentWaiter]);
+
+  const isOnBreak = myLiveEmployee?.status === 'On Break';
+
+  const toggleBreak = useCallback(() => {
+    if (!myLiveEmployee || typeof restaurant?.setEmployeeStatus !== 'function') return;
+    restaurant.setEmployeeStatus(myLiveEmployee.id, isOnBreak ? 'Active' : 'On Break');
+  }, [myLiveEmployee, isOnBreak, restaurant]);
+
+  // Table cleaning flags (shared through RestaurantContext so Admin sees them too)
+  const tableCleaningMap = useMemo(() => {
+    const map = {};
+    (restaurant?.tables || []).forEach(t => {
+      if (t && t.needsCleaning) map[Number(t.tableNumber)] = true;
+    });
+    return map;
+  }, [restaurant?.tables]);
+
+  const toggleTableCleaning = useCallback(
+    tblNum => {
+      if (typeof restaurant?.setTables !== 'function') return;
+      restaurant.setTables(prev =>
+        prev.map(t =>
+          Number(t.tableNumber) === Number(tblNum) ? { ...t, needsCleaning: !t.needsCleaning } : t
+        )
+      );
+    },
+    [restaurant]
+  );
+
+  // Shift handover note: one shared note per device, shown to whoever logs in next
+  const [handover, setHandover] = useState(readShiftHandover);
+  const [handoverEditing, setHandoverEditing] = useState(false);
+  const [handoverDraft, setHandoverDraft] = useState('');
+
+  const saveHandover = useCallback(() => {
+    const text = handoverDraft.trim();
+    try {
+      if (!text) {
+        localStorage.removeItem(SHIFT_HANDOVER_KEY);
+        setHandover(null);
+      } else {
+        const next = {
+          note: text,
+          byName: currentWaiter?.name || 'Staff',
+          byId: currentWaiter?.id || null,
+          at: Date.now()
+        };
+        localStorage.setItem(SHIFT_HANDOVER_KEY, JSON.stringify(next));
+        setHandover(next);
+      }
+    } catch (_) {}
+    setHandoverEditing(false);
+  }, [handoverDraft, currentWaiter]);
+
   // Customer Calls List: Live calls coming ONLY from this waiter's assigned tables
   const myAssignedCalls = useMemo(() => {
     return calls.filter(call => {
@@ -783,6 +863,23 @@ export default function WaiterPanel() {
 
           {/* Right: Sound Toggle + Logout Button */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Break toggle (updates status shown to Admin) */}
+            {myLiveEmployee && (
+              <button
+                type="button"
+                onClick={toggleBreak}
+                className={`flex items-center gap-1.5 px-3 min-h-[40px] rounded-xl border text-xs font-bold transition active:scale-95 cursor-pointer ${
+                  isOnBreak
+                    ? 'bg-sky-500 text-slate-950 border-sky-400'
+                    : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700'
+                }`}
+                title={isOnBreak ? 'Back from break' : 'Go on break'}
+              >
+                <Coffee className="w-4 h-4" />
+                <span>{isOnBreak ? 'Back from break' : 'On break'}</span>
+              </button>
+            )}
+
             {/* Audio Mute/Unmute */}
             <button
               type="button"
@@ -842,35 +939,146 @@ export default function WaiterPanel() {
               No tables assigned yet by the Admin.
             </div>
           ) : (
-            <div className="flex flex-wrap items-center gap-2">
-              {myAssignedTables.map(tblNum => {
-                const hasActiveCall = myAssignedCalls.some(
-                  c => Number(c.table_number || c.tableNumber || c.table) === tblNum
-                );
+            <>
+              {/* Ownership summary */}
+              <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+                <span className="px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800 text-slate-300">
+                  {myAssignedTables.length} mine
+                </span>
+                <span className="px-2.5 py-1 rounded-full bg-rose-950/60 border border-rose-800/60 text-rose-300">
+                  {myAssignedTables.filter(t => myAssignedCalls.some(c => Number(c.table_number || c.tableNumber || c.table) === t)).length} calling
+                </span>
+                <span className="px-2.5 py-1 rounded-full bg-amber-950/60 border border-amber-800/60 text-amber-300">
+                  {myAssignedTables.filter(t => tableCleaningMap[t]).length} need cleaning
+                </span>
+              </div>
 
-                return (
-                  <div
-                    key={`assigned-table-${tblNum}`}
-                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs sm:text-sm font-black transition shadow-sm ${
-                      hasActiveCall
-                        ? 'bg-rose-950/80 border-rose-500 text-rose-200 ring-2 ring-rose-500/30 animate-pulse'
-                        : 'bg-[#080B10] border-slate-800 text-slate-200'
-                    }`}
-                  >
-                    <span
-                      className={`w-2 h-2 rounded-full shrink-0 ${
-                        hasActiveCall ? 'bg-rose-400 animate-ping' : 'bg-emerald-400'
+              <div className="flex flex-wrap items-center gap-2">
+                {myAssignedTables.map(tblNum => {
+                  const hasActiveCall = myAssignedCalls.some(
+                    c => Number(c.table_number || c.tableNumber || c.table) === tblNum
+                  );
+                  const needsCleaning = !!tableCleaningMap[tblNum];
+
+                  return (
+                    <div
+                      key={`assigned-table-${tblNum}`}
+                      className={`inline-flex items-stretch rounded-2xl border overflow-hidden shadow-sm transition ${
+                        hasActiveCall
+                          ? 'border-rose-500 ring-2 ring-rose-500/30'
+                          : needsCleaning
+                          ? 'border-amber-500/60'
+                          : 'border-slate-800'
                       }`}
-                    />
-                    <span>Table {tblNum}</span>
-                    {hasActiveCall && (
-                      <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-rose-500 text-white">
-                        Calling
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
+                    >
+                      <div
+                        className={`inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-black ${
+                          hasActiveCall
+                            ? 'bg-rose-950/80 text-rose-200 animate-pulse'
+                            : 'bg-[#080B10] text-slate-200'
+                        }`}
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full shrink-0 ${
+                            hasActiveCall ? 'bg-rose-400 animate-ping' : needsCleaning ? 'bg-amber-400' : 'bg-emerald-400'
+                          }`}
+                        />
+                        <span>Table {tblNum}</span>
+                        {hasActiveCall && (
+                          <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-rose-500 text-white">
+                            Calling
+                          </span>
+                        )}
+                      </div>
+                      {/* One-tap cleaning status toggle (large tap target) */}
+                      <button
+                        type="button"
+                        onClick={() => toggleTableCleaning(tblNum)}
+                        className={`inline-flex items-center gap-1.5 px-3 min-h-[44px] text-[11px] sm:text-xs font-extrabold border-l transition active:scale-95 cursor-pointer ${
+                          needsCleaning
+                            ? 'bg-amber-500 text-slate-950 border-amber-400'
+                            : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'
+                        }`}
+                        title={needsCleaning ? 'Mark table as cleared' : 'Mark table as needs cleaning'}
+                        aria-label={needsCleaning ? `Mark table ${tblNum} as cleared` : `Mark table ${tblNum} as needs cleaning`}
+                      >
+                        <Brush className="w-3.5 h-3.5" />
+                        <span>{needsCleaning ? 'Cleared' : 'Needs cleaning'}</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </section>
+
+        {/* =====================================================================
+            2b. SHIFT HANDOVER NOTE
+            One note saved on this device. Shown to whoever logs in next.
+            ===================================================================== */}
+        <section className="p-4 sm:p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+                <FileText className="w-4 h-4" />
+              </div>
+              <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-200">
+                Shift Handover
+              </h2>
+            </div>
+            {!handoverEditing && (
+              <button
+                type="button"
+                onClick={() => {
+                  setHandoverDraft(handover?.note || '');
+                  setHandoverEditing(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 min-h-[40px] rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition active:scale-95 cursor-pointer"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>{handover ? 'Edit note' : 'Write note'}</span>
+              </button>
+            )}
+          </div>
+
+          {handoverEditing ? (
+            <div className="space-y-3">
+              <textarea
+                value={handoverDraft}
+                onChange={e => setHandoverDraft(e.target.value)}
+                rows={4}
+                maxLength={1000}
+                placeholder="e.g. Table 4 wants the bill, 2 pending dishes in kitchen, table 7 is cleaned."
+                className="w-full p-3 rounded-2xl bg-[#080B10] border border-slate-700 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setHandoverEditing(false)}
+                  className="min-h-[48px] rounded-2xl bg-slate-800 text-slate-200 border border-slate-700 text-sm font-bold transition active:scale-95 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveHandover}
+                  className="min-h-[48px] rounded-2xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-sm font-black transition active:scale-95 cursor-pointer"
+                >
+                  Save note
+                </button>
+              </div>
+            </div>
+          ) : handover?.note ? (
+            <div className="p-3.5 rounded-2xl bg-[#080B10] border border-slate-800 space-y-1.5">
+              <p className="text-sm text-slate-100 whitespace-pre-wrap break-words">{handover.note}</p>
+              <p className="text-[11px] text-slate-500 font-medium">
+                From {handover.byName} · {new Date(handover.at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+              </p>
+            </div>
+          ) : (
+            <div className="py-4 text-center text-xs text-slate-400 bg-slate-950/60 rounded-2xl border border-dashed border-slate-800">
+              No handover note yet.
             </div>
           )}
         </section>
