@@ -35,6 +35,12 @@ export default defineSchema({
     generalNote: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
+    // Who last moved the order through the kitchen (staff account), for the admin monitor
+    handledById: v.optional(v.string()),
+    handledByName: v.optional(v.string()),
+    preparingAt: v.optional(v.number()),
+    readyAt: v.optional(v.number()),
+    servedAt: v.optional(v.number()),
   })
     .index("by_status", ["status"])
     .index("by_created_at", ["createdAt"])
@@ -141,6 +147,87 @@ export default defineSchema({
   })
     .index("by_settlement_id", ["id"])
     .index("by_table", ["tableNumber", "createdAt"]),
+
+  // Staff accounts created by the admin. Passwords are PBKDF2-SHA256 hashes.
+  staffAccounts: defineTable({
+    username: v.string(), // lowercase, unique
+    name: v.string(),
+    role: v.string(), // legacy: kitchen, waiter, manager; new accounts use "staff"
+    title: v.optional(v.string()), // job title shown to others, e.g. "Head Chef"
+    kitchenAccess: v.optional(v.boolean()), // can run the kitchen screen (unset: role kitchen/manager)
+    station: v.string(), // e.g. "Grill", "Main Hall"
+    assignedTables: v.array(v.number()),
+    active: v.boolean(),
+    passwordHash: v.string(),
+    salt: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastLoginAt: v.optional(v.number()),
+    lastSeenAt: v.optional(v.number()),
+  }).index("by_username", ["username"]),
+
+  staffSessions: defineTable({
+    token: v.string(),
+    accountId: v.id("staffAccounts"),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_token", ["token"])
+    .index("by_account", ["accountId"]),
+
+  adminSessions: defineTable({
+    token: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  }).index("by_token", ["token"]),
+
+  // What staff did and what the admin assigned: shown on the admin monitor.
+  staffActivity: defineTable({
+    accountId: v.optional(v.id("staffAccounts")),
+    actorName: v.string(),
+    actorRole: v.string(),
+    kind: v.string(), // login, logout, order_status, assignment, account
+    orderId: v.optional(v.string()),
+    orderNumber: v.optional(v.string()),
+    tableNumber: v.optional(v.number()),
+    fromStatus: v.optional(v.string()),
+    toStatus: v.optional(v.string()),
+    note: v.optional(v.string()),
+    at: v.number(),
+  })
+    .index("by_at", ["at"])
+    .index("by_account", ["accountId", "at"]),
+
+  // Conversations. key = "staff:<accountId>" (admin <-> one staff member) or
+  // "guest:<table>:<guestId>" (one guest's phone at a table <-> that table's staff + admin).
+  chatThreads: defineTable({
+    key: v.string(),
+    kind: v.string(), // staff, guest
+    accountId: v.optional(v.id("staffAccounts")),
+    tableNumber: v.optional(v.number()),
+    guestId: v.optional(v.string()),
+    lastMessageAt: v.number(),
+    lastText: v.string(),
+    lastSenderType: v.string(), // admin, staff, guest
+    lastIsAlert: v.boolean(),
+    adminReadAt: v.number(),
+    staffReadAt: v.number(),
+    guestReadAt: v.number(),
+  })
+    .index("by_key", ["key"])
+    .index("by_last", ["lastMessageAt"])
+    .index("by_account", ["accountId"])
+    .index("by_table", ["tableNumber", "lastMessageAt"]),
+
+  chatMessages: defineTable({
+    threadKey: v.string(),
+    senderType: v.string(), // admin, staff, guest
+    senderId: v.optional(v.string()),
+    senderName: v.string(),
+    text: v.string(),
+    isAlert: v.boolean(),
+    createdAt: v.number(),
+  }).index("by_thread", ["threadKey", "createdAt"]),
 
   // Global failed admin PIN attempts (single row, key = "global").
   adminAttempts: defineTable({

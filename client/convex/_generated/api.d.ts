@@ -9,6 +9,7 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as chat from "../chat.js";
 import type * as corrections from "../corrections.js";
 import type * as files from "../files.js";
 import type * as media from "../media.js";
@@ -19,6 +20,7 @@ import type * as seed from "../seed.js";
 import type * as settlements from "../settlements.js";
 import type * as staff from "../staff.js";
 import type * as stats from "../stats.js";
+import type * as team from "../team.js";
 import type * as waiter from "../waiter.js";
 
 import type {
@@ -29,6 +31,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  chat: typeof chat;
   corrections: typeof corrections;
   files: typeof files;
   media: typeof media;
@@ -39,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   settlements: typeof settlements;
   staff: typeof staff;
   stats: typeof stats;
+  team: typeof team;
   waiter: typeof waiter;
 }>;
 
