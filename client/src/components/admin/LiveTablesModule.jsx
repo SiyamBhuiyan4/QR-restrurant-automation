@@ -1348,6 +1348,16 @@ export default function LiveTablesModule({
                         </button>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      className="flr-tcard__toggle"
+                      onClick={() => setExpandedTableIds(prev => ({ ...prev, [table.id]: false }))}
+                      aria-controls={bodyId}
+                      aria-expanded={true}
+                    >
+                      <ChevronDown className="w-3.5 h-3.5 flr-tcard__chev is-open" />
+                      <span>Hide details</span>
+                    </button>
                   </div>
                 )}
               </article>

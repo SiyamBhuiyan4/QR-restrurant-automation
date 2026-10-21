@@ -1,10 +1,12 @@
 import React from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convexApi';
+import { appUrl } from '../../utils/appUrls';
 import {
   LayoutDashboard,
   Grid3X3,
   ShoppingBag,
   ChefHat,
-  ConciergeBell,
   UtensilsCrossed,
   QrCode,
   Users,
@@ -37,8 +39,14 @@ export default function AdminSidebar({
     tableCount = 12
   } = counts;
 
+  // Pending customer "call waiter" requests, live from the server
+  const liveCalls = useQuery(api.waiter.getActiveCalls, {});
+  const openCalls = Array.isArray(liveCalls) ? liveCalls.length : 0;
+
   // Normalized active tab
-  const currentTab = activeTab === 'stats' ? 'overview' : activeTab === 'employee' ? 'kds' : activeTab;
+  const currentTab = activeTab === 'stats'
+    ? 'overview'
+    : ['employee', 'team', 'floor', 'waiter', 'roster'].includes(activeTab) ? 'employees' : activeTab;
 
   // Badge tones map to .admin-nav-badge--<tone> in admin.css
   const groups = [
@@ -48,8 +56,7 @@ export default function AdminSidebar({
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'tables', label: 'Floor & Tables', icon: Grid3X3, badge: `${tableCount}`, tone: 'primary' },
         { id: 'orders', label: 'Orders', icon: ShoppingBag, badge: readyPickups > 0 ? `${readyPickups} ready` : null, tone: 'success', pulse: readyPickups > 0 },
-        { id: 'kds', label: 'Kitchen (KDS)', icon: ChefHat, badge: activeOrders > 0 ? activeOrders : null, tone: 'warning', externalUrl: '/employee' },
-        { id: 'floor', label: 'Waiter Console', icon: ConciergeBell, badge: assistanceCount > 0 ? assistanceCount : null, tone: 'danger', pulse: assistanceCount > 0, externalUrl: '/waiter' }
+        { id: 'kds', label: 'Kitchen Monitor', icon: ChefHat, badge: activeOrders > 0 ? activeOrders : null, tone: 'warning' }
       ]
     },
     {
@@ -62,8 +69,8 @@ export default function AdminSidebar({
     {
       title: 'Team & feedback',
       items: [
-        { id: 'employees', label: 'Staff', icon: Users, badge: busyEmployees > 0 ? `${busyEmployees} busy` : null, tone: 'neutral', externalUrl: '/employee?tab=roster' },
-        { id: 'reports', label: 'Reports & feedback', icon: MessageSquareWarning, badge: pendingReports > 0 ? pendingReports : null, tone: 'danger', pulse: pendingReports > 0, externalUrl: '/employee?tab=reports' }
+        { id: 'employees', label: 'Staff', icon: Users, badge: openCalls > 0 ? `${openCalls} call${openCalls === 1 ? '' : 's'}` : null, tone: 'danger', pulse: openCalls > 0 },
+        { id: 'reports', label: 'Reports & feedback', icon: MessageSquareWarning, badge: pendingReports > 0 ? pendingReports : null, tone: 'danger', pulse: pendingReports > 0, externalUrl: appUrl('employee', '?tab=reports') }
       ]
     }
   ];

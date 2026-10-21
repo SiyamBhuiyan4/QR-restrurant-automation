@@ -1354,7 +1354,7 @@ export default function MenuManager({ className = '' }) {
                 <div className="p-3.5 bg-[var(--adm-surface-2)] border-t border-[var(--adm-border)] flex items-center justify-between gap-2 shrink-0 mt-auto">
                   
                   {/* Availability Toggle Switch */}
-                  <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
+                  <label className="relative inline-flex items-center gap-2.5 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       role="switch"
@@ -1407,10 +1407,10 @@ export default function MenuManager({ className = '' }) {
           ========================================================================= */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-lg bg-[var(--adm-surface)] rounded-2xl shadow-2xl border border-[var(--adm-border)] overflow-hidden transform transition-all animate-scaleUp max-h-[90vh] flex flex-col text-[var(--adm-text)]">
+          <div className="w-full max-w-lg bg-[var(--adm-surface)] rounded-2xl shadow-2xl border border-[var(--adm-border)] overflow-clip transform transition-all animate-scaleUp max-h-[90vh] flex flex-col text-[var(--adm-text)]">
             
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-[var(--adm-border)] flex items-center justify-between bg-[var(--adm-surface-2)]">
+            <div className="px-6 py-4 border-b border-[var(--adm-border)] flex items-center justify-between bg-[var(--adm-surface-2)] shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
                   {modalMode === 'add' ? <Plus className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
@@ -1434,7 +1434,7 @@ export default function MenuManager({ className = '' }) {
             </div>
 
             {/* Modal Form Scroll Area */}
-            <form onSubmit={handleSaveDish} className="p-6 overflow-y-auto space-y-4 flex-1">
+            <form onSubmit={handleSaveDish} className="p-6 overflow-y-auto space-y-4 flex-1 min-h-0">
               {formError && (
                 <div className="p-3 bg-rose-950/70 border border-rose-800 rounded-xl text-rose-300 text-xs font-semibold flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -1927,7 +1927,7 @@ export default function MenuManager({ className = '' }) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {/* Vegetarian Toggle */}
-                  <label className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition select-none ${
+                  <label className={`relative flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition select-none ${
                     formData.is_veg ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300' : 'bg-[var(--adm-surface-2)] border-[var(--adm-border)] text-[var(--adm-text-muted)]'
                   }`}>
                     <input
@@ -1946,8 +1946,8 @@ export default function MenuManager({ className = '' }) {
                   </label>
 
                   {/* Spicy Toggle */}
-                  <label className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition select-none ${
-                    formData.is_spicy ? 'bg-rose-950/60 border-rose-500 text-rose-300' : 'bg-[var(--adm-surface-2)] border-[var(--adm-border)] text-[var(--adm-text-muted)]'
+                  <label className={`relative flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition select-none ${
+                    formData.is_spicy ? 'bg-rose-950/40 border-rose-500/70 text-rose-300' : 'bg-[var(--adm-surface-2)] border-[var(--adm-border)] text-[var(--adm-text-muted)]'
                   }`}>
                     <input
                       type="checkbox"
@@ -1956,7 +1956,7 @@ export default function MenuManager({ className = '' }) {
                       className="sr-only"
                     />
                     <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                      formData.is_spicy ? 'bg-rose-600 border-rose-600 text-white' : 'border-[var(--adm-border)] bg-[var(--adm-surface)]'
+                      formData.is_spicy ? 'bg-rose-500 border-rose-500 text-white' : 'border-[var(--adm-border)] bg-[var(--adm-surface)]'
                     }`}>
                       {formData.is_spicy && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
@@ -1965,7 +1965,7 @@ export default function MenuManager({ className = '' }) {
                   </label>
 
                   {/* Available In Stock Toggle */}
-                  <label className={`flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer transition select-none ${
+                  <label className={`relative flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer transition select-none ${
                     formData.is_available ? 'border-[var(--adm-success)] bg-[var(--adm-surface-2)] text-[var(--adm-text)]' : 'border-[var(--adm-border)] bg-[var(--adm-surface-2)] text-[var(--adm-text-muted)]'
                   }`}>
                     <span className="flex flex-col">

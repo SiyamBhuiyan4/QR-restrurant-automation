@@ -43,6 +43,7 @@ import OrderCorrectionModal from './OrderCorrectionModal';
 import { TableBillLookup } from './BillReceipt';
 import '../../styles/staff.css';
 import '../../styles/admin-floor.css';
+import { appUrl } from '../../utils/appUrls';
 
 /**
  * Format relative elapsed time
@@ -623,7 +624,7 @@ export default function AdminWaiterConsole({ currentEmployee = null, isEmployeeM
               {calls.length} active {calls.length === 1 ? 'call' : 'calls'}
             </span>
             <a
-              href="/waiter"
+              href={appUrl('waiter')}
               target="_blank"
               rel="noreferrer"
               className="flr-btn"

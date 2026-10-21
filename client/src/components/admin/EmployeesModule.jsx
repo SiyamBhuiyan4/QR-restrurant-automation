@@ -1705,12 +1705,6 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
     }
   };
 
-  const handleToggleRoleDock = () => {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('smartdine:toggle-role-dock'));
-    }
-  };
-
   const renderAvatar = (emp) => {
     if (emp.name === 'Rakib Ahmed' || emp.avatarType === 'orange') {
       return (
@@ -3079,24 +3073,6 @@ Login at: ${typeof window !== 'undefined' ? window.location.origin : ''}/waiter`
             </div>
           )}
         </section>
-      )}
-
-      {/* =========================================================================
-          7. FLOATING ACTION: Outline "🧭 Switch Role ⌃" Button
-          ========================================================================= */}
-      {!hasGlobalSwitcher && (
-        <div className="fixed bottom-5 right-5 z-50">
-          <button
-            type="button"
-            onClick={handleToggleRoleDock}
-            className="bg-[#111726]/95 backdrop-blur-md border border-amber-500/30 shadow-2xl rounded-full px-4 py-2 text-xs font-semibold text-slate-200 hover:text-white hover:border-amber-500/60 flex items-center gap-2 cursor-pointer transition active:scale-95 shadow-amber-500/10"
-            title="Quick switch between Customer, Employee, Waiter, and Admin views"
-          >
-            <Compass className="w-4 h-4 text-[#F59E0B]" />
-            <span>Switch Role</span>
-            <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
-          </button>
-        </div>
       )}
 
       {/* =========================================================================

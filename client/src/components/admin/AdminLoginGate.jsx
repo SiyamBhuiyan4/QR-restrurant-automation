@@ -11,11 +11,11 @@ import {
 } from 'lucide-react';
 import '../../styles/admin.css';
 import { resolveAdminTheme } from '../../hooks/useAdminTheme';
-import { verifyAdminPin } from '../../utils/adminAuth';
+import { adminLogin } from '../../utils/teamSession';
 
 /**
  * Master Admin Access Key
- * Checked on the server (Convex api.auth.verifyAdminPin).
+ * Checked on the server (Convex api.team.adminLogin), which returns an admin session token.
  */
 const PIN_LENGTH = 6;
 
@@ -43,7 +43,7 @@ export default function AdminLoginGate({ onLoginSuccess }) {
     if (isChecking || isSuccess) return;
     const entered = (candidatePin !== undefined ? candidatePin : pin).trim();
     setIsChecking(true);
-    const valid = await verifyAdminPin(entered);
+    const valid = !!(await adminLogin(entered));
     setIsChecking(false);
     if (valid) {
       setError('');

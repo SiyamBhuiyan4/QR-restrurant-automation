@@ -12,14 +12,14 @@ import AdminHeader from '../components/admin/AdminHeader';
 import OverviewModule from '../components/admin/OverviewModule';
 import LiveTablesModule from '../components/admin/LiveTablesModule';
 import LiveOrdersModule from '../components/admin/LiveOrdersModule';
-import EmployeesModule from '../components/admin/EmployeesModule';
 import CustomerReportsModule from '../components/admin/CustomerReportsModule';
 import AdminLoginGate from '../components/admin/AdminLoginGate';
+import { getAdminToken, adminLogout } from '../utils/teamSession';
 import useAdminShortcuts from '../hooks/useAdminShortcuts';
 
 // System Standalone Consoles (Directly Embedded into Master Admin)
-import KitchenDisplay from './KitchenDisplay';
-import AdminWaiterConsole from '../components/admin/AdminWaiterConsole';
+import KitchenMonitorModule from '../components/admin/KitchenMonitorModule';
+import StaffManagementModule from '../components/admin/StaffManagementModule';
 import MenuManager from '../components/MenuManager';
 import QRBatchGenerator from './QRBatchGenerator';
 import { ExternalLink } from 'lucide-react';
@@ -41,6 +41,8 @@ import {
 import '../styles/admin.css';
 import '../styles/admin-ui.css';
 import useAdminTheme from '../hooks/useAdminTheme';
+import { appUrl } from '../utils/appUrls';
+import StaffMessenger from '../components/admin/StaffMessenger';
 
 /**
  * Unified Master Restaurant Admin Dashboard
@@ -64,7 +66,8 @@ export default function AdminDashboard({ className = '' }) {
   // Session Authentication State (gated by the server-verified Master PIN)
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('smartdine_admin_auth') === 'true';
+      // Needs the server session token too (older sessions without one sign in again)
+      return sessionStorage.getItem('smartdine_admin_auth') === 'true' && !!getAdminToken();
     }
     return false;
   });
@@ -73,6 +76,7 @@ export default function AdminDashboard({ className = '' }) {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('smartdine_admin_auth');
     }
+    adminLogout();
     setIsAuthenticated(false);
   }, []);
 
@@ -86,7 +90,6 @@ export default function AdminDashboard({ className = '' }) {
         'tables',
         'orders',
         'kds',
-        'floor',
         'menu',
         'qr',
         'employees',
@@ -94,8 +97,8 @@ export default function AdminDashboard({ className = '' }) {
       ];
       if (tabParam === 'stats') return 'overview';
       if (tabParam === 'kitchen') return 'kds';
-      if (tabParam === 'waiter') return 'floor';
-      if (tabParam === 'roster') return 'employees';
+      // Staff, team and waiter console are one Staff page now
+      if (['waiter', 'floor', 'team', 'roster', 'employee'].includes(tabParam)) return 'employees';
       if (validTabs.includes(tabParam)) return tabParam;
     }
     return 'overview';
@@ -175,8 +178,7 @@ export default function AdminDashboard({ className = '' }) {
   const handleSelectTab = (tabId) => {
     let normalizedTab = tabId === 'stats' ? 'overview' : tabId;
     if (normalizedTab === 'kitchen') normalizedTab = 'kds';
-    if (normalizedTab === 'waiter') normalizedTab = 'floor';
-    if (normalizedTab === 'roster') normalizedTab = 'employees';
+    if (['waiter', 'floor', 'team', 'roster', 'employee'].includes(normalizedTab)) normalizedTab = 'employees';
     setActiveTab(normalizedTab);
     setIsMobileSidebarOpen(false);
     if (typeof window !== 'undefined' && window.history?.pushState) {
@@ -196,22 +198,17 @@ export default function AdminDashboard({ className = '' }) {
         'tables',
         'orders',
         'kds',
-        'floor',
         'menu',
         'qr',
         'employees',
         'reports'
       ];
-      if (tabParam === 'employee') {
+      if (['employee', 'waiter', 'floor', 'team', 'roster'].includes(tabParam)) {
         setActiveTab('employees');
       } else if (tabParam === 'stats') {
         setActiveTab('overview');
       } else if (tabParam === 'kitchen') {
         setActiveTab('kds');
-      } else if (tabParam === 'waiter') {
-        setActiveTab('floor');
-      } else if (tabParam === 'roster') {
-        setActiveTab('employees');
       } else if (validTabs.includes(tabParam)) {
         setActiveTab(tabParam);
       } else {
@@ -445,7 +442,7 @@ export default function AdminDashboard({ className = '' }) {
       t: () => handleSelectTab('tables'),
       r: () => handleSelectTab('orders'),
       k: () => handleSelectTab('kds'),
-      w: () => handleSelectTab('floor'),
+      w: () => handleSelectTab('employees'),
       s: () => handleSelectTab('employees'),
       m: () => handleSelectTab('menu'),
       q: () => handleSelectTab('qr'),
@@ -662,17 +659,10 @@ export default function AdminDashboard({ className = '' }) {
             </div>
           )}
 
-          {/* TAB 4: EMPLOYEE & KITCHEN HUB (KDS) */}
+          {/* TAB 4: KITCHEN MONITOR (view only; staff run the kitchen from their own sign-in) */}
           {activeTab === 'kds' && (
-            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-[color:var(--adm-border)] shadow-md bg-[color:var(--adm-surface)]">
-              <KitchenDisplay isEmbedded={true} />
-            </div>
-          )}
-
-          {/* TAB 5: ON-FIELD WAITER CONSOLE (ADMIN GOD-MODE OVERVIEW & DISPATCH) */}
-          {activeTab === 'floor' && (
-            <div className="animate-fadeIn rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
-              <AdminWaiterConsole />
+            <div className="animate-fadeIn">
+              <KitchenMonitorModule onManageTeam={() => handleSelectTab('employees')} />
             </div>
           )}
 
@@ -690,19 +680,10 @@ export default function AdminDashboard({ className = '' }) {
             </div>
           )}
 
-          {/* TAB 9: EMPLOYEES & STAFF ROSTER HUB */}
+          {/* TAB 9: STAFF (accounts, kitchen access, table coverage, who is doing what) */}
           {activeTab === 'employees' && (
-            <div className="space-y-4 animate-fadeIn">
-              <EmployeesModule
-                employees={employees}
-                tables={tables}
-                tableCount={effectiveLiveTableCount}
-                onAssignTable={assignTableToEmployee}
-                onReassignAllTables={reassignAllTables}
-                onSetEmployeeStatus={setEmployeeStatus}
-                onAutoBalance={autoBalanceTables}
-                onSwitchToKds={() => handleSelectTab('kds')}
-              />
+            <div className="animate-fadeIn">
+              <StaffManagementModule tableCount={effectiveLiveTableCount} />
             </div>
           )}
 
@@ -714,13 +695,13 @@ export default function AdminDashboard({ className = '' }) {
                   Direct customer reports synchronized in real-time with Staff Operations Console
                 </span>
                 <a
-                  href="/employee?tab=reports"
+                  href={appUrl('employee', '?tab=reports')}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold transition cursor-pointer"
                   title="Open Customer Requests in Employee Hub"
                 >
-                  <span>Open in Employee Hub (/employee?tab=reports)</span>
+                  <span>Open in Employee Hub</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </div>
@@ -729,6 +710,9 @@ export default function AdminDashboard({ className = '' }) {
           )}
         </main>
       </div>
+
+      {/* Staff message bubble + split view (only after admin sign-in) */}
+      <StaffMessenger />
     </div>
   );
 }

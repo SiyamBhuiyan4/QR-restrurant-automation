@@ -27,7 +27,7 @@
 
   background: var(--kds-bg);
   color: var(--kds-text);
-  font-family: 'Inter', 'Hind Siliguri', system-ui, sans-serif;
+  font-family: 'Inter', 'Plus Jakarta Sans', 'Hind Siliguri', system-ui, -apple-system, sans-serif;
   min-height: 100%;
   display: flex;
   flex-direction: column;
@@ -84,7 +84,7 @@
 
 .kds-brand__title {
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.1;
   color: var(--kds-text);
@@ -122,9 +122,9 @@
 }
 
 .kds-clock__time {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: inherit; font-variant-numeric: tabular-nums;
   font-size: 26px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--kds-text);
   font-variant-numeric: tabular-nums;
 }
@@ -197,7 +197,7 @@
   padding: 0 16px;
   border-radius: 12px;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   border: 1px solid transparent;
 }
@@ -227,7 +227,7 @@
   border-radius: 14px;
   background: var(--kds-pending);
   color: var(--kds-on-tone);
-  font-weight: 800;
+  font-weight: 700;
   font-size: 17px;
 }
 
@@ -256,6 +256,10 @@
   border: 1px solid var(--kds-line);
   border-radius: 16px;
   padding: 8px;
+  /* Stay on screen while scrolling through the sections below */
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
 .kds-tab {
@@ -281,8 +285,8 @@
   border-radius: 999px;
   background: var(--kds-bg);
   color: var(--kds-text);
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-weight: 800;
+  font-family: inherit; font-variant-numeric: tabular-nums;
+  font-weight: 700;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
@@ -327,17 +331,18 @@
 }
 
 /* ---------- Board ---------- */
-.kds-board { display: grid; gap: 16px; align-items: start; width: 100%; }
-/* Desktop (900px+): multi-column board, each column keeps at least 300px so ticket titles
-   and item names stay readable (admin embed included). Below 900px the board shows one
-   status column at a time (see the tablet/phone block at the bottom of this file). */
-.kds-board--all,
-.kds-board--single { grid-template-columns: minmax(0, 1fr); }
-
-@media (min-width: 900px) {
-  .kds-board--all,
-  .kds-board--single { grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); }
+/* Board: one status section at a time (tabs above choose it). "All Active" stacks the
+   sections top to bottom and you scroll down through them. Tickets sit in a responsive grid
+   inside each section, so a wide screen shows several cards per row without side-by-side
+   columns. */
+.kds-board { display: flex; flex-direction: column; gap: 20px; width: 100%; }
+.kds-board > .kds-col { width: 100%; }
+.kds-board .kds-col__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  align-items: start;
 }
+.kds-board .kds-col__empty { grid-column: 1 / -1; }
 
 .kds-col {
   background: var(--kds-surface);
@@ -364,7 +369,7 @@
 
 .kds-col__head h2 {
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--kds-text);
 }
 
@@ -380,9 +385,9 @@
   border-radius: 999px;
   background: var(--kds-bg);
   color: var(--kds-text);
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: inherit; font-variant-numeric: tabular-nums;
   font-size: 17px;
-  font-weight: 800;
+  font-weight: 700;
   text-align: center;
 }
 
@@ -443,12 +448,11 @@
 .kds-ticket__title-wrap { min-width: 0; flex: 1 1 auto; }
 
 .kds-ticket__table {
-  font-size: 28px;
-  font-weight: 900;
-  line-height: 1.1;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
   color: var(--kds-text);
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -459,7 +463,7 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--kds-muted);
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: inherit; font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
@@ -472,9 +476,9 @@
 }
 
 .kds-ticket__elapsed {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: inherit; font-variant-numeric: tabular-nums;
   font-size: 36px;
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1;
   color: var(--kds-tone);
   font-variant-numeric: tabular-nums;
@@ -485,7 +489,7 @@
 .kds-ticket__urgency {
   margin-top: 4px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--kds-tone);
@@ -531,7 +535,7 @@
   min-width: 48px;
   text-align: center;
   font-size: 22px;
-  font-weight: 900;
+  font-weight: 700;
   color: var(--kds-pending);
   font-variant-numeric: tabular-nums;
 }
@@ -547,9 +551,9 @@
 }
 .kds-item__price {
   flex-shrink: 0;
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: inherit; font-variant-numeric: tabular-nums;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--kds-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -565,7 +569,7 @@
   min-height: 64px;
   border-radius: 14px;
   font-size: 19px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.01em;
   color: var(--kds-on-tone);
   background: var(--kds-tone);
@@ -587,7 +591,7 @@
   border: 1px solid var(--kds-line);
 }
 
-.kds-empty h3 { font-size: 24px; font-weight: 900; color: var(--kds-text); }
+.kds-empty h3 { font-size: 24px; font-weight: 700; color: var(--kds-text); }
 .kds-empty p { margin-top: 6px; font-size: 16px; color: var(--kds-muted); }
 
 .kds-empty__btn {
@@ -597,7 +601,7 @@
   border-radius: 12px;
   background: var(--kds-pending);
   color: var(--kds-on-tone);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .kds-loading {
@@ -611,7 +615,7 @@
   color: var(--kds-muted);
 }
 
-.kds-loading h2 { font-size: 24px; font-weight: 800; color: var(--kds-text); margin-top: 16px; }
+.kds-loading h2 { font-size: 24px; font-weight: 700; color: var(--kds-text); margin-top: 16px; }
 
 .kds-loading__spinner {
   width: 48px;
@@ -625,8 +629,7 @@
 @keyframes kds-spin { to { transform: rotate(360deg); } }
 
 /* ---------- Tablet & phone (below 900px): one status column at a time ----------
-   The existing status tabs drive which column is shown. "All Active" puts the columns in a
-   horizontal snap row (swipe between them), so nothing ever stacks vertically. */
+   The status tabs choose which section is shown. "All Active" stacks the sections vertically. */
 @media (max-width: 899px) {
   .kds-main { padding: 10px; }
 
@@ -660,25 +663,9 @@
   .kds-search { min-width: 0; flex: 1; }
   .kds-ticket__table { font-size: 22px; }
 
-  /* Board: a single column visible at a time */
-  .kds-board { gap: 12px; }
-  .kds-board--single {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .kds-board--all {
-    display: flex;
-    grid-template-columns: none;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .kds-board--all::-webkit-scrollbar { display: none; }
-  .kds-board--all > .kds-col {
-    flex: 0 0 100%;
-    min-width: 0;
-    scroll-snap-align: start;
-  }
+  /* Board: sections stack vertically; tickets are one per row on phones */
+  .kds-board { gap: 16px; }
+  .kds-board .kds-col__list { grid-template-columns: minmax(0, 1fr); }
 
   /* Column & compact phone ticket */
   .kds-col { padding: 10px; border-radius: 14px; }
@@ -687,3 +674,42 @@
   .kds-ticket__items { gap: 4px; }
   .kds-ticket__action { min-height: 52px; font-size: 17px; }
 }
+
+/* =========================================================================
+   Embedded in the admin panel: match admin typography and density
+   (the full-screen kitchen page keeps the large kiosk sizes above)
+   ========================================================================= */
+.kds-root--embedded { font-size: 14px; }
+.kds-root--embedded .kds-brand__title { font-size: 18px; font-weight: 600; }
+.kds-root--embedded .kds-conn { font-size: 12px; }
+.kds-root--embedded .kds-clock__time { font-size: 18px; font-weight: 600; }
+.kds-root--embedded .kds-clock__date { font-size: 12px; }
+.kds-root--embedded .kds-search input { min-height: 38px; font-size: 13px; }
+.kds-root--embedded .kds-sound { min-height: 38px; font-size: 13px; font-weight: 600; }
+
+.kds-root--embedded .kds-tab { min-height: 38px; font-size: 13px; font-weight: 600; padding: 0 12px; }
+.kds-root--embedded .kds-tab svg { width: 16px; height: 16px; }
+.kds-root--embedded .kds-tab__count { font-size: 12px; min-width: 24px; padding: 1px 7px; }
+.kds-root--embedded .kds-live-pill,
+.kds-root--embedded .kds-chip { font-size: 12px; min-height: 32px; }
+
+.kds-root--embedded .kds-col__head h2 { font-size: 15px; font-weight: 600; }
+.kds-root--embedded .kds-col__count { font-size: 13px; }
+.kds-root--embedded .kds-col__empty { font-size: 13px; }
+
+.kds-root--embedded .kds-ticket__table { font-size: 16px; font-weight: 600; }
+.kds-root--embedded .kds-ticket__meta { font-size: 12px; font-weight: 500; }
+.kds-root--embedded .kds-ticket__elapsed { font-size: 20px; font-weight: 700; }
+.kds-root--embedded .kds-ticket__elapsed small { font-size: 12px; }
+.kds-root--embedded .kds-ticket__urgency { font-size: 10px; }
+.kds-root--embedded .kds-ticket__note { font-size: 13px; }
+
+.kds-root--embedded .kds-item { min-height: 40px; }
+.kds-root--embedded .kds-item__qty { font-size: 14px; }
+.kds-root--embedded .kds-item__name { font-size: 14px; font-weight: 600; }
+.kds-root--embedded .kds-item__price { font-size: 13px; }
+.kds-root--embedded .kds-item__note { font-size: 12px; }
+
+.kds-root--embedded .kds-ticket__action { min-height: 40px; font-size: 14px; font-weight: 600; }
+.kds-root--embedded .kds-empty h3 { font-size: 16px; }
+.kds-root--embedded .kds-empty p { font-size: 13px; }

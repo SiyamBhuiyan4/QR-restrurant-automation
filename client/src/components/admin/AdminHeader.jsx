@@ -106,6 +106,7 @@ export default function AdminHeader({
   const handleLockLogout = () => {
     try {
       sessionStorage.removeItem('smartdine_admin_auth');
+      sessionStorage.removeItem('smartdine_admin_token');
     } catch (_) {}
     if (typeof onLogout === 'function') {
       onLogout();
@@ -203,9 +204,14 @@ export default function AdminHeader({
       description: 'Real-time kitchen tickets, customer voice notes & invoice tickets'
     },
     kds: {
-      title: 'Employee & Kitchen Hub (KDS)',
-      breadcrumb: 'Kitchen Pass',
-      description: 'Live ticket stream, prep timers & culinary alert chimes'
+      title: 'Kitchen Monitor',
+      breadcrumb: 'Kitchen',
+      description: 'What the kitchen is cooking, who is on duty and what they are doing'
+    },
+    team: {
+      title: 'Team & Access',
+      breadcrumb: 'Team',
+      description: 'Staff sign-ins, roles, stations and table assignments'
     },
     floor: {
       title: 'On-Field Waiter Console',
@@ -223,9 +229,9 @@ export default function AdminHeader({
       description: `High-res printable QR code stickers for all ${tableCount} tables`
     },
     employees: {
-      title: 'Employee Roster & Shifts',
-      breadcrumb: 'Staff Roster',
-      description: 'Floor team roster, table allocation matrix & service benchmarks'
+      title: 'Staff',
+      breadcrumb: 'Staff',
+      description: 'Sign-ins, kitchen access, table coverage and who is doing what'
     },
     employee: {
       title: 'Employee & Kitchen Hub',

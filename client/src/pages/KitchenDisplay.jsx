@@ -17,6 +17,10 @@ import {
   WifiOff,
   BellRing,
   Check,
+  CheckCheck,
+  Play,
+  RotateCcw,
+  Timer,
   X
 } from 'lucide-react';
 import AudioPlayer from '../components/AudioPlayer.jsx';
@@ -124,7 +128,14 @@ export default function KitchenDisplay({
   initialTab = 'all',
   initialViewMode = null,
   onOrderCountChange = null,
-  currentEmployee = null
+  currentEmployee = null,
+  // Admin monitor: watch the kitchen without action buttons
+  readOnly = false,
+  // Signed-in staff session: status changes are recorded against this account
+  staffToken = '',
+  // Admin session: status changes go through the admin mutation (shown as "Admin" on the activity feed)
+  adminToken = '',
+  stationLabel = 'Main Line • Station 01'
 }) {
   const restaurant = useRestaurant();
   // Socket Context with fallback to standalone socket instance
@@ -163,10 +174,14 @@ export default function KitchenDisplay({
   // Convex Cloud real-time orders query and status mutation
   let convexOrders = null;
   let updateConvexStatus = null;
+  let staffSetStatus = null;
+  let adminSetStatus = null;
   let convexError = null;
   try {
     convexOrders = useQuery(api.orders.getOrders, {});
     updateConvexStatus = useMutation(api.orders.updateOrderStatus);
+    staffSetStatus = useMutation(api.team.staffSetOrderStatus);
+    adminSetStatus = useMutation(api.team.adminSetOrderStatus);
   } catch (err) {
     convexError = err;
   }
@@ -570,10 +585,20 @@ export default function KitchenDisplay({
     }
 
     // Persist to Convex Cloud if available
-    if (updateConvexStatus && orderId && typeof orderId === 'string' && !orderId.startsWith('ord_')) {
+    if (orderId && typeof orderId === 'string' && !orderId.startsWith('ord_')) {
       try {
-        await updateConvexStatus({ orderId, status: nextStatus });
-      } catch (_) {}
+        if (adminToken && adminSetStatus) {
+          await adminSetStatus({ adminToken, orderId, status: nextStatus });
+        } else if (staffToken && staffSetStatus) {
+          // Recorded against the signed-in staff account (shows on the admin monitor)
+          await staffSetStatus({ staffToken, orderId, status: nextStatus });
+        } else if (updateConvexStatus) {
+          await updateConvexStatus({ orderId, status: nextStatus });
+        }
+      } catch (err) {
+        console.warn('[KDS] status update failed:', err);
+        fetchOrders();
+      }
     }
 
     // Record action in shared employee audit history
@@ -698,228 +723,264 @@ export default function KitchenDisplay({
     { key: 'completed', label: 'Served', count: completedOrders.length, icon: CheckCircle2 }
   ];
 
-  // Board columns: one per kitchen status, each with its one-tap next step
+  // Board sections: one per kitchen status, each with its one-tap next step and colour tokens
   const columns = [
-    { key: 'pending', title: 'Pending', list: pendingOrders, nextStatus: 'preparing', actionLabel: 'Start Cooking', icon: BellRing, empty: 'No new orders in the queue.' },
-    { key: 'preparing', title: 'Preparing', list: preparingOrders, nextStatus: 'ready', actionLabel: 'Mark Ready', icon: Flame, empty: 'Nothing on the grill right now.' },
-    { key: 'ready', title: 'Ready', list: readyOrders, nextStatus: 'served', actionLabel: 'Mark Served', icon: Sparkles, empty: 'No orders waiting for pickup.' },
-    { key: 'completed', title: 'Served', list: completedOrders, nextStatus: null, actionLabel: null, icon: CheckCircle2, empty: 'No served orders yet today.' }
+    {
+      key: 'pending', title: 'Pending Orders', list: pendingOrders, nextStatus: 'preparing', actionLabel: 'Start Cooking',
+      icon: BellRing, actionIcon: Play,
+      bar: 'border-t-amber-500/70', iconColor: 'text-amber-400', badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+      cardAccent: 'border-l-amber-500/80', timer: 'bg-amber-500/10 text-amber-300 border-amber-500/25',
+      btn: 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/30'
+    },
+    {
+      key: 'preparing', title: 'Preparing in Kitchen', list: preparingOrders, nextStatus: 'ready', actionLabel: 'Mark as Ready',
+      icon: Flame, actionIcon: Check,
+      bar: 'border-t-indigo-500/70', iconColor: 'text-indigo-400', badge: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+      cardAccent: 'border-l-indigo-500/80', timer: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/25',
+      btn: 'bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 border-indigo-500/35'
+    },
+    {
+      key: 'ready', title: 'Ready for Pickup', list: readyOrders, nextStatus: 'served', actionLabel: 'Complete & Serve',
+      icon: Sparkles, actionIcon: CheckCheck,
+      bar: 'border-t-emerald-500/70', iconColor: 'text-emerald-400', badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+      cardAccent: 'border-l-emerald-500/80', timer: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25',
+      btn: 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border-emerald-500/35'
+    },
+    {
+      key: 'completed', title: 'Recently Served', list: completedOrders, nextStatus: 'pending', actionLabel: 'Reopen Order',
+      icon: CheckCircle2, actionIcon: RotateCcw,
+      bar: 'border-t-slate-600', iconColor: 'text-slate-400', badge: 'bg-slate-800 text-slate-400 border-slate-700',
+      cardAccent: 'border-l-slate-600', timer: 'bg-slate-800/80 text-slate-400 border-slate-700',
+      btn: 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+    }
   ];
 
-  const visibleColumns = activeTab === 'all' ? columns : columns.filter((c) => c.key === activeTab);
-  const totalVisibleTickets = visibleColumns.reduce((sum, c) => sum + c.list.length, 0);
+  // "All Active" shows the non-empty active sections; a status tab shows just that section
+  const visibleColumns = activeTab === 'all'
+    ? columns.filter((c) => c.key !== 'completed' && c.list.length > 0)
+    : columns.filter((c) => c.key === activeTab);
 
   return (
-    <div className={`kds-root staff-root ${isEmbedded ? 'kds-root--embedded' : 'kds-root--page'} ${className}`}>
-      {/* =========================================================================
-          HEADER: brand, live connection, clock, search and controls
-          ========================================================================= */}
-      {showHeader && (
-        <header className="kds-header">
-          <div className="kds-header__row">
-            <div className="kds-brand">
-              <div className="kds-brand__mark">
-                <ChefHat className="w-6 h-6" />
+    <div className={`kds-v2 min-w-0 ${isEmbedded ? '' : 'min-h-screen p-3 sm:p-5 lg:p-6 bg-[#0B0F17]'} ${className}`} style={{ fontFamily: "'Inter', system-ui, sans-serif", color: '#F3F4F6' }}>
+      <div className="max-w-7xl mx-auto bg-[#111827]/90 border border-slate-800/80 rounded-2xl shadow-2xl overflow-hidden">
+
+        {/* HEADER: brand + live status, clock, search and controls */}
+        {showHeader && (
+          <header className="px-5 py-3.5 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <ChefHat className="w-5 h-5" />
               </div>
-              <div className="min-w-0">
-                <h1 className="kds-brand__title">Kitchen Display</h1>
-                <div className={`kds-conn is-${connectionState}`}>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base font-semibold tracking-tight text-slate-100">Kitchen Display</h1>
                   {connectionState === 'live' && (
-                    <>
-                      <span className="kds-conn__dot" />
-                      <span>Live</span>
-                    </>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Live
+                    </span>
                   )}
                   {connectionState === 'connecting' && (
-                    <>
-                      <span className="kds-conn__dot" />
-                      <span>Connecting…</span>
-                    </>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      Connecting…
+                    </span>
                   )}
                   {connectionState === 'offline' && (
-                    <>
-                      <WifiOff className="w-3.5 h-3.5" />
-                      <span>Offline</span>
-                    </>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-300 border border-rose-500/20">
+                      <WifiOff className="w-3 h-3" />
+                      Offline
+                    </span>
                   )}
                 </div>
+                <p className="text-xs text-slate-400">{readOnly ? 'Admin monitor • view only' : adminToken ? 'Admin • you can step in on any order' : stationLabel}</p>
               </div>
             </div>
 
-            <div className="kds-clock">
-              <Clock className="w-4 h-4" />
-              <span className="kds-clock__time">{currentTimeStr || '--:--:--'}</span>
-              <span className="kds-clock__date">{currentDateStr}</span>
+            <div className="flex items-center gap-2.5 bg-slate-900/90 border border-slate-800 px-3.5 py-1.5 rounded-xl">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <span className="font-mono text-sm font-semibold text-slate-100 tracking-wide">{currentTimeStr || '--:--:--'}</span>
+              <span className="text-slate-700">|</span>
+              <span className="text-xs font-medium text-slate-400">{currentDateStr}</span>
             </div>
 
-            <div className="kds-tools">
-              <div className="kds-search">
-                <Search className="w-4 h-4" />
+            <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+              <div className="relative flex-1 sm:w-60">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Table, order or dish"
+                  placeholder="Search table, order, dish..."
                   aria-label="Search tickets"
+                  className="w-full bg-slate-900/90 border border-slate-800 focus:border-indigo-500/60 rounded-xl pl-8 pr-7 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none transition"
                 />
                 {searchQuery && (
-                  <button type="button" onClick={() => setSearchQuery('')} className="kds-search__clear" aria-label="Clear search">
-                    <X className="w-4 h-4" />
+                  <button type="button" onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-200" aria-label="Clear search">
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
 
-              <button type="button" onClick={fetchOrders} className="kds-icon-btn" title="Refresh orders" aria-label="Refresh orders">
-                <RefreshCw className="w-5 h-5" />
+              <button type="button" onClick={fetchOrders} title="Refresh orders" aria-label="Refresh orders" className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition">
+                <RefreshCw className="w-3.5 h-3.5" />
               </button>
 
               {!isEmbedded && (
-                <button type="button" onClick={toggleFullscreen} className="kds-icon-btn" title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'} aria-label="Toggle fullscreen">
-                  {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                <button type="button" onClick={toggleFullscreen} title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'} aria-label="Toggle fullscreen" className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition">
+                  {isFullscreen ? <Minimize className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
                 </button>
               )}
 
               <button
                 type="button"
                 onClick={toggleMute}
-                className={`kds-sound ${isMuted ? 'is-muted' : 'is-on'}`}
                 title={isMuted ? 'Turn on audio alerts' : 'Turn off audio alerts'}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition ${
+                  isMuted
+                    ? 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 hover:bg-emerald-500/15'
+                }`}
               >
-                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                <span>{isMuted ? 'Alerts Off' : 'Alerts On'}</span>
+                {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                <span>{isMuted ? 'Muted' : 'Alerts On'}</span>
               </button>
             </div>
-          </div>
-
-          {recentAlertMessage && unackedOrderIds.size === 0 && (
-            <div className="kds-toast kds-toast--info" role="status">
-              <div className="kds-toast__msg">
-                <BellRing className="w-5 h-5" />
-                <span>{recentAlertMessage}</span>
-              </div>
-            </div>
-          )}
-
-          {unackedOrderIds.size > 0 && (
-            <div className="kds-toast" role="alert" aria-live="assertive">
-              <div className="kds-toast__msg">
-                <BellRing className="w-5 h-5" />
-                <span>
-                  {unackedOrderIds.size} new {unackedOrderIds.size === 1 ? 'order' : 'orders'} waiting. Tap Start Cooking to acknowledge.
-                </span>
-              </div>
-            </div>
-          )}
-        </header>
-      )}
-
-      {/* =========================================================================
-          MAIN: status filter tabs + board
-          ========================================================================= */}
-      <main className="kds-main">
-        {isLoading && orders.length === 0 ? (
-          <div className="kds-loading">
-            <div className="kds-loading__spinner" />
-            <h2>Loading Kitchen Display...</h2>
-            <p>Connecting to live order stream</p>
-          </div>
-        ) : (
-          <>
-            <nav className="kds-tabs" aria-label="Filter by status">
-              {TABS.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`kds-tab kds-tab--${tab.key} ${isActive ? 'is-active' : ''}`}
-                    aria-pressed={isActive}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span>{tab.label}</span>
-                    <span className="kds-tab__count">{tab.count}</span>
-                  </button>
-                );
-              })}
-
-              <div className="kds-tabs__status">
-                {searchQuery && (
-                  <button type="button" onClick={() => setSearchQuery('')} className="kds-chip">
-                    <Filter className="w-4 h-4" />
-                    <span>&quot;{searchQuery}&quot;</span>
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-                <span className="kds-live-pill">
-                  <span className="kds-conn__dot" />
-                  Live Stream
-                </span>
-              </div>
-            </nav>
-
-            {totalVisibleTickets === 0 && (
-              <div className="kds-empty">
-                <h3>{searchQuery ? 'No matching tickets' : 'All caught up'}</h3>
-                <p>{searchQuery ? `Nothing matches "${searchQuery}".` : 'No tickets need attention right now. New orders appear here instantly.'}</p>
-                {searchQuery && (
-                  <button type="button" onClick={() => setSearchQuery('')} className="kds-empty__btn">
-                    Clear Search
-                  </button>
-                )}
-              </div>
-            )}
-
-            <div className={`kds-board ${activeTab === 'all' ? 'kds-board--all' : 'kds-board--single'}`}>
-              {visibleColumns.map((col) => {
-                const Icon = col.icon;
-                const sorted = [...col.list].sort((a, b) => (getStartMs(a) ?? 0) - (getStartMs(b) ?? 0));
-                return (
-                  <section key={col.key} className={`kds-col kds-col--${col.key}`} aria-label={col.title}>
-                    <header className="kds-col__head">
-                      <Icon className="w-5 h-5" />
-                      <h2>{col.title}</h2>
-                      <span className="kds-col__count">{col.list.length}</span>
-                    </header>
-                    <div className="kds-col__list">
-                      {sorted.length === 0 ? (
-                        <p className="kds-col__empty">{col.empty}</p>
-                      ) : (
-                        sorted.map((order) => {
-                          const id = order.id || order._id || order.order_id;
-                          return (
-                            <KdsTicket
-                              key={id}
-                              order={order}
-                              tone={col.key}
-                              nextStatus={col.nextStatus}
-                              actionLabel={col.actionLabel}
-                              nowMs={nowMs}
-                              onAdvance={handleStatusChange}
-                              isUpdating={updatingOrderId === id}
-                            />
-                          );
-                        })
-                      )}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
-          </>
+          </header>
         )}
-      </main>
+
+        {showHeader && (recentAlertMessage || unackedOrderIds.size > 0) && (
+          <div
+            role={unackedOrderIds.size > 0 ? 'alert' : 'status'}
+            className={`px-5 py-2 border-b text-xs font-medium flex items-center gap-2 ${
+              unackedOrderIds.size > 0
+                ? 'bg-amber-500/10 text-amber-300 border-amber-500/20'
+                : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'
+            }`}
+          >
+            <BellRing className="w-3.5 h-3.5" />
+            <span>
+              {unackedOrderIds.size > 0
+                ? `${unackedOrderIds.size} new ${unackedOrderIds.size === 1 ? 'order' : 'orders'} waiting. Tap Start Cooking to acknowledge.`
+                : recentAlertMessage}
+            </span>
+          </div>
+        )}
+
+        {/* TABS: status filter */}
+        <div className="px-5 py-2.5 bg-slate-900/50 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto py-0.5" role="tablist" aria-label="Filter by status">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all whitespace-nowrap ${
+                    isActive
+                      ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/40 shadow-sm'
+                      : 'bg-transparent text-slate-400 border-transparent hover:bg-slate-800/60 hover:text-slate-200'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                  <span className={`px-1.5 rounded-md text-[11px] font-mono font-semibold ${isActive ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="hidden md:flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+            <span className="relative flex w-1.5 h-1.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+              <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            </span>
+            <span>Live Stream</span>
+          </div>
+        </div>
+
+        {/* BOARD: sections stacked top to bottom, cards in a responsive grid */}
+        <main className="p-5 space-y-6">
+          {isLoading && orders.length === 0 ? (
+            <div className="py-16 text-center">
+              <RefreshCw className="w-5 h-5 text-slate-500 animate-spin mx-auto" />
+              <p className="mt-3 text-sm text-slate-400">Connecting to live order stream…</p>
+            </div>
+          ) : visibleColumns.length === 0 ? (
+            <div className="py-16 text-center">
+              <p className="text-sm text-slate-400">
+                {searchQuery ? `No orders match "${searchQuery}".` : 'No active orders. New orders appear here instantly.'}
+              </p>
+              {searchQuery && (
+                <button type="button" onClick={() => setSearchQuery('')} className="mt-3 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700">
+                  Clear search
+                </button>
+              )}
+            </div>
+          ) : (
+            visibleColumns.map((col) => {
+              const Icon = col.icon;
+              const sorted = [...col.list].sort((a, b) => (getStartMs(a) ?? 0) - (getStartMs(b) ?? 0));
+              return (
+                <section key={col.key} aria-label={col.title} className={`bg-slate-900/40 border border-slate-800/80 border-t-2 ${col.bar} rounded-xl p-4`}>
+                  <div className="flex items-center justify-between mb-3.5">
+                    <div className="flex items-center gap-2">
+                      <Icon className={`w-4 h-4 ${col.iconColor}`} />
+                      <h2 className="text-sm font-semibold text-slate-200 tracking-tight">{col.title}</h2>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-medium border ${col.badge}`}>
+                      {col.list.length}
+                    </span>
+                  </div>
+
+                  {sorted.length === 0 ? (
+                    <div className="py-8 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
+                      No orders in {col.title.toLowerCase()}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                      {sorted.map((order) => {
+                        const id = order.id || order._id || order.order_id;
+                        return (
+                          <KdsTicket
+                            key={id}
+                            order={order}
+                            section={col}
+                            nowMs={nowMs}
+                            onAdvance={readOnly ? null : handleStatusChange}
+                            isUpdating={updatingOrderId === id}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              );
+            })
+          )}
+        </main>
+      </div>
     </div>
   );
 }
 
+/** "45m" under an hour, otherwise "49h 20m" */
+function formatElapsed(mins) {
+  if (mins >= 60) return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+  return `${mins}m`;
+}
+
 /**
- * KdsTicket - single order card on the board.
- * Urgency comes from elapsed time: under 10 min normal, 10-19 min warning, 20+ min critical.
- * Served tickets stay neutral. Tapping an item marks it done on the line.
+ * KdsTicket - single order card. Orders waiting 20+ minutes get a "Delayed" tag.
+ * Tapping an item marks it done on the line.
  */
-function KdsTicket({ order, tone, nextStatus, actionLabel, nowMs, onAdvance, isUpdating }) {
+function KdsTicket({ order, section, nowMs, onAdvance, isUpdating }) {
   const [checkedItems, setCheckedItems] = useState(() => new Set());
 
   const orderId = order?.id || order?._id || order?.order_id;
@@ -934,10 +995,14 @@ function KdsTicket({ order, tone, nextStatus, actionLabel, nowMs, onAdvance, isU
   const elapsedMin = startMs
     ? Math.max(0, Math.floor((nowMs - startMs) / 60000))
     : (typeof order?.timeElapsedMinutes === 'number' ? order.timeElapsedMinutes : 0);
-  const urgency = tone === 'completed' ? 'done' : elapsedMin >= 20 ? 'critical' : elapsedMin >= 10 ? 'warning' : 'normal';
-  const urgencyLabel = { done: 'Served', critical: 'Overdue', warning: 'Check soon', normal: 'On time' }[urgency];
+  const isDelayed = elapsedMin >= 20 && section.key !== 'completed';
   const placedAt = startMs
-    ? new Date(startMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    ? new Date(startMs).toLocaleString([], {
+        // Older orders still open from a previous day show their date too
+        ...(new Date(startMs).toDateString() === new Date(nowMs).toDateString() ? {} : { month: 'short', day: 'numeric' }),
+        hour: '2-digit',
+        minute: '2-digit'
+      })
     : (order?.placedTime || '');
 
   const toggleItem = (index) => {
@@ -949,73 +1014,97 @@ function KdsTicket({ order, tone, nextStatus, actionLabel, nowMs, onAdvance, isU
     });
   };
 
+  const ActionIcon = section.actionIcon;
+
   return (
-    <article className={`kds-ticket kds-ticket--${urgency}`} data-order-id={orderId} data-order-status={tone}>
-      <div className="kds-ticket__head">
-        <div className="kds-ticket__title-wrap">
-          <div className="kds-ticket__table" title={isTakeaway ? 'Takeaway' : `Table ${tableNo}`}>
-            {isTakeaway ? 'Takeaway' : `Table ${tableNo}`}
+    <article
+      className={`bg-[#161F30] border border-slate-800/90 border-l-2 ${section.cardAccent} rounded-xl p-3.5 flex flex-col justify-between shadow-md transition hover:-translate-y-0.5`}
+      data-order-id={orderId}
+      data-order-status={section.key}
+    >
+      <div>
+        <div className="flex items-start justify-between gap-2 mb-2.5">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-slate-100 truncate">{isTakeaway ? 'Takeaway' : `Table ${tableNo}`}</h3>
+              {isDelayed && (
+                <span className="px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                  Delayed
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] font-mono text-slate-400 mt-0.5 truncate">#{displayNum}{placedAt ? ` • ${placedAt}` : ''}</p>
+            {order?.handledByName && section.key !== 'pending' && (
+              <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                {section.key === 'preparing' ? 'Cooking' : section.key === 'ready' ? 'Prepared' : 'Handled'} by <span className="text-slate-200 font-medium">{order.handledByName}</span>
+              </p>
+            )}
           </div>
-          <div className="kds-ticket__meta">#{displayNum}{placedAt ? ` · ${placedAt}` : ''}</div>
+
+          <div className={`px-2 py-1 rounded-lg font-mono text-xs font-medium flex items-center gap-1 shrink-0 border ${section.timer}`} title={`${elapsedMin} minutes elapsed`}>
+            <Timer className="w-3 h-3 opacity-75" />
+            <span>{formatElapsed(elapsedMin)}</span>
+          </div>
         </div>
-        <div className="kds-ticket__timer">
-          <span className="kds-ticket__elapsed">{elapsedMin}<small>m</small></span>
-          <span className="kds-ticket__urgency">{urgencyLabel}</span>
-        </div>
+
+        {voiceNoteUrl && (
+          <div className="mb-2">
+            <AudioPlayer src={voiceNoteUrl} />
+          </div>
+        )}
+
+        {generalNote && (
+          <p className="mb-2 flex items-start gap-1.5 text-[11px] text-amber-200 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1.5">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-px" />
+            <span>{generalNote}</span>
+          </p>
+        )}
+
+        <ul className="space-y-1.5 my-3">
+          {items.map((item, index) => {
+            const name = item?.name || item?.dish_name || item?.title || 'Item';
+            const qty = item?.quantity ?? item?.qty ?? 1;
+            const note = item?.notes || item?.note || item?.special_instructions;
+            const done = checkedItems.has(index);
+            const rawPrice = item?.price ?? item?.unit_price ?? item?.amount;
+            const price = typeof rawPrice === 'number' ? rawPrice : null;
+            return (
+              <li key={index}>
+                <button
+                  type="button"
+                  onClick={() => toggleItem(index)}
+                  aria-pressed={done}
+                  className={`w-full text-left bg-slate-900/75 border border-slate-800/80 rounded-lg px-2.5 py-2 transition hover:border-slate-700 ${done ? 'opacity-50' : ''}`}
+                >
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-mono font-semibold text-amber-400 shrink-0">{qty}×</span>
+                      <span className={`font-medium text-slate-200 truncate ${done ? 'line-through' : ''}`} title={name}>{name}</span>
+                    </div>
+                    {done ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    ) : (
+                      price !== null && <span className="font-mono text-[11px] text-slate-400 shrink-0">${price.toFixed(2)}</span>
+                    )}
+                  </div>
+                  {note && <p className="text-[11px] text-slate-400 mt-1 pl-5 italic truncate">Note: {note}</p>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
-      {voiceNoteUrl && (
-        <div className="kds-ticket__voice">
-          <AudioPlayer src={voiceNoteUrl} />
-        </div>
-      )}
-
-      {generalNote && (
-        <p className="kds-ticket__note">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{generalNote}</span>
-        </p>
-      )}
-
-      <ul className="kds-ticket__items">
-        {items.map((item, index) => {
-          const name = item?.name || item?.dish_name || item?.title || 'Item';
-          const qty = item?.quantity ?? item?.qty ?? 1;
-          const note = item?.notes || item?.note || item?.special_instructions;
-          const done = checkedItems.has(index);
-          const rawPrice = item?.price ?? item?.unit_price ?? item?.amount;
-          const price = typeof rawPrice === 'number' ? rawPrice : null;
-          return (
-            <li key={index}>
-              <button
-                type="button"
-                onClick={() => toggleItem(index)}
-                className={`kds-item ${done ? 'is-done' : ''}`}
-                aria-pressed={done}
-              >
-                <span className="kds-item__qty">{qty}×</span>
-                <span className="kds-item__body">
-                  <span className="kds-item__name" title={name}>{name}</span>
-                  {item?.category && <span className="kds-item__cat">{item.category}</span>}
-                  {note && <span className="kds-item__note">{note}</span>}
-                </span>
-                {price !== null && <span className="kds-item__price">{price.toLocaleString()}</span>}
-                {done && <Check className="kds-item__check w-5 h-5" />}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-
-      {nextStatus && (
-        <button
-          type="button"
-          className="kds-ticket__action"
-          disabled={isUpdating}
-          onClick={() => onAdvance(orderId, nextStatus)}
-        >
-          {isUpdating ? 'Saving...' : actionLabel}
-        </button>
+      {onAdvance && (
+      <button
+        type="button"
+        disabled={isUpdating}
+        onClick={() => onAdvance(orderId, section.nextStatus)}
+        className={`w-full mt-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all disabled:opacity-60 ${section.btn}`}
+      >
+        <ActionIcon className="w-3.5 h-3.5" />
+        <span>{isUpdating ? 'Saving...' : section.actionLabel}</span>
+      </button>
       )}
     </article>
   );

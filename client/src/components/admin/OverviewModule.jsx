@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
-  Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
   TrendingUp,
@@ -20,7 +19,6 @@ import {
   Layers,
   Check,
   Eye,
-  AlertCircle,
   HelpCircle,
   SlidersHorizontal,
   ChevronDown,
@@ -106,7 +104,6 @@ export default function OverviewModule({
   const [endDateStr, setEndDateStr] = useState(() => formatDateToYMD(rangeEnd));
 
   // Calendar open/collapsed state (toggleable from top bar)
-  const [isCalendarOpen, setIsCalendarOpen] = useState(true);
 
   // Calendar month navigation
   const [currentCalendarDate, setCurrentCalendarDate] = useState(() => new Date());
@@ -752,236 +749,196 @@ export default function OverviewModule({
         </div>
       )}
 
-      {/* 1. Page header and toolbar: title, subtitle, date range controls */}
-      <header className="adm-card space-y-3">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <h1 className="text-xl font-semibold tracking-tight text-[var(--adm-text)]">Overview</h1>
-            <p className="adm-section-sub">
-              {dateRangeLabel} · {daysCount} {daysCount === 1 ? 'day' : 'days'}
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-            <div
-              role="group"
-              aria-label="Date presets"
-              className="flex flex-wrap gap-1 rounded-xl p-1"
-              style={{ background: 'var(--adm-surface-2)', border: '1px solid var(--adm-border)' }}
-            >
-              {[
-                { key: 'today', label: 'Today' },
-                { key: 'yesterday', label: 'Yesterday' },
-                { key: '7days', label: 'Last 7 days' },
-                { key: '30days', label: 'Last 30 days' },
-                { key: 'this_month', label: 'This month' }
-              ].map((preset) => {
-                const isActive = activePreset === preset.key;
-                return (
-                  <button
-                    key={preset.key}
-                    type="button"
-                    onClick={() => handleSelectPreset(preset.key)}
-                    aria-pressed={isActive}
-                    className={`h-8 px-3 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                      isActive
-                        ? 'bg-[var(--adm-primary)] text-[var(--adm-primary-fg)]'
-                        : 'text-[var(--adm-text-muted)] hover:text-[var(--adm-text)] hover:bg-[var(--adm-border)]'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                );
-              })}
+      {/* 1. Overview header: filters on the left, compact range calendar on the right */}
+      <header className="adm-card">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+          {/* LEFT: title, preset tabs, custom range, category and export */}
+          <div className="flex flex-col gap-4 min-w-0">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h1 className="text-xl font-semibold tracking-tight text-[var(--adm-text)]">Overview</h1>
+                <p className="adm-section-sub">
+                  {dateRangeLabel} · {daysCount} {daysCount === 1 ? 'day' : 'days'}
+                </p>
+              </div>
+              <button type="button" onClick={handleExportCSV} disabled={isExporting} className="adm-btn shrink-0">
+                <Download className="w-4 h-4" />
+                <span>{isExporting ? 'Generating...' : 'Export CSV'}</span>
+              </button>
             </div>
 
-            <form onSubmit={handleApplyInputRange} className="flex flex-wrap items-center gap-2">
-              <input
-                type="date"
-                aria-label="Start date"
-                value={startDateStr}
-                onChange={(e) => setStartDateStr(e.target.value)}
-                className="adm-input"
-                style={{ width: 'auto' }}
-              />
-              <span className="text-xs adm-muted">to</span>
-              <input
-                type="date"
-                aria-label="End date"
-                value={endDateStr}
-                onChange={(e) => setEndDateStr(e.target.value)}
-                className="adm-input"
-                style={{ width: 'auto' }}
-              />
-              <button type="submit" className="adm-btn adm-btn--primary">
-                Apply
-              </button>
-            </form>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 border-t border-[var(--adm-border)] pt-3">
-          <button
-            type="button"
-            onClick={() => setIsCalendarOpen((prev) => !prev)}
-            className="adm-btn"
-            title="Toggle calendar"
-          >
-            <CalendarIcon className="w-4 h-4" />
-            <span>{isCalendarOpen ? 'Hide calendar' : 'Show calendar'}</span>
-          </button>
-          <button type="button" onClick={handleExportCSV} disabled={isExporting} className="adm-btn">
-            <Download className="w-4 h-4" />
-            <span>{isExporting ? 'Generating...' : 'Export CSV'}</span>
-          </button>
-          <select
-            aria-label="Category filter"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="adm-input"
-            style={{ width: 'auto', minWidth: 180 }}
-          >
-            <option value="all">All categories</option>
-            <option value="mains">Mains only</option>
-            <option value="beverages">Beverages only</option>
-            <option value="appetizers">Appetizers only</option>
-            <option value="desserts">Desserts only</option>
-          </select>
-
-          {selectingState === 'picking_end' && (
-            <span className="adm-badge adm-badge--warning gap-2">
-              <AlertCircle className="w-3.5 h-3.5" />
-              Pick end date
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectingState('idle');
-                  setHoverDate(null);
-                }}
-                className="underline cursor-pointer"
+            <div>
+              <span className="block text-[11px] font-bold uppercase tracking-wider text-[var(--adm-text-muted)] mb-2">Period</span>
+              <div
+                role="tablist"
+                aria-label="Date presets"
+                className="grid grid-cols-2 sm:grid-cols-5 gap-1 rounded-xl p-1"
+                style={{ background: 'var(--adm-surface-2)', border: '1px solid var(--adm-border)' }}
               >
-                Cancel
-              </button>
-            </span>
-          )}
-        </div>
-      </header>
-
-      {isCalendarOpen && (
-        <div className="adm-card" onMouseLeave={() => { if (selectingState === 'picking_end') setHoverDate(null); }}>
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="adm-section-title flex items-center gap-2">
-              <CalendarIcon className="w-4 h-4 text-[var(--adm-primary)]" />
-              {currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-            </h2>
-            <div className="flex items-center gap-1">
-              <button type="button" onClick={handlePrevMonth} aria-label="Previous month" className="adm-btn adm-btn--ghost h-8 w-8 p-0">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button type="button" onClick={handleNextMonth} aria-label="Next month" className="adm-btn adm-btn--ghost h-8 w-8 p-0">
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-              {/* Selection Guidance Notice */}
-              <div className="mb-3 px-3 py-2 rounded-xl bg-[var(--adm-surface-2)] border border-[var(--adm-border)] text-center">
-                {selectingState === 'picking_end' ? (
-                  <p className="text-[11px] font-bold text-[var(--adm-warning)] flex items-center justify-center gap-1.5 animate-pulse">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--adm-warning)] animate-ping" />
-                    <span>Start: <strong>{rangeStart ? rangeStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</strong>. Click an end date!</span>
-                  </p>
-                ) : (
-                  <p className="text-[11px] font-medium text-[var(--adm-text-muted)]">
-                    Click a date for start, then click second date for end range
-                  </p>
-                )}
-              </div>
-
-              {/* Days of Week Header */}
-              <div className="grid grid-cols-7 gap-1 text-center mb-1">
-                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d, i) => (
-                  <div key={i} className="text-[11px] font-bold text-[var(--adm-text-muted)] py-1">
-                    {d}
-                  </div>
-                ))}
-              </div>
-
-              {/* Calendar Grid */}
-              <div className="grid grid-cols-7 gap-1 text-center">
-                {calendarDays.map((cell, idx) => {
-                  const isStart = isDateRangeStart(cell.date);
-                  const isEnd = isDateRangeEnd(cell.date);
-                  const isBoundary = isStart || isEnd;
-                  const isIntermediate = isDateIntermediate(cell.date);
-                  const isToday = cell.date.toDateString() === new Date().toDateString();
-
-                  let cellStyle = 'h-8.5 w-full text-xs font-semibold flex items-center justify-center transition-all cursor-pointer relative ';
-                  if (isBoundary) {
-                    cellStyle += 'bg-[var(--adm-primary)] text-[var(--adm-primary-fg)] font-bold shadow-md shadow-emerald-600/40 z-10 ';
-                    if (isStart && isEnd) {
-                      cellStyle += 'rounded-xl ';
-                    } else if (isStart) {
-                      cellStyle += 'rounded-l-xl rounded-r-none ';
-                    } else if (isEnd) {
-                      cellStyle += 'rounded-r-xl rounded-l-none ';
-                    }
-                  } else if (isIntermediate) {
-                    cellStyle += 'bg-[color-mix(in_srgb,var(--adm-success)_20%,transparent)] text-[var(--adm-success)] border-y border-[color-mix(in_srgb,var(--adm-success)_40%,transparent)] rounded-none ';
-                  } else if (cell.isCurrentMonth) {
-                    cellStyle += 'text-[var(--adm-text)] hover:bg-[var(--adm-surface-2)] rounded-xl ';
-                  } else {
-                    cellStyle += 'text-[var(--adm-text-muted)] hover:bg-[var(--adm-surface-2)] rounded-xl ';
-                  }
-
+                {[
+                  { key: 'today', label: 'Today' },
+                  { key: 'yesterday', label: 'Yesterday' },
+                  { key: '7days', label: 'Last 7 days' },
+                  { key: '30days', label: 'Last 30 days' },
+                  { key: 'this_month', label: 'This month' }
+                ].map((preset) => {
+                  const isActive = activePreset === preset.key;
                   return (
                     <button
-                      key={idx}
+                      key={preset.key}
                       type="button"
-                      onClick={() => handleDayClick(cell.date)}
-                      onMouseEnter={() => {
-                        if (selectingState === 'picking_end') {
-                          setHoverDate(cell.date);
-                        }
-                      }}
-                      className={cellStyle}
-                      title={cell.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      role="tab"
+                      onClick={() => handleSelectPreset(preset.key)}
+                      aria-selected={isActive}
+                      className={`h-9 px-3 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                        isActive
+                          ? 'bg-[var(--adm-primary)] text-[var(--adm-primary-fg)] shadow-sm'
+                          : 'text-[var(--adm-text-muted)] hover:text-[var(--adm-text)] hover:bg-[var(--adm-border)]'
+                      }`}
                     >
-                      <span>{cell.dayNumber}</span>
-                      {isToday && !isBoundary && !isIntermediate && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--adm-success)] absolute bottom-1" />
-                      )}
+                      {preset.label}
                     </button>
                   );
                 })}
               </div>
+            </div>
 
-              {/* Calendar Footer */}
-              <div className="mt-4 pt-3 border-t border-[var(--adm-border)] flex items-center justify-between text-[11px] text-[var(--adm-text-muted)]">
-                <span>{selectingState === 'picking_end' ? 'Picking Range...' : 'Range active'}</span>
-                <div className="flex items-center gap-3">
-                  {selectingState === 'picking_end' && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <form onSubmit={handleApplyInputRange} className="min-w-0">
+                <span className="block text-[11px] font-bold uppercase tracking-wider text-[var(--adm-text-muted)] mb-2">Custom range</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    aria-label="Start date"
+                    value={startDateStr}
+                    onChange={(e) => setStartDateStr(e.target.value)}
+                    className="adm-input min-w-0 flex-1"
+                  />
+                  <span className="text-xs adm-muted">to</span>
+                  <input
+                    type="date"
+                    aria-label="End date"
+                    value={endDateStr}
+                    onChange={(e) => setEndDateStr(e.target.value)}
+                    className="adm-input min-w-0 flex-1"
+                  />
+                  <button type="submit" className="adm-btn adm-btn--primary shrink-0">
+                    Apply
+                  </button>
+                </div>
+              </form>
+
+              <div className="min-w-0">
+                <span className="block text-[11px] font-bold uppercase tracking-wider text-[var(--adm-text-muted)] mb-2">Category</span>
+                <select
+                  aria-label="Category filter"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="adm-input w-full"
+                >
+                  <option value="all">All categories</option>
+                  <option value="mains">Mains only</option>
+                  <option value="beverages">Beverages only</option>
+                  <option value="appetizers">Appetizers only</option>
+                  <option value="desserts">Desserts only</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: compact calendar, click a start date then an end date */}
+          <div
+            className="rounded-xl p-3 lg:border-l-0"
+            style={{ background: 'var(--adm-surface-2)', border: '1px solid var(--adm-border)' }}
+            onMouseLeave={() => { if (selectingState === 'picking_end') setHoverDate(null); }}
+          >
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <button type="button" onClick={handlePrevMonth} aria-label="Previous month" className="adm-btn adm-btn--ghost h-8 w-8 p-0">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <h2 className="text-sm font-semibold text-[var(--adm-text)]">
+                {currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </h2>
+              <button type="button" onClick={handleNextMonth} aria-label="Next month" className="adm-btn adm-btn--ghost h-8 w-8 p-0">
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-7 text-center mb-1">
+              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d, i) => (
+                <div key={i} className="text-[10px] font-bold uppercase text-[var(--adm-text-muted)] py-1">
+                  {d}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-y-1 text-center">
+              {calendarDays.map((cell, idx) => {
+                const isStart = isDateRangeStart(cell.date);
+                const isEnd = isDateRangeEnd(cell.date);
+                const isBoundary = isStart || isEnd;
+                const isIntermediate = isDateIntermediate(cell.date);
+                const isToday = cell.date.toDateString() === new Date().toDateString();
+
+                // Range band behind the day; boundaries get a solid circle on top
+                let band = '';
+                if (isIntermediate) band = 'bg-[color-mix(in_srgb,var(--adm-primary)_18%,transparent)]';
+                else if (isStart && !isEnd) band = 'bg-[linear-gradient(to_right,transparent_50%,color-mix(in_srgb,var(--adm-primary)_18%,transparent)_50%)]';
+                else if (isEnd && !isStart) band = 'bg-[linear-gradient(to_left,transparent_50%,color-mix(in_srgb,var(--adm-primary)_18%,transparent)_50%)]';
+
+                let dot = 'w-8 h-8 mx-auto rounded-full flex items-center justify-center text-xs font-semibold transition relative ';
+                if (isBoundary) dot += 'bg-[var(--adm-primary)] text-[var(--adm-primary-fg)] font-bold';
+                else if (isIntermediate) dot += 'text-[var(--adm-text)]';
+                else if (cell.isCurrentMonth) dot += 'text-[var(--adm-text)] hover:bg-[var(--adm-border)]';
+                else dot += 'text-[var(--adm-text-muted)] opacity-50 hover:bg-[var(--adm-border)]';
+
+                return (
+                  <div key={idx} className={band}>
                     <button
                       type="button"
-                      onClick={() => {
-                        setSelectingState('idle');
-                        setHoverDate(null);
-                      }}
-                      className="text-[var(--adm-warning)] hover:text-[var(--adm-warning)] font-bold hover:underline cursor-pointer"
+                      onClick={() => handleDayClick(cell.date)}
+                      onMouseEnter={() => { if (selectingState === 'picking_end') setHoverDate(cell.date); }}
+                      className={`${dot} cursor-pointer`}
+                      title={cell.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     >
-                      Cancel
+                      {cell.dayNumber}
+                      {isToday && !isBoundary && (
+                        <span className="w-1 h-1 rounded-full bg-[var(--adm-primary)] absolute bottom-1" />
+                      )}
                     </button>
-                  )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-3 pt-2 border-t border-[var(--adm-border)] flex items-center justify-between text-[11px]">
+              {selectingState === 'picking_end' ? (
+                <>
+                  <span className="font-semibold text-[var(--adm-warning)]">Pick an end date</span>
+                  <button
+                    type="button"
+                    onClick={() => { setSelectingState('idle'); setHoverDate(null); }}
+                    className="font-bold text-[var(--adm-warning)] hover:underline cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="text-[var(--adm-text-muted)]">Tap start, then end date</span>
                   <button
                     type="button"
                     onClick={() => handleSelectPreset('today')}
-                    className="text-[var(--adm-success)] font-bold hover:underline cursor-pointer"
+                    className="font-bold text-[var(--adm-primary)] hover:underline cursor-pointer"
                   >
-                    Reset to Today
+                    Today
                   </button>
-                </div>
-              </div> />
+                </>
+              )}
+            </div>
+          </div>
         </div>
-      )}
+      </header>
 
       {/* 2. KPI row */}
       <section aria-label="Key metrics" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">

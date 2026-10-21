@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar';
 import CategoryBar from '../components/CategoryBar';
 import CartDrawer from '../components/CartDrawer';
 import FoodDetailModal from '../components/FoodDetailModal';
+import GuestChat from '../components/GuestChat';
 import MenuItemCard from '../components/MenuItemCard';
 import RiverBackground from '../components/RiverBackground';
 import '../styles/customer-hero.css';
@@ -2079,6 +2080,9 @@ export default function CustomerMenu({
           </div>
         </aside>
       )}
+
+      {/* Guest chat with the restaurant (table staff + manager) */}
+      <GuestChat tableNumber={tableNumber} raised={cartSummary.totalCount > 0} hidden={isCartOpen || !!selectedDishModal} />
 
       {/* Cart & Voice Customization Drawer */}
       <CartDrawer
