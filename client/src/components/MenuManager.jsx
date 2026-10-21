@@ -454,7 +454,7 @@ export default function MenuManager({ className = '' }) {
     });
     if (!res.ok) throw new Error('Upload failed. Please try again.');
     const { storageId } = await res.json();
-    return await convex.mutation(api.files.getFileUrl, { storageId });
+    return await convex.action(api.media.mirrorToTelegram, { storageId, kind: file.type.startsWith('video/') ? 'video' : 'photo' });
   };
 
   // Upload Dish Photo

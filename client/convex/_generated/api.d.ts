@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as corrections from "../corrections.js";
 import type * as files from "../files.js";
+import type * as media from "../media.js";
 import type * as menu from "../menu.js";
 import type * as orders from "../orders.js";
 import type * as reviews from "../reviews.js";
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   corrections: typeof corrections;
   files: typeof files;
+  media: typeof media;
   menu: typeof menu;
   orders: typeof orders;
   reviews: typeof reviews;
