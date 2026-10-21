@@ -123,13 +123,10 @@ export default defineConfig({
             if (id.includes('convex')) {
               return 'vendor-convex';
             }
-            if (id.includes('jspdf') || id.includes('fflate')) {
-              return 'vendor-pdf';
-            }
-            if (id.includes('qrcode') || id.includes('idb')) {
-              return 'vendor-utils';
-            }
-            return 'vendor-common';
+            // Everything else: let Rollup split it, so libraries used only by lazy
+            // screens (jsPDF for QR sheets, admin-only packages) stay out of the
+            // customer's first load.
+            return undefined;
           }
         },
       },

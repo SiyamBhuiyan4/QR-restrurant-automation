@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { startVisibleVideos } from '../utils/visibleVideos';
+
+// Dish videos play only while on screen (see utils/visibleVideos.js)
+startVisibleVideos();
 import { 
   Plus, 
   Minus, 
@@ -398,16 +402,11 @@ export default function MenuItemCard({
                     ref={showcaseVideoRef}
                     src={dishVideo}
                     poster={safeDishImage}
-                    autoPlay
+                    data-play-when-visible
                     loop
                     muted={isVideoMuted}
                     playsInline
-                    preload="auto"
-                    onLoadedMetadata={(e) => {
-                      if (e.currentTarget.paused) {
-                        e.currentTarget.play().catch(() => {});
-                      }
-                    }}
+                    preload="none"
                     onError={() => setVideoError(true)}
                     className="menu-show__video"
                   />
@@ -659,16 +658,11 @@ export default function MenuItemCard({
               <video
                 src={dishVideo}
                 poster={safeDishImage}
-                autoPlay
+                data-play-when-visible
                 loop
                 muted
                 playsInline
-                preload="auto"
-                onLoadedMetadata={(e) => {
-                  if (e.currentTarget.paused) {
-                    e.currentTarget.play().catch(() => {});
-                  }
-                }}
+                preload="none"
                 onError={() => setVideoError(true)}
                 className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               />
@@ -865,16 +859,11 @@ export default function MenuItemCard({
                 <video
                   src={dishVideo}
                   poster={safeDishImage}
-                  autoPlay
+                  data-play-when-visible
                   loop
                   muted
                   playsInline
-                  preload="auto"
-                  onLoadedMetadata={(e) => {
-                    if (e.currentTarget.paused) {
-                      e.currentTarget.play().catch(() => {});
-                    }
-                  }}
+                  preload="none"
                   onError={() => setVideoError(true)}
                   className="plate-card__img object-cover w-full h-full"
                 />
@@ -1047,16 +1036,11 @@ export default function MenuItemCard({
                 <video
                   src={dishVideo}
                   poster={safeDishImage}
-                  autoPlay
+                  data-play-when-visible
                   loop
                   muted
                   playsInline
-                  preload="auto"
-                  onLoadedMetadata={(e) => {
-                    if (e.currentTarget.paused) {
-                      e.currentTarget.play().catch(() => {});
-                    }
-                  }}
+                  preload="none"
                   onError={() => setVideoError(true)}
                   className="w-full h-full object-cover rounded-full"
                 />

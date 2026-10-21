@@ -1149,7 +1149,8 @@ void main(){
   // init / resize / input / loop
   // =====================================================================
   function init() {
-    Q = Math.min(window.devicePixelRatio || 1, CONFIG.QUALITY);
+    // Phones: render at 1x (the canvas is a soft background, extra pixels only cost frames)
+    Q = Math.min(window.devicePixelRatio || 1, window.innerWidth < 768 ? 1 : CONFIG.QUALITY);
     W = window.innerWidth; H = window.innerHeight;
     PW = Math.max(1, Math.round(W * Q)); PH = Math.max(1, Math.round(H * Q));
     for (const c of [bed, grassC, fishC, crabC, scene]) { c.width = PW; c.height = PH; }
@@ -1187,7 +1188,15 @@ void main(){
   document.addEventListener('mouseout', e => { if (!e.relatedTarget) { mouse.x = mouse.y = -1e5; } });
 
   let rt = 0;
-  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(init, 150); });
+  // Phones fire resize when the address bar shows/hides during scroll; only rebuild the
+  // scene when the width changes or the height changes a lot (rotation, real resize).
+  let lastW = window.innerWidth, lastH = window.innerHeight;
+  window.addEventListener('resize', () => {
+    const w = window.innerWidth, h = window.innerHeight;
+    if (w === lastW && Math.abs(h - lastH) < 160) return;
+    lastW = w; lastH = h;
+    clearTimeout(rt); rt = setTimeout(init, 150);
+  });
 
   init();
   if (!setupGL()) {
@@ -1200,8 +1209,24 @@ void main(){
     window.addEventListener('resize', () => setTimeout(() => { c2.width = PW; c2.height = PH; }, 200));
   }
 
+  // Smoothness: draw at most ~30 fps, pause while the page is scrolling (the menu's
+  // blurred cards would otherwise re-blur every frame) and while the tab is hidden.
+  const FRAME_MS = 1000 / 30;
+  let scrolling = false, scrollTimer = 0, lastDraw = 0;
+  window.addEventListener('scroll', () => {
+    scrolling = true;
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => { scrolling = false; }, 180);
+  }, { passive: true, capture: true });
+
   let nextAuto = 1.5, last = performance.now();
   function frame(now) {
+    if (scrolling || document.hidden || now - lastDraw < FRAME_MS) {
+      if (scrolling || document.hidden) last = now; // don't jump ahead when resuming
+      requestAnimationFrame(frame);
+      return;
+    }
+    lastDraw = now;
     const dt = Math.min(0.05, (now - last) / 1000) * MOTION;
     last = now;
     T += dt;

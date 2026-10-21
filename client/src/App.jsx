@@ -1,27 +1,17 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
 import { NetworkProvider } from './context/NetworkContext';
 import { SocketProvider } from './context/SocketContext';
 import { RestaurantProvider } from './context/RestaurantContext';
 import { CartProvider } from './context/CartContext';
 
-// Views - Directly imported for instant, offline-first reliability (avoids dynamic import hangs & Suspense freezes)
-import CustomerMenu from './pages/CustomerMenu';
-import EmployeeView from './pages/EmployeeView';
-import WaiterPanel from './pages/WaiterPanel';
-import AdminDashboard from './pages/AdminDashboard';
-import QRBatchGenerator from './pages/QRBatchGenerator';
+// Views are loaded per role: each deployment (customer, staff, admin) only downloads its
+// own screens, so guests don't load the admin panel or the PDF library. The PWA service
+// worker precaches every chunk, so these still open offline.
+const CustomerMenu = lazy(() => import('./pages/CustomerMenu'));
+const EmployeeView = lazy(() => import('./pages/EmployeeView'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const QRBatchGenerator = lazy(() => import('./pages/QRBatchGenerator'));
 
-// Icons
-import { 
-  UtensilsCrossed, 
-  ChefHat, 
-  ConciergeBell, 
-  ShieldCheck, 
-  ChevronUp, 
-  ChevronDown, 
-  Compass,
-  X
-} from 'lucide-react';
 
 const APP_ROLE = import.meta.env?.VITE_APP_ROLE || 'all';
 const ROLE_VIEW = { admin: 'admin', employee: 'employee', waiter: 'waiter', customer: 'customer' };
@@ -105,7 +95,6 @@ function AppRouter() {
     return '/';
   });
 
-  const [isDockOpen, setIsDockOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Hide the role dock while any overlay (food detail, cart drawer, table/success modal)
@@ -134,18 +123,12 @@ function AppRouter() {
       }
     };
 
-    const handleToggleDock = () => {
-      setIsDockOpen(prev => !prev);
-    };
-
     window.addEventListener('popstate', handlePopState);
     window.addEventListener('smartdine:navigate', handleCustomNavigate);
-    window.addEventListener('smartdine:toggle-role-dock', handleToggleDock);
 
     return () => {
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('smartdine:navigate', handleCustomNavigate);
-      window.removeEventListener('smartdine:toggle-role-dock', handleToggleDock);
     };
   }, []);
 
@@ -214,7 +197,8 @@ function AppRouter() {
       case 'employee':
         return <EmployeeView />;
       case 'waiter':
-        return <WaiterPanel />;
+        // Waiters and kitchen staff share one Staff app (the old waiter URL signs in here)
+        return <EmployeeView />;
       case 'admin':
         return <AdminDashboard />;
       case 'qr':
@@ -230,14 +214,6 @@ function AppRouter() {
         return <CustomerMenu />;
     }
   };
-
-  // 4 Primary Application Views in Quick Role Switcher
-  const navItems = [
-    { id: 'customer', label: 'Customer View', path: '/?table=1', icon: UtensilsCrossed, badge: 'Diner' },
-    { id: 'employee', label: 'Employee View (Kitchen & Staff)', path: '/employee', icon: ChefHat, badge: 'Staff' },
-    { id: 'waiter', label: 'On-Field / Waiter View', path: '/waiter', icon: ConciergeBell, badge: 'Floor' },
-    { id: 'admin', label: 'Admin Portal', path: '/admin', icon: ShieldCheck, badge: 'Manager' },
-  ];
 
   return (
     <div
@@ -259,84 +235,11 @@ function AppRouter() {
         className="flex-1"
         style={activeView === 'admin' ? { backgroundColor: '#0b0f19' } : undefined}
       >
-        {renderView()}
+        <Suspense fallback={<div className="min-h-screen" style={{ background: '#0b0f19' }} aria-busy="true" />}>
+          {renderView()}
+        </Suspense>
       </div>
 
-      {/* QUICK ROLE-SWITCHING FLOATING DOCK (Hidden on Waiter Mobile View) */}
-      {(activeView === 'admin' || activeView === 'employee') && (
-        <div
-          id="smartdine-global-role-switcher"
-          className={`no-print fixed bottom-6 right-6 z-50 ${isModalOpen ? 'hidden' : 'flex'} flex-col items-end pointer-events-none`}
-        >
-          {/* Expanded Navigation Drawer */}
-          {isDockOpen && (
-            <div className="mb-2 bg-[#131926]/95 backdrop-blur-md rounded-2xl p-3 shadow-2xl border border-[#2A384C] w-64 pointer-events-auto transform transition-all animate-scaleUp">
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#1E293B]">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#F59E0B]">
-                  <Compass className="w-3.5 h-3.5 text-[#F59E0B]" />
-                  <span>Role Switcher</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsDockOpen(false)}
-                  className="text-slate-400 hover:text-white p-1 rounded-lg"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="space-y-1">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeView === item.id;
-
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => {
-                        navigate(item.path);
-                        setIsDockOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer border ${
-                        isActive
-                          ? 'bg-[#1E293B] text-white border-[#F59E0B]/60 shadow-sm'
-                          : 'bg-[#0B0F19]/50 hover:bg-[#1E293B]/60 text-slate-300 border-[#1E293B]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#F59E0B]' : 'text-slate-400'}`} />
-                        <span>{item.label}</span>
-                      </div>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase ${
-                        isActive ? 'bg-[#F59E0B]/20 text-[#F59E0B]' : 'bg-[#0B0F19] text-slate-400'
-                      }`}>
-                        {item.badge}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Floating Toggle Pill: Outline "🧭 Switch Role ⌃" Button */}
-          <button
-            type="button"
-            onClick={() => setIsDockOpen(prev => !prev)}
-            className="pointer-events-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#131926]/95 hover:bg-[#1E293B] text-slate-200 shadow-2xl backdrop-blur-md border border-[#2A384C] hover:border-[#F59E0B]/60 text-xs font-semibold tracking-wide transition-all active:scale-95 cursor-pointer"
-            title="Quick switch between Customer, Employee, Waiter, and Admin views"
-          >
-            <Compass className="w-4 h-4 text-[#F59E0B] animate-spin-slow" />
-            <span className="hidden sm:inline text-slate-200">Switch Role</span>
-            {isDockOpen ? (
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            ) : (
-              <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
-            )}
-          </button>
-        </div>
-      )}
 
     </div>
   );
