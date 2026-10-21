@@ -1,0 +1,104 @@
+/* Village background behind the customer menu (see VillageBackground.jsx).
+   Only transform/opacity animate; everything else is drawn once. */
+
+.vb-root {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+  background: #081d29;
+  overflow: hidden;
+  contain: strict;
+}
+.vb-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Wind: everything sways on the same slow rhythm, offset by delays */
+.vb-sway {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: vb-wind 6s ease-in-out infinite;
+}
+.vb-sway--kash { animation-name: vb-wind-kash; animation-duration: 5.2s; }
+.vb-sway--palm { animation-name: vb-wind-palm; animation-duration: 7s; }
+.vb-sway--tree { animation-name: vb-wind-tree; animation-duration: 8s; }
+.vb-sway--grass { animation-duration: 3.6s; }
+.vb-sway--flowers { animation-name: vb-wind-flower; animation-duration: 4.4s; }
+
+@keyframes vb-wind {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(3deg); }
+}
+@keyframes vb-wind-kash {
+  0%, 100% { transform: rotate(-3deg) skewX(-2deg); }
+  45% { transform: rotate(6deg) skewX(4deg); }
+  70% { transform: rotate(2deg) skewX(1deg); }
+}
+@keyframes vb-wind-palm {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(3.5deg); }
+}
+@keyframes vb-wind-tree {
+  0%, 100% { transform: rotate(-1deg) scale(1); }
+  50% { transform: rotate(1.4deg) scale(1.01); }
+}
+@keyframes vb-wind-flower {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(4deg); }
+}
+
+/* Cow: head down grazing, lifts to chew now and then; tail flicks */
+.vb-graze {
+  transform-box: fill-box;
+  animation: vb-graze 9s ease-in-out infinite;
+}
+@keyframes vb-graze {
+  0%, 38% { transform: rotate(0deg); }
+  42% { transform: rotate(3deg); }
+  46%, 60% { transform: rotate(24deg); }
+  64%, 100% { transform: rotate(0deg); }
+}
+.vb-tail {
+  transform-box: fill-box;
+  animation: vb-tail 3.2s ease-in-out infinite;
+}
+@keyframes vb-tail {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  70% { transform: rotate(22deg); }
+  80% { transform: rotate(-10deg); }
+  90% { transform: rotate(14deg); }
+}
+
+/* Kash seeds float up and drift left with the wind, fading in and out */
+.vb-seed {
+  animation-name: vb-seed;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  opacity: 0;
+}
+@keyframes vb-seed {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  8% { opacity: 0.9; }
+  30% { transform: translate(calc(-220px * var(--vb-dist, 1)), -120px) rotate(60deg); }
+  55% { transform: translate(calc(-420px * var(--vb-dist, 1)), -190px) rotate(140deg); }
+  80% { transform: translate(calc(-640px * var(--vb-dist, 1)), -300px) rotate(220deg); opacity: 0.8; }
+  100% { transform: translate(calc(-860px * var(--vb-dist, 1)), -360px) rotate(300deg); opacity: 0; }
+}
+
+/* Birds drift slowly across */
+.vb-birds { animation: vb-birds 60s linear infinite; }
+@keyframes vb-birds {
+  0% { transform: translateX(700px); }
+  100% { transform: translateX(-900px); }
+}
+
+/* Paused while scrolling, and for reduced motion */
+.vb-root.is-still *,
+.vb-root.is-still { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) {
+  .vb-root * { animation: none !important; }
+  .vb-seed { opacity: 0.6; }
+}

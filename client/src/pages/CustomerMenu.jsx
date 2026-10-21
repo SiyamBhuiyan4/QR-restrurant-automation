@@ -7,6 +7,7 @@ import CategoryBar from '../components/CategoryBar';
 import CartDrawer from '../components/CartDrawer';
 import FoodDetailModal from '../components/FoodDetailModal';
 import GuestChat from '../components/GuestChat';
+import VillageBackground from '../components/VillageBackground';
 import MenuItemCard from '../components/MenuItemCard';
 import '../styles/customer-hero.css';
 import '../styles/customer-menu-sections.css';
@@ -1600,12 +1601,8 @@ export default function CustomerMenu({
 
   return (
     <div className="min-h-screen bg-transparent text-slate-100 pb-32 selection:bg-[#0284c7] selection:text-white relative">
-      {/* Static background (no animation; keeps the menu light on phones) */}
-      <div
-        aria-hidden="true"
-        className="fixed inset-0 -z-10 pointer-events-none"
-        style={{ background: 'linear-gradient(180deg, #0b3a4f 0%, #0a2f40 45%, #08222f 100%)' }}
-      />
+      {/* Village at dusk: trees, grazing cow, kash flowers in the wind (light SVG + CSS) */}
+      <VillageBackground />
       
       {/* 1. Header Navigation */}
       <Navbar
