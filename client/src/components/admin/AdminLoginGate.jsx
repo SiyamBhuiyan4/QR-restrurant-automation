@@ -15,7 +15,7 @@ import { verifyAdminPin } from '../../utils/adminAuth';
 
 /**
  * Master Admin Access Key
- * Checked on the server (POST /api/auth/admin-pin).
+ * Checked on the server (Convex api.auth.verifyAdminPin).
  */
 const PIN_LENGTH = 6;
 

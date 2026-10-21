@@ -1,22 +1,11 @@
-import { resolveServerUrl } from '../context/SocketContext';
+import { checkAdminPinInConvex } from './convexServices';
 
 /**
- * Admin PIN verification. The master PIN lives only on the server.
- * If the server cannot be reached, verification fails closed (returns false).
+ * Admin PIN verification. The master PIN lives only in the Convex backend
+ * (api.auth.verifyAdminPin). If Convex cannot be reached, verification fails closed (returns false).
  */
 export async function verifyAdminPin(pin) {
   const value = String(pin ?? '').trim();
   if (!value) return false;
-  try {
-    const res = await fetch(`${resolveServerUrl()}/api/auth/admin-pin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin: value })
-    });
-    if (!res.ok && res.status !== 429) return false;
-    const data = await res.json();
-    return data?.ok === true;
-  } catch {
-    return false;
-  }
+  return checkAdminPinInConvex(value);
 }

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Printer, X, CheckCircle2 } from 'lucide-react';
 import { resolveServerUrl } from '../../context/SocketContext';
+import { createSettlementInConvex } from '../../utils/convexServices';
 import '../../styles/receipt.css';
 
 /**
@@ -146,11 +147,7 @@ export async function settleTableOrders({ bill, paymentMethod, orders }) {
 
   const base = resolveServerUrl();
   try {
-    await fetch(`${base}/api/settlements`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(record)
-    });
+    await createSettlementInConvex(record);
   } catch (_) { /* offline: local ledger already holds the record */ }
 
   // Best-effort: use the existing order status route for orders that exist on the server

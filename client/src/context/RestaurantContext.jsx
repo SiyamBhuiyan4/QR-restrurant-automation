@@ -8,22 +8,33 @@ import {
   mockTables as defaultMockTables,
   mockEmployees as defaultMockEmployees
 } from '../data/adminMockData';
-import { useSocket, useSocketListener, resolveServerUrl } from './SocketContext';
+import { useSocket, useSocketListener } from './SocketContext';
 import { verifyAdminPin } from '../utils/adminAuth';
+import { useQuery } from 'convex/react';
+import { api } from '../convexApi';
+import {
+  fetchStaffMessagesFor,
+  sendStaffMessageToConvex,
+  createCorrectionInConvex,
+  patchCorrectionStatusInConvex
+} from '../utils/convexServices';
 
 const RestaurantContext = createContext(null);
 
 // ---------------------------------------------------------------------------
 // Server sync helpers for order corrections (localStorage stays the offline fallback)
 // ---------------------------------------------------------------------------
-const sendCorrectionRequest = (method, path, body) => {
+/** Fire-and-forget write to Convex; the localStorage copy remains if it fails. */
+const sendCorrectionCreate = (body) => {
   try {
-    fetch(`${resolveServerUrl()}${path}`, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    }).catch(() => {});
-  } catch (_) { /* offline or fetch unavailable: localStorage copy remains */ }
+    createCorrectionInConvex(body).catch(() => {});
+  } catch (_) { /* offline: localStorage copy remains */ }
+};
+
+const sendCorrectionPatch = (id, fields) => {
+  try {
+    patchCorrectionStatusInConvex({ id, ...fields }).catch(() => {});
+  } catch (_) { /* offline: localStorage copy remains */ }
 };
 
 /** Converts server correction rows (newest first) into the local snapshot shape. */
@@ -1701,7 +1712,7 @@ export function RestaurantProvider({ children }) {
   // while this device was closed still appear. Filters elsewhere match on id,
   // numericId or username, so query each identifier and merge deduped by id.
   useEffect(() => {
-    if (typeof localStorage === 'undefined' || typeof fetch === 'undefined') return;
+    if (typeof localStorage === 'undefined') return;
     let ids = [];
     try {
       const raw = localStorage.getItem('smartdine_logged_in_employee')
@@ -1720,9 +1731,9 @@ export function RestaurantProvider({ children }) {
 
     let cancelled = false;
     Promise.all(ids.map(id =>
-      fetch(`${resolveServerUrl()}/api/staff/messages?recipient=${encodeURIComponent(id)}`)
-        .then(res => (res.ok ? res.json() : null))
-        .then(json => (json?.success && Array.isArray(json.data) ? json.data : []))
+      Promise.resolve()
+        .then(() => fetchStaffMessagesFor(id))
+        .then(data => (Array.isArray(data) ? data : []))
         .catch(() => [])
     )).then(results => {
       if (cancelled) return;
@@ -2073,31 +2084,14 @@ export function RestaurantProvider({ children }) {
     });
   }, []);
 
-  const refreshServerCorrections = useCallback(async () => {
-    if (typeof fetch === 'undefined') return;
-    try {
-      const res = await fetch(`${resolveServerUrl()}/api/corrections`);
-      if (!res.ok) return;
-      const json = await res.json();
-      if (json?.success && Array.isArray(json.data)) {
-        applyServerCorrections(correctionRowsToSnapshot(json.data));
-      }
-    } catch (_) { /* server unreachable: keep local copy */ }
-  }, [applyServerCorrections]);
+  // Live corrections from Convex (every device sees changes). Undefined while loading
+  // or when Convex is unreachable, in which case the local copy stays in place.
+  const serverCorrectionRows = useQuery(api.corrections.listAll);
 
-  // Load corrections from the server on mount
   useEffect(() => {
-    refreshServerCorrections();
-  }, [refreshServerCorrections]);
-
-  // Re-sync whenever any device changes a correction
-  useEffect(() => {
-    if (!socketContext?.socket) return;
-    const socket = socketContext.socket;
-    const handleCorrectionChanged = () => { refreshServerCorrections(); };
-    socket.on('correction:changed', handleCorrectionChanged);
-    return () => { socket.off('correction:changed', handleCorrectionChanged); };
-  }, [socketContext, refreshServerCorrections]);
+    if (!Array.isArray(serverCorrectionRows)) return;
+    applyServerCorrections(correctionRowsToSnapshot(serverCorrectionRows));
+  }, [serverCorrectionRows, applyServerCorrections]);
 
   const getOrderCorrection = useCallback((orderId) => {
     const key = String(orderId);
@@ -2134,7 +2128,7 @@ export function RestaurantProvider({ children }) {
     if (!indexes.length) return { success: false, error: 'Select at least one item' };
     const itemNames = indexes.map(i => items[i]?.name).filter(Boolean);
     commitOrderCorrections(prev => applyVoidsToSnapshot(prev, orderId, indexes));
-    sendCorrectionRequest('POST', '/api/corrections', {
+    sendCorrectionCreate({
       type: 'void', orderId, orderLabel, tableNumber, itemIndexes: indexes, itemNames,
       wholeOrder: itemIndexes === 'all', reason, note, appliedBy: actor?.actorName || ADMIN_ACTOR.actorName
     });
@@ -2170,7 +2164,7 @@ export function RestaurantProvider({ children }) {
       requestedAt: Date.now()
     };
     commitOrderCorrections(prev => ({ ...prev, requests: [request, ...prev.requests].slice(0, 200) }));
-    sendCorrectionRequest('POST', '/api/corrections', {
+    sendCorrectionCreate({
       id: request.id, type: 'void_request', orderId: request.orderId, orderLabel, tableNumber,
       itemIndexes: indexes, itemNames, wholeOrder: request.wholeOrder, reason, note,
       requestedBy: request.requestedBy, requestedById: request.requestedById
@@ -2204,7 +2198,7 @@ export function RestaurantProvider({ children }) {
           : r))
       };
     });
-    sendCorrectionRequest('PATCH', `/api/corrections/${encodeURIComponent(requestId)}`, { status: 'approved', resolvedBy: admin.actorName });
+    sendCorrectionPatch(requestId, { status: 'approved', resolvedBy: admin.actorName });
     recordActivity({
       ...admin,
       actionType: 'VOID_APPROVED',
@@ -2227,7 +2221,7 @@ export function RestaurantProvider({ children }) {
         ? { ...r, status: 'rejected', resolvedBy: admin.actorName, resolvedAt: Date.now() }
         : r))
     }));
-    sendCorrectionRequest('PATCH', `/api/corrections/${encodeURIComponent(requestId)}`, { status: 'rejected', resolvedBy: admin.actorName });
+    sendCorrectionPatch(requestId, { status: 'rejected', resolvedBy: admin.actorName });
     recordActivity({
       ...admin,
       actionType: 'VOID_REJECTED',
@@ -2250,7 +2244,7 @@ export function RestaurantProvider({ children }) {
     const key = String(orderId);
     const discount = { id: `disc-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`, type: discountType === 'percent' ? 'percent' : 'fixed', value: amount, reason, note, appliedBy: actor.actorName, appliedAt: Date.now() };
     commitOrderCorrections(prev => ({ ...prev, discounts: { ...prev.discounts, [key]: discount } }));
-    sendCorrectionRequest('POST', '/api/corrections', {
+    sendCorrectionCreate({
       id: discount.id, type: 'discount', orderId: key, orderLabel, tableNumber,
       discountType: discount.type, value: amount, reason, note, appliedBy: actor.actorName
     });
@@ -2277,7 +2271,7 @@ export function RestaurantProvider({ children }) {
       return { ...prev, discounts };
     });
     if (activeDiscountId) {
-      sendCorrectionRequest('PATCH', `/api/corrections/${encodeURIComponent(activeDiscountId)}`, { status: 'cleared', resolvedBy: actor.actorName });
+      sendCorrectionPatch(activeDiscountId, { status: 'cleared', resolvedBy: actor.actorName });
     }
     recordActivity({
       ...actor,
@@ -2381,19 +2375,13 @@ export function RestaurantProvider({ children }) {
     // Persist on the server so staff on other devices receive it.
     // If the server is unreachable the message stays in local state (offline fallback).
     try {
-      fetch(`${resolveServerUrl()}/api/staff/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newMsg)
-      }).then(res => res.ok ? res.json() : null)
-        .then(json => {
-          if (json?.success && json.data) {
-            mergeIncomingStaffMessage(json.data);
-          }
+      sendStaffMessageToConvex(newMsg)
+        .then(saved => {
+          if (saved && saved.id) mergeIncomingStaffMessage(saved);
         })
         .catch(() => { /* offline: keep local copy only */ });
     } catch {
-      /* fetch unavailable: keep local copy only */
+      /* Convex unavailable: keep local copy only */
     }
 
     return newMsg;
