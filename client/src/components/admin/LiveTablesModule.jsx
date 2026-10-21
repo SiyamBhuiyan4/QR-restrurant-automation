@@ -288,6 +288,7 @@ export default function LiveTablesModule({
   const [dispatchedTables, setDispatchedTables] = useState({});
   const [advancingOrderIds, setAdvancingOrderIds] = useState({});
   const [billTarget, setBillTarget] = useState(null); // { tableNumber } while the bill preview is open
+  const [expandedTableIds, setExpandedTableIds] = useState({}); // compact table cards: which ones show Details
 
   // Sync props if parent updates
   useEffect(() => {
@@ -1005,13 +1006,21 @@ export default function LiveTablesModule({
           </button>
         </div>
       ) : (
-        <div className={viewMode === 'grid' ? 'flr-tables' : 'flr-stack'}>
+        <div className={viewMode === 'grid' ? 'flr-tgrid' : 'flr-stack'}>
           {filteredTables.map(table => {
             const activeOrder = getOrderForTable(table);
             const assignedEmp = getAssignedEmployee(table.assignedEmployeeId);
             const issueNote = getIssueForTable(table.tableNumber);
             const isDispatched = dispatchedTables[table.tableNumber];
             const isAdvancing = activeOrder && advancingOrderIds[activeOrder.id];
+            const isExpanded = !!expandedTableIds[table.id];
+            const hasOrderBlock = !!activeOrder && table.status !== TABLE_STATUS.AVAILABLE;
+            const orderTotal = activeOrder
+              ? (computeOrderBill(activeOrder, getOrderCorrection(activeOrder.id)).total || activeOrder.total)
+              : 0;
+            const zoneLabel = table.location || table.zone || 'Main Hall';
+            const seatCount = table.capacity || table.seats || 4;
+            const staffFirstName = assignedEmp?.name ? assignedEmp.name.split(' ')[0] : 'Unassigned';
 
             // One tone per status: success = available, warning = ordering,
             // info = ready for pickup, danger = needs assistance.
@@ -1029,281 +1038,319 @@ export default function LiveTablesModule({
             }
 
             const stageIdx = activeOrder ? ORDER_PIPELINE_STAGES.map(s => s.key).indexOf(activeOrder.kitchenFlowStage) : -1;
+            const bodyId = `flr-tcard-body-${table.id}`;
 
             return (
-              <div
+              <article
                 key={table.id}
-                className="flr-table"
+                className={`flr-tcard${isExpanded ? ' is-expanded' : ''}`}
                 data-tone={statusTone}
-                style={{ cursor: 'default' }}
               >
-                {/* Header: number, name, seats, status */}
-                <div className="flr-table__top">
-                  <div className="flr-row" style={{ flexWrap: 'nowrap', minWidth: 0 }}>
-                    <div className="flr-table__num">#{table.tableNumber}</div>
-                    <div style={{ minWidth: 0 }}>
-                      <div className="flr-strong flr-ellipsis">{table.name}</div>
-                      <div className="flr-table__meta">
-                        {table.capacity || table.seats || 4} seats &middot; {table.location || table.zone || 'Main Hall'}
-                      </div>
-                    </div>
-                  </div>
-                  <span className="flr-tone-chip" data-tone={statusTone}>
+                {/* Compact header: table number and one status pill */}
+                <div className="flr-tcard__head">
+                  <div className="flr-tcard__num">#{table.tableNumber}</div>
+                  <span className="flr-tone-chip flr-tcard__pill" data-tone={statusTone}>
                     {statusTone === 'danger' ? <AlertTriangle className="w-3 h-3" /> : <span className="flr-dot" />}
                     <span>{statusLabel}</span>
                   </span>
                 </div>
 
-                {/* Assigned staff (reassignment is PIN-free in the original logic; unchanged) */}
-                <div className="flr-box flr-stack" style={{ gap: '0.4rem' }}>
-                  <div className="flr-row flr-row--between">
-                    <span className="flr-label">Assigned staff</span>
-                    <span className="flr-muted flr-ellipsis" style={{ maxWidth: '50%' }}>{assignedEmp?.role || ''}</span>
+                <div className="flr-tcard__name flr-ellipsis" title={table.name}>{table.name}</div>
+                <div
+                  className="flr-tcard__meta flr-ellipsis"
+                  title={`${seatCount} seats · ${zoneLabel}`}
+                >
+                  {seatCount} seats &middot; {zoneLabel}
+                </div>
+
+                {/* Single summary line: order total or vacant */}
+                {hasOrderBlock ? (
+                  <div className="flr-tcard__total flr-ellipsis" title={`Current order total ${formatCurrency(orderTotal)}`}>
+                    <span className="flr-muted">Total</span>{' '}
+                    <span className="flr-amount">{formatCurrency(orderTotal)}</span>
                   </div>
-                  <div className="flr-row" style={{ flexWrap: 'nowrap' }}>
-                    <div
-                      className="flr-avatar"
+                ) : (
+                  <div className="flr-tcard__total flr-tcard__total--vacant flr-ellipsis" title="Clean and vacant">
+                    Clean and vacant
+                  </div>
+                )}
+
+                {/* Footer: staff avatar (first name only) and details toggle */}
+                <div className="flr-tcard__foot">
+                  <div className="flr-tcard__staff" title={assignedEmp?.name ? `Assigned to ${assignedEmp.name}` : 'Unassigned (floor pool)'}>
+                    <span
+                      className="flr-avatar flr-tcard__avatar"
                       style={{ backgroundColor: assignedEmp?.avatarColor || assignedEmp?.color || 'var(--adm-primary)' }}
                     >
                       {assignedEmp?.initials || assignedEmp?.avatar?.initials || 'FE'}
-                    </div>
-                    <select
-                      aria-label={`Assigned Employee for Table ${table.tableNumber}`}
-                      value={table.assignedEmployeeId ? String(table.assignedEmployeeId) : ''}
-                      onChange={(e) => {
-                        const val = e.target.value ? e.target.value : null;
-                        requestReassignEmployee(table.tableNumber, val);
-                      }}
-                      className="flr-select flr-grow"
-                    >
-                      <option value="">Unassigned (floor pool)</option>
-                      {employees.map(emp => (
-                        <option key={emp.id} value={emp.id}>
-                          {emp.name} ({emp.role?.split(' ')[0] || 'Staff'}) {emp.status === 'Active' || emp.status === 'active' ? '· Active' : `· ${emp.status}`}
-                        </option>
-                      ))}
-                    </select>
+                    </span>
+                    <span className="flr-ellipsis">{staffFirstName}</span>
                   </div>
+                  <button
+                    type="button"
+                    className="flr-tcard__toggle"
+                    aria-expanded={isExpanded}
+                    aria-controls={bodyId}
+                    onClick={() => setExpandedTableIds(prev => ({ ...prev, [table.id]: !prev[table.id] }))}
+                  >
+                    <span>Details</span>
+                    <ChevronDown className={`w-3.5 h-3.5 flr-tcard__chev${isExpanded ? ' is-open' : ''}`} />
+                  </button>
                 </div>
 
-                {/* Assistance alert */}
-                {table.status === TABLE_STATUS.NEED_ASSISTANCE && (
-                  <div className="flr-alert flr-stack" data-tone="danger" style={{ gap: '0.4rem' }}>
-                    <div className="flr-row flr-row--between">
-                      <span className="flr-strong flr-row" style={{ gap: 6, color: 'var(--adm-danger)' }}>
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        <span>Guest asked for help</span>
-                      </span>
-                      {issueNote?.severity && (
-                        <span className="flr-tone-chip" data-tone={issueNote.severity === ISSUE_SEVERITY.CRITICAL ? 'danger' : 'warning'}>
-                          {issueNote.severity}
-                        </span>
-                      )}
-                    </div>
-                    <p className="flr-clamp" style={{ margin: 0, fontSize: '0.82rem', color: 'var(--adm-text)' }}>
-                      &quot;{issueNote ? issueNote.complaintText : 'Guest requested prompt employee assistance at table.'}&quot;
-                    </p>
-                    <div className="flr-muted">
-                      Guest: <span className="flr-strong">{issueNote?.customerName || 'Dining guest'}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Order summary + stage progression */}
-                {activeOrder && table.status !== TABLE_STATUS.AVAILABLE && (
-                  <div className="flr-stack" style={{ gap: '0.5rem' }}>
-                    <div className="flr-box flr-stack" style={{ gap: '0.35rem' }}>
+                {isExpanded && (
+                  <div id={bodyId} className="flr-tcard__body">
+                    {/* Assigned staff (reassignment is PIN-free in the original logic; unchanged) */}
+                    <div className="flr-box flr-stack" style={{ gap: '0.4rem' }}>
                       <div className="flr-row flr-row--between">
-                        <span className="flr-strong flr-ellipsis">
-                          {activeOrder.orderNumber} &middot; {activeOrder.customerName}
-                        </span>
-                        <span className="flr-muted flr-row" style={{ gap: 4, flexWrap: 'nowrap' }}>
-                          <Clock className="w-3 h-3" />
-                          <span>{formatElapsed(activeOrder.timeElapsedMinutes)}</span>
-                        </span>
+                        <span className="flr-label">Assigned staff</span>
+                        <span className="flr-muted flr-ellipsis" style={{ maxWidth: '50%' }} title={assignedEmp?.role || ''}>{assignedEmp?.role || ''}</span>
                       </div>
-                      {activeOrder.items.slice(0, 2).map((item, idx) => (
-                        <div key={item.id || idx} className="flr-row flr-row--between" style={{ fontSize: '0.82rem', flexWrap: 'nowrap' }}>
-                          <span className="flr-ellipsis">
-                            <span style={{ color: 'var(--adm-primary)', fontWeight: 700, marginRight: 4 }}>{item.quantity}x</span>
-                            {item.name}
-                          </span>
-                          <span className="flr-amount" style={{ flexShrink: 0 }}>{formatCurrency(item.price * item.quantity)}</span>
+                      <div className="flr-row" style={{ flexWrap: 'nowrap' }}>
+                        <div
+                          className="flr-avatar"
+                          style={{ backgroundColor: assignedEmp?.avatarColor || assignedEmp?.color || 'var(--adm-primary)' }}
+                        >
+                          {assignedEmp?.initials || assignedEmp?.avatar?.initials || 'FE'}
                         </div>
-                      ))}
-                      {activeOrder.items.length > 2 && (
-                        <div className="flr-muted">+{activeOrder.items.length - 2} more item(s)</div>
-                      )}
-                      <div className="flr-row flr-row--between" style={{ borderTop: '1px solid var(--adm-border)', paddingTop: '0.4rem' }}>
-                        <span className="flr-muted">Total</span>
-                        <span className="flr-amount">{formatCurrency(computeOrderBill(activeOrder, getOrderCorrection(activeOrder.id)).total || activeOrder.total)}</span>
+                        <select
+                          aria-label={`Assigned Employee for Table ${table.tableNumber}`}
+                          value={table.assignedEmployeeId ? String(table.assignedEmployeeId) : ''}
+                          onChange={(e) => {
+                            const val = e.target.value ? e.target.value : null;
+                            requestReassignEmployee(table.tableNumber, val);
+                          }}
+                          className="flr-select flr-grow"
+                        >
+                          <option value="">Unassigned (floor pool)</option>
+                          {employees.map(emp => (
+                            <option key={emp.id} value={emp.id}>
+                              {emp.name} ({emp.role?.split(' ')[0] || 'Staff'}) {emp.status === 'Active' || emp.status === 'active' ? '· Active' : `· ${emp.status}`}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 
-                    <div>
-                      <div className="flr-row flr-row--between" style={{ marginBottom: 4 }}>
-                        <span className="flr-label">Kitchen to table</span>
-                        <span className="flr-muted">{stageIdx + 1} of 4</span>
+                    {/* Assistance alert */}
+                    {table.status === TABLE_STATUS.NEED_ASSISTANCE && (
+                      <div className="flr-alert flr-stack" data-tone="danger" style={{ gap: '0.4rem' }}>
+                        <div className="flr-row flr-row--between">
+                          <span className="flr-strong flr-row" style={{ gap: 6, color: 'var(--adm-danger)' }}>
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            <span>Guest asked for help</span>
+                          </span>
+                          {issueNote?.severity && (
+                            <span className="flr-tone-chip" data-tone={issueNote.severity === ISSUE_SEVERITY.CRITICAL ? 'danger' : 'warning'}>
+                              {issueNote.severity}
+                            </span>
+                          )}
+                        </div>
+                        <p className="flr-clamp" style={{ margin: 0, fontSize: '0.82rem', color: 'var(--adm-text)' }}>
+                          &quot;{issueNote ? issueNote.complaintText : 'Guest requested prompt employee assistance at table.'}&quot;
+                        </p>
+                        <div className="flr-muted">
+                          Guest: <span className="flr-strong">{issueNote?.customerName || 'Dining guest'}</span>
+                        </div>
                       </div>
-                      <div className="flr-stepper">
-                        {ORDER_PIPELINE_STAGES.map((stage, sIdx) => {
-                          const isDone = sIdx < stageIdx;
-                          const isCurr = sIdx === stageIdx;
-                          return (
-                            <div
-                              key={stage.key}
-                              className={`flr-step${isDone ? ' is-done' : ''}${isCurr ? ' is-current' : ''}`}
-                              title={stage.description}
-                            >
-                              {isDone ? <Check className="w-3 h-3" /> : <span>{sIdx + 1}</span>}
-                              <span>{stage.shortLabel}</span>
-                            </div>
-                          );
-                        })}
+                    )}
+
+                    {/* Order items and stage progression */}
+                    {hasOrderBlock && (
+                      <div className="flr-stack" style={{ gap: '0.5rem' }}>
+                        <div className="flr-box flr-stack" style={{ gap: '0.35rem' }}>
+                          <div className="flr-row flr-row--between">
+                            <span className="flr-strong flr-ellipsis" title={`${activeOrder.orderNumber} · ${activeOrder.customerName}`}>
+                              {activeOrder.orderNumber} &middot; {activeOrder.customerName}
+                            </span>
+                            <span className="flr-muted flr-row" style={{ gap: 4, flexWrap: 'nowrap' }}>
+                              <Clock className="w-3 h-3" />
+                              <span>{formatElapsed(activeOrder.timeElapsedMinutes)}</span>
+                            </span>
+                          </div>
+                          <div className="flr-tcard__items">
+                            {activeOrder.items.map((item, idx) => (
+                              <div key={item.id || idx} className="flr-tcard__item">
+                                <span className="flr-ellipsis" title={`${item.quantity} x ${item.name}`}>
+                                  <span className="flr-tcard__qty">{item.quantity}x</span>
+                                  {item.name}
+                                </span>
+                                <span className="flr-amount" style={{ flexShrink: 0 }}>{formatCurrency(item.price * item.quantity)}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flr-row flr-row--between" style={{ borderTop: '1px solid var(--adm-border)', paddingTop: '0.4rem' }}>
+                            <span className="flr-muted">Total</span>
+                            <span className="flr-amount">{formatCurrency(orderTotal)}</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flr-row flr-row--between" style={{ marginBottom: 4 }}>
+                            <span className="flr-label">Kitchen to table</span>
+                            <span className="flr-muted">{stageIdx + 1} of 4</span>
+                          </div>
+                          <div className="flr-stepper">
+                            {ORDER_PIPELINE_STAGES.map((stage, sIdx) => {
+                              const isDone = sIdx < stageIdx;
+                              const isCurr = sIdx === stageIdx;
+                              return (
+                                <div
+                                  key={stage.key}
+                                  className={`flr-step${isDone ? ' is-done' : ''}${isCurr ? ' is-current' : ''}`}
+                                  title={stage.description}
+                                >
+                                  {isDone ? <Check className="w-3 h-3" /> : <span>{sIdx + 1}</span>}
+                                  <span>{stage.shortLabel}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Empty table */}
+                    {table.status === TABLE_STATUS.AVAILABLE && (
+                      <div className="flr-box" style={{ textAlign: 'center', padding: '0.8rem 0.7rem' }}>
+                        <div className="flr-strong">Clean and vacant</div>
+                        <div className="flr-muted">Seats {table.capacity || 4} guests</div>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flr-stack" style={{ gap: '0.45rem' }}>
+                      {activeOrder && activeOrder.kitchenFlowStage !== KITCHEN_STAGE.SERVED && (
+                        <button
+                          type="button"
+                          disabled={isAdvancing}
+                          onClick={() => handleAdvanceStage(activeOrder.id, table.tableNumber)}
+                          className="flr-btn flr-btn--primary flr-full"
+                        >
+                          {activeOrder.kitchenFlowStage === KITCHEN_STAGE.PLACED && (
+                            <>
+                              <Flame className="w-3.5 h-3.5" />
+                              <span>Send to kitchen</span>
+                            </>
+                          )}
+                          {activeOrder.kitchenFlowStage === KITCHEN_STAGE.PREPARING && (
+                            <>
+                              <ConciergeBell className="w-3.5 h-3.5" />
+                              <span>Mark ready &amp; alert staff</span>
+                            </>
+                          )}
+                          {activeOrder.kitchenFlowStage === KITCHEN_STAGE.READY_PICKUP && (
+                            <>
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Confirm served to table</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {activeOrder && activeOrder.kitchenFlowStage === KITCHEN_STAGE.SERVED && (
+                        <button
+                          type="button"
+                          onClick={() => handleResetTable(table.tableNumber)}
+                          className="flr-btn flr-btn--primary flr-full"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Clear and reset table</span>
+                        </button>
+                      )}
+
+                      {activeOrder && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setBillTarget({ tableNumber: table.tableNumber })}
+                            className="flr-btn flr-full"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>Print bill</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setBillTarget({ tableNumber: table.tableNumber })}
+                            className="flr-btn flr-full"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Settle &amp; close table</span>
+                          </button>
+                        </>
+                      )}
+
+                      {table.status === TABLE_STATUS.NEED_ASSISTANCE && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveIssueModal({ table, note: issueNote })}
+                          className="flr-btn flr-full"
+                          style={{ background: 'var(--adm-danger)', borderColor: 'transparent', color: '#fff' }}
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                          <span>Handle request</span>
+                        </button>
+                      )}
+
+                      <div className="flr-table-actions">
+                        <button
+                          type="button"
+                          onClick={() => handleDispatchEmployee(table.tableNumber, table.assignedEmployeeId)}
+                          className="flr-btn"
+                          title="Dispatch alert to assigned employee handset"
+                          style={isDispatched ? { background: 'var(--adm-success)', color: '#fff', borderColor: 'transparent' } : undefined}
+                        >
+                          {isDispatched ? (
+                            <>
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Dispatched</span>
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-3.5 h-3.5" />
+                              <span>Notify staff</span>
+                            </>
+                          )}
+                        </button>
+
+                        {activeOrder ? (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOrderModal({ order: activeOrder, table, employee: assignedEmp })}
+                            className="flr-btn"
+                            title="View full order receipt"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Receipt</span>
+                          </button>
+                        ) : table.status === TABLE_STATUS.AVAILABLE ? (
+                          <button
+                            type="button"
+                            onClick={() => triggerToast(`Table ${table.tableNumber} is ready. Guest QR code active.`, 'info')}
+                            className="flr-btn"
+                          >
+                            <Users className="w-3.5 h-3.5" />
+                            <span>Seat table</span>
+                          </button>
+                        ) : <span />}
+                      </div>
+
+                      <div style={{ borderTop: '1px solid var(--adm-border)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                        <button
+                          type="button"
+                          onClick={() => requestRemoveSpecificTable(table.tableNumber)}
+                          className="flr-danger-link"
+                          title={`Remove Table #${table.tableNumber} (requires Admin PIN)`}
+                          aria-label={`Remove Table #${table.tableNumber} from floor, requires admin PIN`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Remove table (PIN)</span>
+                        </button>
                       </div>
                     </div>
                   </div>
                 )}
-
-                {/* Empty table */}
-                {table.status === TABLE_STATUS.AVAILABLE && (
-                  <div className="flr-box" style={{ textAlign: 'center', padding: '1rem 0.7rem' }}>
-                    <div className="flr-strong">Clean and vacant</div>
-                    <div className="flr-muted">Seats {table.capacity || 4} guests</div>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flr-stack" style={{ gap: '0.45rem', marginTop: 'auto' }}>
-                  {activeOrder && activeOrder.kitchenFlowStage !== KITCHEN_STAGE.SERVED && (
-                    <button
-                      type="button"
-                      disabled={isAdvancing}
-                      onClick={() => handleAdvanceStage(activeOrder.id, table.tableNumber)}
-                      className="flr-btn flr-btn--primary flr-full"
-                    >
-                      {activeOrder.kitchenFlowStage === KITCHEN_STAGE.PLACED && (
-                        <>
-                          <Flame className="w-3.5 h-3.5" />
-                          <span>Send to kitchen</span>
-                        </>
-                      )}
-                      {activeOrder.kitchenFlowStage === KITCHEN_STAGE.PREPARING && (
-                        <>
-                          <ConciergeBell className="w-3.5 h-3.5" />
-                          <span>Mark ready &amp; alert staff</span>
-                        </>
-                      )}
-                      {activeOrder.kitchenFlowStage === KITCHEN_STAGE.READY_PICKUP && (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Confirm served to table</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-
-                  {activeOrder && activeOrder.kitchenFlowStage === KITCHEN_STAGE.SERVED && (
-                    <button
-                      type="button"
-                      onClick={() => handleResetTable(table.tableNumber)}
-                      className="flr-btn flr-btn--primary flr-full"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Clear and reset table</span>
-                    </button>
-                  )}
-
-                  {activeOrder && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setBillTarget({ tableNumber: table.tableNumber })}
-                        className="flr-btn flr-full"
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                        <span>Print bill</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBillTarget({ tableNumber: table.tableNumber })}
-                        className="flr-btn flr-full"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Settle &amp; close table</span>
-                      </button>
-                    </>
-                  )}
-
-                  {table.status === TABLE_STATUS.NEED_ASSISTANCE && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveIssueModal({ table, note: issueNote })}
-                      className="flr-btn flr-full"
-                      style={{ background: 'var(--adm-danger)', borderColor: 'transparent', color: '#fff' }}
-                    >
-                      <AlertTriangle className="w-4 h-4" />
-                      <span>Handle request</span>
-                    </button>
-                  )}
-
-                  <div className="flr-table-actions">
-                    <button
-                      type="button"
-                      onClick={() => handleDispatchEmployee(table.tableNumber, table.assignedEmployeeId)}
-                      className="flr-btn"
-                      title="Dispatch alert to assigned employee handset"
-                      style={isDispatched ? { background: 'var(--adm-success)', color: '#fff', borderColor: 'transparent' } : undefined}
-                    >
-                      {isDispatched ? (
-                        <>
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Dispatched</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-3.5 h-3.5" />
-                          <span>Notify staff</span>
-                        </>
-                      )}
-                    </button>
-
-                    {activeOrder ? (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedOrderModal({ order: activeOrder, table, employee: assignedEmp })}
-                        className="flr-btn"
-                        title="View full order receipt"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Receipt</span>
-                      </button>
-                    ) : table.status === TABLE_STATUS.AVAILABLE ? (
-                      <button
-                        type="button"
-                        onClick={() => triggerToast(`Table ${table.tableNumber} is ready. Guest QR code active.`, 'info')}
-                        className="flr-btn"
-                      >
-                        <Users className="w-3.5 h-3.5" />
-                        <span>Seat table</span>
-                      </button>
-                    ) : <span />}
-                  </div>
-
-                  <div style={{ borderTop: '1px solid var(--adm-border)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                      type="button"
-                      onClick={() => requestRemoveSpecificTable(table.tableNumber)}
-                      className="flr-danger-link"
-                      title={`Remove Table #${table.tableNumber} (requires Admin PIN)`}
-                      aria-label={`Remove Table #${table.tableNumber} from floor, requires admin PIN`}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      <span>Remove table (PIN)</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+              </article>
             );
           })}
         </div>

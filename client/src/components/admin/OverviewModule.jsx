@@ -720,11 +720,30 @@ export default function OverviewModule({
     }
   };
 
+  const kpi = ({ label, value, sub, icon: Icon, delta, tone }) => (
+    <div className="adm-card min-w-0 flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-[var(--adm-text-muted)]">{label}</span>
+        <span
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+          style={{ background: 'color-mix(in srgb, var(--adm-primary) 14%, transparent)', color: 'var(--adm-primary)' }}
+        >
+          <Icon className="w-4 h-4" />
+        </span>
+      </div>
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span className="text-2xl font-bold tabular-nums text-[var(--adm-text)]">{value}</span>
+        <span className={`adm-badge adm-badge--${tone}`}>{delta}</span>
+      </div>
+      <p className="text-xs text-[var(--adm-text-muted)]">{sub}</p>
+    </div>
+  );
+
+  const growthTone = (v) => (v >= 0 ? 'success' : 'danger');
+  const growthText = (v) => (v >= 0 ? `+${v}%` : `${v}%`);
+
   return (
-    <div
-      className={`space-y-6 max-w-full overflow-x-hidden ${className}`}
-      style={{ padding: '24px 28px', boxSizing: 'border-box' }}
-    >
+    <div className={`space-y-4 max-w-full overflow-x-hidden p-4 sm:p-6 ${className}`}>
       {/* Toast Notification */}
       {exportNotice && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-[var(--adm-surface)] text-[var(--adm-text)] shadow-2xl border border-[color-mix(in_srgb,var(--adm-success)_40%,transparent)] animate-fade-up">
@@ -733,643 +752,137 @@ export default function OverviewModule({
         </div>
       )}
 
-      {/* Manager end-of-day tools: Z-report, cash drawer count, past closings */}
-      <DayClose orders={orders} />
-
-      {/* =========================================================================
-          PROMINENT DATE RANGE COMMAND BAR (TOP OF MODULE - ALWAYS VISIBLE)
-          ========================================================================= */}
-      <div className="admin-card border border-[var(--adm-border)] bg-[var(--adm-surface)] p-5 text-[var(--adm-text)] space-y-4">
-        {/* Top Row: Title, Active Range Summary & Calendar Toggle */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-[color-mix(in_srgb,var(--adm-success)_20%,transparent)] border border-[color-mix(in_srgb,var(--adm-success)_30%,transparent)] flex items-center justify-center text-[var(--adm-success)] shadow-sm">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="admin-section-title text-lg sm:text-xl font-black text-[var(--adm-text)] tracking-tight">
-                  Executive Revenue &amp; Sales Telemetry
-                </h2>
-                <p className="text-xs text-[var(--adm-text-muted)]">
-                  Real-time multi-period operational diagnostics &amp; margin calculations
-                </p>
-              </div>
-            </div>
+      {/* 1. Page header and toolbar: title, subtitle, date range controls */}
+      <header className="adm-card space-y-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold tracking-tight text-[var(--adm-text)]">Overview</h1>
+            <p className="adm-section-sub">
+              {dateRangeLabel} · {daysCount} {daysCount === 1 ? 'day' : 'days'}
+            </p>
           </div>
 
-          {/* Calendar Toggle & Active Preset Pill */}
-          <div className="flex items-center gap-2 self-start lg:self-auto">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-[color-mix(in_srgb,var(--adm-success)_14%,transparent)] text-[var(--adm-success)] border border-[color-mix(in_srgb,var(--adm-success)_35%,transparent)]">
-              <span className="w-2 h-2 rounded-full bg-[var(--adm-success)] animate-pulse" />
-              {activePreset === 'custom' ? 'Custom Range' : activePreset.replace('_', ' ').toUpperCase()}
-            </span>
-            <button
-              type="button"
-              onClick={() => setIsCalendarOpen((prev) => !prev)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--adm-surface-2)] hover:bg-[var(--adm-border)] text-[var(--adm-text)] border border-[var(--adm-border)] transition cursor-pointer"
-              title="Toggle Calendar Visibility"
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <div
+              role="group"
+              aria-label="Date presets"
+              className="flex flex-wrap gap-1 rounded-xl p-1"
+              style={{ background: 'var(--adm-surface-2)', border: '1px solid var(--adm-border)' }}
             >
-              <CalendarIcon className="w-3.5 h-3.5 text-[var(--adm-warning)]" />
-              <span>{isCalendarOpen ? 'Hide Calendar' : 'Show Calendar'}</span>
-            </button>
+              {[
+                { key: 'today', label: 'Today' },
+                { key: 'yesterday', label: 'Yesterday' },
+                { key: '7days', label: 'Last 7 days' },
+                { key: '30days', label: 'Last 30 days' },
+                { key: 'this_month', label: 'This month' }
+              ].map((preset) => {
+                const isActive = activePreset === preset.key;
+                return (
+                  <button
+                    key={preset.key}
+                    type="button"
+                    onClick={() => handleSelectPreset(preset.key)}
+                    aria-pressed={isActive}
+                    className={`h-8 px-3 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                      isActive
+                        ? 'bg-[var(--adm-primary)] text-[var(--adm-primary-fg)]'
+                        : 'text-[var(--adm-text-muted)] hover:text-[var(--adm-text)] hover:bg-[var(--adm-border)]'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <form onSubmit={handleApplyInputRange} className="flex flex-wrap items-center gap-2">
+              <input
+                type="date"
+                aria-label="Start date"
+                value={startDateStr}
+                onChange={(e) => setStartDateStr(e.target.value)}
+                className="adm-input"
+                style={{ width: 'auto' }}
+              />
+              <span className="text-xs adm-muted">to</span>
+              <input
+                type="date"
+                aria-label="End date"
+                value={endDateStr}
+                onChange={(e) => setEndDateStr(e.target.value)}
+                className="adm-input"
+                style={{ width: 'auto' }}
+              />
+              <button type="submit" className="adm-btn adm-btn--primary">
+                Apply
+              </button>
+            </form>
           </div>
         </div>
 
-        {/* Active Date Range Display Banner */}
-        <div className="bg-[var(--adm-surface-2)] border border-[var(--adm-border)] rounded-2xl px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-[color-mix(in_srgb,var(--adm-success)_20%,transparent)] border border-[color-mix(in_srgb,var(--adm-success)_40%,transparent)] flex items-center justify-center text-[var(--adm-success)] shrink-0">
-              <CalendarIcon className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs uppercase font-extrabold tracking-wider text-[var(--adm-text-muted)]">
-                  Active Date Range:
-                </span>
-                <span className="px-2 py-0.5 rounded-md bg-[color-mix(in_srgb,var(--adm-success)_20%,transparent)] text-[var(--adm-success)] text-[11px] font-bold">
-                  {daysCount} {daysCount === 1 ? 'Day' : 'Days'} Selected
-                </span>
-              </div>
-              <p className="text-sm sm:text-base font-black text-[var(--adm-text)] mt-0.5 tracking-tight">
-                📅 {dateRangeLabel}
-              </p>
-            </div>
-          </div>
+        <div className="flex flex-wrap items-center gap-2 border-t border-[var(--adm-border)] pt-3">
+          <button
+            type="button"
+            onClick={() => setIsCalendarOpen((prev) => !prev)}
+            className="adm-btn"
+            title="Toggle calendar"
+          >
+            <CalendarIcon className="w-4 h-4" />
+            <span>{isCalendarOpen ? 'Hide calendar' : 'Show calendar'}</span>
+          </button>
+          <button type="button" onClick={handleExportCSV} disabled={isExporting} className="adm-btn">
+            <Download className="w-4 h-4" />
+            <span>{isExporting ? 'Generating...' : 'Export CSV'}</span>
+          </button>
+          <select
+            aria-label="Category filter"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="adm-input"
+            style={{ width: 'auto', minWidth: 180 }}
+          >
+            <option value="all">All categories</option>
+            <option value="mains">Mains only</option>
+            <option value="beverages">Beverages only</option>
+            <option value="appetizers">Appetizers only</option>
+            <option value="desserts">Desserts only</option>
+          </select>
 
           {selectingState === 'picking_end' && (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[color-mix(in_srgb,var(--adm-warning)_20%,transparent)] border border-[color-mix(in_srgb,var(--adm-warning)_40%,transparent)] text-[var(--adm-warning)] text-xs font-bold animate-pulse">
+            <span className="adm-badge adm-badge--warning gap-2">
               <AlertCircle className="w-3.5 h-3.5" />
-              <span>Click 2nd date to set End Date</span>
+              Pick end date
               <button
                 type="button"
                 onClick={() => {
                   setSelectingState('idle');
                   setHoverDate(null);
                 }}
-                className="ml-1 text-[11px] text-[var(--adm-warning)] hover:text-[var(--adm-text)] underline cursor-pointer"
+                className="underline cursor-pointer"
               >
                 Cancel
               </button>
-            </div>
+            </span>
           )}
         </div>
+      </header>
 
-        {/* Controls Row: Preset Buttons & Direct Date Pickers */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pt-1">
-          {/* Preset Buttons */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-[var(--adm-bg)] p-1.5 rounded-2xl border border-[var(--adm-border)]">
-            {[
-              { key: 'today', label: 'Today' },
-              { key: 'yesterday', label: 'Yesterday' },
-              { key: '7days', label: 'Last 7 Days' },
-              { key: '30days', label: 'Last 30 Days' },
-              { key: 'this_month', label: 'This Month' }
-            ].map((preset) => {
-              const isActive = activePreset === preset.key;
-              return (
-                <button
-                  key={preset.key}
-                  type="button"
-                  onClick={() => handleSelectPreset(preset.key)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-[var(--adm-primary)] text-[var(--adm-primary-fg)] shadow-md shadow-emerald-600/30 font-black'
-                      : 'text-[var(--adm-text)] hover:text-[var(--adm-text)] hover:bg-[var(--adm-surface-2)]'
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Direct Date Pickers & Apply Button */}
-          <form
-            onSubmit={handleApplyInputRange}
-            className="flex flex-wrap items-center gap-2 bg-[var(--adm-bg)] p-1.5 rounded-2xl border border-[var(--adm-border)]"
-          >
-            <div className="flex items-center gap-1.5 pl-2">
-              <span className="text-[11px] font-bold text-[var(--adm-text-muted)]">From</span>
-              <input
-                type="date"
-                value={startDateStr}
-                onChange={(e) => setStartDateStr(e.target.value)}
-                className="bg-[var(--adm-surface-2)] text-[var(--adm-text)] border border-[var(--adm-border)] rounded-xl px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-[var(--adm-success)] "
-              />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold text-[var(--adm-text-muted)]">to</span>
-              <input
-                type="date"
-                value={endDateStr}
-                onChange={(e) => setEndDateStr(e.target.value)}
-                className="bg-[var(--adm-surface-2)] text-[var(--adm-text)] border border-[var(--adm-border)] rounded-xl px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-[var(--adm-success)] "
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-3.5 py-1.5 rounded-xl bg-[var(--adm-primary)] hover:bg-[var(--adm-primary)] text-[var(--adm-primary-fg)] text-xs font-black shadow-md shadow-emerald-600/30 transition cursor-pointer"
-            >
-              Apply Range
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          TOP: 4 FINANCIAL & SALES KPI CARDS (FULL PAGE WIDTH - NO TRUNCATION)
-          ========================================================================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 w-full">
-        
-        {/* KPI 1: Total Sales (Orders Count) */}
-        <div className="admin-kpi group min-w-0">
-          <div className="flex items-center justify-between mb-3">
-            <div className="admin-kpi-icon">
-              <ShoppingBag className="w-5 h-5" />
-            </div>
-            <div
-              className={`admin-kpi-delta ${
-                currentMetrics.salesGrowth >= 0
-                  ? 'is-up'
-                  : 'is-down'
-              }`}
-            >
-              {currentMetrics.salesGrowth >= 0 ? (
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              ) : (
-                <TrendingDown className="w-3.5 h-3.5" />
-              )}
-              <span>{currentMetrics.salesGrowth >= 0 ? `+${currentMetrics.salesGrowth}%` : `${currentMetrics.salesGrowth}%`}</span>
-            </div>
-          </div>
-          <p className="admin-kpi-label">
-            Total Orders
-          </p>
-          <h3
-            className="admin-kpi-value"
-            style={{
-              fontVariantNumeric: 'tabular-nums',
-              lineHeight: 1.2
-            }}
-          >
-            {currentMetrics.totalOrders.toLocaleString()}
-          </h3>
-          <p className="admin-kpi-sub">
-            <span>vs prev {previousMetrics.totalOrders} orders</span>
-          </p>
-        </div>
-
-        {/* KPI 2: Total Revenue */}
-        <div className="admin-kpi admin-kpi--amber group min-w-0">
-          <div className="flex items-center justify-between mb-3">
-            <div className="admin-kpi-icon admin-kpi-icon--amber">
-              <DollarSign className="w-5 h-5" />
-            </div>
-            <div
-              className={`admin-kpi-delta ${
-                currentMetrics.revenueGrowth >= 0
-                  ? 'is-up'
-                  : 'is-down'
-              }`}
-            >
-              {currentMetrics.revenueGrowth >= 0 ? (
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              ) : (
-                <TrendingDown className="w-3.5 h-3.5" />
-              )}
-              <span>{currentMetrics.revenueGrowth >= 0 ? `+${currentMetrics.revenueGrowth}%` : `${currentMetrics.revenueGrowth}%`}</span>
-            </div>
-          </div>
-          <p className="admin-kpi-label">
-            Total Revenue
-          </p>
-          <h3
-            className="admin-kpi-value"
-            style={{
-              fontVariantNumeric: 'tabular-nums',
-              lineHeight: 1.2
-            }}
-          >
-            ${currentMetrics.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </h3>
-          <p className="admin-kpi-sub">
-            <span>vs prev ${previousMetrics.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-          </p>
-        </div>
-
-        {/* KPI 3: Net Profit */}
-        <div className="admin-kpi group min-w-0">
-          <div className="flex items-center justify-between mb-3">
-            <div className="admin-kpi-icon">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-            <div className="admin-kpi-delta is-up">
-              <span>{currentMetrics.grossMarginPercent}% margin</span>
-            </div>
-          </div>
-          <p className="admin-kpi-label">
-            Net Profit
-          </p>
-          <h3
-            className="admin-kpi-value"
-            style={{
-              fontVariantNumeric: 'tabular-nums',
-              lineHeight: 1.2
-            }}
-          >
-            ${currentMetrics.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </h3>
-          <p className="admin-kpi-sub">
-            <span>Estimated operational margin</span>
-          </p>
-        </div>
-
-        {/* KPI 4: Average Order Value (AOV) */}
-        <div className="admin-kpi admin-kpi--amber group min-w-0">
-          <div className="flex items-center justify-between mb-3">
-            <div className="admin-kpi-icon admin-kpi-icon--amber">
-              <BarChart3 className="w-5 h-5" />
-            </div>
-            <div
-              className={`admin-kpi-delta ${
-                currentMetrics.aovGrowth >= 0
-                  ? 'is-up'
-                  : 'is-down'
-              }`}
-            >
-              {currentMetrics.aovGrowth >= 0 ? (
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              ) : (
-                <TrendingDown className="w-3.5 h-3.5" />
-              )}
-              <span>{currentMetrics.aovGrowth >= 0 ? `+${currentMetrics.aovGrowth}%` : `${currentMetrics.aovGrowth}%`}</span>
-            </div>
-          </div>
-          <p className="admin-kpi-label">
-            Average Order Value
-          </p>
-          <h3
-            className="admin-kpi-value"
-            style={{
-              fontVariantNumeric: 'tabular-nums',
-              lineHeight: 1.2
-            }}
-          >
-            ${currentMetrics.aov.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </h3>
-          <p className="admin-kpi-sub">
-            <span>Avg spend per table</span>
-          </p>
-        </div>
-
-      </div>
-
-      {/* =========================================================================
-          LOWER SECTION: CHART & BEST SELLERS (LEFT 8) + CALENDAR & ACTIVE (RIGHT 4)
-          ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
-        {/* ---------------------------------------------------------------------
-            LEFT 8 COLUMNS: VISUAL CHART & QUICK SHORTCUTS
-            --------------------------------------------------------------------- */}
-        <div className="lg:col-span-8 space-y-6 min-w-0">
-
-          {/* VISUAL REVENUE & SALES CHART */}
-          <div className="bg-[var(--adm-surface)] border border-[var(--adm-border)] rounded-3xl p-5 sm:p-6 text-[var(--adm-text)] shadow-lg relative overflow-hidden">
-            
-            {/* Header & Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base sm:text-lg font-black text-[var(--adm-text)]">
-                    Revenue &amp; Velocity Dynamics
-                  </h3>
-                  {peakPoint && (
-                    <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-[color-mix(in_srgb,var(--adm-warning)_20%,transparent)] text-[var(--adm-warning)] border border-[color-mix(in_srgb,var(--adm-warning)_40%,transparent)]">
-                      🔥 Peak: {peakPoint.label} (${peakPoint.revenue.toFixed(0)})
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-[var(--adm-text-muted)] mt-0.5">
-                  Hover over bars or curve nodes for detailed interval breakdown
-                </p>
-              </div>
-
-              {/* Chart Metric Toggle */}
-              <div className="flex items-center gap-1 bg-[var(--adm-surface-2)] p-1 rounded-2xl border border-[var(--adm-border)] self-start sm:self-auto">
-                <button
-                  type="button"
-                  onClick={() => setChartMetric('revenue')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    chartMetric === 'revenue'
-                      ? 'bg-[var(--adm-primary)] text-[var(--adm-primary-fg)] shadow-sm font-black'
-                      : 'text-[var(--adm-text-muted)] hover:text-[var(--adm-text)]'
-                  }`}
-                >
-                  Revenue ($)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChartMetric('orders')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    chartMetric === 'orders'
-                      ? 'bg-[var(--adm-primary)] text-[var(--adm-primary-fg)] shadow-sm font-black'
-                      : 'text-[var(--adm-text-muted)] hover:text-[var(--adm-text)]'
-                  }`}
-                >
-                  Order Count
-                </button>
-              </div>
-            </div>
-
-            {/* Interactive SVG Chart Container */}
-            <div className="relative w-full aspect-[21/9] min-h-[220px]">
-              
-              {/* Floating Tooltip */}
-              {hoveredDataPoint && (
-                <div
-                  className="absolute pointer-events-none z-30 transform -translate-x-1/2 -translate-y-full -top-3 bg-[var(--adm-surface)] text-[var(--adm-text)] px-3.5 py-2.5 rounded-2xl shadow-2xl border border-[color-mix(in_srgb,var(--adm-success)_45%,transparent)] text-left transition-all"
-                  style={{ left: `${tooltipPos.x}px` }}
-                >
-                  <p className="text-[11px] font-bold text-[var(--adm-success)]">
-                    {hoveredDataPoint.fullLabel || hoveredDataPoint.label}
-                  </p>
-                  <div className="mt-1 space-y-0.5">
-                    <p className="text-xs font-black text-[var(--adm-text)]">
-                      Revenue: ${hoveredDataPoint.revenue.toFixed(2)}
-                    </p>
-                    <p className="text-[11px] text-[var(--adm-text)]">
-                      Orders: {hoveredDataPoint.orders} • AOV: ${hoveredDataPoint.aov.toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="w-2.5 h-2.5 bg-[var(--adm-surface)] border-r border-b border-[color-mix(in_srgb,var(--adm-success)_45%,transparent)] transform rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2" />
-                </div>
-              )}
-
-              <svg
-                viewBox={`0 0 ${chartGeometry.width} ${chartGeometry.height}`}
-                className="w-full h-full overflow-visible"
-              >
-                <defs>
-                  {/* Area Fill Gradient */}
-                  <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-                  </linearGradient>
-
-                  {/* Bar Fill Gradient */}
-                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#34d399" stopOpacity="0.85" />
-                    <stop offset="100%" stopColor="#059669" stopOpacity="0.3" />
-                  </linearGradient>
-                </defs>
-
-                {/* Horizontal Gridlines */}
-                {chartGeometry.yTicks.map((tick, i) => (
-                  <g key={i}>
-                    <line
-                      x1={chartGeometry.paddingLeft}
-                      y1={tick.y}
-                      x2={chartGeometry.width - 20}
-                      y2={tick.y}
-                      stroke="currentColor"
-                      strokeDasharray="4 4"
-                      className="text-[var(--adm-border)]"
-                      strokeWidth="1"
-                    />
-                    <text
-                      x={chartGeometry.paddingLeft - 8}
-                      y={tick.y + 4}
-                      textAnchor="end"
-                      className="text-[10px] font-semibold fill-[var(--adm-text-muted)]"
-                    >
-                      {tick.label}
-                    </text>
-                  </g>
-                ))}
-
-                {/* Subtle Interactive Columns (Bars) */}
-                {chartGeometry.points.map((pt, i) => {
-                  const barW = Math.max(4, Math.min(28, (chartGeometry.plotW / Math.max(1, chartGeometry.points.length)) * 0.45));
-                  const barH = chartGeometry.baselineY - pt.y;
-                  const isHovered = hoveredDataPoint === pt.data;
-
-                  return (
-                    <rect
-                      key={i}
-                      x={pt.x - barW / 2}
-                      y={pt.y}
-                      width={barW}
-                      height={barH}
-                      rx="3"
-                      fill={isHovered ? '#10b981' : 'url(#barGradient)'}
-                      className="transition-all duration-200 cursor-pointer opacity-80 hover:opacity-100"
-                      onMouseEnter={(e) => {
-                        const rect = e.currentTarget.ownerSVGElement.getBoundingClientRect();
-                        setHoveredDataPoint(pt.data);
-                        setTooltipPos({ x: (pt.x / chartGeometry.width) * rect.width, y: (pt.y / chartGeometry.height) * rect.height });
-                      }}
-                      onMouseLeave={() => setHoveredDataPoint(null)}
-                    />
-                  );
-                })}
-
-                {/* Area Gradient */}
-                {chartGeometry.pathArea && (
-                  <path
-                    d={chartGeometry.pathArea}
-                    fill="url(#areaGradient)"
-                    className="transition-all duration-300"
-                  />
-                )}
-
-                {/* Smooth Curve Stroke */}
-                {chartGeometry.pathLine && (
-                  <path
-                    d={chartGeometry.pathLine}
-                    fill="none"
-                    stroke="#10b981"
-                    strokeWidth="3.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="drop-shadow-sm transition-all duration-300"
-                  />
-                )}
-
-                {/* Interactive Points / Nodes */}
-                {chartGeometry.points.map((pt, i) => {
-                  const isHovered = hoveredDataPoint === pt.data;
-                  const totalPts = chartGeometry.points.length;
-                  const step = totalPts > 20 ? 4 : totalPts > 10 ? 2 : 1;
-                  const showLabel = isHovered || i % step === 0 || i === totalPts - 1;
-
-                  return (
-                    <g key={i}>
-                      <circle
-                        cx={pt.x}
-                        cy={pt.y}
-                        r={isHovered ? 7 : 4}
-                        fill="#ffffff"
-                        stroke="#10b981"
-                        strokeWidth={isHovered ? 3.5 : 2}
-                        className="transition-all duration-150 cursor-pointer"
-                        onMouseEnter={(e) => {
-                          const rect = e.currentTarget.ownerSVGElement.getBoundingClientRect();
-                          setHoveredDataPoint(pt.data);
-                          setTooltipPos({ x: (pt.x / chartGeometry.width) * rect.width, y: (pt.y / chartGeometry.height) * rect.height });
-                        }}
-                        onMouseLeave={() => setHoveredDataPoint(null)}
-                      />
-                      {/* X-axis labels */}
-                      {showLabel && (
-                        <text
-                          x={pt.x}
-                          y={chartGeometry.baselineY + 18}
-                          textAnchor="middle"
-                          className={`text-[10px] transition-colors ${
-                            isHovered
-                              ? 'font-bold fill-[var(--adm-success)]'
-                              : 'font-medium fill-[var(--adm-text-muted)]'
-                          }`}
-                        >
-                          {pt.data.label}
-                        </text>
-                      )}
-                    </g>
-                  );
-                })}
-              </svg>
-            </div>
-
-            {/* Category Revenue Breakdown Bar */}
-            <div className="mt-6 pt-5 border-t border-[var(--adm-border)]">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-[var(--adm-text)]">
-                  Revenue Share by Category
-                </span>
-                <span className="text-xs text-[var(--adm-text-muted)]">
-                  Total: ${currentMetrics.totalRevenue.toFixed(0)}
-                </span>
-              </div>
-              
-              {/* Multi-segment Progress Bar */}
-              <div className="h-3 w-full rounded-full bg-[var(--adm-surface-2)] overflow-hidden flex">
-                {categoryBreakdown.map((cat, i) => (
-                  <div
-                    key={i}
-                    style={{ width: `${cat.share}%`, backgroundColor: cat.color }}
-                    className="h-full transition-all duration-500 hover:opacity-90"
-                    title={`${cat.name}: ${cat.share}% ($${cat.revenue})`}
-                  />
-                ))}
-              </div>
-
-              {/* Category Legend */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-                {categoryBreakdown.map((cat, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                    <span className="text-[11px] font-semibold text-[var(--adm-text-muted)] truncate">
-                      {cat.name}: <strong className="text-[var(--adm-text)]">{cat.share}%</strong>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-
-          {/* QUICK ACTION SHORTCUTS */}
-          <div className="bg-[var(--adm-surface)] border border-[var(--adm-border)] rounded-3xl p-5 text-[var(--adm-text)] shadow-lg">
-            <h4 className="text-xs font-black uppercase tracking-wider text-[var(--adm-text-muted)] mb-3">
-              Executive Quick Actions
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              
-              {/* Action 1: Export CSV Report */}
-              <button
-                type="button"
-                onClick={handleExportCSV}
-                disabled={isExporting}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-[color-mix(in_srgb,var(--adm-success)_14%,transparent)] border border-[color-mix(in_srgb,var(--adm-success)_35%,transparent)] text-[var(--adm-success)] font-bold text-xs hover:bg-[var(--adm-primary)] hover:text-[var(--adm-primary-fg)] hover:border-[var(--adm-success)] transition-all duration-200 cursor-pointer shadow-xs"
-              >
-                <Download className="w-4 h-4" />
-                <span>{isExporting ? 'Generating...' : 'Export CSV Report'}</span>
+      {isCalendarOpen && (
+        <div className="adm-card" onMouseLeave={() => { if (selectingState === 'picking_end') setHoverDate(null); }}>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="adm-section-title flex items-center gap-2">
+              <CalendarIcon className="w-4 h-4 text-[var(--adm-primary)]" />
+              {currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </h2>
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={handlePrevMonth} aria-label="Previous month" className="adm-btn adm-btn--ghost h-8 w-8 p-0">
+                <ChevronLeft className="w-4 h-4" />
               </button>
-
-              {/* Action 2: Print Daily Summary */}
-              <button
-                type="button"
-                onClick={handlePrintSummary}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-[var(--adm-surface-2)] border border-[var(--adm-border)] text-[var(--adm-text)] font-bold text-xs hover:bg-[var(--adm-border)] hover:text-[var(--adm-text)] transition-all duration-200 cursor-pointer shadow-xs"
-              >
-                <FileText className="w-4 h-4 text-[var(--adm-text-muted)]" />
-                <span>Daily Z-Report / Print</span>
+              <button type="button" onClick={handleNextMonth} aria-label="Next month" className="adm-btn adm-btn--ghost h-8 w-8 p-0">
+                <ChevronRight className="w-4 h-4" />
               </button>
-
-              {/* Action 3: Category Filter Quick Switch */}
-              <div className="relative">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full flex items-center justify-center appearance-none gap-2 px-4 py-3 rounded-2xl bg-[var(--adm-surface-2)] border border-[var(--adm-border)] text-[var(--adm-text)] font-bold text-xs hover:bg-[var(--adm-border)] hover:text-[var(--adm-text)] transition-all duration-200 cursor-pointer shadow-xs pr-8"
-                >
-                  <option value="all">Filter: All Categories</option>
-                  <option value="mains">Filter: Mains Only</option>
-                  <option value="beverages">Filter: Beverages Only</option>
-                  <option value="appetizers">Filter: Appetizers Only</option>
-                  <option value="desserts">Filter: Desserts Only</option>
-                </select>
-                <Filter className="w-3.5 h-3.5 text-[var(--adm-text-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-
             </div>
           </div>
-
-        </div>
-
-        {/* ---------------------------------------------------------------------
-            RIGHT 4 COLUMNS: INTERACTIVE SIDE CALENDAR & RUNNING ORDERS WIDGET
-            --------------------------------------------------------------------- */}
-        <div className="lg:col-span-4 space-y-6 min-w-0">
-
-          {/* INTERACTIVE SIDE CALENDAR */}
-          {isCalendarOpen ? (
-            <div
-              className="bg-[var(--adm-surface)] border border-[var(--adm-border)] rounded-3xl p-5 text-[var(--adm-text)] shadow-lg relative animate-fadeIn"
-              onMouseLeave={() => {
-                if (selectingState === 'picking_end') setHoverDate(null);
-              }}
-            >
-              {/* Calendar Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4 text-[var(--adm-success)]" />
-                  <h3 className="text-sm font-black text-[var(--adm-text)]">
-                    {currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                  </h3>
-                </div>
-                <div className="flex items-center gap-1 bg-[var(--adm-surface-2)] p-1 rounded-xl border border-[var(--adm-border)]">
-                  <button
-                    type="button"
-                    onClick={handlePrevMonth}
-                    aria-label="Previous month"
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--adm-text)] hover:text-[var(--adm-text)] hover:bg-[var(--adm-border)] transition cursor-pointer"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNextMonth}
-                    aria-label="Next month"
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--adm-text)] hover:text-[var(--adm-text)] hover:bg-[var(--adm-border)] transition cursor-pointer"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
               {/* Selection Guidance Notice */}
               <div className="mb-3 px-3 py-2 rounded-xl bg-[var(--adm-surface-2)] border border-[var(--adm-border)] text-center">
                 {selectingState === 'picking_end' ? (
@@ -1466,114 +979,345 @@ export default function OverviewModule({
                     Reset to Today
                   </button>
                 </div>
+              </div> />
+        </div>
+      )}
+
+      {/* 2. KPI row */}
+      <section aria-label="Key metrics" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {kpi({
+          label: 'Orders',
+          icon: ShoppingBag,
+          value: currentMetrics.totalOrders.toLocaleString(),
+          delta: growthText(currentMetrics.salesGrowth),
+          tone: growthTone(currentMetrics.salesGrowth),
+          sub: `vs previous ${previousMetrics.totalOrders} orders`
+        })}
+        {kpi({
+          label: 'Revenue',
+          icon: DollarSign,
+          value: `$${currentMetrics.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          delta: growthText(currentMetrics.revenueGrowth),
+          tone: growthTone(currentMetrics.revenueGrowth),
+          sub: `vs previous $${previousMetrics.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+        })}
+        {kpi({
+          label: 'Net profit',
+          icon: TrendingUp,
+          value: `$${currentMetrics.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          delta: `${currentMetrics.grossMarginPercent}% margin`,
+          tone: 'info',
+          sub: 'Estimated operational margin'
+        })}
+        {kpi({
+          label: 'Avg order value',
+          icon: BarChart3,
+          value: `$${currentMetrics.aov.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          delta: growthText(currentMetrics.aovGrowth),
+          tone: growthTone(currentMetrics.aovGrowth),
+          sub: 'Average spend per table'
+        })}
+      </section>
+
+      {/* 3. Main chart and category breakdown */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
+        <section className="adm-card xl:col-span-2 min-w-0 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="adm-section-title">Revenue and orders</h2>
+                {peakPoint && (
+                  <span className="adm-badge adm-badge--warning">
+                    Peak {peakPoint.label} (${peakPoint.revenue.toFixed(0)})
+                  </span>
+                )}
               </div>
+              <p className="adm-section-sub">Hover bars or points for the interval breakdown</p>
             </div>
-          ) : (
-            <div className="bg-[var(--adm-surface)] border border-[var(--adm-border)] rounded-3xl p-4 text-[var(--adm-text)] flex items-center justify-between shadow-lg">
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-[var(--adm-success)]" />
-                <span className="text-xs font-bold text-[var(--adm-text)]">Side Calendar Collapsed</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsCalendarOpen(true)}
-                className="text-xs text-[var(--adm-success)] font-bold hover:underline cursor-pointer"
-              >
-                Show Calendar
-              </button>
+
+            <div
+              role="group"
+              aria-label="Chart metric"
+              className="flex gap-1 rounded-xl p-1 self-start sm:self-auto"
+              style={{ background: 'var(--adm-surface-2)', border: '1px solid var(--adm-border)' }}
+            >
+              {[
+                { key: 'revenue', label: 'Revenue ($)' },
+                { key: 'orders', label: 'Order count' }
+              ].map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => setChartMetric(m.key)}
+                  aria-pressed={chartMetric === m.key}
+                  className={`h-8 px-3 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                    chartMetric === m.key
+                      ? 'bg-[var(--adm-primary)] text-[var(--adm-primary-fg)]'
+                      : 'text-[var(--adm-text-muted)] hover:text-[var(--adm-text)]'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
             </div>
-          )}
-
-          {/* COMPACT "CURRENTLY RUNNING ORDERS" WIDGET */}
-          <div className="bg-[var(--adm-surface)] border border-[var(--adm-border)] rounded-3xl p-5 text-[var(--adm-text)] shadow-lg">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[var(--adm-success)] animate-pulse shadow-sm shadow-emerald-400/80" />
-                <h3 className="text-sm font-black text-[var(--adm-text)]">
-                  Currently Running Orders
-                </h3>
-              </div>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--adm-success)_14%,transparent)] text-[var(--adm-success)] border border-[color-mix(in_srgb,var(--adm-success)_35%,transparent)]">
-                {runningOrders.length} active
-              </span>
-            </div>
-
-            {/* List of running orders */}
-            {runningOrders.length === 0 ? (
-              <div className="py-8 text-center text-[var(--adm-text-muted)] space-y-2">
-                <CheckCircle2 className="w-8 h-8 text-[var(--adm-success)] mx-auto" />
-                <p className="text-xs font-semibold text-[var(--adm-text)]">
-                  Kitchen queue is clear!
-                </p>
-                <p className="text-[11px] text-[var(--adm-text-muted)]">
-                  All table orders have been completed.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {runningOrders.map((ord) => {
-                  const badge = getStatusBadge(ord.status);
-                  return (
-                    <div
-                      key={ord.id}
-                      className="p-3 rounded-2xl bg-[var(--adm-surface-2)] border border-[var(--adm-border)] hover:border-[color-mix(in_srgb,var(--adm-success)_45%,transparent)] transition group"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-xs text-[var(--adm-text)]">
-                            Table #{ord.tableNumber < 10 ? `0${ord.tableNumber}` : ord.tableNumber}
-                          </span>
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border ${badge.pillClass}`}
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClass}`} />
-                            {badge.label}
-                          </span>
-                        </div>
-
-                        {/* 1-Click "View Table" Button */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (onNavigateToTables) {
-                              onNavigateToTables(ord.tableNumber);
-                            } else {
-                              console.log(`Navigating to table #${ord.tableNumber}`);
-                            }
-                          }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black bg-[var(--adm-primary)] hover:bg-[var(--adm-primary)] text-[var(--adm-primary-fg)] shadow-xs transition cursor-pointer"
-                          title={`View Table #${ord.tableNumber} in Live Tables`}
-                        >
-                          <span>View Table</span>
-                          <ArrowUpRight className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                      {/* Summary of items & elapsed time */}
-                      <p className="text-[11px] text-[var(--adm-text-muted)] mt-1.5 line-clamp-1">
-                        {ord.itemSummary}
-                      </p>
-
-                      <div className="flex items-center justify-between text-[10px] text-[var(--adm-text-muted)] mt-2 pt-1.5 border-t border-[var(--adm-border)]">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-[var(--adm-text-muted)]" />
-                          <span>{ord.elapsedMins} mins ago</span>
-                        </span>
-                        <span className="font-bold text-[var(--adm-text)]">
-                          ${ord.total}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
 
-        </div>
+            {/* Interactive SVG Chart Container */}
+            <div className="relative w-full aspect-[21/9] min-h-[220px]">
+              
+              {/* Floating Tooltip */}
+              {hoveredDataPoint && (
+                <div
+                  className="absolute pointer-events-none z-30 transform -translate-x-1/2 -translate-y-full -top-3 bg-[var(--adm-surface)] text-[var(--adm-text)] px-3.5 py-2.5 rounded-2xl shadow-2xl border border-[color-mix(in_srgb,var(--adm-success)_45%,transparent)] text-left transition-all"
+                  style={{ left: `${tooltipPos.x}px` }}
+                >
+                  <p className="text-[11px] font-bold text-[var(--adm-success)]">
+                    {hoveredDataPoint.fullLabel || hoveredDataPoint.label}
+                  </p>
+                  <div className="mt-1 space-y-0.5">
+                    <p className="text-xs font-black text-[var(--adm-text)]">
+                      Revenue: ${hoveredDataPoint.revenue.toFixed(2)}
+                    </p>
+                    <p className="text-[11px] text-[var(--adm-text)]">
+                      Orders: {hoveredDataPoint.orders} • AOV: ${hoveredDataPoint.aov.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="w-2.5 h-2.5 bg-[var(--adm-surface)] border-r border-b border-[color-mix(in_srgb,var(--adm-success)_45%,transparent)] transform rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2" />
+                </div>
+              )}
 
+              <svg
+                viewBox={`0 0 ${chartGeometry.width} ${chartGeometry.height}`}
+                className="w-full h-full overflow-visible"
+              >
+                <defs>
+                  {/* Area Fill Gradient */}
+                  <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" style={{ stopColor: 'var(--adm-success)' }} stopOpacity="0.35" />
+                    <stop offset="100%" style={{ stopColor: 'var(--adm-success)' }} stopOpacity="0.0" />
+                  </linearGradient>
+
+                  {/* Bar Fill Gradient */}
+                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" style={{ stopColor: 'var(--adm-success)' }} stopOpacity="0.85" />
+                    <stop offset="100%" style={{ stopColor: 'var(--adm-primary)' }} stopOpacity="0.3" />
+                  </linearGradient>
+                </defs>
+
+                {/* Horizontal Gridlines */}
+                {chartGeometry.yTicks.map((tick, i) => (
+                  <g key={i}>
+                    <line
+                      x1={chartGeometry.paddingLeft}
+                      y1={tick.y}
+                      x2={chartGeometry.width - 20}
+                      y2={tick.y}
+                      stroke="currentColor"
+                      strokeDasharray="4 4"
+                      className="text-[var(--adm-border)]"
+                      strokeWidth="1"
+                    />
+                    <text
+                      x={chartGeometry.paddingLeft - 8}
+                      y={tick.y + 4}
+                      textAnchor="end"
+                      className="text-[10px] font-semibold fill-[var(--adm-text-muted)]"
+                    >
+                      {tick.label}
+                    </text>
+                  </g>
+                ))}
+
+                {/* Subtle Interactive Columns (Bars) */}
+                {chartGeometry.points.map((pt, i) => {
+                  const barW = Math.max(4, Math.min(28, (chartGeometry.plotW / Math.max(1, chartGeometry.points.length)) * 0.45));
+                  const barH = chartGeometry.baselineY - pt.y;
+                  const isHovered = hoveredDataPoint === pt.data;
+
+                  return (
+                    <rect
+                      key={i}
+                      x={pt.x - barW / 2}
+                      y={pt.y}
+                      width={barW}
+                      height={barH}
+                      rx="3"
+                      style={{ fill: isHovered ? 'var(--adm-success)' : 'url(#barGradient)' }}
+                      className="transition-all duration-200 cursor-pointer opacity-80 hover:opacity-100"
+                      onMouseEnter={(e) => {
+                        const rect = e.currentTarget.ownerSVGElement.getBoundingClientRect();
+                        setHoveredDataPoint(pt.data);
+                        setTooltipPos({ x: (pt.x / chartGeometry.width) * rect.width, y: (pt.y / chartGeometry.height) * rect.height });
+                      }}
+                      onMouseLeave={() => setHoveredDataPoint(null)}
+                    />
+                  );
+                })}
+
+                {/* Area Gradient */}
+                {chartGeometry.pathArea && (
+                  <path
+                    d={chartGeometry.pathArea}
+                    fill="url(#areaGradient)"
+                    className="transition-all duration-300"
+                  />
+                )}
+
+                {/* Smooth Curve Stroke */}
+                {chartGeometry.pathLine && (
+                  <path
+                    d={chartGeometry.pathLine}
+                    fill="none"
+                    style={{ stroke: 'var(--adm-success)' }}
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="drop-shadow-sm transition-all duration-300"
+                  />
+                )}
+
+                {/* Interactive Points / Nodes */}
+                {chartGeometry.points.map((pt, i) => {
+                  const isHovered = hoveredDataPoint === pt.data;
+                  const totalPts = chartGeometry.points.length;
+                  const step = totalPts > 20 ? 4 : totalPts > 10 ? 2 : 1;
+                  const showLabel = isHovered || i % step === 0 || i === totalPts - 1;
+
+                  return (
+                    <g key={i}>
+                      <circle
+                        cx={pt.x}
+                        cy={pt.y}
+                        r={isHovered ? 7 : 4}
+                        style={{ fill: 'var(--adm-surface)', stroke: 'var(--adm-success)' }}
+                        strokeWidth={isHovered ? 3.5 : 2}
+                        className="transition-all duration-150 cursor-pointer"
+                        onMouseEnter={(e) => {
+                          const rect = e.currentTarget.ownerSVGElement.getBoundingClientRect();
+                          setHoveredDataPoint(pt.data);
+                          setTooltipPos({ x: (pt.x / chartGeometry.width) * rect.width, y: (pt.y / chartGeometry.height) * rect.height });
+                        }}
+                        onMouseLeave={() => setHoveredDataPoint(null)}
+                      />
+                      {/* X-axis labels */}
+                      {showLabel && (
+                        <text
+                          x={pt.x}
+                          y={chartGeometry.baselineY + 18}
+                          textAnchor="middle"
+                          className={`text-[10px] transition-colors ${
+                            isHovered
+                              ? 'font-bold fill-[var(--adm-success)]'
+                              : 'font-medium fill-[var(--adm-text-muted)]'
+                          }`}
+                        >
+                          {pt.data.label}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+        </section>
+
+        <section className="adm-card min-w-0">
+          <div className="mb-4">
+            <h2 className="adm-section-title">Revenue by category</h2>
+            <p className="adm-section-sub">Total ${currentMetrics.totalRevenue.toFixed(0)}</p>
+          </div>
+
+          <div className="h-2.5 w-full rounded-full bg-[var(--adm-surface-2)] overflow-hidden flex">
+            {categoryBreakdown.map((cat, i) => (
+              <div
+                key={i}
+                style={{ width: `${cat.share}%`, backgroundColor: cat.color }}
+                className="h-full transition-all duration-500"
+                title={`${cat.name}: ${cat.share}% ($${cat.revenue})`}
+              />
+            ))}
+          </div>
+
+          <ul className="mt-4 space-y-2.5">
+            {categoryBreakdown.map((cat, i) => (
+              <li key={i} className="flex items-center gap-2.5 text-xs">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                <span className="flex-1 min-w-0 truncate font-semibold text-[var(--adm-text)]">{cat.name}</span>
+                <span className="tabular-nums text-[var(--adm-text-muted)]">${cat.revenue}</span>
+                <span className="w-12 text-right font-bold tabular-nums text-[var(--adm-text)]">{cat.share}%</span>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
 
+      {/* 4. Currently running orders (compact list) */}
+      <section className="adm-card min-w-0">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="adm-section-title flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[var(--adm-success)] animate-pulse" />
+            Currently running orders
+          </h2>
+          <span className="adm-badge adm-badge--success">{runningOrders.length} active</span>
+        </div>
+
+        {runningOrders.length === 0 ? (
+          <div className="adm-empty mt-4">
+            <CheckCircle2 className="w-6 h-6 text-[var(--adm-success)]" />
+            <p className="font-semibold text-[var(--adm-text)]">Kitchen queue is clear</p>
+            <p className="text-xs">All table orders have been completed.</p>
+          </div>
+        ) : (
+          <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
+            {runningOrders.map((ord) => {
+              const badge = getStatusBadge(ord.status);
+              return (
+                <li
+                  key={ord.id}
+                  className="flex items-center gap-3 rounded-xl p-3 bg-[var(--adm-surface-2)] border border-[var(--adm-border)]"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-bold text-[var(--adm-text)] tabular-nums">
+                        Table {ord.tableNumber < 10 ? `0${ord.tableNumber}` : ord.tableNumber}
+                      </span>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border ${badge.pillClass}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClass}`} />
+                        {badge.label}
+                      </span>
+                    </div>
+                    <p className="mt-1 truncate text-xs text-[var(--adm-text-muted)]">{ord.itemSummary}</p>
+                    <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[var(--adm-text-muted)]">
+                      <Clock className="w-3 h-3" />
+                      <span>{ord.elapsedMins} mins ago</span>
+                      <span aria-hidden="true">·</span>
+                      <span className="font-bold text-[var(--adm-text)]">${ord.total}</span>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onNavigateToTables) {
+                        onNavigateToTables(ord.tableNumber);
+                      } else {
+                        console.log(`Navigating to table #${ord.tableNumber}`);
+                      }
+                    }}
+                    className="adm-btn adm-btn--ghost h-8 px-2.5 text-xs"
+                    title={`View Table #${ord.tableNumber} in Live Tables`}
+                  >
+                    <span>View</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      {/* 5. Close day: compact summary, Z-report opens in a modal */}
+      <DayClose orders={orders} />
     </div>
   );
 }

@@ -952,8 +952,10 @@ function KdsTicket({ order, tone, nextStatus, actionLabel, nowMs, onAdvance, isU
   return (
     <article className={`kds-ticket kds-ticket--${urgency}`} data-order-id={orderId} data-order-status={tone}>
       <div className="kds-ticket__head">
-        <div className="min-w-0">
-          <div className="kds-ticket__table">{isTakeaway ? 'Takeaway' : `Table ${tableNo}`}</div>
+        <div className="kds-ticket__title-wrap">
+          <div className="kds-ticket__table" title={isTakeaway ? 'Takeaway' : `Table ${tableNo}`}>
+            {isTakeaway ? 'Takeaway' : `Table ${tableNo}`}
+          </div>
           <div className="kds-ticket__meta">#{displayNum}{placedAt ? ` · ${placedAt}` : ''}</div>
         </div>
         <div className="kds-ticket__timer">
@@ -981,6 +983,8 @@ function KdsTicket({ order, tone, nextStatus, actionLabel, nowMs, onAdvance, isU
           const qty = item?.quantity ?? item?.qty ?? 1;
           const note = item?.notes || item?.note || item?.special_instructions;
           const done = checkedItems.has(index);
+          const rawPrice = item?.price ?? item?.unit_price ?? item?.amount;
+          const price = typeof rawPrice === 'number' ? rawPrice : null;
           return (
             <li key={index}>
               <button
@@ -991,10 +995,11 @@ function KdsTicket({ order, tone, nextStatus, actionLabel, nowMs, onAdvance, isU
               >
                 <span className="kds-item__qty">{qty}×</span>
                 <span className="kds-item__body">
-                  <span className="kds-item__name">{name}</span>
+                  <span className="kds-item__name" title={name}>{name}</span>
                   {item?.category && <span className="kds-item__cat">{item.category}</span>}
                   {note && <span className="kds-item__note">{note}</span>}
                 </span>
+                {price !== null && <span className="kds-item__price">{price.toLocaleString()}</span>}
                 {done && <Check className="kds-item__check w-5 h-5" />}
               </button>
             </li>
