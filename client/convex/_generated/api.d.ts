@@ -12,6 +12,7 @@ import type * as auth from "../auth.js";
 import type * as chat from "../chat.js";
 import type * as corrections from "../corrections.js";
 import type * as files from "../files.js";
+import type * as http from "../http.js";
 import type * as media from "../media.js";
 import type * as menu from "../menu.js";
 import type * as orders from "../orders.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   chat: typeof chat;
   corrections: typeof corrections;
   files: typeof files;
+  http: typeof http;
   media: typeof media;
   menu: typeof menu;
   orders: typeof orders;

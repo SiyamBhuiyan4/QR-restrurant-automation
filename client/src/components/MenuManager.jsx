@@ -444,8 +444,12 @@ export default function MenuManager({ className = '' }) {
     return { total, inStock, outOfStock, vegCount, tgMediaCount };
   }, [dishes]);
 
-  // Upload a dish photo or video to Convex file storage and return its public URL
+  // Upload a dish photo or video: Convex storage briefly, then the Telegram channel; returns a permanent media link
   const uploadMediaToConvex = async (file) => {
+    // Telegram bots can only serve files up to 20 MB back to us
+    if (file.size > 20 * 1024 * 1024) {
+      throw new Error('File is larger than 20 MB. Please upload a smaller or compressed file.');
+    }
     const uploadUrl = await convex.mutation(api.orders.generateUploadUrl, {});
     const res = await fetch(uploadUrl, {
       method: 'POST',

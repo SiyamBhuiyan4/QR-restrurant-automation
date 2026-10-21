@@ -229,6 +229,13 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_thread", ["threadKey", "createdAt"]),
 
+  // Telegram download paths for dish media (file_id -> file_path), refreshed hourly.
+  telegramFiles: defineTable({
+    fileId: v.string(),
+    filePath: v.string(),
+    fetchedAt: v.number(),
+  }).index("by_file_id", ["fileId"]),
+
   // Global failed admin PIN attempts (single row, key = "global").
   adminAttempts: defineTable({
     key: v.string(),
