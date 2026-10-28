@@ -26,6 +26,16 @@ class ErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError(error) {
+    const msg = String(error?.message || error || '');
+    if (
+      msg.includes('CONVEX') ||
+      msg.includes('Convex') ||
+      msg.includes('free plan limits') ||
+      msg.includes('deployments have been disabled')
+    ) {
+      // Gracefully suppress external Convex cloud errors in favor of zero-database Telegram CDN operation
+      return { hasError: false, error: null };
+    }
     return { hasError: true, error };
   }
 

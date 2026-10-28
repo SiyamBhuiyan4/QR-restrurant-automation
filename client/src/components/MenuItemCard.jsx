@@ -412,6 +412,7 @@ export default function MenuItemCard({
                     muted={isVideoMuted}
                     playsInline
                     preload="none"
+                    referrerPolicy="no-referrer"
                     onError={() => setVideoError(true)}
                     className="menu-show__video"
                   />
@@ -424,6 +425,7 @@ export default function MenuItemCard({
                       onError={() => setImageError(true)}
                       loading="lazy"
                       draggable={false}
+                      referrerPolicy="no-referrer"
                       className={`menu-show__img ${idx === currentAngleIndex ? 'is-active' : ''}`}
                     />
                   ))
@@ -668,6 +670,7 @@ export default function MenuItemCard({
                 muted
                 playsInline
                 preload="none"
+                referrerPolicy="no-referrer"
                 onError={() => setVideoError(true)}
                 className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               />
@@ -677,6 +680,7 @@ export default function MenuItemCard({
                 alt={dishTitle}
                 onError={() => setImageError(true)}
                 loading="lazy"
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               />
             ) : (
@@ -869,6 +873,7 @@ export default function MenuItemCard({
                   muted
                   playsInline
                   preload="none"
+                  referrerPolicy="no-referrer"
                   onError={() => setVideoError(true)}
                   className="plate-card__img object-cover w-full h-full"
                 />
@@ -878,6 +883,7 @@ export default function MenuItemCard({
                   alt={dishTitle}
                   onError={() => setImageError(true)}
                   loading="lazy"
+                  referrerPolicy="no-referrer"
                   className="plate-card__img"
                 />
               ) : (
@@ -1046,6 +1052,7 @@ export default function MenuItemCard({
                   muted
                   playsInline
                   preload="none"
+                  referrerPolicy="no-referrer"
                   onError={() => setVideoError(true)}
                   className="w-full h-full object-cover rounded-full"
                 />
@@ -1055,6 +1062,7 @@ export default function MenuItemCard({
                   alt={dishTitle}
                   onError={() => setImageError(true)}
                   loading="lazy"
+                  referrerPolicy="no-referrer"
                 />
               ) : (
                 <div className="menu-card__fallback select-none">

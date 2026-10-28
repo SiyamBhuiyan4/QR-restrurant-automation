@@ -60,6 +60,7 @@ import {
 import AudioPlayer from '../AudioPlayer';
 import BillPreviewModal, { settleTableOrders, formatMoney } from './BillReceipt';
 import { useRestaurant } from '../../context/RestaurantContext';
+import { sendFloorSnapshotToTelegram } from '../../services/telegramClient.js';
 import OrderCorrectionModal, { computeOrderBill } from './OrderCorrectionModal';
 import '../../styles/admin-tables.css';
 import '../../styles/admin-floor.css';
@@ -211,15 +212,45 @@ export default function LiveTablesModule({
   // STATE MANAGEMENT (Self-contained with sync back to parent handlers)
   // ---------------------------------------------------------------------------
 
-  // Initialize 12 tables ensuring exact initial distribution:
+  const restaurantContext = useRestaurant();
+  const {
+    tables: contextTables,
+    setTables: contextSetTables,
+    employees: contextEmployees,
+    assistanceCalls,
+    getOrderCorrection
+  } = restaurantContext || {};
+
+  // Initialize tables ensuring offline-first persistence from localStorage ('smartdine_restaurant_tables'),
+  // propTables, RestaurantContext, or realistic default distribution:
   // Available: 4 (T3, T6, T8, T11)
   // Order Running: 5 (T1, T4, T5, T10, T12)
   // Ready in Kitchen: 2 (T2, T7)
   // Assistance / Issue: 1 (T9)
   const [tables, setTables] = useState(() => {
+    // 1. Check offline localStorage first
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('smartdine_restaurant_tables');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (err) {
+        console.warn('[LiveTablesModule] Error reading smartdine_restaurant_tables:', err);
+      }
+    }
+    // 2. Check props
     if (propTables && Array.isArray(propTables) && propTables.length > 0) {
       return propTables;
     }
+    // 3. Check context tables
+    if (contextTables && Array.isArray(contextTables) && contextTables.length > 0) {
+      return contextTables;
+    }
+    // 4. Default mock data
     const base = defaultMockTables ? JSON.parse(JSON.stringify(defaultMockTables)) : [];
     // Ensure Table 4 is set to ORDER_RUNNING and Table 9 is set to NEED_ASSISTANCE
     return base.map(t => {
@@ -244,12 +275,32 @@ export default function LiveTablesModule({
   });
 
   const [employees, setEmployees] = useState(() => {
-    return propEmployees && Array.isArray(propEmployees) ? propEmployees : defaultMockEmployees || [];
+    if (propEmployees && Array.isArray(propEmployees) && propEmployees.length > 0) return propEmployees;
+    if (contextEmployees && Array.isArray(contextEmployees) && contextEmployees.length > 0) return contextEmployees;
+    return defaultMockEmployees || [];
   });
 
   const [orders, setOrders] = useState(() => {
     if (propOrders && Array.isArray(propOrders) && propOrders.length > 0) {
       return propOrders;
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        const liveOrdersRaw = localStorage.getItem('smartdine_live_orders');
+        if (liveOrdersRaw) {
+          const parsed = JSON.parse(liveOrdersRaw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+        const kdsOrdersRaw = localStorage.getItem('smartdine_kds_orders');
+        if (kdsOrdersRaw) {
+          const parsed = JSON.parse(kdsOrdersRaw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (_) {}
     }
     const base = defaultMockLiveOrders ? JSON.parse(JSON.stringify(defaultMockLiveOrders)) : [];
     // Include Table 4 order if not already present
@@ -273,7 +324,6 @@ export default function LiveTablesModule({
   // Modals & Active Selections
   const [selectedOrderModal, setSelectedOrderModal] = useState(null);
   const [billCorrectionOrder, setBillCorrectionOrder] = useState(null);
-  const { getOrderCorrection } = useRestaurant();
   const [activeIssueModal, setActiveIssueModal] = useState(null);
   const [activeEmployeeDropdownTableId, setActiveEmployeeDropdownTableId] = useState(null);
   const [isAddTableModalOpen, setIsAddTableModalOpen] = useState(false);
@@ -290,9 +340,32 @@ export default function LiveTablesModule({
   const [billTarget, setBillTarget] = useState(null); // { tableNumber } while the bill preview is open
   const [expandedTableIds, setExpandedTableIds] = useState({}); // compact table cards: which ones show Details
 
+  // Sync tables to offline storage ('smartdine_restaurant_tables'), RestaurantContext, and parent
+  const syncTablesOffline = useCallback((nextTables) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('smartdine_restaurant_tables', JSON.stringify(nextTables));
+        window.dispatchEvent(new CustomEvent('smartdine:table-update', { detail: nextTables }));
+      } catch (err) {
+        console.warn('[LiveTablesModule] Error persisting smartdine_restaurant_tables:', err);
+      }
+    }
+    if (typeof contextSetTables === 'function') {
+      contextSetTables(nextTables);
+    }
+    if (typeof onUpdateTables === 'function') {
+      onUpdateTables(nextTables);
+    }
+  }, [contextSetTables, onUpdateTables]);
+
   // Sync props if parent updates
   useEffect(() => {
-    if (propTables && Array.isArray(propTables)) setTables(propTables);
+    if (propTables && Array.isArray(propTables) && propTables.length > 0) {
+      setTables(propTables);
+      try {
+        localStorage.setItem('smartdine_restaurant_tables', JSON.stringify(propTables));
+      } catch (_) {}
+    }
   }, [propTables]);
 
   useEffect(() => {
@@ -306,6 +379,97 @@ export default function LiveTablesModule({
   useEffect(() => {
     if (propCustomerNotes && Array.isArray(propCustomerNotes)) setCustomerNotes(propCustomerNotes);
   }, [propCustomerNotes]);
+
+  // Persist live orders offline
+  useEffect(() => {
+    if (Array.isArray(orders) && orders.length > 0 && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('smartdine_live_orders', JSON.stringify(orders));
+      } catch (_) {}
+    }
+  }, [orders]);
+
+  // Listen for storage events and cross-tab/module custom events for smartdine_restaurant_tables
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'smartdine_restaurant_tables' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setTables(parsed);
+          }
+        } catch (_) {}
+      }
+    };
+
+    const handleCustomTableUpdate = (e) => {
+      if (Array.isArray(e.detail) && e.detail.length > 0) {
+        setTables(e.detail);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('smartdine:table-update', handleCustomTableUpdate);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('smartdine:table-update', handleCustomTableUpdate);
+    };
+  }, []);
+
+  // Listen for offline customer orders placed via smartdine:new-order
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleNewOrder = (e) => {
+      const newOrder = e.detail;
+      if (!newOrder) return;
+      const tNum = Number(newOrder.tableNumber || newOrder.table_number || newOrder.table);
+
+      setOrders(prev => {
+        const exists = prev.some(o => (o.id && o.id === newOrder.id) || (o.orderNumber && o.orderNumber === newOrder.orderNumber));
+        if (exists) return prev;
+        const normalized = {
+          id: newOrder.id || `ord-${Date.now()}`,
+          orderNumber: newOrder.orderNumber || newOrder.orderId || `#${Math.floor(1000 + Math.random() * 9000)}`,
+          tableNumber: tNum,
+          customerName: newOrder.customerName || newOrder.dinerName || 'Guest',
+          timeElapsedMinutes: 0,
+          timestamp: new Date().toISOString(),
+          items: newOrder.items || [],
+          subtotal: Number(newOrder.subtotal || newOrder.total || 0),
+          tax: Number(newOrder.tax || 0),
+          total: Number(newOrder.total || newOrder.totalAmount || 0),
+          kitchenFlowStage: newOrder.kitchenFlowStage || KITCHEN_STAGE.PLACED,
+          assignedEmployeeId: newOrder.assignedEmployeeId || null
+        };
+        return [normalized, ...prev];
+      });
+
+      if (tNum) {
+        setTables(prev => {
+          const updated = prev.map(t => {
+            if (t.tableNumber === tNum && t.status === TABLE_STATUS.AVAILABLE) {
+              return {
+                ...t,
+                status: TABLE_STATUS.ORDER_RUNNING,
+                currentOrderId: newOrder.id || newOrder.orderId
+              };
+            }
+            return t;
+          });
+          syncTablesOffline(updated);
+          return updated;
+        });
+      }
+    };
+
+    window.addEventListener('smartdine:new-order', handleNewOrder);
+    return () => {
+      window.removeEventListener('smartdine:new-order', handleNewOrder);
+    };
+  }, [syncTablesOffline]);
 
   // Show Toast Alert helper
   const triggerToast = useCallback((message, type = 'success') => {
@@ -362,9 +526,7 @@ export default function LiveTablesModule({
         nextTables = prev.slice(0, num);
       }
       nextCount = nextTables.length;
-      if (typeof onUpdateTables === 'function') {
-        onUpdateTables(nextTables);
-      }
+      syncTablesOffline(nextTables);
       if (typeof onTableCountChange === 'function') {
         onTableCountChange(nextCount);
       }
@@ -373,7 +535,7 @@ export default function LiveTablesModule({
 
     setCustomTableCount(nextCount.toString());
     triggerToast(`Admin password authorized. Floor tables updated to ${nextCount}`, 'success');
-  }, [onUpdateTables, onTableCountChange, triggerToast]);
+  }, [syncTablesOffline, onTableCountChange, triggerToast]);
 
   const handleAddNewTable = useCallback(() => {
     let nextCount = 0;
@@ -393,9 +555,7 @@ export default function LiveTablesModule({
       };
       const nextTables = [...prev, newTable];
       nextCount = nextTables.length;
-      if (typeof onUpdateTables === 'function') {
-        onUpdateTables(nextTables);
-      }
+      syncTablesOffline(nextTables);
       if (typeof onTableCountChange === 'function') {
         onTableCountChange(nextCount);
       }
@@ -404,7 +564,7 @@ export default function LiveTablesModule({
 
     setCustomTableCount(nextCount.toString());
     triggerToast(`Admin password authorized. Floor tables updated to ${nextCount}`, 'success');
-  }, [onUpdateTables, onTableCountChange, triggerToast]);
+  }, [syncTablesOffline, onTableCountChange, triggerToast]);
 
   const handleRemoveSpecificTable = useCallback((tableNumber) => {
     let nextCount = 0;
@@ -415,9 +575,7 @@ export default function LiveTablesModule({
       }
       const nextTables = prev.filter(t => t.tableNumber !== tableNumber);
       nextCount = nextTables.length;
-      if (typeof onUpdateTables === 'function') {
-        onUpdateTables(nextTables);
-      }
+      syncTablesOffline(nextTables);
       if (typeof onTableCountChange === 'function') {
         onTableCountChange(nextCount);
       }
@@ -428,7 +586,7 @@ export default function LiveTablesModule({
       setCustomTableCount(nextCount.toString());
       triggerToast(`Admin password authorized. Floor tables updated to ${nextCount}`, 'success');
     }
-  }, [onUpdateTables, onTableCountChange, triggerToast]);
+  }, [syncTablesOffline, onTableCountChange, triggerToast]);
 
   // Request handlers that open TableSecurityModal for admin PIN confirmation
   const requestTableCountChange = useCallback((newCount) => {
@@ -525,6 +683,21 @@ export default function LiveTablesModule({
     };
   }, [tables]);
 
+  // Active Orders Count (uncompleted and not yet served to guests)
+  const activeOrdersCount = useMemo(() => {
+    return orders.filter(o => !o.completed && o.kitchenFlowStage !== KITCHEN_STAGE.SERVED).length;
+  }, [orders]);
+
+  // Table Occupancy: number of occupied tables and occupancy percentage (offline-first)
+  const occupiedCount = useMemo(() => {
+    return tables.filter(t => t.status !== TABLE_STATUS.AVAILABLE).length;
+  }, [tables]);
+
+  const occupancyRate = useMemo(() => {
+    if (!tables.length) return 0;
+    return Math.round((occupiedCount / tables.length) * 100);
+  }, [occupiedCount, tables.length]);
+
   // ---------------------------------------------------------------------------
   // FILTERED TABLES
   // ---------------------------------------------------------------------------
@@ -612,7 +785,11 @@ export default function LiveTablesModule({
     setOrders(prev => prev.map(o => (o.id === orderId ? { ...o, kitchenFlowStage: nextStage } : o)));
 
     // Update table status
-    setTables(prev => prev.map(t => (t.tableNumber === tableNumber ? { ...t, status: nextTableStatus } : t)));
+    setTables(prev => {
+      const next = prev.map(t => (t.tableNumber === tableNumber ? { ...t, status: nextTableStatus } : t));
+      syncTablesOffline(next);
+      return next;
+    });
 
     triggerToast(toastMsg, 'info');
 
@@ -623,21 +800,25 @@ export default function LiveTablesModule({
     setTimeout(() => {
       setAdvancingOrderIds(prev => ({ ...prev, [orderId]: false }));
     }, 500);
-  }, [orders, triggerToast, onAdvanceOrderStage]);
+  }, [orders, triggerToast, onAdvanceOrderStage, syncTablesOffline]);
 
   // Clear / Reset Table (when served or settling bill)
   const handleResetTable = useCallback((tableNumber) => {
     playChimeSound();
-    setTables(prev => prev.map(t => {
-      if (t.tableNumber === tableNumber) {
-        return {
-          ...t,
-          status: TABLE_STATUS.AVAILABLE,
-          currentOrderId: null
-        };
-      }
-      return t;
-    }));
+    setTables(prev => {
+      const next = prev.map(t => {
+        if (t.tableNumber === tableNumber) {
+          return {
+            ...t,
+            status: TABLE_STATUS.AVAILABLE,
+            currentOrderId: null
+          };
+        }
+        return t;
+      });
+      syncTablesOffline(next);
+      return next;
+    });
 
     // If an order was active, mark it completed
     setOrders(prev => prev.map(o => {
@@ -652,7 +833,7 @@ export default function LiveTablesModule({
     if (onResetTable) {
       onResetTable(tableNumber);
     }
-  }, [triggerToast, onResetTable]);
+  }, [triggerToast, onResetTable, syncTablesOffline]);
 
   // Bill printing / settlement: a table's bill is built from its orders that are not yet completed
   // With a parent handler the shared order/table state is updated there; otherwise settle locally
@@ -675,7 +856,11 @@ export default function LiveTablesModule({
     const newEmp = employees.find(e => String(e.id) === empId || (e.numericId && String(e.numericId) === empId));
     const empName = newEmp ? newEmp.name : (empId ? 'Employee' : 'Unassigned');
 
-    setTables(prev => prev.map(t => (t.tableNumber === tableNumber ? { ...t, assignedEmployeeId: empId } : t)));
+    setTables(prev => {
+      const next = prev.map(t => (t.tableNumber === tableNumber ? { ...t, assignedEmployeeId: empId } : t));
+      syncTablesOffline(next);
+      return next;
+    });
     setOrders(prev => prev.map(o => (o.tableNumber === tableNumber ? { ...o, assignedEmployeeId: empId } : o)));
 
     // Bubble to parent shared context handler
@@ -685,7 +870,7 @@ export default function LiveTablesModule({
 
     setActiveEmployeeDropdownTableId(null);
     triggerToast(`Table ${tableNumber} assigned to ${empName}`, 'success');
-  }, [employees, onAssignEmployee, triggerToast]);
+  }, [employees, onAssignEmployee, triggerToast, syncTablesOffline]);
 
   // Request Employee Reassignment with Admin PIN verification
   const requestReassignEmployee = useCallback((tableNumber, newEmployeeId, onModalConfirmedCallback) => {
@@ -737,16 +922,20 @@ export default function LiveTablesModule({
     }));
 
     // Check if table has an active order running; if so, restore to ORDER_RUNNING, else AVAILABLE
-    setTables(prev => prev.map(t => {
-      if (t.tableNumber === tableNumber) {
-        const hasOrder = orders.some(o => o.tableNumber === tableNumber && o.kitchenFlowStage !== KITCHEN_STAGE.SERVED);
-        return {
-          ...t,
-          status: hasOrder ? TABLE_STATUS.ORDER_RUNNING : TABLE_STATUS.AVAILABLE
-        };
-      }
-      return t;
-    }));
+    setTables(prev => {
+      const next = prev.map(t => {
+        if (t.tableNumber === tableNumber) {
+          const hasOrder = orders.some(o => o.tableNumber === tableNumber && o.kitchenFlowStage !== KITCHEN_STAGE.SERVED);
+          return {
+            ...t,
+            status: hasOrder ? TABLE_STATUS.ORDER_RUNNING : TABLE_STATUS.AVAILABLE
+          };
+        }
+        return t;
+      });
+      syncTablesOffline(next);
+      return next;
+    });
 
     setActiveIssueModal(null);
     triggerToast(`Assistance request for Table ${tableNumber} resolved successfully!`, 'success');
@@ -754,7 +943,7 @@ export default function LiveTablesModule({
     if (onResolveIssue) {
       onResolveIssue(noteId, tableNumber, resolutionMemo);
     }
-  }, [orders, triggerToast, onResolveIssue]);
+  }, [orders, triggerToast, onResolveIssue, syncTablesOffline]);
 
   // ---------------------------------------------------------------------------
   // FORMATTING HELPERS

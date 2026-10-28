@@ -876,6 +876,79 @@
   border-color: rgba(245, 158, 11, 0.3);
 }
 
+/* Telegram CDN & Cloud DB Live Telemetry Indicator */
+.admin-tg-telemetry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.admin-tg-telemetry-btn.is-online {
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+.admin-tg-telemetry-btn.is-online:hover {
+  background: #d1fae5;
+  border-color: #6ee7b7;
+}
+
+.admin-header.dark .admin-tg-telemetry-btn.is-online {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+.admin-header.dark .admin-tg-telemetry-btn.is-online:hover {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.admin-tg-telemetry-btn.is-checking {
+  color: #0369a1;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+}
+.admin-header.dark .admin-tg-telemetry-btn.is-checking {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.12);
+  border-color: rgba(14, 165, 233, 0.3);
+}
+
+.admin-tg-telemetry-btn.is-offline {
+  color: #be123c;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+}
+.admin-header.dark .admin-tg-telemetry-btn.is-offline {
+  color: #fb7185;
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+.admin-tg-telemetry-ping {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 800;
+  background: #ffffff;
+  border: 1px solid currentColor;
+}
+.admin-header.dark .admin-tg-telemetry-ping {
+  background: #0f172a;
+}
+
+
 .admin-bell {
   overflow: visible;
 }

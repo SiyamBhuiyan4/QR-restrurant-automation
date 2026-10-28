@@ -119,6 +119,12 @@ function handleResolveCall(req, res) {
     // Emit Socket.IO event to dismiss alert on staff dashboards
     emitSocket(req, 'waiter:resolved', { id, call: resolvedCall });
 
+    // Notify Telegram channel of resolution
+    const { sendWaiterResolveToTelegram } = require('../telegram');
+    sendWaiterResolveToTelegram(resolvedCall).catch(err => {
+      console.warn('[Telegram waiter resolve error]:', err.message);
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Waiter call resolved',

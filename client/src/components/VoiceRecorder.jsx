@@ -67,24 +67,35 @@ export default function VoiceRecorder({
   const [totalDuration, setTotalDuration] = useState('0:00');
 
   const formatSeconds = (sec) => {
-    if (!sec || isNaN(sec)) return '0:00';
+    if (!sec || isNaN(sec) || !isFinite(sec)) return '0:00';
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+  const getAudioDuration = () => {
+    if (audioRef.current && isFinite(audioRef.current.duration) && audioRef.current.duration > 0) {
+      return audioRef.current.duration;
+    }
+    if (audioBlob?.duration && isFinite(audioBlob.duration) && audioBlob.duration > 0) {
+      return audioBlob.duration;
+    }
+    return 0;
+  };
+
   const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-      setTotalDuration(formatSeconds(audioRef.current.duration));
+    const dur = getAudioDuration();
+    if (dur > 0) {
+      setTotalDuration(formatSeconds(dur));
     }
   };
 
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       const current = audioRef.current.currentTime;
-      const duration = audioRef.current.duration || 1;
+      const duration = getAudioDuration() || 1;
       setPlaybackTime(formatSeconds(current));
-      setPlaybackProgress((current / duration) * 100);
+      setPlaybackProgress(Math.min(100, (current / duration) * 100));
     }
   };
 
@@ -111,7 +122,8 @@ export default function VoiceRecorder({
   const handleSeek = (e) => {
     if (!audioRef.current) return;
     const seekPercent = parseFloat(e.target.value);
-    const newTime = (seekPercent / 100) * (audioRef.current.duration || 0);
+    const dur = getAudioDuration();
+    const newTime = (seekPercent / 100) * dur;
     audioRef.current.currentTime = newTime;
     setPlaybackProgress(seekPercent);
   };

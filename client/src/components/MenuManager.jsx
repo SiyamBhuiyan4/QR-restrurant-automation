@@ -29,6 +29,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
 import { getCachedMenu, cacheMenu } from '../db/indexedDb.js';
+import { uploadMediaToTelegram, publishMenuSnapshotToTelegram } from '../services/telegramClient.js';
 import '../styles/admin.css';
 
 // Helper to detect whether a media URL or file points to a video
@@ -204,6 +205,8 @@ export default function MenuManager({ className = '' }) {
     description: '',
     image_url: '',
     making_video_url: '',
+    telegram_file_id: '',
+    telegram_video_file_id: '',
     is_veg: false,
     is_spicy: false,
     is_available: true
@@ -215,6 +218,7 @@ export default function MenuManager({ className = '' }) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [isSyncingTelegram, setIsSyncingTelegram] = useState(false);
   const photoInputRef = useRef(null);
   const videoInputRef = useRef(null);
 
@@ -247,6 +251,8 @@ export default function MenuManager({ className = '' }) {
       image_url: rawImage || rawVideo || '',
       making_video_url: rawVideo || (isVideoUrl(rawImage) ? rawImage : ''),
       videoUrl: rawVideo || undefined,
+      telegram_file_id: item.telegram_file_id || item.telegramFileId || '',
+      telegram_video_file_id: item.telegram_video_file_id || item.telegramVideoFileId || '',
       is_veg: item.is_veg === 1 || item.is_veg === true || item.isVeg === true || item.veg === true ? 1 : 0,
       is_spicy: item.is_spicy === 1 || item.is_spicy === true || item.isSpicy === true || item.spicy === true ? 1 : 0,
       is_available: item.is_available === 0 || item.is_available === false || item.isAvailable === false || item.available === false ? 0 : 1
@@ -261,11 +267,24 @@ export default function MenuManager({ className = '' }) {
     }, 3500);
   };
 
-  // Load menu from Server with fallback to IndexedDB or initial sample data
+  // Load menu from Server with fallback to LocalStorage, IndexedDB or initial sample data
   const loadMenu = useCallback(async () => {
     setLoading(true);
     setError(null);
     let loadedDishes = [];
+
+    // 0. High priority check: LocalStorage smartdine_menu_items
+    try {
+      const stored = localStorage.getItem('smartdine_menu_items');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          loadedDishes = parsed.map(normalizeDish);
+        }
+      }
+    } catch (e) {
+      console.warn('[MenuManager] LocalStorage retrieval error:', e);
+    }
 
     try {
       // 1. Load the menu from Convex (categories with their items, flattened to dishes)
@@ -283,10 +302,8 @@ export default function MenuManager({ className = '' }) {
           }));
         });
       });
-      if (list.length > 0) {
+      if (list.length > 0 && loadedDishes.length === 0) {
         loadedDishes = list;
-        // Update offline IndexedDB cache
-        await cacheMenu(loadedDishes);
       }
     } catch (err) {
       console.warn('[MenuManager] Convex menu load failed or offline, loading from IndexedDB:', err.message);
@@ -307,8 +324,12 @@ export default function MenuManager({ className = '' }) {
     // 3. Fallback to sample data if both server and IndexedDB were empty
     if (loadedDishes.length === 0) {
       loadedDishes = INITIAL_SAMPLE_DISHES.map(normalizeDish);
-      await cacheMenu(loadedDishes);
     }
+
+    try {
+      localStorage.setItem('smartdine_menu_items', JSON.stringify(loadedDishes));
+    } catch {}
+    await cacheMenu(loadedDishes).catch(() => {});
 
     // Also fetch categories from server API
     try {
@@ -328,6 +349,35 @@ export default function MenuManager({ className = '' }) {
   useEffect(() => {
     loadMenu();
   }, [loadMenu]);
+
+  // Real-time synchronization listener for external updates from other tabs
+  useEffect(() => {
+    const handleMenuSync = (e) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setDishes(e.detail.map(normalizeDish));
+      }
+    };
+    window.addEventListener('smartdine:menu-updated', handleMenuSync);
+
+    let bc = null;
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        bc = new BroadcastChannel('smartdine_restaurant_state');
+        bc.onmessage = (evt) => {
+          if (evt.data?.type === 'MENU_UPDATED' && Array.isArray(evt.data?.menu)) {
+            setDishes(evt.data.menu.map(normalizeDish));
+          }
+        };
+      }
+    } catch (e) {}
+
+    return () => {
+      window.removeEventListener('smartdine:menu-updated', handleMenuSync);
+      if (bc) {
+        try { bc.close(); } catch (_) {}
+      }
+    };
+  }, [normalizeDish]);
 
   // Extract all unique category names (Default + Custom + Convex + Existing Dishes)
   const availableCategories = useMemo(() => {
@@ -444,24 +494,74 @@ export default function MenuManager({ className = '' }) {
     return { total, inStock, outOfStock, vegCount, tgMediaCount };
   }, [dishes]);
 
-  // Upload a dish photo or video: Convex storage briefly, then the Telegram channel; returns a permanent media link
-  const uploadMediaToConvex = async (file) => {
-    // Telegram bots can only serve files up to 20 MB back to us
-    if (file.size > 20 * 1024 * 1024) {
-      throw new Error('File is larger than 20 MB. Please upload a smaller or compressed file.');
+  // Centralized menu updater: state, localStorage, IndexedDB, CustomEvent, BroadcastChannel, Telegram snapshot
+  const commitMenuUpdate = useCallback(async (updatedList) => {
+    // 1. Direct local dishes state
+    setDishes(updatedList);
+
+    // 2. Persist to localStorage
+    try {
+      localStorage.setItem('smartdine_menu_items', JSON.stringify(updatedList));
+    } catch (err) {
+      console.warn('[MenuManager] LocalStorage menu persistence warning:', err);
     }
-    const uploadUrl = await convex.mutation(api.orders.generateUploadUrl, {});
-    const res = await fetch(uploadUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': file.type || 'application/octet-stream' },
-      body: file,
-    });
-    if (!res.ok) throw new Error('Upload failed. Please try again.');
-    const { storageId } = await res.json();
-    return await convex.action(api.media.mirrorToTelegram, { storageId, kind: file.type.startsWith('video/') ? 'video' : 'photo' });
+
+    // 3. Persist to IndexedDB cache
+    try {
+      await cacheMenu(updatedList);
+    } catch (err) {
+      console.warn('[MenuManager] IndexedDB cacheMenu warning:', err);
+    }
+
+    // 4. Dispatch custom event for real-time same-window sync with CustomerMenu
+    try {
+      window.dispatchEvent(new CustomEvent('smartdine:menu-updated', { detail: updatedList }));
+    } catch (err) {
+      console.warn('[MenuManager] CustomEvent smartdine:menu-updated warning:', err);
+    }
+
+    // 5. BroadcastChannel for cross-tab sync with CustomerMenu
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('smartdine_restaurant_state');
+        bc.postMessage({ type: 'MENU_UPDATED', menu: updatedList, detail: updatedList });
+        bc.close();
+      }
+    } catch (err) {
+      console.warn('[MenuManager] BroadcastChannel dispatch warning:', err);
+    }
+
+    // 6. Automatically call publishMenuSnapshotToTelegram
+    try {
+      if (typeof publishMenuSnapshotToTelegram === 'function') {
+        publishMenuSnapshotToTelegram(updatedList, customCategories).catch((tgErr) => {
+          console.warn('[MenuManager] Telegram snapshot auto-sync warning:', tgErr);
+        });
+      }
+    } catch (tgErr) {
+      console.warn('[MenuManager] Telegram publishMenuSnapshotToTelegram call warning:', tgErr);
+    }
+  }, [customCategories]);
+
+  // Manual trigger to publish complete menu snapshot to Telegram CDN
+  const handleManualTelegramSync = async () => {
+    setIsSyncingTelegram(true);
+    try {
+      const res = await publishMenuSnapshotToTelegram(dishes, customCategories);
+      if (res && res.success === false && res.reason === 'unconfigured') {
+        triggerSuccess('Menu saved locally! (Telegram bot token unconfigured) 📤');
+      } else {
+        triggerSuccess('Menu database snapshot synced to Telegram CDN! 📤✨');
+      }
+    } catch (err) {
+      console.error('[MenuManager] Manual Telegram sync error:', err);
+      setError('Failed to sync menu to Telegram: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIsSyncingTelegram(false);
+    }
   };
 
-  // Upload Dish Photo
+  // Upload Dish Photo directly to Telegram CDN
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -474,9 +574,15 @@ export default function MenuManager({ className = '' }) {
     setUploadingPhoto(true);
     setUploadError('');
     try {
-      const url = await uploadMediaToConvex(file);
-      setFormData((prev) => ({ ...prev, image_url: url }));
-      triggerSuccess('Photo uploaded! 📸');
+      const uploadResult = await uploadMediaToTelegram(file);
+      const url = uploadResult?.cdnUrl || uploadResult?.url || '';
+      const fileId = uploadResult?.fileId || uploadResult?.file_id || '';
+      setFormData((prev) => ({
+        ...prev,
+        image_url: url,
+        telegram_file_id: fileId
+      }));
+      triggerSuccess('Photo uploaded to Telegram CDN! 📸');
     } catch (err) {
       console.error('[MenuManager] Telegram photo upload failed:', err);
       setUploadError(err.message || 'Failed to upload photo to Telegram Channel');
@@ -486,7 +592,7 @@ export default function MenuManager({ className = '' }) {
     }
   };
 
-  // Upload 360° Profile Video
+  // Upload 360° Profile Video directly to Telegram CDN
   const handleVideoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -494,16 +600,17 @@ export default function MenuManager({ className = '' }) {
     setUploadingVideo(true);
     setUploadError('');
     try {
-      const url = await uploadMediaToConvex(file);
-      {
-        // Sync so both image_url and making_video_url recognize the 360° video
-        setFormData((prev) => ({
-          ...prev,
-          making_video_url: url,
-          image_url: prev.image_url && !isVideoUrl(prev.image_url) ? prev.image_url : url
-        }));
-        triggerSuccess('360° Profile Video uploaded! 🎥');
-      }
+      const uploadResult = await uploadMediaToTelegram(file);
+      const url = uploadResult?.cdnUrl || uploadResult?.url || '';
+      const fileId = uploadResult?.fileId || uploadResult?.file_id || '';
+      // Sync so both image_url and making_video_url recognize the 360° video
+      setFormData((prev) => ({
+        ...prev,
+        making_video_url: url,
+        telegram_video_file_id: fileId,
+        image_url: prev.image_url && !isVideoUrl(prev.image_url) ? prev.image_url : url
+      }));
+      triggerSuccess('360° Profile Video uploaded to Telegram CDN! 🎥');
     } catch (err) {
       console.error('[MenuManager] Telegram video upload failed:', err);
       setUploadError(err.message || 'Failed to upload video to Telegram Channel');
@@ -542,7 +649,7 @@ export default function MenuManager({ className = '' }) {
     triggerSuccess('360° Angular Video Reel preset applied! 🔄🎥');
   };
 
-  // Toggle item availability immediately (Convex + SQLite + IndexedDB)
+  // Toggle item availability immediately (Local state + LocalStorage + IndexedDB + Broadcast + Telegram + Convex)
   const handleToggleAvailability = async (dishId, currentStatus, e) => {
     if (e) e.stopPropagation();
 
@@ -552,12 +659,9 @@ export default function MenuManager({ className = '' }) {
     const updatedDishes = dishes.map((d) => 
       d.id === dishId ? { ...d, is_available: newStatus } : d
     );
-    setDishes(updatedDishes);
+    await commitMenuUpdate(updatedDishes);
 
-    // Save to IndexedDB
-    await cacheMenu(updatedDishes);
-
-    // 1. Sync to Convex Cloud Database
+    // Sync to Convex Cloud Database in background if available
     if (toggleConvexAvailability && targetDish?.convexId) {
       try {
         await toggleConvexAvailability({
@@ -602,8 +706,7 @@ export default function MenuManager({ className = '' }) {
 
     setInlinePriceSaving(true);
     const updatedDishes = dishes.map((d) => (d.id === dish.id ? { ...d, price } : d));
-    setDishes(updatedDishes);
-    await cacheMenu(updatedDishes);
+    await commitMenuUpdate(updatedDishes);
 
     if (updateConvexItem && dish.convexId) {
       try {
@@ -722,6 +825,8 @@ export default function MenuManager({ className = '' }) {
       description: '',
       image_url: '',
       making_video_url: '',
+      telegram_file_id: '',
+      telegram_video_file_id: '',
       is_veg: false,
       is_spicy: false,
       is_available: true
@@ -746,6 +851,8 @@ export default function MenuManager({ className = '' }) {
       description: dish.description || '',
       image_url: rawImg || rawVid || '',
       making_video_url: rawVid || '',
+      telegram_file_id: dish.telegram_file_id || dish.telegramFileId || '',
+      telegram_video_file_id: dish.telegram_video_file_id || dish.telegramVideoFileId || '',
       is_veg: Boolean(dish.is_veg),
       is_spicy: Boolean(dish.is_spicy),
       is_available: Boolean(dish.is_available)
@@ -755,7 +862,7 @@ export default function MenuManager({ className = '' }) {
     setIsModalOpen(true);
   };
 
-  // Save Dish (Add or Edit) -> Persists to Convex Cloud AND SQLite Local Server
+  // Save Dish (Add or Edit) -> Persists to Local State, LocalStorage, IndexedDB, Broadcast, Telegram CDN Snapshot & Convex
   const handleSaveDish = async (e) => {
     e.preventDefault();
     setFormError('');
@@ -812,6 +919,8 @@ export default function MenuManager({ className = '' }) {
       making_video_url: finalVideoUrl,
       makingVideoUrl: finalVideoUrl,
       videoUrl: finalVideoUrl || undefined,
+      telegram_file_id: formData.telegram_file_id || '',
+      telegram_video_file_id: formData.telegram_video_file_id || '',
       is_veg: formData.is_veg ? 1 : 0,
       is_spicy: formData.is_spicy ? 1 : 0,
       is_available: formData.is_available ? 1 : 0
@@ -821,7 +930,7 @@ export default function MenuManager({ className = '' }) {
 
     try {
       if (modalMode === 'add') {
-        // 1. Save structured record to Convex Cloud Database
+        // 1. Save structured record to Convex Cloud Database in background if configured
         let convexNewId = null;
         if (createConvexItem) {
           try {
@@ -838,32 +947,27 @@ export default function MenuManager({ className = '' }) {
               isAvailable: Boolean(formData.is_available)
             });
           } catch (convexErr) {
-            console.warn('[MenuManager] Convex create failed:', convexErr.message);
+            console.warn('[MenuManager] Convex create failed (running local-first):', convexErr.message);
           }
         }
 
-        // 2. Build the local dish record (Convex _id when the insert succeeded)
-        let newDishObj = null;
-
-        if (!newDishObj || !newDishObj.id) {
-          const maxId = dishes.reduce((max, d) => Math.max(max, Number(d.id) || 0), 0);
-          newDishObj = {
-            ...payload,
-            id: convexNewId || (maxId + 1),
-            convexId: convexNewId
-          };
-        } else if (convexNewId) {
-          newDishObj.convexId = convexNewId;
-        }
+        // 2. Build local dish record
+        const maxId = dishes.reduce((max, d) => Math.max(max, Number(d.id) || 0), 0);
+        const newDishObj = {
+          ...payload,
+          id: convexNewId || (maxId + 1),
+          convexId: convexNewId
+        };
 
         updatedList = [normalizeDish(newDishObj), ...updatedList];
-        triggerSuccess(`"${trimmedName}" saved to Convex & Menu! ✨`);
+        await commitMenuUpdate(updatedList);
+        triggerSuccess(`"${trimmedName}" saved to menu! ✨`);
       } else {
         // Edit existing dish
         const currentDish = dishes.find(d => d.id === editingDishId);
         const targetConvexId = currentDish?.convexId;
 
-        // 1. Update in Convex Cloud Database
+        // 1. Update in Convex Cloud Database in background if configured
         if (targetConvexId && updateConvexItem) {
           try {
             await updateConvexItem({
@@ -882,7 +986,6 @@ export default function MenuManager({ className = '' }) {
             console.warn('[MenuManager] Convex update failed:', convexErr.message);
           }
         } else if (!targetConvexId && createConvexItem) {
-          // If dish was previously only in SQLite, insert into Convex
           try {
             await createConvexItem({
               categorySlug,
@@ -904,11 +1007,10 @@ export default function MenuManager({ className = '' }) {
         updatedList = updatedList.map((d) => 
           d.id === editingDishId ? normalizeDish({ ...d, ...payload, id: editingDishId, convexId: targetConvexId }) : d
         );
+        await commitMenuUpdate(updatedList);
         triggerSuccess(`"${trimmedName}" updated! ✨`);
       }
 
-      setDishes(updatedList);
-      await cacheMenu(updatedList);
       setIsModalOpen(false);
     } catch (err) {
       setFormError(err.message || 'Error saving dish. Please try again.');
@@ -917,16 +1019,15 @@ export default function MenuManager({ className = '' }) {
     }
   };
 
-  // Confirm and Execute Deletion (Convex + SQLite + IndexedDB)
+  // Confirm and Execute Deletion (Local State + LocalStorage + IndexedDB + Broadcast + Telegram + Convex)
   const handleDeleteDish = async () => {
     if (!dishToDelete) return;
     const { id, convexId, name } = dishToDelete;
 
     const updatedList = dishes.filter(d => d.id !== id);
-    setDishes(updatedList);
-    await cacheMenu(updatedList);
+    await commitMenuUpdate(updatedList);
 
-    // 1. Delete in Convex
+    // 1. Delete in Convex in background if configured
     if (deleteConvexItem && convexId) {
       try {
         await deleteConvexItem({ id: convexId });
@@ -951,7 +1052,22 @@ export default function MenuManager({ className = '' }) {
         </div>
 
         {/* Right CTA Actions */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            onClick={handleManualTelegramSync}
+            disabled={isSyncingTelegram}
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-sky-600/90 hover:bg-sky-500 active:scale-95 disabled:opacity-60 text-white font-semibold text-xs sm:text-sm transition shadow-md shadow-sky-600/20 cursor-pointer border border-sky-400/30"
+            title="Publish full menu database snapshot directly to Telegram Channel CDN"
+          >
+            {isSyncingTelegram ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <span>📤</span>
+            )}
+            <span>{isSyncingTelegram ? 'Syncing...' : 'Sync Menu to Telegram CDN'}</span>
+          </button>
+
           <button
             type="button"
             onClick={handleOpenAddModal}
@@ -1669,10 +1785,17 @@ export default function MenuManager({ className = '' }) {
 
                       {((formData.image_url && (formData.image_url.includes('telegram') || formData.image_url.includes('api.telegram.org'))) ||
                         (formData.making_video_url && (formData.making_video_url.includes('telegram') || formData.making_video_url.includes('api.telegram.org')))) && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700 animate-fadeIn">
-                          <Check className="w-3 h-3 stroke-[3]" />
-                          <span>✅ Hosted on Telegram Channel CDN</span>
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700 animate-fadeIn">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                            <span>✅ Hosted on Telegram Channel CDN</span>
+                          </span>
+                          {(formData.telegram_file_id || formData.telegram_video_file_id) && (
+                            <span className="text-[10px] text-sky-400 font-mono bg-sky-950/70 px-2 py-0.5 rounded-full border border-sky-800" title={`Telegram File ID: ${formData.telegram_file_id || formData.telegram_video_file_id}`}>
+                              ID: {(formData.telegram_file_id || formData.telegram_video_file_id).slice(0, 16)}...
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                     <p className="text-[11px] text-[var(--adm-text-muted)] mt-0.5">

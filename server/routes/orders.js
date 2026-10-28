@@ -203,7 +203,7 @@ router.get('/:id', (req, res) => {
  * Accepts JSON or multipart/form-data (with optional voiceNote file upload or base64 audio).
  * Emits Socket.IO 'order:new' to notify KDS immediately.
  */
-router.post('/', upload.single('voiceNote'), (req, res) => {
+router.post('/', upload.single('voiceNote'), async (req, res) => {
   try {
     const body = req.body || {};
 
@@ -246,19 +246,37 @@ router.post('/', upload.single('voiceNote'), (req, res) => {
       note: it.note || it.itemNote || null
     }));
 
-    // 4. Resolve voice note URL (from multer file upload OR base64 payload OR pre-existing path)
+    // 4. Resolve voice note URL (Direct to Telegram CDN with local fallback)
     let voiceNoteUrl = null;
+    let localVoicePath = null;
     if (req.file) {
       voiceNoteUrl = `/uploads/voices/${req.file.filename}`;
+      localVoicePath = req.file.path;
     } else if (body.voiceNote || body.voice_note || body.voiceNoteUrl || body.voice_note_url) {
       const voiceInput = body.voiceNote || body.voice_note || body.voiceNoteUrl || body.voice_note_url;
       if (typeof voiceInput === 'string') {
         if (voiceInput.startsWith('data:audio') || voiceInput.length > 500) {
           // It's a base64 encoded audio string
           voiceNoteUrl = saveBase64Audio(voiceInput);
-        } else if (voiceInput.startsWith('/uploads/') || voiceInput.startsWith('http')) {
+          if (voiceNoteUrl) {
+            localVoicePath = path.join(__dirname, '..', voiceNoteUrl.replace(/^\//, ''));
+          }
+        } else if (voiceInput.startsWith('/uploads/') || voiceInput.startsWith('http') || voiceInput.startsWith('/telegram-media/')) {
           voiceNoteUrl = voiceInput;
         }
+      }
+    }
+
+    // Try hosting voice note directly on Telegram CDN
+    if (localVoicePath && fs.existsSync(localVoicePath)) {
+      try {
+        const { storeMediaInTelegram } = require('../telegram');
+        const tgVoice = await storeMediaInTelegram(localVoicePath, `🎙️ Customer Voice Note (Table #${tableNumber})`);
+        if (tgVoice && tgVoice.success && tgVoice.permanentUrl) {
+          voiceNoteUrl = tgVoice.permanentUrl;
+        }
+      } catch (tgVoiceErr) {
+        console.warn('[Telegram Voice CDN upload fallback]:', tgVoiceErr.message);
       }
     }
 
@@ -278,13 +296,22 @@ router.post('/', upload.single('voiceNote'), (req, res) => {
       total_amount: totalAmount
     });
 
-const { sendOrderToTelegram } = require('../telegram');
+    const { sendOrderToTelegram } = require('../telegram');
 
     // 8. Emit Socket.IO event for KDS instant real-time notification
     emitSocket(req, 'order:new', savedOrder);
 
-    // 9. Post order to Telegram Channel (database / notification feed)
-    sendOrderToTelegram(savedOrder).catch(err => {
+    // 9. Post order to Telegram Channel (database / notification feed) with full details
+    const orderPayloadForTelegram = {
+      ...savedOrder,
+      table_number: tableNumber,
+      items: normalizedItems,
+      customer_name: body.customer_name || body.customerName || body.guest,
+      payment_method: body.payment_method || body.paymentMethod,
+      voice_note_url: voiceNoteUrl || savedOrder.voice_note_url,
+      general_note: generalNote ? String(generalNote).trim() : savedOrder.general_note
+    };
+    sendOrderToTelegram(orderPayloadForTelegram).catch(err => {
       console.warn('[Telegram order send error]:', err.message);
     });
 
@@ -341,6 +368,12 @@ router.patch('/:id/status', (req, res) => {
 
     // Emit Socket.IO real-time notification
     emitSocket(req, 'order:status_update', updatedOrder);
+
+    // Notify Telegram Channel of status transition
+    const { sendOrderStatusUpdateToTelegram } = require('../telegram');
+    sendOrderStatusUpdateToTelegram(updatedOrder, normalizedStatus, { note: req.body.note }).catch(err => {
+      console.warn('[Telegram order status update error]:', err.message);
+    });
 
     return res.status(200).json({
       success: true,

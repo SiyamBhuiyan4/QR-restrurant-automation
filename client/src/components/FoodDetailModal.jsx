@@ -419,8 +419,8 @@ export default function FoodDetailModal({
   }, [dish]);
 
   // Kitchen video reel URL (always fallback to local self-hosted reel-chef.mp4 if mixkit or empty)
-  const isVideoField = (u) => typeof u === 'string' && (/\.(mp4|webm|mov|ogg|m4v)(\?.*)?$/i.test(u) || u.includes('/videos/') || u.includes('sendvideo'));
-  const rawVideo = dish?.makingVideoUrl || dish?.videoUrl || (isVideoField(dish?.image) ? dish?.image : null) || (isVideoField(dish?.imageUrl) ? dish?.imageUrl : null);
+  const isVideoField = (u) => typeof u === 'string' && (/\.(mp4|webm|mov|ogg|m4v)(\?.*)?$/i.test(u) || u.includes('/videos/') || u.includes('/video/') || u.includes('video_note') || u.includes('sendvideo') || u.includes('video/mp4'));
+  const rawVideo = dish?.makingVideoUrl || dish?.making_video_url || dish?.videoUrl || dish?.video_url || (isVideoField(dish?.image) ? dish?.image : null) || (isVideoField(dish?.imageUrl) ? dish?.imageUrl : null);
   const videoUrl = rawVideo && typeof rawVideo === 'string' && !rawVideo.includes('mixkit.co')
     ? rawVideo
     : '/videos/reel-chef.mp4';
@@ -819,6 +819,7 @@ export default function FoodDetailModal({
                 key={selectedImageIndex}
                 src={photos[selectedImageIndex]}
                 alt={`${dish.name || 'Dish'} view ${selectedImageIndex + 1}`}
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover transition-opacity duration-300 ease-out animate-fadeIn"
               />
 
@@ -874,7 +875,7 @@ export default function FoodDetailModal({
                         }`}
                         aria-label={`Jump to photo ${idx + 1}`}
                       >
-                        <img src={img} alt={`Angle ${idx + 1}`} className="w-full h-full object-cover" />
+                        <img src={img} alt={`Angle ${idx + 1}`} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                         <span className="absolute bottom-0.5 right-1 text-[9px] font-mono font-bold text-white drop-shadow-md">
                           {idx + 1}
                         </span>
@@ -1000,6 +1001,7 @@ export default function FoodDetailModal({
                 playsInline
                 loop
                 muted={isBodyVideoMuted}
+                referrerPolicy="no-referrer"
                 onTimeUpdate={handleBodyVideoTimeUpdate}
                 onClick={toggleBodyVideoPlay}
                 className="w-full h-full object-cover cursor-pointer"

@@ -5,6 +5,7 @@ import { createSettlementInConvex } from '../../utils/convexServices';
 import { convex } from '../../convexClient.js';
 import { api } from '../../convexApi';
 import { mapConvexOrders } from '../../utils/convexOrders.js';
+import { sendSettlementToTelegramChannel } from '../../services/telegramClient.js';
 import '../../styles/receipt.css';
 
 /**
@@ -147,6 +148,20 @@ export async function settleTableOrders({ bill, paymentMethod, orders }) {
   };
   const ledger = readJson(BILL_SETTLEMENTS_KEY, []);
   writeJson(BILL_SETTLEMENTS_KEY, [record, ...(Array.isArray(ledger) ? ledger : [])].slice(0, 200));
+
+  // Send settlement summary directly to Telegram Channel
+  try {
+    sendSettlementToTelegramChannel({
+      ...record,
+      subtotal: bill.subtotal,
+      service: bill.service,
+      tax: bill.tax,
+      discount: bill.discount,
+      lines: bill.lines
+    }).catch((tgErr) => console.warn('[Telegram Settlement Error]:', tgErr));
+  } catch (tgErr) {
+    console.warn('[Telegram Settlement Error]:', tgErr);
+  }
 
   try {
     await createSettlementInConvex(record);

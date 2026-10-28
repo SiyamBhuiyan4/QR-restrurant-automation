@@ -62,6 +62,28 @@ app.use('/api/tables', safeRouteRequire('./routes/tables'));
 app.use('/api/staff', safeRouteRequire('./routes/staff'));
 app.use('/api', safeRouteRequire('./routes/corrections'));
 app.use('/api/auth', safeRouteRequire('./routes/auth'));
+app.use('/api/telegram', safeRouteRequire('./routes/telegram'));
+
+// Zero-external-database Telegram CDN media streaming route (supports Range headers for video seeking)
+const { streamTelegramMedia } = require('./telegram');
+const { Readable } = require('stream');
+
+app.get('/telegram-media/:fileId', async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    const streamResult = await streamTelegramMedia(fileId, req.headers.range);
+    if (!streamResult.ok) {
+      return res.status(streamResult.status || 404).send(streamResult.error || 'Media not found');
+    }
+    res.writeHead(streamResult.status, streamResult.headers);
+    Readable.fromWeb(streamResult.body).pipe(res);
+  } catch (err) {
+    console.error('[Telegram Media Proxy Error]:', err.message);
+    if (!res.headersSent) {
+      res.status(500).send('Failed to stream media: ' + err.message);
+    }
+  }
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -80,7 +102,7 @@ if (fs.existsSync(clientDistPath)) {
 
   // SPA fallback for HTML5 History API (KDS, Admin, Customer routes)
   app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/socket.io')) {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/telegram-media') || req.path.startsWith('/socket.io')) {
       return next();
     }
     const indexPath = path.join(clientDistPath, 'index.html');
@@ -226,6 +248,13 @@ const HOST = '0.0.0.0';
 if (require.main === module) {
   server.listen(PORT, HOST, () => {
     printServerBanner(PORT, protocol);
+    // Auto-sync active Menu state with Telegram CDN Channel on startup
+    try {
+      const { syncMenuToTelegram } = require('./telegram');
+      syncMenuToTelegram().catch(err => {
+        console.warn('[Telegram Cloud Catalog Sync Info]:', err.message);
+      });
+    } catch (e) {}
   });
 }
 

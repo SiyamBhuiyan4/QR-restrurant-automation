@@ -50,7 +50,10 @@ import {
   stripPlainCredentials,
   hasStaffCredentialHash
 } from '../../utils/staffCredentials';
+import { sendStaffRosterBackupToTelegram } from '../../services/telegramClient';
 
+// Primary storage key for restaurant employee roster (profiles, PINs, shifts, custody)
+const STORAGE_KEY_EMPLOYEES = 'smartdine_restaurant_employees';
 // Storage key for table custody lineage tracking across sessions and days
 const STORAGE_KEY_CUSTODY = 'smartdine_table_custody_v1';
 // Storage key for waiter console accounts & credentials synchronization

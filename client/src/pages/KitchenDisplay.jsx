@@ -31,6 +31,8 @@ import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
 import { mapConvexOrders } from '../utils/convexOrders.js';
 import { useRestaurant } from '../context/RestaurantContext';
+import { sendMessage, sendOrderStatusToTelegram } from '../services/telegramClient.js';
+import { getPendingOrders } from '../db/indexedDb.js';
 import '../styles/staff.css';
 import '../styles/kds.css';
 
@@ -97,6 +99,268 @@ export const playKitchenChime = () => {
     console.warn('[KDS Sound Alert] AudioContext playback warning:', err);
   }
 };
+
+/** Storage key for active KDS orders */
+export const KDS_STORAGE_KEY = 'smartdine_kds_orders';
+
+/** Safely load active tickets from localStorage */
+export function loadStoredKdsOrders() {
+  if (typeof window === 'undefined' || !window.localStorage) return [];
+  try {
+    const raw = localStorage.getItem(KDS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.warn('[KDS] Failed to parse smartdine_kds_orders from localStorage:', err);
+    return [];
+  }
+}
+
+/** Safely persist active tickets to localStorage (stripping non-serializable blobs) */
+export function saveKdsOrdersToStorage(ordersList) {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    const sanitized = (ordersList || []).map((o) => ({
+      ...o,
+      voiceBlob: undefined
+    }));
+    localStorage.setItem(KDS_STORAGE_KEY, JSON.stringify(sanitized));
+  } catch (err) {
+    console.warn('[KDS] Failed to save smartdine_kds_orders to localStorage:', err);
+  }
+}
+
+/** Standardize ticket objects across Convex, localStorage, IndexedDB and live events */
+export function normalizeTicket(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+
+  const id = String(
+    raw.id ||
+    raw._id ||
+    raw.order_id ||
+    raw.orderId ||
+    raw.orderNumber ||
+    raw.localId ||
+    `ord_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`
+  );
+
+  const orderNumber = String(
+    raw.order_number ||
+    raw.orderNumber ||
+    raw.orderId ||
+    (id.length > 4 ? id.slice(-4).toUpperCase() : id)
+  );
+
+  const tableNo = String(
+    raw.table_no ??
+    raw.tableNumber ??
+    raw.table_number ??
+    raw.table ??
+    '1'
+  );
+
+  const rawStatus = String(raw.status || raw.kitchenFlowStage || 'pending').toLowerCase().trim();
+  let status = 'pending';
+  let kitchenFlowStage = 'placed';
+
+  if (['pending', 'received', 'new', 'placed', 'order_placed', 'pending_sync'].includes(rawStatus)) {
+    status = 'pending';
+    kitchenFlowStage = 'placed';
+  } else if (['preparing', 'cooking', 'in_kitchen', 'in-progress', 'in_prep', 'in-kitchen'].includes(rawStatus)) {
+    status = 'preparing';
+    kitchenFlowStage = 'preparing';
+  } else if (['ready', 'ready_pickup', 'ready-pickup', 'ready_for_pickup'].includes(rawStatus)) {
+    status = 'ready';
+    kitchenFlowStage = 'ready_pickup';
+  } else if (['served', 'completed', 'delivered', 'done', 'closed'].includes(rawStatus)) {
+    status = 'completed';
+    kitchenFlowStage = 'served';
+  } else {
+    status = rawStatus;
+    kitchenFlowStage = raw.kitchenFlowStage || rawStatus;
+  }
+
+  const rawItems = raw.items || raw.dishes || raw.order_items || [];
+  const items = Array.isArray(rawItems)
+    ? rawItems.map((it) => ({
+        id: it?.id || it?._id,
+        name: it?.name || it?.dish_name || it?.title || 'Dish',
+        category: it?.category || it?.categoryName || 'Kitchen',
+        quantity: Number(it?.quantity ?? it?.qty ?? 1),
+        price: typeof it?.price === 'number' ? it.price : (Number(it?.price || it?.unit_price) || null),
+        notes: it?.notes || it?.note || it?.special_instructions || '',
+        voiceNoteUrl: it?.voiceNoteUrl || it?.voice_note_url || null
+      }))
+    : [];
+
+  const createdAt =
+    raw.created_at ||
+    raw.createdAt ||
+    (raw.timestamp ? new Date(raw.timestamp).toISOString() : (raw.queuedAt ? new Date(raw.queuedAt).toISOString() : new Date().toISOString()));
+
+  const placedTime =
+    raw.placedTime ||
+    new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const voiceNoteUrl =
+    raw.voice_note_url ||
+    raw.voiceNoteUrl ||
+    raw.voice_url ||
+    raw.audio_url ||
+    null;
+
+  const notes =
+    raw.notes ||
+    raw.note ||
+    raw.generalNote ||
+    raw.special_instructions ||
+    '';
+
+  return {
+    ...raw,
+    id,
+    _id: raw._id || id,
+    order_number: orderNumber,
+    table_no: tableNo,
+    order_type: raw.order_type || raw.type || 'dine_in',
+    status,
+    kitchenFlowStage,
+    items,
+    created_at: createdAt,
+    placedTime,
+    voice_note_url: voiceNoteUrl,
+    notes,
+    total: raw.total || raw.totalAmount || 0
+  };
+}
+
+/** Demo fallback tickets if no cloud, local, or offline tickets exist */
+const DEMO_ORDERS = [
+  {
+    id: 'ord_kbbk',
+    order_number: 'KBBK',
+    table_no: '1',
+    order_type: 'dine_in',
+    status: 'pending',
+    kitchenFlowStage: 'placed',
+    placedTime: '03:06 PM',
+    timeElapsedMinutes: 1285,
+    created_at: new Date(Date.now() - 1285 * 60 * 1000).toISOString(),
+    items: [
+      { name: 'The Signature Wagyu Smash', category: 'Signature Burgers', quantity: 1, notes: 'Medium rare, house sauce' },
+      { name: 'Grilled Herb Ribeye Steak', category: 'Prime Steaks', quantity: 1, notes: 'Chef special garlic butter' },
+      { name: 'Creamy Truffle Tagliatelle', category: 'Handmade Pasta', quantity: 1, notes: 'Extra shaved black truffle' }
+    ]
+  },
+  {
+    id: 'ord_krsp',
+    order_number: 'KRSP',
+    table_no: '2',
+    order_type: 'dine_in',
+    status: 'pending',
+    kitchenFlowStage: 'placed',
+    placedTime: '03:06 PM',
+    timeElapsedMinutes: 1285,
+    created_at: new Date(Date.now() - 1285 * 60 * 1000).toISOString(),
+    items: [
+      { name: 'The Signature Wagyu Smash', category: 'Signature Burgers', quantity: 1, notes: 'Extra aged cheddar' }
+    ]
+  },
+  {
+    id: 'ord_kmwb',
+    order_number: 'KMWB',
+    table_no: '3',
+    order_type: 'dine_in',
+    status: 'pending',
+    kitchenFlowStage: 'placed',
+    placedTime: '03:06 PM',
+    timeElapsedMinutes: 1285,
+    created_at: new Date(Date.now() - 1285 * 60 * 1000).toISOString(),
+    items: [
+      { name: 'Warm Molten Lava Cake', category: 'Artisan Desserts', quantity: 1, notes: 'Vanilla bean gelato' }
+    ]
+  },
+  {
+    id: 'ord_kd7p',
+    order_number: 'KD7P',
+    table_no: '5',
+    order_type: 'dine_in',
+    status: 'pending',
+    kitchenFlowStage: 'placed',
+    placedTime: '03:06 PM',
+    timeElapsedMinutes: 1285,
+    created_at: new Date(Date.now() - 1285 * 60 * 1000).toISOString(),
+    items: [
+      { name: 'Grilled Herb Ribeye Steak', category: 'Prime Steaks', quantity: 1 },
+      { name: 'Truffle Parmesan Fries', category: 'Artisan Sides', quantity: 1, notes: 'Extra crispy' }
+    ]
+  },
+  {
+    id: 'ord_kpg1',
+    order_number: 'KPG1',
+    table_no: '6',
+    order_type: 'dine_in',
+    status: 'preparing',
+    kitchenFlowStage: 'preparing',
+    created_at: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
+    voice_note_url: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg',
+    items: [
+      { name: 'Pan-Seared Chilean Seabass', category: 'Fresh Catch', quantity: 1, notes: 'Lemon butter emulsion' },
+      { name: 'Wild Mushroom Risotto', category: 'Italian Classics', quantity: 1 }
+    ]
+  },
+  {
+    id: 'ord_kpg2',
+    order_number: 'KPG2',
+    table_no: '8',
+    order_type: 'dine_in',
+    status: 'preparing',
+    kitchenFlowStage: 'preparing',
+    created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+    items: [
+      { name: 'Smoked Beef Brisket', category: 'Smoked Specialties', quantity: 1, notes: 'House BBQ glaze' }
+    ]
+  },
+  {
+    id: 'ord_kpg3',
+    order_number: 'KPG3',
+    table_no: '10',
+    order_type: 'dine_in',
+    status: 'preparing',
+    kitchenFlowStage: 'preparing',
+    created_at: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+    items: [
+      { name: 'Artisanal Margherita Pizza', category: 'Wood-Fired Pizza', quantity: 1, notes: 'Fresh buffalo mozzarella' },
+      { name: 'Caesar Salad', category: 'Fresh Greens', quantity: 1 }
+    ]
+  },
+  {
+    id: 'ord_kpg4',
+    order_number: 'KPG4',
+    table_no: '11',
+    order_type: 'dine_in',
+    status: 'preparing',
+    kitchenFlowStage: 'preparing',
+    created_at: new Date(Date.now() - 9 * 60 * 1000).toISOString(),
+    items: [
+      { name: 'Creamy Truffle Tagliatelle', category: 'Handmade Pasta', quantity: 1, notes: 'Parmigiano Reggiano' }
+    ]
+  },
+  {
+    id: 'ord_kcp1',
+    order_number: 'KCP1',
+    table_no: '4',
+    order_type: 'dine_in',
+    status: 'completed',
+    kitchenFlowStage: 'served',
+    created_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+    items: [
+      { name: 'Balado Sauce Wings', category: 'Starters', quantity: 2 },
+      { name: 'House Mojito', category: 'Beverages', quantity: 2 }
+    ]
+  }
+];
 
 /** Parse the order's start timestamp (ms), or null when unknown */
 const getStartMs = (o) => {
@@ -310,11 +574,12 @@ export default function KitchenDisplay({
   const kdsOrders = useMemo(() => (Array.isArray(convexOrders) ? mapConvexOrders(convexOrders) : null), [convexOrders]);
   useEffect(() => {
     if (kdsOrders && Array.isArray(kdsOrders)) {
+      const normalizedConvex = kdsOrders.map(normalizeTicket).filter(Boolean);
+
       if (prevOrderIdsRef.current.size > 0) {
         // Detect newly added tickets from Convex
-        kdsOrders.forEach((o) => {
-          const id = o.id || o._id;
-          if (id && !prevOrderIdsRef.current.has(id)) {
+        normalizedConvex.forEach((o) => {
+          if (o.id && !prevOrderIdsRef.current.has(o.id)) {
             const rawStatus = (o.status || o.kitchenFlowStage || 'pending').toLowerCase();
             if (['pending', 'received', 'new', 'placed'].includes(rawStatus)) {
               triggerNewOrderAlert(o);
@@ -323,219 +588,245 @@ export default function KitchenDisplay({
         });
       }
 
-      setOrders(kdsOrders);
-      prevOrderIdsRef.current = new Set(kdsOrders.map((o) => o.id || o._id));
+      setOrders((prev) => {
+        // Preserve offline/local orders created in diner PWA or CartDrawer
+        const convexIds = new Set(normalizedConvex.map((o) => o.id));
+        const localActive = prev.filter(
+          (o) => !convexIds.has(o.id) && (String(o.id).startsWith('ord_') || String(o.id).startsWith('SD-') || String(o.id).startsWith('local_'))
+        );
+        const merged = [...normalizedConvex, ...localActive];
+        saveKdsOrdersToStorage(merged);
+        return merged;
+      });
+
+      prevOrderIdsRef.current = new Set(normalizedConvex.map((o) => o.id));
       setIsLoading(false);
     }
   }, [kdsOrders, triggerNewOrderAlert]);
 
-  // 7. Socket.IO Listeners for real-time order events
+  // 7. Real-Time Order Stream Listeners: Socket.IO, BroadcastChannel, Window Events & LocalStorage
   useEffect(() => {
-    if (!activeSocket) return;
+    // Helper to accept and display an incoming order ticket instantly
+    const handleIncomingTicket = (rawTicket) => {
+      if (!rawTicket) return;
+      const ticket = normalizeTicket(rawTicket);
+      if (!ticket) return;
 
-    // Listen to new order incoming
-    const handleNewOrder = (newOrder) => {
-      if (!newOrder) return;
-      const orderId = newOrder.id || newOrder._id || newOrder.order_id;
       setOrders((prev) => {
-        const exists = prev.some((o) => (o.id || o._id || o.order_id) === orderId);
+        const exists = prev.some((o) => (o.id || o._id || o.order_id || o.orderId) === ticket.id);
         if (exists) return prev;
-        return [newOrder, ...prev];
+        const next = [ticket, ...prev];
+        saveKdsOrdersToStorage(next);
+        return next;
       });
 
-      if (orderId) {
-        prevOrderIdsRef.current.add(orderId);
+      if (!prevOrderIdsRef.current.has(ticket.id)) {
+        prevOrderIdsRef.current.add(ticket.id);
+        triggerNewOrderAlert(ticket);
+        setRecentAlertMessage(`🔔 New Order #${ticket.order_number} received from Table ${ticket.table_no}!`);
+        if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
+        alertTimeoutRef.current = setTimeout(() => setRecentAlertMessage(null), 5000);
       }
-
-      triggerNewOrderAlert(newOrder);
     };
 
-    // Listen to status changes from server or other devices
-    const handleStatusUpdate = (update) => {
-      if (!update) return;
-      const targetId = update.id || update._id || update.orderId || update.order_id;
-      setOrders((prev) =>
-        prev.map((order) => {
-          const match = (order.id || order._id || order.order_id) === targetId;
-          if (!match) return order;
-          return {
-            ...order,
-            status: update.status || order.status,
-            kitchenFlowStage: update.kitchenFlowStage || order.kitchenFlowStage,
-            ...update
-          };
-        })
-      );
+    // A. Window Event: smartdine:new-order (fired directly by CartDrawer / Diner PWA in same tab)
+    const handleWindowNewOrder = (event) => {
+      const payload = event.detail?.order || event.detail?.orderPayload || event.detail;
+      handleIncomingTicket(payload);
     };
+    window.addEventListener('smartdine:new-order', handleWindowNewOrder);
 
-    // Listen to order cancellation
-    const handleOrderCancel = ({ id }) => {
-      if (!id) return;
-      setOrders((prev) => prev.filter((o) => (o.id || o._id || o.order_id) !== id));
+    // B. Cross-Tab BroadcastChannels ('smartdine_restaurant_state' and 'smartdine_kds')
+    let bcState = null;
+    let bcKds = null;
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        bcState = new BroadcastChannel('smartdine_restaurant_state');
+        bcState.onmessage = (event) => {
+          const data = event.data;
+          if (!data) return;
+
+          if (
+            data.type === 'smartdine:new-order' ||
+            data.type === 'ORDER_PLACED' ||
+            data.type === 'NEW_ORDER' ||
+            data.type === 'ORDER_CREATED'
+          ) {
+            handleIncomingTicket(data.order || data.orderPayload || data.payload || data.data);
+          } else if (data.type === 'ORDER_STATUS_UPDATE') {
+            const targetId = data.orderId || data.id || data._id;
+            if (targetId && data.status) {
+              setOrders((prev) => {
+                const next = prev.map((order) => {
+                  if ((order.id || order._id || order.order_id || order.orderId) === targetId) {
+                    return {
+                      ...order,
+                      status: data.status,
+                      kitchenFlowStage: data.kitchenFlowStage || (data.status === 'ready' ? 'ready_pickup' : data.status === 'served' ? 'served' : data.status),
+                      updated_at: new Date().toISOString()
+                    };
+                  }
+                  return order;
+                });
+                saveKdsOrdersToStorage(next);
+                return next;
+              });
+            }
+          }
+        };
+
+        bcKds = new BroadcastChannel('smartdine_kds');
+        bcKds.onmessage = (event) => {
+          const data = event.data;
+          if (!data) return;
+          if (data.type === 'smartdine:new-order' || data.order || data.detail) {
+            handleIncomingTicket(data.order || data.detail || data.orderPayload || data);
+          }
+        };
+      }
+    } catch (bcErr) {
+      console.warn('[KDS] BroadcastChannel listener setup warning:', bcErr);
+    }
+
+    // C. Window storage event for multi-tab localStorage synchronization
+    const handleStorageChange = (e) => {
+      if (e.key === KDS_STORAGE_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const normalized = parsed.map(normalizeTicket).filter(Boolean);
+            setOrders((prev) => {
+              const map = new Map();
+              normalized.forEach((o) => map.set(o.id, o));
+              // Preserve any existing tickets that might not be in storage
+              prev.forEach((o) => {
+                if (!map.has(o.id)) map.set(o.id, o);
+              });
+              return Array.from(map.values());
+            });
+          }
+        } catch (_) {}
+      }
     };
+    window.addEventListener('storage', handleStorageChange);
 
-    activeSocket.on('order:new', handleNewOrder);
-    activeSocket.on('order:status_update', handleStatusUpdate);
-    activeSocket.on('order:cancel', handleOrderCancel);
+    // D. Socket.IO Listeners
+    if (activeSocket) {
+      const handleSocketNewOrder = (newOrder) => {
+        handleIncomingTicket(newOrder);
+      };
+
+      const handleSocketStatusUpdate = (update) => {
+        if (!update) return;
+        const targetId = update.id || update._id || update.orderId || update.order_id;
+        setOrders((prev) => {
+          const next = prev.map((order) => {
+            const match = (order.id || order._id || order.order_id || order.orderId) === targetId;
+            if (!match) return order;
+            return {
+              ...order,
+              status: update.status || order.status,
+              kitchenFlowStage: update.kitchenFlowStage || order.kitchenFlowStage,
+              ...update
+            };
+          });
+          saveKdsOrdersToStorage(next);
+          return next;
+        });
+      };
+
+      const handleSocketOrderCancel = ({ id }) => {
+        if (!id) return;
+        setOrders((prev) => {
+          const next = prev.filter((o) => (o.id || o._id || o.order_id || o.orderId) !== id);
+          saveKdsOrdersToStorage(next);
+          return next;
+        });
+      };
+
+      activeSocket.on('order:new', handleSocketNewOrder);
+      activeSocket.on('order:status_update', handleSocketStatusUpdate);
+      activeSocket.on('order:cancel', handleSocketOrderCancel);
+
+      return () => {
+        window.removeEventListener('smartdine:new-order', handleWindowNewOrder);
+        window.removeEventListener('storage', handleStorageChange);
+        if (bcState) {
+          try { bcState.close(); } catch (_) {}
+        }
+        if (bcKds) {
+          try { bcKds.close(); } catch (_) {}
+        }
+        activeSocket.off('order:new', handleSocketNewOrder);
+        activeSocket.off('order:status_update', handleSocketStatusUpdate);
+        activeSocket.off('order:cancel', handleSocketOrderCancel);
+      };
+    }
 
     return () => {
-      activeSocket.off('order:new', handleNewOrder);
-      activeSocket.off('order:status_update', handleStatusUpdate);
-      activeSocket.off('order:cancel', handleOrderCancel);
+      window.removeEventListener('smartdine:new-order', handleWindowNewOrder);
+      window.removeEventListener('storage', handleStorageChange);
+      if (bcState) {
+        try { bcState.close(); } catch (_) {}
+      }
+      if (bcKds) {
+        try { bcKds.close(); } catch (_) {}
+      }
     };
   }, [activeSocket, triggerNewOrderAlert]);
 
-  // 8. Initial Fetch of Orders
+  // 8. Initial Fetch of Orders (localStorage + IndexedDB + Convex + Demo)
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
 
+    // 1. Read active tickets from localStorage
+    const localKdsList = loadStoredKdsOrders()
+      .map(normalizeTicket)
+      .filter(Boolean);
+
+    // 2. Read pending offline tickets from IndexedDB
+    let idbList = [];
     try {
-      const list = mapConvexOrders(await convex.query(api.orders.getOrders, {}));
-      if (list.length > 0) {
-        setOrders(list);
-        prevOrderIdsRef.current = new Set(list.map((o) => o.id || o._id || o.order_id));
-        setIsLoading(false);
-        return;
+      const idbRaw = await getPendingOrders();
+      if (Array.isArray(idbRaw)) {
+        idbList = idbRaw.map(normalizeTicket).filter(Boolean);
       }
     } catch (err) {
-      console.warn('Could not fetch orders from Convex:', err);
+      console.warn('[KDS] IndexedDB read warning:', err);
     }
 
-    // Default demonstration orders if API has no orders yet (guarantees stunning out-of-the-box preview!)
-    setOrders((current) => {
-      if (current.length > 0) {
-        setIsLoading(false);
-        return current;
+    // 3. Query Convex Cloud for orders
+    let convexList = [];
+    try {
+      const cloudOrders = await convex.query(api.orders.getOrders, {});
+      if (Array.isArray(cloudOrders)) {
+        convexList = mapConvexOrders(cloudOrders).map(normalizeTicket).filter(Boolean);
       }
-      const demoList = [
-        {
-          id: 'ord_kbbk',
-          order_number: 'KBBK',
-          table_no: '1',
-          order_type: 'dine_in',
-          status: 'pending',
-          kitchenFlowStage: 'placed',
-          placedTime: '03:06 PM',
-          timeElapsedMinutes: 1285,
-          created_at: new Date(Date.now() - 1285 * 60 * 1000).toISOString(),
-          items: [
-            { name: 'The Signature Wagyu Smash', category: 'Signature Burgers', quantity: 1, notes: 'Medium rare, house sauce' },
-            { name: 'Grilled Herb Ribeye Steak', category: 'Prime Steaks', quantity: 1, notes: 'Chef special garlic butter' },
-            { name: 'Creamy Truffle Tagliatelle', category: 'Handmade Pasta', quantity: 1, notes: 'Extra shaved black truffle' }
-          ]
-        },
-        {
-          id: 'ord_krsp',
-          order_number: 'KRSP',
-          table_no: '2',
-          order_type: 'dine_in',
-          status: 'pending',
-          kitchenFlowStage: 'placed',
-          placedTime: '03:06 PM',
-          timeElapsedMinutes: 1285,
-          created_at: new Date(Date.now() - 1285 * 60 * 1000).toISOString(),
-          items: [
-            { name: 'The Signature Wagyu Smash', category: 'Signature Burgers', quantity: 1, notes: 'Extra aged cheddar' }
-          ]
-        },
-        {
-          id: 'ord_kmwb',
-          order_number: 'KMWB',
-          table_no: '3',
-          order_type: 'dine_in',
-          status: 'pending',
-          kitchenFlowStage: 'placed',
-          placedTime: '03:06 PM',
-          timeElapsedMinutes: 1285,
-          created_at: new Date(Date.now() - 1285 * 60 * 1000).toISOString(),
-          items: [
-            { name: 'Warm Molten Lava Cake', category: 'Artisan Desserts', quantity: 1, notes: 'Vanilla bean gelato' }
-          ]
-        },
-        {
-          id: 'ord_kd7p',
-          order_number: 'KD7P',
-          table_no: '5',
-          order_type: 'dine_in',
-          status: 'pending',
-          kitchenFlowStage: 'placed',
-          placedTime: '03:06 PM',
-          timeElapsedMinutes: 1285,
-          created_at: new Date(Date.now() - 1285 * 60 * 1000).toISOString(),
-          items: [
-            { name: 'Grilled Herb Ribeye Steak', category: 'Prime Steaks', quantity: 1 },
-            { name: 'Truffle Parmesan Fries', category: 'Artisan Sides', quantity: 1, notes: 'Extra crispy' }
-          ]
-        },
-        {
-          id: 'ord_kpg1',
-          order_number: 'KPG1',
-          table_no: '6',
-          order_type: 'dine_in',
-          status: 'preparing',
-          kitchenFlowStage: 'preparing',
-          created_at: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
-          voice_note_url: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg',
-          items: [
-            { name: 'Pan-Seared Chilean Seabass', category: 'Fresh Catch', quantity: 1, notes: 'Lemon butter emulsion' },
-            { name: 'Wild Mushroom Risotto', category: 'Italian Classics', quantity: 1 }
-          ]
-        },
-        {
-          id: 'ord_kpg2',
-          order_number: 'KPG2',
-          table_no: '8',
-          order_type: 'dine_in',
-          status: 'preparing',
-          kitchenFlowStage: 'preparing',
-          created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-          items: [
-            { name: 'Smoked Beef Brisket', category: 'Smoked Specialties', quantity: 1, notes: 'House BBQ glaze' }
-          ]
-        },
-        {
-          id: 'ord_kpg3',
-          order_number: 'KPG3',
-          table_no: '10',
-          order_type: 'dine_in',
-          status: 'preparing',
-          kitchenFlowStage: 'preparing',
-          created_at: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-          items: [
-            { name: 'Artisanal Margherita Pizza', category: 'Wood-Fired Pizza', quantity: 1, notes: 'Fresh buffalo mozzarella' },
-            { name: 'Caesar Salad', category: 'Fresh Greens', quantity: 1 }
-          ]
-        },
-        {
-          id: 'ord_kpg4',
-          order_number: 'KPG4',
-          table_no: '11',
-          order_type: 'dine_in',
-          status: 'preparing',
-          kitchenFlowStage: 'preparing',
-          created_at: new Date(Date.now() - 9 * 60 * 1000).toISOString(),
-          items: [
-            { name: 'Creamy Truffle Tagliatelle', category: 'Handmade Pasta', quantity: 1, notes: 'Parmigiano Reggiano' }
-          ]
-        },
-        {
-          id: 'ord_kcp1',
-          order_number: 'KCP1',
-          table_no: '4',
-          order_type: 'dine_in',
-          status: 'completed',
-          kitchenFlowStage: 'served',
-          created_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-          items: [
-            { name: 'Balado Sauce Wings', category: 'Starters', quantity: 2 },
-            { name: 'House Mojito', category: 'Beverages', quantity: 2 }
-          ]
-        }
-      ];
-      prevOrderIdsRef.current = new Set(demoList.map((o) => o.id));
-      return demoList;
+    } catch (err) {
+      console.warn('[KDS] Convex query warning:', err);
+    }
+
+    // Merge in priority order:
+    // Convex (cloud truth) -> LocalStorage KDS -> IndexedDB offline queue
+    const orderMap = new Map();
+    convexList.forEach((o) => orderMap.set(o.id, o));
+    localKdsList.forEach((o) => {
+      if (!orderMap.has(o.id)) orderMap.set(o.id, o);
+    });
+    idbList.forEach((o) => {
+      if (!orderMap.has(o.id)) orderMap.set(o.id, o);
     });
 
+    let combined = Array.from(orderMap.values());
+
+    // Fallback to demo orders only if no real or offline tickets exist anywhere
+    if (combined.length === 0) {
+      combined = DEMO_ORDERS.map(normalizeTicket).filter(Boolean);
+    }
+
+    setOrders(combined);
+    saveKdsOrdersToStorage(combined);
+    prevOrderIdsRef.current = new Set(combined.map((o) => o.id));
     setIsLoading(false);
   }, []);
 
@@ -558,21 +849,88 @@ export default function KitchenDisplay({
     // Map nextStatus to kitchenFlowStage equivalent
     let stageEquivalent = nextStatus;
     if (nextStatus === 'ready') stageEquivalent = 'ready_pickup';
+    else if (nextStatus === 'served' || nextStatus === 'completed') stageEquivalent = 'served';
+    else if (nextStatus === 'preparing') stageEquivalent = 'preparing';
+    else if (nextStatus === 'pending') stageEquivalent = 'placed';
+
+    let targetOrder = null;
 
     // Optimistic state update for instant snappy 0ms latency UI
-    setOrders((prev) =>
-      prev.map((o) => {
-        if ((o.id || o._id || o.order_id) === orderId) {
-          return {
+    setOrders((prev) => {
+      const next = prev.map((o) => {
+        if ((o.id || o._id || o.order_id || o.orderId) === orderId) {
+          targetOrder = {
             ...o,
             status: nextStatus,
             kitchenFlowStage: stageEquivalent,
             updated_at: new Date().toISOString()
           };
+          return targetOrder;
         }
         return o;
-      })
-    );
+      });
+      // 1. Update smartdine_kds_orders in localStorage
+      saveKdsOrdersToStorage(next);
+      return next;
+    });
+
+    if (!targetOrder) {
+      targetOrder = orders.find((o) => (o.id || o._id || o.order_id || o.orderId) === orderId);
+    }
+
+    const tableNo = targetOrder?.table_no ?? targetOrder?.tableNumber ?? targetOrder?.table ?? '1';
+    const displayNum = targetOrder?.order_number || (typeof orderId === 'string' && orderId.length > 4 ? orderId.slice(-4).toUpperCase() : orderId || '-');
+
+    // 2. Broadcast status change via BroadcastChannel ('smartdine_restaurant_state')
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('smartdine_restaurant_state');
+        bc.postMessage({
+          type: 'ORDER_STATUS_UPDATE',
+          orderId,
+          status: nextStatus,
+          kitchenFlowStage: stageEquivalent,
+          tableNumber: tableNo,
+          orderNumber: displayNum,
+          timestamp: Date.now()
+        });
+        bc.close();
+      }
+    } catch (err) {
+      console.warn('[KDS] BroadcastChannel postMessage error:', err);
+    }
+
+    // 3. Broadcast status change via window event
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('smartdine:order-status-update', {
+          detail: {
+            orderId,
+            status: nextStatus,
+            kitchenFlowStage: stageEquivalent,
+            tableNumber: tableNo,
+            orderNumber: displayNum,
+            order: targetOrder
+          }
+        })
+      );
+    }
+
+    // 4. Send order status update to Telegram Channel via sendMessage
+    try {
+      const statusUpper = nextStatus.toUpperCase();
+      let emoji = '🍳';
+      if (statusUpper === 'READY') emoji = '✨';
+      else if (statusUpper === 'SERVED' || statusUpper === 'COMPLETED') emoji = '🍽️';
+      else if (statusUpper === 'PREPARING') emoji = '🍳';
+
+      const tgText = `${emoji} <b>Order #${displayNum}</b> (Table ${tableNo}) is now <b>${statusUpper}</b>\n⏱️ ${new Date().toLocaleTimeString()}`;
+      sendMessage(tgText).catch((err) => {
+        console.warn('[KDS] Telegram status notification failed:', err);
+      });
+    } catch (tgErr) {
+      console.warn('[KDS] Failed to send Telegram status:', tgErr);
+    }
 
     // Emit via Socket so other kitchen devices/screens update immediately
     if (activeSocket) {
@@ -585,7 +943,7 @@ export default function KitchenDisplay({
     }
 
     // Persist to Convex Cloud if available
-    if (orderId && typeof orderId === 'string' && !orderId.startsWith('ord_')) {
+    if (orderId && typeof orderId === 'string' && !orderId.startsWith('ord_') && !orderId.startsWith('local_') && !orderId.startsWith('SD-')) {
       try {
         if (adminToken && adminSetStatus) {
           await adminSetStatus({ adminToken, orderId, status: nextStatus });

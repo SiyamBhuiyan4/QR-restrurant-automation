@@ -209,38 +209,86 @@ export default function CallWaiterModal({
     const isDeviceOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
 
     try {
-      if (!isDeviceOnline) {
-        throw new Error('Device is offline');
-      }
+      // 1. Send waiter assistance call directly to Telegram Channel
+      sendWaiterCallToTelegramChannel(finalTable, formattedReason, assignedEmp?.name).catch(tgErr => {
+        console.warn('[CallWaiterModal] Telegram channel dispatch error:', tgErr);
+      });
 
-      // 1. Submit to Convex Cloud if available
-      let convexSuccess = false;
-      if (createConvexCall) {
+      // 2. Submit to Convex Cloud if available (non-blocking)
+      if (createConvexCall && isDeviceOnline) {
         try {
           await createConvexCall({ tableNumber: finalTable, reason: formattedReason });
-          convexSuccess = true;
-        } catch (_) {}
+        } catch (convexErr) {
+          console.warn('[CallWaiterModal] Convex mutation skipped/failed:', convexErr?.message);
+        }
       }
 
-      // Convex is the only backend: if the call did not reach it, fall into the offline queue
-      if (!convexSuccess) throw new Error('Waiter call could not be sent to Convex');
-
-      // Also trigger socket emit if connected as immediate fail-safe
+      // 3. Socket emit if connected as immediate fail-safe
       if (socketHelpers?.socket?.connected) {
         socketHelpers.emit('waiter:call', payload);
       }
 
-      // Register with Restaurant Context for dynamic state & targeted routing
+      // 4. Register with Restaurant Context for dynamic state & targeted routing
+      let registeredCall = null;
       if (restaurant?.registerAssistanceCall) {
-        restaurant.registerAssistanceCall(payload);
+        registeredCall = restaurant.registerAssistanceCall(payload);
       }
 
+      // 5. Register in local storage smartdine_active_assistance_calls
+      if (typeof localStorage !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('smartdine_active_assistance_calls');
+          const existing = raw ? JSON.parse(raw) : [];
+          const callItem = registeredCall || {
+            id: `call_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            ...payload
+          };
+          const filtered = Array.isArray(existing)
+            ? existing.filter(c => Number(c?.tableNumber || c?.table_number || c?.table) !== finalTable)
+            : [];
+          localStorage.setItem('smartdine_active_assistance_calls', JSON.stringify([callItem, ...filtered]));
+        } catch (storageErr) {
+          console.warn('[CallWaiterModal] Failed to update smartdine_active_assistance_calls in localStorage:', storageErr);
+        }
+      }
+
+      // 6. Broadcast across tabs via BroadcastChannel
+      try {
+        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+          const bc = new BroadcastChannel('smartdine_restaurant_state');
+          const savedCalls = typeof localStorage !== 'undefined'
+            ? JSON.parse(localStorage.getItem('smartdine_active_assistance_calls') || '[]')
+            : [payload];
+          bc.postMessage({ type: 'CALLS_UPDATED', data: savedCalls });
+          bc.close();
+        }
+      } catch (_) {}
+
+      // If device is offline, also queue to IndexedDB/localStorage offline queue
+      if (!isDeviceOnline) {
+        try {
+          if (typeof enqueueWaiterCall === 'function') {
+            await enqueueWaiterCall({
+              tableNumber: finalTable,
+              table_number: finalTable,
+              reason: formattedReason,
+              notes: customMessage.trim(),
+              queuedAt: Date.now()
+            });
+          }
+        } catch (idbErr) {
+          console.warn('[CallWaiterModal] IndexedDB enqueue fallback:', idbErr);
+        }
+        setIsOfflineQueued(true);
+      } else {
+        setIsOfflineQueued(false);
+      }
+
+      // 7. Reliably show confirmation animation and success state
       setIsConfirmed(true);
-      setIsOfflineQueued(false);
-      sendWaiterCallToTelegramChannel(finalTable, formattedReason).catch(() => {});
-      if (onSuccess) onSuccess({ tableNumber: finalTable, reason: formattedReason });
+      if (onSuccess) onSuccess({ tableNumber: finalTable, reason: formattedReason, offline: !isDeviceOnline });
     } catch (err) {
-      console.warn('[CallWaiterModal] Network call failed, attempting offline queue:', err.message);
+      console.warn('[CallWaiterModal] Call handling error, fallback to local register:', err?.message);
 
       // Save to IndexedDB (with automatic localStorage/memory fallback)
       let queuedLocally = false;
@@ -275,12 +323,22 @@ export default function CallWaiterModal({
         }
       }
 
-      // Register locally in Restaurant Context
+      // Register locally in Restaurant Context & localStorage
       if (restaurant?.registerAssistanceCall) {
         restaurant.registerAssistanceCall(payload);
       }
+      if (typeof localStorage !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('smartdine_active_assistance_calls');
+          const existing = raw ? JSON.parse(raw) : [];
+          const filtered = Array.isArray(existing)
+            ? existing.filter(c => Number(c?.tableNumber || c?.table_number || c?.table) !== finalTable)
+            : [];
+          localStorage.setItem('smartdine_active_assistance_calls', JSON.stringify([payload, ...filtered]));
+        } catch (_) {}
+      }
 
-      // Show offline confirmation
+      // Show confirmation reliably
       setIsOfflineQueued(true);
       setIsConfirmed(true);
       if (onSuccess) onSuccess({ tableNumber: finalTable, reason: formattedReason, offline: true });
@@ -336,8 +394,8 @@ export default function CallWaiterModal({
         <div className="px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6">
           {/* CONFIRMED STATE */}
           {isConfirmed ? (
-            <div className="text-center py-4 space-y-4 animate-scaleUp motion-reduce:animate-none">
-              <div className="w-20 h-20 mx-auto rounded-3xl bg-[#0b0f19] text-emerald-400 border border-emerald-500/60 flex items-center justify-center shadow-lg shadow-black/40">
+            <div className="text-center py-4 space-y-4 animate-fade-up motion-reduce:animate-none">
+              <div className="w-20 h-20 mx-auto rounded-3xl bg-[#0b0f19] text-emerald-400 border border-emerald-500/60 flex items-center justify-center shadow-lg shadow-emerald-500/10">
                 <CheckCircle2 className="w-10 h-10 animate-bounce motion-reduce:animate-none" />
               </div>
 

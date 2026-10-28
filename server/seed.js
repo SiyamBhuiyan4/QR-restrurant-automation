@@ -1,4 +1,4 @@
-const { db } = require('./db');
+const db = require('./db');
 
 const initialCategories = [
   { name: 'Starters', slug: 'starters', icon: '🥗', sort_order: 1 },
@@ -202,69 +202,42 @@ const initialMenuItems = [
 
 function seedDatabase({ force = false } = {}) {
   try {
-    const existingCount = db.prepare('SELECT count(*) as count FROM categories').get().count;
+    const existingCategories = db.getCategories();
+    const existingCount = existingCategories.length;
 
     if (existingCount > 0 && !force) {
-      console.log(`[Seed] Database already has ${existingCount} categories. Skipping seed (use --force to reseed).`);
+      console.log(`[Seed] Telegram catalog already has ${existingCount} categories. Skipping seed (use --force to reseed).`);
       return { skipped: true, categoryCount: existingCount };
     }
 
-    if (force) {
-      console.log('[Seed] Force flag detected. Clearing existing data...');
-      db.exec(`
-        DELETE FROM order_items;
-        DELETE FROM orders;
-        DELETE FROM waiter_calls;
-        DELETE FROM menu_items;
-        DELETE FROM categories;
-      `);
-    }
-
-    console.log('[Seed] Seeding categories and menu items...');
-
-    db.exec('BEGIN TRANSACTION;');
-
-    const insertCatStmt = db.prepare(`
-      INSERT INTO categories (name, slug, icon, sort_order)
-      VALUES (?, ?, ?, ?)
-    `);
+    console.log('[Seed] Seeding categories and menu items into Telegram-backed state...');
 
     const categoryIdMap = {};
     for (const cat of initialCategories) {
-      const res = insertCatStmt.run(cat.name, cat.slug, cat.icon, cat.sort_order);
-      categoryIdMap[cat.slug] = Number(res.lastInsertRowid);
+      const created = db.createCategory(cat);
+      categoryIdMap[cat.slug] = created.id;
     }
-
-    const insertItemStmt = db.prepare(`
-      INSERT INTO menu_items (category_id, name, description, price, image_url, is_veg, is_spicy, is_available)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-    `);
 
     for (const item of initialMenuItems) {
       const categoryId = categoryIdMap[item.category_slug];
-      insertItemStmt.run(
-        categoryId,
-        item.name,
-        item.description,
-        item.price,
-        item.image_url,
-        item.is_veg,
-        item.is_spicy
-      );
+      db.createMenuItem({
+        category_id: categoryId,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        image_url: item.image_url,
+        is_veg: item.is_veg,
+        is_spicy: item.is_spicy
+      });
     }
 
-    db.exec('COMMIT;');
-
-    const totalCategories = db.prepare('SELECT count(*) as count FROM categories').get().count;
-    const totalItems = db.prepare('SELECT count(*) as count FROM menu_items').get().count;
+    const totalCategories = db.getCategories().length;
+    const totalItems = db.getMenuItems().length;
 
     console.log(`[Seed] Successfully seeded ${totalCategories} categories and ${totalItems} menu items!`);
     return { success: true, categories: totalCategories, menuItems: totalItems };
   } catch (error) {
-    try {
-      db.exec('ROLLBACK;');
-    } catch (_) {}
-    console.error('[Seed] Error seeding database:', error);
+    console.error('[Seed] Error seeding state:', error);
     throw error;
   }
 }

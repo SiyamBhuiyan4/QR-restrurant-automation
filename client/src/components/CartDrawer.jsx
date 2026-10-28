@@ -28,7 +28,7 @@ import { api } from '../convexApi';
 import { enqueueOrder as idbEnqueueOrder } from '../db/indexedDb.js';
 import VoiceRecorder from './VoiceRecorder';
 import { uploadVoiceBlob } from '../utils/voiceUpload.js';
-import { sendOrderToTelegramChannel } from '../services/telegramClient';
+import { sendOrderToTelegramChannel, sendVoiceNoteToTelegram } from '../services/telegramClient';
 
 const TAX_RATE = 0.05; // 5% Estimated Tax
 
@@ -307,11 +307,14 @@ export default function CartDrawer({
     setIsSubmitting(true);
 
     try {
-      // 2. Voice blob is uploaded to Convex file storage in step 4 (never sent as base64)
+      const orderNumber = `SD-${Date.now().toString().slice(-4)}`;
+      const voiceBlob = cartCtx?.voiceBlob || null;
 
-      // 3. Assemble full order payload
+      // 1. Assemble full order payload
       const orderPayload = {
-        orderId: `SD-${Date.now().toString().slice(-4)}`,
+        _id: `sd-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        orderId: orderNumber,
+        orderNumber: orderNumber,
         tableNumber: finalTable,
         table_number: finalTable,
         items: items.map((ci) => ({
@@ -327,81 +330,135 @@ export default function CartDrawer({
         total: parseFloat(grandTotal.toFixed(2)),
         totalAmount: parseFloat(grandTotal.toFixed(2)),
         generalNote: generalNote.trim(),
-        voiceBlob: cartCtx?.voiceBlob || null,
-        voiceNote: cartCtx?.voiceBlob ? null : (cartCtx?.voiceUrl || null),
+        voiceBlob: voiceBlob,
+        voiceNote: voiceBlob ? null : (cartCtx?.voiceUrl || null),
         status: 'pending',
         createdAt: new Date().toISOString(),
         timestamp: Date.now()
       };
 
-      // Forward to Telegram Channel
-      sendOrderToTelegramChannel(orderPayload).catch((e) => {
-        console.warn('[Telegram Channel send error]:', e);
-      });
-
-      // 4. Send via Convex Cloud, NetworkContext or offline IndexedDB fallback
-      let result = null;
-      let voiceStorageId;
-      let voiceUploadFailed = false;
-      if (cartCtx?.voiceBlob) {
-        try {
-          if (!generateUploadUrl) throw new Error('Convex upload unavailable');
-          voiceStorageId = await uploadVoiceBlob(cartCtx.voiceBlob, generateUploadUrl);
-        } catch (uploadErr) {
-          voiceUploadFailed = true;
-          console.warn('[CartDrawer] Voice upload failed:', uploadErr);
-        }
+      // 2. Send entire order to Telegram Channel
+      try {
+        await sendOrderToTelegramChannel(orderPayload);
+      } catch (tgErr) {
+        console.warn('[CartDrawer] Telegram send order warning:', tgErr);
       }
 
-      // Offline with a failed voice upload: skip the direct call so the order (with its Blob)
-      // goes to the IndexedDB queue and the upload is retried on sync.
-      const skipDirectConvex = voiceUploadFailed && !navigator.onLine;
-      if (createConvexOrder && !skipDirectConvex) {
+      // 3. If customer recorded a voice note (voiceBlob), upload directly to Telegram Channel
+      if (voiceBlob) {
         try {
-          const convexRes = await createConvexOrder({
-            tableNumber: Number(finalTable) || 1,
-            items: orderPayload.items.map((i) => ({
-              name: i.name,
-              price: Number(i.price) || 0,
-              quantity: Number(i.quantity) || 1,
-              note: i.note || undefined
-            })),
-            totalAmount: parseFloat(grandTotal.toFixed(2)),
-            generalNote: generalNote.trim() || undefined,
-            voiceStorageId // undefined when there is no voice or the upload failed (order is kept without voice)
+          const voiceRes = await sendVoiceNoteToTelegram(voiceBlob, {
+            tableNumber: finalTable,
+            orderNumber: orderPayload.orderNumber
           });
-          result = { success: true, offline: false, data: convexRes };
-          if (convexRes?.orderNumber) {
-            orderPayload.orderNumber = convexRes.orderNumber;
-            orderPayload.orderId = convexRes.orderNumber;
+          if (voiceRes?.cdnUrl) {
+            orderPayload.voiceUrl = voiceRes.cdnUrl;
+            orderPayload.voiceNoteUrl = voiceRes.cdnUrl;
           }
-          if (convexRes?.orderId) {
-            orderPayload._id = convexRes.orderId;
-          }
-        } catch (convexErr) {
-          console.warn('[CartDrawer] Convex order submit failed, falling back:', convexErr);
+        } catch (voiceErr) {
+          console.warn('[CartDrawer] Telegram voice upload warning:', voiceErr);
         }
       }
 
-      if (!result) {
+      // 4. Store the order locally:
+      // a) Add to smartdine_kds_orders in localStorage so KitchenDisplay instantly gets the ticket
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          const existingKds = JSON.parse(localStorage.getItem('smartdine_kds_orders') || '[]');
+          const storageItem = {
+            ...orderPayload,
+            voiceBlob: undefined // Raw blobs cannot be JSON-serialized
+          };
+          const updatedKds = [
+            storageItem,
+            ...existingKds.filter((o) => (o.orderId || o.orderNumber) !== (orderPayload.orderId || orderPayload.orderNumber))
+          ];
+          localStorage.setItem('smartdine_kds_orders', JSON.stringify(updatedKds));
+        }
+      } catch (storageErr) {
+        console.warn('[CartDrawer] LocalStorage KDS write warning:', storageErr);
+      }
+
+      // b) Dispatch window event for instant ticket rendering in KitchenDisplay (same tab)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('smartdine:new-order', { detail: orderPayload }));
+      }
+
+      // c) Post via BroadcastChannel for multi-tab sync
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        try {
+          const bcKds = new BroadcastChannel('smartdine_kds');
+          bcKds.postMessage({
+            type: 'smartdine:new-order',
+            order: orderPayload,
+            detail: orderPayload,
+            timestamp: Date.now()
+          });
+          bcKds.close();
+        } catch (_) {}
+
+        try {
+          const bcState = new BroadcastChannel('smartdine_restaurant_state');
+          bcState.postMessage({
+            type: 'NEW_ORDER',
+            order: orderPayload,
+            data: orderPayload,
+            timestamp: Date.now()
+          });
+          bcState.close();
+        } catch (_) {}
+      }
+
+      // 5. Non-blocking Convex background sync (removes blocking reliance on Convex)
+      if (createConvexOrder) {
+        (async () => {
+          try {
+            let voiceStorageId;
+            if (voiceBlob && generateUploadUrl) {
+              try {
+                voiceStorageId = await uploadVoiceBlob(voiceBlob, generateUploadUrl);
+              } catch (uErr) {
+                console.warn('[CartDrawer] Convex voice upload skipped:', uErr);
+              }
+            }
+            await createConvexOrder({
+              tableNumber: Number(finalTable) || 1,
+              items: orderPayload.items.map((i) => ({
+                name: i.name,
+                price: Number(i.price) || 0,
+                quantity: Number(i.quantity) || 1,
+                note: i.note || undefined
+              })),
+              totalAmount: parseFloat(grandTotal.toFixed(2)),
+              generalNote: generalNote.trim() || undefined,
+              voiceStorageId
+            });
+          } catch (convexErr) {
+            console.warn('[CartDrawer] Convex sync skipped (order saved via Telegram + local persistence):', convexErr);
+          }
+        })();
+      }
+
+      // Optional IndexedDB queue fallback for offline sync
+      try {
         if (networkCtx?.submitOrder) {
-          result = await networkCtx.submitOrder(orderPayload);
+          networkCtx.submitOrder(orderPayload).catch(() => {});
         } else {
-          // Convex submit already failed (or is unavailable): keep the order in the IndexedDB queue
-          const queued = await idbEnqueueOrder(orderPayload);
-          result = { success: true, offline: true, localId: queued.localId };
+          idbEnqueueOrder(orderPayload).catch(() => {});
         }
-      }
+      } catch (_) {}
 
-      // 5. Notify parent callback if provided
+      const result = { success: true, offline: !navigator.onLine, orderId: orderPayload.orderId };
+
+      // 6. Notify parent callback if provided
       if (propOnOrderSuccess) {
         propOnOrderSuccess(orderPayload, result);
       }
 
-      // 6. Set confirmation animation state & clear cart
+      // 7. Set confirmation animation state & clear cart
       setOrderConfirmation({
         ...orderPayload,
-        isOfflineQueued: Boolean(result?.offline)
+        isOfflineQueued: !navigator.onLine
       });
 
       if (cartCtx?.clearCart) {

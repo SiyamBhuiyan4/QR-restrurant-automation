@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { useRestaurant } from '../context/RestaurantContext';
+import { getCachedMenu } from '../db/indexedDb.js';
 import Navbar from '../components/Navbar';
 import CategoryBar from '../components/CategoryBar';
 import CartDrawer from '../components/CartDrawer';
@@ -721,6 +722,152 @@ export const getCategoryMetadata = (categoryName = '') => {
   };
 };
 
+// Helper to detect if a URL is hosted on Telegram CDN / bot API
+export const isTelegramCdnUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  const lower = url.trim().toLowerCase();
+  return (
+    lower.includes('api.telegram.org') ||
+    lower.includes('telegram.org') ||
+    lower.includes('telesco.pe') ||
+    lower.includes('telegram-cdn') ||
+    lower.includes('t.me')
+  );
+};
+
+// Helper to detect if a URL (including Telegram CDN videos) represents video / 360° product reel
+export const isVideoMediaUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  const clean = url.trim().toLowerCase();
+  if (clean.includes('mixkit.co')) return false;
+  if (/\.(mp4|webm|mov|ogg|m4v)(\?.*)?$/i.test(clean)) return true;
+  if (
+    clean.includes('/videos/') ||
+    clean.includes('/video/') ||
+    clean.includes('/video_notes/') ||
+    clean.includes('sendvideo') ||
+    clean.includes('video_note') ||
+    clean.includes('video/mp4') ||
+    clean.includes('mime_type=video')
+  ) {
+    return true;
+  }
+  return false;
+};
+
+// Normalize a dish item to ensure complete compatibility across cards and modals,
+// seamlessly resolving Telegram CDN photos and 360° videos
+export const normalizeDishItem = (item, defaultCategory = 'Mains') => {
+  if (!item || typeof item !== 'object') return null;
+
+  const id = item.id || item._id || (item.name ? `dish_${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}` : Math.random().toString(36).substr(2, 9));
+  const name = item.name || item.title || 'Untitled Dish';
+  const category = item.category || item.category_name || item.categoryName || defaultCategory;
+  const categorySlug = item.categorySlug || (typeof category === 'string' ? category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : 'mains');
+  const price = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
+  const description = item.description || '';
+
+  // Extract candidate media links
+  const explicitVideo = item.videoUrl || item.video_url || item.makingVideoUrl || item.making_video_url || item.makingVideo || item.video;
+  const explicitImage = item.imageUrl || item.image_url || item.image;
+
+  // Identify if image candidate is actually a 360° video (e.g. uploaded directly as the primary dish media)
+  const isExplicitImageVideo = isVideoMediaUrl(explicitImage);
+  const resolvedVideo = (!explicitVideo || (typeof explicitVideo === 'string' && explicitVideo.includes('mixkit.co')))
+    ? (isExplicitImageVideo ? explicitImage : (Array.isArray(item.videos) && item.videos[0]) || '/videos/reel-chef.mp4')
+    : explicitVideo;
+
+  // Primary culinary photo for dish thumbnails and posters
+  let resolvedImage = (!isExplicitImageVideo && explicitImage) ? explicitImage : null;
+  if (!resolvedImage && Array.isArray(item.images)) {
+    const nonVideo = item.images.find(img => typeof img === 'string' && !isVideoMediaUrl(img));
+    if (nonVideo) resolvedImage = nonVideo;
+  }
+  if (!resolvedImage) {
+    resolvedImage = 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80';
+  }
+
+  // Build images array
+  let allImages = [];
+  if (Array.isArray(item.images) && item.images.length > 0) {
+    allImages = item.images.filter(img => typeof img === 'string' && img.trim().length > 0);
+  } else {
+    allImages = [resolvedImage];
+  }
+  if (!allImages.includes(resolvedImage)) {
+    allImages.unshift(resolvedImage);
+  }
+
+  // Boolean flags
+  const isVeg = Boolean(item.isVeg || item.is_veg === 1 || item.is_veg === true || item.veg === true || (Array.isArray(item.tags) && item.tags.some(t => /veg/i.test(t))));
+  const isSpicy = Boolean(item.isSpicy || item.is_spicy === 1 || item.is_spicy === true || item.spicy === true || (Array.isArray(item.tags) && item.tags.some(t => /spic/i.test(t))));
+  const isAvailable = item.isAvailable !== false && item.is_available !== 0 && item.is_available !== false && item.available !== false && item.outOfStock !== true;
+
+  return {
+    id: String(id),
+    _id: item._id || String(id),
+    convexId: item.convexId || item._id || null,
+    name,
+    title: name,
+    category,
+    categorySlug,
+    price,
+    description,
+    image: resolvedImage,
+    imageUrl: resolvedImage,
+    image_url: resolvedImage,
+    images: allImages,
+    videoUrl: resolvedVideo,
+    video_url: resolvedVideo,
+    makingVideoUrl: resolvedVideo,
+    making_video_url: resolvedVideo,
+    isVeg,
+    is_veg: isVeg ? 1 : 0,
+    isSpicy,
+    is_spicy: isSpicy ? 1 : 0,
+    isAvailable,
+    is_available: isAvailable ? 1 : 0,
+    ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
+    isPopular: Boolean(item.isPopular || item.popular),
+    prepTime: item.prepTime || '15 min'
+  };
+};
+
+export const normalizeDishList = (input) => {
+  if (!input) return null;
+  let target = input;
+  // If JSON string
+  if (typeof target === 'string') {
+    try {
+      target = JSON.parse(target);
+    } catch (_) {
+      return null;
+    }
+  }
+  // If input is an object with items / data / menu / dishes property
+  if (!Array.isArray(target) && typeof target === 'object') {
+    target = target.items || target.menu || target.dishes || target.data || [];
+  }
+  if (!Array.isArray(target) || target.length === 0) return null;
+
+  // Check if it's categorized (each item has .items array)
+  if (target.some(cat => cat && Array.isArray(cat.items))) {
+    const flattened = [];
+    target.forEach(cat => {
+      const catName = cat.name || cat.title || 'Mains';
+      (cat.items || []).forEach(dish => {
+        const normalized = normalizeDishItem(dish, catName);
+        if (normalized) flattened.push(normalized);
+      });
+    });
+    return flattened.length > 0 ? flattened : null;
+  }
+
+  // Flat dish list
+  const list = target.map(d => normalizeDishItem(d)).filter(Boolean);
+  return list.length > 0 ? list : null;
+};
+
 export default function CustomerMenu({
   menuItems: propMenuItems,
   onPlaceOrder,
@@ -774,6 +921,172 @@ export default function CustomerMenu({
       return {};
     }
   });
+
+  // 6.5 Priority 1 Menu Items: localStorage ('smartdine_menu_items') or IndexedDB
+  const [storedMenuItems, setStoredMenuItems] = useState(() => {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('smartdine_menu_items');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const normalized = normalizeDishList(parsed);
+          if (normalized && normalized.length > 0) {
+            return normalized;
+          }
+        }
+      } catch (err) {
+        console.warn('[CustomerMenu] Error reading initial smartdine_menu_items from localStorage:', err);
+      }
+    }
+    return null;
+  });
+
+  // Ensure Telegram CDN assets (images & 360° videos) can be fetched without hotlinking / referrer restrictions
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      let meta = document.querySelector('meta[name="referrer"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = 'referrer';
+        meta.content = 'no-referrer-when-downgrade';
+        document.head.appendChild(meta);
+      }
+    }
+  }, []);
+
+  // Priority 1: Load from IndexedDB if not found in localStorage or on initial launch
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCachedMenu() {
+      try {
+        const localRaw = typeof localStorage !== 'undefined' ? localStorage.getItem('smartdine_menu_items') : null;
+        if (localRaw) {
+          try {
+            const parsed = JSON.parse(localRaw);
+            const normalized = normalizeDishList(parsed);
+            if (normalized && normalized.length > 0) {
+              if (isMounted) setStoredMenuItems(normalized);
+              return;
+            }
+          } catch (_) {}
+        }
+
+        const cached = await getCachedMenu();
+        if (cached && isMounted) {
+          const normalized = normalizeDishList(cached);
+          if (normalized && normalized.length > 0) {
+            setStoredMenuItems(normalized);
+          }
+        }
+      } catch (e) {
+        console.warn('[CustomerMenu] Error loading cached menu from IndexedDB:', e);
+      }
+    }
+    loadCachedMenu();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Real-time listener for MenuManager saves/edits:
+  // - smartdine:menu-updated (window / document custom event)
+  // - smartdine_restaurant_state (BroadcastChannel)
+  // - smartdine_menu_items (storage event across tabs)
+  useEffect(() => {
+    const handleMenuSync = async (payload) => {
+      if (payload) {
+        const normalized = normalizeDishList(payload);
+        if (normalized && normalized.length > 0) {
+          setStoredMenuItems(normalized);
+          return;
+        }
+      }
+
+      // Check localStorage first
+      if (typeof localStorage !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('smartdine_menu_items');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const normalized = normalizeDishList(parsed);
+            if (normalized && normalized.length > 0) {
+              setStoredMenuItems(normalized);
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('[CustomerMenu] Error re-reading localStorage smartdine_menu_items:', e);
+        }
+      }
+
+      // Check IndexedDB
+      try {
+        const cached = await getCachedMenu();
+        if (cached) {
+          const normalized = normalizeDishList(cached);
+          if (normalized && normalized.length > 0) {
+            setStoredMenuItems(normalized);
+          }
+        }
+      } catch (e) {
+        console.warn('[CustomerMenu] Error re-reading IndexedDB menu:', e);
+      }
+    };
+
+    // A. Custom Event listener: 'smartdine:menu-updated' on window and document
+    const onMenuUpdated = (e) => {
+      const data = e?.detail?.items || e?.detail?.menu || e?.detail?.dishes || e?.detail;
+      handleMenuSync(data);
+    };
+    window.addEventListener('smartdine:menu-updated', onMenuUpdated);
+    document.addEventListener('smartdine:menu-updated', onMenuUpdated);
+
+    // B. BroadcastChannel listener on 'smartdine_restaurant_state'
+    let bc = null;
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        bc = new BroadcastChannel('smartdine_restaurant_state');
+        bc.onmessage = (event) => {
+          const msg = event?.data;
+          if (!msg) return;
+
+          const isMenuUpdate =
+            msg.type === 'smartdine:menu-updated' ||
+            msg.type === 'MENU_UPDATED' ||
+            msg.type === 'MENU_ITEMS_UPDATED' ||
+            msg.type === 'MENU_SYNC' ||
+            msg.type === 'smartdine_menu_items' ||
+            (typeof msg.type === 'string' && msg.type.toLowerCase().includes('menu'));
+
+          if (isMenuUpdate) {
+            const data = msg.data?.items || msg.data?.menu || msg.data?.dishes || msg.data || msg.items || msg.menu;
+            handleMenuSync(data);
+          }
+        };
+      }
+    } catch (e) {
+      console.warn('[CustomerMenu] BroadcastChannel setup error:', e);
+    }
+
+    // C. Cross-tab storage change listener
+    const onStorage = (e) => {
+      if (e.key === 'smartdine_menu_items' || e.key === 'smartdine_offline_menu') {
+        handleMenuSync();
+      }
+    };
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      window.removeEventListener('smartdine:menu-updated', onMenuUpdated);
+      document.removeEventListener('smartdine:menu-updated', onMenuUpdated);
+      window.removeEventListener('storage', onStorage);
+      if (bc) {
+        try {
+          bc.close();
+        } catch (_) {}
+      }
+    };
+  }, []);
 
   // 7. Drawer & Modal States
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -1279,70 +1592,36 @@ export default function CustomerMenu({
 
   const convexFormattedItems = useMemo(() => {
     if (!convexMenu || !Array.isArray(convexMenu) || convexMenu.length === 0) return null;
-    const isVideo = (url) => {
-      if (!url || typeof url !== 'string') return false;
-      const clean = url.trim().toLowerCase();
-      if (clean.includes('mixkit.co')) return false;
-      if (/\.(mp4|webm|mov|ogg|m4v)(\?.*)?$/i.test(clean)) return true;
-      if (
-        clean.includes('/videos/') ||
-        clean.includes('/video/') ||
-        clean.includes('sendvideo') ||
-        clean.includes('video_note') ||
-        clean.includes('video/mp4') ||
-        clean.includes('mime_type=video')
-      ) return true;
-      return false;
-    };
-
-    const cleanImg = (url) => {
-      if (!url || typeof url !== 'string') return 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900';
-      if (url.includes('photo-1604909052743')) {
-        return 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80';
-      }
-      return url;
-    };
-
     const list = [];
     convexMenu.forEach((cat) => {
       (cat.items || []).forEach((item) => {
-        // Resolve video from explicit video field or uploaded profile video
-        const rawVideo = item.videoUrl || item.video_url || item.makingVideoUrl || item.making_video_url;
-        const candidateVideo = (rawVideo && !rawVideo.includes('mixkit.co'))
-          ? rawVideo
-          : (isVideo(item.imageUrl) ? item.imageUrl : (isVideo(item.image) ? item.image : '/videos/reel-chef.mp4'));
-
-        const primaryImg = cleanImg(item.imageUrl || item.image);
-        const allImgs = (Array.isArray(item.images) && item.images.length > 0 ? item.images : [primaryImg]).map(cleanImg);
-        list.push({
-          id: item._id,
-          _id: item._id,
-          name: item.name,
-          title: item.name,
-          description: item.description,
-          price: item.price,
-          category: cat.name,
-          categorySlug: cat.slug || item.categorySlug,
-          isVeg: Boolean(item.isVeg),
-          isSpicy: Boolean(item.isSpicy),
-          isAvailable: item.isAvailable !== false,
-          image: primaryImg,
-          imageUrl: primaryImg,
-          images: allImgs,
-          videoUrl: candidateVideo,
-          makingVideoUrl: candidateVideo,
-          making_video_url: candidateVideo,
-        });
+        const normalized = normalizeDishItem(item, cat.name);
+        if (normalized) list.push(normalized);
       });
     });
     return list.length > 0 ? list : null;
   }, [convexMenu]);
 
-
-  // Menu items list (Convex Cloud -> Props -> Default Offline)
+  // Menu items list adhering strictly to priority hierarchy:
+  // 1. First: localStorage.getItem('smartdine_menu_items') or IndexedDB cached items (storedMenuItems)
+  // 2. Second: propMenuItems
+  // 3. Third: DEFAULT_MENU_ITEMS (with fallback to convexFormattedItems if neither 1 nor 2 present)
   const allMenuItems = useMemo(() => {
-    return convexFormattedItems || (propMenuItems && propMenuItems.length > 0 ? propMenuItems : DEFAULT_MENU_ITEMS);
-  }, [convexFormattedItems, propMenuItems]);
+    // Priority 1: localStorage or IndexedDB cached items
+    if (storedMenuItems && Array.isArray(storedMenuItems) && storedMenuItems.length > 0) {
+      return storedMenuItems;
+    }
+    // Priority 2: propMenuItems
+    if (propMenuItems && Array.isArray(propMenuItems) && propMenuItems.length > 0) {
+      const normalizedProps = normalizeDishList(propMenuItems);
+      return (normalizedProps && normalizedProps.length > 0) ? normalizedProps : propMenuItems;
+    }
+    // Priority 3: convexFormattedItems (if present from cloud) or DEFAULT_MENU_ITEMS
+    if (convexFormattedItems && Array.isArray(convexFormattedItems) && convexFormattedItems.length > 0) {
+      return convexFormattedItems;
+    }
+    return DEFAULT_MENU_ITEMS;
+  }, [storedMenuItems, propMenuItems, convexFormattedItems]);
 
   // Filtered menu items
   const filteredItems = useMemo(() => {

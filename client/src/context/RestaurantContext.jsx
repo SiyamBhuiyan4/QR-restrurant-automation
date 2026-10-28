@@ -18,23 +18,42 @@ import {
   createCorrectionInConvex,
   patchCorrectionStatusInConvex
 } from '../utils/convexServices';
+import { sendCorrectionToTelegramChannel } from '../services/telegramClient.js';
 
 const RestaurantContext = createContext(null);
 
 // ---------------------------------------------------------------------------
 // Server sync helpers for order corrections (localStorage stays the offline fallback)
 // ---------------------------------------------------------------------------
-/** Fire-and-forget write to Convex; the localStorage copy remains if it fails. */
+/** Fire-and-forget write to Convex; gracefully falls back to localStorage & Telegram logging if Convex fails or is offline */
 const sendCorrectionCreate = (body) => {
   try {
-    createCorrectionInConvex(body).catch(() => {});
-  } catch (_) { /* offline: localStorage copy remains */ }
+    if (typeof createCorrectionInConvex === 'function') {
+      const p = createCorrectionInConvex(body);
+      if (p && typeof p.catch === 'function') {
+        p.catch((err) => {
+          console.warn('[Convex Correction Create Fallback]: Saved in localStorage & logged to Telegram', err?.message);
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('[Convex Correction Create Unavailable]: Using localStorage & Telegram fallback', err?.message);
+  }
 };
 
 const sendCorrectionPatch = (id, fields) => {
   try {
-    patchCorrectionStatusInConvex({ id, ...fields }).catch(() => {});
-  } catch (_) { /* offline: localStorage copy remains */ }
+    if (typeof patchCorrectionStatusInConvex === 'function') {
+      const p = patchCorrectionStatusInConvex({ id, ...fields });
+      if (p && typeof p.catch === 'function') {
+        p.catch((err) => {
+          console.warn('[Convex Correction Patch Fallback]: Saved in localStorage & logged to Telegram', err?.message);
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('[Convex Correction Patch Unavailable]: Using localStorage & Telegram fallback', err?.message);
+  }
 };
 
 /** Converts server correction rows (newest first) into the local snapshot shape. */
@@ -2128,10 +2147,15 @@ export function RestaurantProvider({ children }) {
     if (!indexes.length) return { success: false, error: 'Select at least one item' };
     const itemNames = indexes.map(i => items[i]?.name).filter(Boolean);
     commitOrderCorrections(prev => applyVoidsToSnapshot(prev, orderId, indexes));
-    sendCorrectionCreate({
+    const correctionPayload = {
       type: 'void', orderId, orderLabel, tableNumber, itemIndexes: indexes, itemNames,
-      wholeOrder: itemIndexes === 'all', reason, note, appliedBy: actor?.actorName || ADMIN_ACTOR.actorName
-    });
+      wholeOrder: itemIndexes === 'all', reason, note, appliedBy: actor?.actorName || ADMIN_ACTOR.actorName,
+      timestamp: Date.now()
+    };
+    sendCorrectionCreate(correctionPayload);
+    try {
+      sendCorrectionToTelegramChannel(correctionPayload).catch((tgErr) => console.warn('[Telegram Void Log Error]:', tgErr));
+    } catch (_) {}
     recordActivity({
       ...actor,
       actionType: 'VOID',
@@ -2169,6 +2193,13 @@ export function RestaurantProvider({ children }) {
       itemIndexes: indexes, itemNames, wholeOrder: request.wholeOrder, reason, note,
       requestedBy: request.requestedBy, requestedById: request.requestedById
     });
+    try {
+      sendCorrectionToTelegramChannel({
+        type: 'void_request', orderId: request.orderId, orderLabel, tableNumber,
+        itemIndexes: indexes, itemNames, wholeOrder: request.wholeOrder, reason, note,
+        requestedBy: request.requestedBy, timestamp: request.requestedAt
+      }).catch((tgErr) => console.warn('[Telegram Void Request Log Error]:', tgErr));
+    } catch (_) {}
     recordActivity({
       actorType: 'employee',
       ...(actor || {}),
@@ -2199,6 +2230,13 @@ export function RestaurantProvider({ children }) {
       };
     });
     sendCorrectionPatch(requestId, { status: 'approved', resolvedBy: admin.actorName });
+    try {
+      sendCorrectionToTelegramChannel({
+        type: 'void_approved', orderId: request.orderId, orderLabel: request.orderLabel,
+        tableNumber: request.tableNumber, itemIndexes: request.itemIndexes, itemNames: request.itemNames,
+        reason: request.reason, resolvedBy: admin.actorName, timestamp: Date.now()
+      }).catch((tgErr) => console.warn('[Telegram Void Approved Log Error]:', tgErr));
+    } catch (_) {}
     recordActivity({
       ...admin,
       actionType: 'VOID_APPROVED',
@@ -2222,6 +2260,13 @@ export function RestaurantProvider({ children }) {
         : r))
     }));
     sendCorrectionPatch(requestId, { status: 'rejected', resolvedBy: admin.actorName });
+    try {
+      sendCorrectionToTelegramChannel({
+        type: 'void_rejected', orderId: request.orderId, orderLabel: request.orderLabel,
+        tableNumber: request.tableNumber, reason: request.reason, resolvedBy: admin.actorName,
+        timestamp: Date.now()
+      }).catch((tgErr) => console.warn('[Telegram Void Rejected Log Error]:', tgErr));
+    } catch (_) {}
     recordActivity({
       ...admin,
       actionType: 'VOID_REJECTED',
@@ -2244,10 +2289,15 @@ export function RestaurantProvider({ children }) {
     const key = String(orderId);
     const discount = { id: `disc-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`, type: discountType === 'percent' ? 'percent' : 'fixed', value: amount, reason, note, appliedBy: actor.actorName, appliedAt: Date.now() };
     commitOrderCorrections(prev => ({ ...prev, discounts: { ...prev.discounts, [key]: discount } }));
-    sendCorrectionCreate({
+    const correctionPayload = {
       id: discount.id, type: 'discount', orderId: key, orderLabel, tableNumber,
-      discountType: discount.type, value: amount, reason, note, appliedBy: actor.actorName
-    });
+      discountType: discount.type, value: amount, reason, note, appliedBy: actor.actorName,
+      timestamp: Date.now()
+    };
+    sendCorrectionCreate(correctionPayload);
+    try {
+      sendCorrectionToTelegramChannel(correctionPayload).catch((tgErr) => console.warn('[Telegram Discount Log Error]:', tgErr));
+    } catch (_) {}
     recordActivity({
       ...actor,
       actionType: 'DISCOUNT',
@@ -2273,6 +2323,12 @@ export function RestaurantProvider({ children }) {
     if (activeDiscountId) {
       sendCorrectionPatch(activeDiscountId, { status: 'cleared', resolvedBy: actor.actorName });
     }
+    try {
+      sendCorrectionToTelegramChannel({
+        type: 'discount_removed', orderId: key, orderLabel,
+        resolvedBy: actor.actorName, timestamp: Date.now()
+      }).catch((tgErr) => console.warn('[Telegram Discount Remove Log Error]:', tgErr));
+    } catch (_) {}
     recordActivity({
       ...actor,
       actionType: 'DISCOUNT_REMOVED',

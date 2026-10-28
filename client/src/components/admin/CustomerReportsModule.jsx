@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   MessageSquare,
   AlertTriangle,
@@ -18,9 +18,12 @@ import {
   Zap,
   ArrowLeft,
   Eye,
-  Inbox
+  Inbox,
+  PlusCircle,
+  MessageCircle
 } from 'lucide-react';
 import { useRestaurant } from '../../context/RestaurantContext';
+import { sendCustomerReportToTelegramChannel } from '../../services/telegramClient.js';
 import '../../styles/admin-tables.css';
 import '../../styles/admin-feedback.css';
 
@@ -683,6 +686,19 @@ function FeedbackDetail({
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Telegram Notification Dispatcher
+// ─────────────────────────────────────────────────────────────────────────────
+function dispatchTelegramReportNotification(report) {
+  if (!report) return;
+  try {
+    sendCustomerReportToTelegramChannel(report).catch((err) => {
+      console.warn('[CustomerReportsModule] Telegram dispatch error:', err);
+    });
+  } catch (err) {
+    console.warn('[CustomerReportsModule] Telegram dispatch exception:', err);
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Master CustomerReportsModule Component
@@ -725,6 +741,34 @@ export default function CustomerReportsModule({
   const [toast, setToast] = useState(null);
   const [tick, setTick] = useState(0);
   const [showSimulateMenu, setShowSimulateMenu] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addFormData, setAddFormData] = useState({
+    table: 1,
+    category: 'Complaint',
+    severity: 'moderate',
+    customerName: '',
+    note: '',
+    staffId: 'emp-1'
+  });
+
+  // Persistent BroadcastChannel Reference for zero-latency cross-tab synchronization
+  const bcRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        bcRef.current = new BroadcastChannel('smartdine_restaurant_state');
+      } catch (_) {}
+    }
+    return () => {
+      if (bcRef.current) {
+        try {
+          bcRef.current.close();
+        } catch (_) {}
+        bcRef.current = null;
+      }
+    };
+  }, []);
 
   // Mute audio state
   const [muted, setMuted] = useState(() => {
@@ -769,7 +813,11 @@ export default function CustomerReportsModule({
       window.dispatchEvent(new CustomEvent('smartdine:reports-updated', {
         detail: { reports: newReports }
       }));
-      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      if (bcRef.current) {
+        try {
+          bcRef.current.postMessage({ type: 'REPORTS_UPDATED', data: newReports, timestamp: Date.now() });
+        } catch (_) {}
+      } else if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         try {
           const bc = new BroadcastChannel('smartdine_restaurant_state');
           bc.postMessage({ type: 'REPORTS_UPDATED', data: newReports, timestamp: Date.now() });
@@ -800,6 +848,7 @@ export default function CustomerReportsModule({
             setReports(e.data.data.reports);
           } else if (e.data.type === 'CUSTOMER_REPLY' && e.data.data) {
             const reply = e.data.data;
+            let targetReport = null;
             setReports(prev => {
               const updated = prev.map(r => {
                 const matchesId = reply.reportId && r.id === reply.reportId;
@@ -807,19 +856,21 @@ export default function CustomerReportsModule({
                 if (matchesId || matchesTable) {
                   const already = (r.messages || []).some(m => m.id === reply.id);
                   if (already) return r;
-                  return {
+                  const newMsg = {
+                    id: reply.id || `reply-${Date.now()}`,
+                    to: 'staff',
+                    from: reply.from || `Customer (Table #${reply.table})`,
+                    text: reply.text,
+                    sentAt: reply.sentAt || Date.now()
+                  };
+                  targetReport = {
                     ...r,
                     messages: [
                       ...(r.messages || []),
-                      {
-                        id: reply.id || `reply-${Date.now()}`,
-                        to: 'staff',
-                        from: reply.from || `Customer (Table #${reply.table})`,
-                        text: reply.text,
-                        sentAt: reply.sentAt || Date.now()
-                      }
+                      newMsg
                     ]
                   };
+                  return targetReport;
                 }
                 return r;
               });
@@ -831,6 +882,24 @@ export default function CustomerReportsModule({
             });
             chime.urgent();
             showToast(`💬 Reply from Table #${reply.table}: "${reply.text}"`, 'warn');
+
+            // Dispatch to Telegram Channel
+            dispatchTelegramReportNotification({
+              id: reply.reportId || targetReport?.id || `rep-table-${reply.table}`,
+              table: reply.table,
+              customerName: reply.from || `Customer (Table #${reply.table})`,
+              category: targetReport ? getCategory(targetReport) : 'Customer Reply',
+              severity: targetReport?.severity || 'moderate',
+              status: targetReport?.status || 'in_progress',
+              action: 'REPLY',
+              isReply: true,
+              lastMessage: {
+                from: reply.from || `Customer (Table #${reply.table})`,
+                to: 'staff',
+                text: reply.text,
+                sentAt: reply.sentAt || Date.now()
+              }
+            });
           } else if (e.data.type === 'NEW_CUSTOMER_REPORT' && e.data.data) {
             const newRpt = e.data.data;
             setReports(prev => {
@@ -844,6 +913,12 @@ export default function CustomerReportsModule({
             });
             chime.urgent();
             showToast(`🚨 New Request from Table #${newRpt.table}`, 'warn');
+
+            // Dispatch to Telegram Channel
+            dispatchTelegramReportNotification({
+              ...newRpt,
+              action: 'NEW_REPORT'
+            });
           }
         };
       } catch (_) {}
@@ -858,6 +933,7 @@ export default function CustomerReportsModule({
       } else if (e.key === 'smartdine_customer_reply' && e.newValue) {
         try {
           const reply = JSON.parse(e.newValue);
+          let targetReport = null;
           setReports(prev => {
             const updated = prev.map(r => {
               const matchesId = reply.reportId && r.id === reply.reportId;
@@ -865,19 +941,21 @@ export default function CustomerReportsModule({
               if (matchesId || matchesTable) {
                 const already = (r.messages || []).some(m => m.id === reply.id);
                 if (already) return r;
-                return {
+                const newMsg = {
+                  id: reply.id || `reply-${Date.now()}`,
+                  to: 'staff',
+                  from: reply.from || `Customer (Table #${reply.table})`,
+                  text: reply.text,
+                  sentAt: reply.sentAt || Date.now()
+                };
+                targetReport = {
                   ...r,
                   messages: [
                     ...(r.messages || []),
-                    {
-                      id: reply.id || `reply-${Date.now()}`,
-                      to: 'staff',
-                      from: reply.from || `Customer (Table #${reply.table})`,
-                      text: reply.text,
-                      sentAt: reply.sentAt || Date.now()
-                    }
+                    newMsg
                   ]
                 };
+                return targetReport;
               }
               return r;
             });
@@ -885,6 +963,24 @@ export default function CustomerReportsModule({
           });
           chime.urgent();
           showToast(`💬 Reply from Table #${reply.table}: "${reply.text}"`, 'warn');
+
+          // Dispatch to Telegram Channel
+          dispatchTelegramReportNotification({
+            id: reply.reportId || targetReport?.id || `rep-table-${reply.table}`,
+            table: reply.table,
+            customerName: reply.from || `Customer (Table #${reply.table})`,
+            category: targetReport ? getCategory(targetReport) : 'Customer Reply',
+            severity: targetReport?.severity || 'moderate',
+            status: targetReport?.status || 'in_progress',
+            action: 'REPLY',
+            isReply: true,
+            lastMessage: {
+              from: reply.from || `Customer (Table #${reply.table})`,
+              to: 'staff',
+              text: reply.text,
+              sentAt: reply.sentAt || Date.now()
+            }
+          });
         } catch (_) {}
       }
     };
@@ -989,9 +1085,10 @@ export default function CustomerReportsModule({
   // 1. Assign Staff (Immediate 1-click dropdown)
   const handleAssignStaff = useCallback((reportId, staffId) => {
     const staff = REAL_STAFF.find(s => s.id === staffId) || REAL_STAFF[0];
+    let assignedReport = null;
     const updated = reports.map(r => {
       if (r.id !== reportId) return r;
-      return {
+      assignedReport = {
         ...r,
         staffId: staff.id,
         status: r.status === 'new' ? 'in_progress' : r.status,
@@ -1000,10 +1097,20 @@ export default function CustomerReportsModule({
           note: `Assigned to ${staff.name} (${staff.zone})`
         }
       };
+      return assignedReport;
     });
     saveReports(updated);
     chime.success();
-    showToast(`✓ Assigned Table #${reports.find(r => r.id === reportId)?.table} to ${staff.name}`, 'success');
+    showToast(`✓ Assigned Table #${assignedReport?.table || ''} to ${staff.name}`, 'success');
+
+    // Notify Telegram channel of staff assignment & status update
+    if (assignedReport) {
+      dispatchTelegramReportNotification({
+        ...assignedReport,
+        staffName: staff.name,
+        action: 'ASSIGNED'
+      });
+    }
   }, [reports, saveReports, showToast]);
 
   // 2. Toggle or Switch Messaging Drawer
@@ -1070,7 +1177,13 @@ export default function CustomerReportsModule({
 
       // 2. Broadcast via BroadcastChannel
       try {
-        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        if (bcRef.current) {
+          bcRef.current.postMessage({
+            type: 'CUSTOMER_MESSAGE',
+            data: tableMsgPayload,
+            timestamp
+          });
+        } else if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
           const bc = new BroadcastChannel('smartdine_restaurant_state');
           bc.postMessage({
             type: 'CUSTOMER_MESSAGE',
@@ -1081,7 +1194,7 @@ export default function CustomerReportsModule({
         }
       } catch (_) {}
 
-      // 3. Dispatch custom window event (for same-window / embedded simulator iframes)
+      // 3. Dispatch custom window event
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('smartdine:table_message', { detail: tableMsgPayload }));
       }
@@ -1090,31 +1203,24 @@ export default function CustomerReportsModule({
       showToast(`✓ Direct message sent to Table #${report.table} Customer`, 'info');
     } else {
       // ── TEXT TO STAFF ({employeeName}) ──
-      // Requirement 2:
-      // - Save dispatch message in report's thread
-      // - Update report status to 'in_progress' and log dispatch timestamp
-      // - Show quick audible chime (Web Audio) and toast notification
-      const dispatchRecord = {
+      const staffDispatchPayload = {
+        id: newMsg.id,
+        reportId: report.id,
+        table: report.table,
         staffId: staff.id,
         staffName: staff.name,
-        note: `Directive sent: "${text.trim()}"`,
-        dispatchedAt: timestamp,
-        dispatchedBy: senderName || 'Admin'
+        text: text.trim(),
+        dispatchedAt: timestamp
       };
-
-      // Broadcast staff dispatch across tabs
       try {
-        const staffDispatchPayload = {
-          id: newMsg.id,
-          reportId: report.id,
-          table: report.table,
-          staffId: staff.id,
-          staffName: staff.name,
-          text: text.trim(),
-          dispatchedAt: timestamp
-        };
         localStorage.setItem('smartdine_last_staff_dispatch', JSON.stringify(staffDispatchPayload));
-        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        if (bcRef.current) {
+          bcRef.current.postMessage({
+            type: 'STAFF_DISPATCH',
+            data: staffDispatchPayload,
+            timestamp
+          });
+        } else if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
           const bc = new BroadcastChannel('smartdine_restaurant_state');
           bc.postMessage({
             type: 'STAFF_DISPATCH',
@@ -1129,12 +1235,12 @@ export default function CustomerReportsModule({
       showToast(`✓ Dispatched directive to ${staff.name} for Table #${report.table}`, 'success');
     }
 
+    let updatedReport = null;
     const updated = reports.map(r => {
       if (r.id !== reportId) return r;
-      return {
+      updatedReport = {
         ...r,
         messages: [...(r.messages || []), newMsg],
-        // When texting employee, always ensure status is in_progress and log dispatch timestamp
         status: to === 'employee' ? 'in_progress' : (r.status === 'new' ? 'in_progress' : r.status),
         dispatch: to === 'employee'
           ? {
@@ -1146,9 +1252,20 @@ export default function CustomerReportsModule({
             }
           : r.dispatch
       };
+      return updatedReport;
     });
 
     saveReports(updated);
+
+    // Send Telegram Notification for reply or directive
+    if (updatedReport) {
+      dispatchTelegramReportNotification({
+        ...updatedReport,
+        action: 'REPLY',
+        isReply: true,
+        lastMessage: newMsg
+      });
+    }
   }, [reports, saveReports, showToast]);
 
   // 4. Mark Resolved
@@ -1160,15 +1277,17 @@ export default function CustomerReportsModule({
     const elapsedMinutes = Math.max(1, Math.round((now - report.createdAt) / 60000));
     const finalNote = customNote.trim() || 'Resolved — customer confirmed satisfied.';
 
+    let resolvedReport = null;
     const updated = reports.map(r => {
       if (r.id !== reportId) return r;
-      return {
+      resolvedReport = {
         ...r,
         status: 'resolved',
         resolvedAt: now,
         resolutionTime: `${elapsedMinutes} min${elapsedMinutes === 1 ? '' : 's'}`,
         resolutionNote: finalNote
       };
+      return resolvedReport;
     });
 
     saveReports(updated);
@@ -1176,6 +1295,17 @@ export default function CustomerReportsModule({
     // Close resolution drawer if open
     setResolutionDrawers(prev => ({ ...prev, [reportId]: false }));
     showToast(`✓ Table #${report.table} marked resolved (${elapsedMinutes}m turnaround)`, 'success');
+
+    // Notify Telegram Channel of resolution
+    if (resolvedReport) {
+      dispatchTelegramReportNotification({
+        ...resolvedReport,
+        action: 'RESOLVED',
+        status: 'resolved',
+        resolutionNote: finalNote,
+        resolutionTime: `${elapsedMinutes} min${elapsedMinutes === 1 ? '' : 's'}`
+      });
+    }
   }, [reports, saveReports, showToast]);
 
   // 5. Reopen
@@ -1183,19 +1313,30 @@ export default function CustomerReportsModule({
     const report = reports.find(r => r.id === reportId);
     if (!report) return;
 
+    let reopenedReport = null;
     const updated = reports.map(r => {
       if (r.id !== reportId) return r;
-      return {
+      reopenedReport = {
         ...r,
         status: 'in_progress',
         resolvedAt: null,
         resolutionTime: null,
         resolutionNote: null
       };
+      return reopenedReport;
     });
 
     saveReports(updated);
     showToast(`Table #${report.table} request reopened`, 'warn');
+
+    // Notify Telegram Channel of reopen
+    if (reopenedReport) {
+      dispatchTelegramReportNotification({
+        ...reopenedReport,
+        action: 'REOPENED',
+        status: 'in_progress'
+      });
+    }
   }, [reports, saveReports, showToast]);
 
   // 6. Simulate Customer Request (napkins, steak temperature, wine spill, allergy substitute, check split)
@@ -1220,6 +1361,7 @@ export default function CustomerReportsModule({
       customerName: issue.customerName || `Guest (Table #${targetTable})`,
       note: issue.note,
       severity: issue.severity,
+      category: issue.category,
       status: 'new',
       createdAt: now,
       staffId: staff.id,
@@ -1262,7 +1404,13 @@ export default function CustomerReportsModule({
 
     // Broadcast across tabs
     try {
-      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      if (bcRef.current) {
+        bcRef.current.postMessage({
+          type: 'NEW_CUSTOMER_REPORT',
+          data: newReport,
+          timestamp: now
+        });
+      } else if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         const bc = new BroadcastChannel('smartdine_restaurant_state');
         bc.postMessage({
           type: 'NEW_CUSTOMER_REPORT',
@@ -1275,6 +1423,68 @@ export default function CustomerReportsModule({
 
     chime.urgent();
     showToast(`🚨 Simulated: ${issue.title} (Table #${targetTable})`, 'warn');
+
+    // Notify Telegram Channel of new report
+    dispatchTelegramReportNotification({
+      ...newReport,
+      action: 'NEW_REPORT'
+    });
+  }, [reports, saveReports, showToast, restaurant]);
+
+  // 7. Manually Log Feedback, Report, Complaint, Compliment, or Table Note
+  const handleCreateCustomerReport = useCallback((formData) => {
+    const targetTable = Number(formData.table || 1);
+    const assignedStaff = REAL_STAFF.find(s => s.id === formData.staffId) ||
+      (restaurant?.getAssignedEmployeeForTable?.(targetTable)) ||
+      REAL_STAFF[0];
+
+    const now = Date.now();
+    const newReport = {
+      id: `rep-${now}-${Math.random().toString(36).substr(2, 4)}`,
+      table: targetTable,
+      customerName: formData.customerName?.trim() || `Guest (Table #${targetTable})`,
+      note: formData.note?.trim() || 'No description provided',
+      category: formData.category || 'Customer Feedback',
+      severity: formData.severity || 'general',
+      status: 'new',
+      createdAt: now,
+      staffId: assignedStaff.id,
+      dispatch: { staffId: assignedStaff.id, note: `Assigned to ${assignedStaff.name} (${assignedStaff.zone})` },
+      resolvedAt: null,
+      resolutionTime: null,
+      resolutionNote: null,
+      messages: []
+    };
+
+    saveReports([newReport, ...reports]);
+
+    try {
+      if (bcRef.current) {
+        bcRef.current.postMessage({
+          type: 'NEW_CUSTOMER_REPORT',
+          data: newReport,
+          timestamp: now
+        });
+      } else if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('smartdine_restaurant_state');
+        bc.postMessage({
+          type: 'NEW_CUSTOMER_REPORT',
+          data: newReport,
+          timestamp: now
+        });
+        bc.close();
+      }
+    } catch (_) {}
+
+    chime.urgent();
+    showToast(`✓ Logged ${newReport.category} for Table #${targetTable}`, 'success');
+
+    // Notify Telegram Channel
+    dispatchTelegramReportNotification({
+      ...newReport,
+      staffName: assignedStaff.name,
+      action: 'NEW_REPORT'
+    });
   }, [reports, saveReports, showToast, restaurant]);
 
   // Alias for backward-compatibility
@@ -1286,9 +1496,25 @@ export default function CustomerReportsModule({
   const handleMarkInReview = useCallback((reportId) => {
     const report = reports.find(r => r.id === reportId);
     if (!report) return;
-    const updated = reports.map(r => (r.id === reportId ? { ...r, status: 'in_progress' } : r));
+    let reviewedReport = null;
+    const updated = reports.map(r => {
+      if (r.id === reportId) {
+        reviewedReport = { ...r, status: 'in_progress' };
+        return reviewedReport;
+      }
+      return r;
+    });
     saveReports(updated);
     showToast(`Table #${report.table} marked in review`, 'info');
+
+    // Notify Telegram Channel of in-progress review
+    if (reviewedReport) {
+      dispatchTelegramReportNotification({
+        ...reviewedReport,
+        action: 'IN_REVIEW',
+        status: 'in_progress'
+      });
+    }
   }, [reports, saveReports, showToast]);
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -1363,6 +1589,17 @@ export default function CustomerReportsModule({
             aria-label={muted ? 'Unmute audio alerts' : 'Mute audio alerts'}
           >
             {muted ? <VolumeX className="fb-icon" aria-hidden="true" /> : <Volume2 className="fb-icon" aria-hidden="true" />}
+          </button>
+
+          <button
+            type="button"
+            className="fb-btn fb-btn--primary"
+            onClick={() => setShowAddModal(true)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            title="Log Feedback, Report, Complaint, Compliment, or Table Note"
+          >
+            <PlusCircle className="fb-icon" aria-hidden="true" />
+            <span>Log report / note</span>
           </button>
 
           <div className="fb-simulate">
@@ -1578,6 +1815,182 @@ export default function CustomerReportsModule({
           )}
         </section>
       </div>
+
+      {/* ── Log Customer Feedback / Report / Note Modal ────────────────────── */}
+      {showAddModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="fb-modal-title"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(4px)'
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#1c1917',
+              border: '1px solid #292524',
+              borderRadius: '16px',
+              padding: '24px',
+              width: '100%',
+              maxWidth: '520px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              color: '#f5f5f4'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '14px', borderBottom: '1px solid #292524' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px', fontWeight: 'bold' }}>
+                <MessageSquare className="w-5 h-5 text-amber-500" style={{ color: '#f59e0b', width: 20, height: 20 }} />
+                <span id="fb-modal-title">Log Customer Report / Note</span>
+              </div>
+              <button
+                type="button"
+                className="fb-btn fb-btn--ghost fb-btn--icon"
+                onClick={() => setShowAddModal(false)}
+                aria-label="Close modal"
+              >
+                <X className="fb-icon" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#a8a29e', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    Table
+                  </label>
+                  <select
+                    className="fb-select"
+                    value={addFormData.table}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, table: Number(e.target.value) }))}
+                    style={{ width: '100%' }}
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
+                      <option key={num} value={num}>Table #{num} ({TABLE_ZONES[num] || 'Main Hall'})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#a8a29e', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    Category / Type
+                  </label>
+                  <select
+                    className="fb-select"
+                    value={addFormData.category}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, category: e.target.value }))}
+                    style={{ width: '100%' }}
+                  >
+                    <option value="Complaint">🚨 Customer Complaint</option>
+                    <option value="Compliment">🌟 Customer Compliment</option>
+                    <option value="General Feedback">💬 Guest Feedback</option>
+                    <option value="Table Note">📝 Table Note / Directive</option>
+                    <option value="Kitchen / Quality">🥩 Kitchen / Quality</option>
+                    <option value="Food Safety">⚠️ Food Safety & Allergy</option>
+                    <option value="Urgent Spill">🍷 Urgent Spill Cleanup</option>
+                    <option value="Amenities">🧻 Amenities & Cutlery</option>
+                    <option value="Billing">💳 Billing & Split Bill</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#a8a29e', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    Severity
+                  </label>
+                  <select
+                    className="fb-select"
+                    value={addFormData.severity}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, severity: e.target.value }))}
+                    style={{ width: '100%' }}
+                  >
+                    <option value="general">🟢 General</option>
+                    <option value="moderate">🟡 Moderate</option>
+                    <option value="critical">🔴 Critical</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#a8a29e', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    Assigned Staff
+                  </label>
+                  <select
+                    className="fb-select"
+                    value={addFormData.staffId}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, staffId: e.target.value }))}
+                    style={{ width: '100%' }}
+                  >
+                    {REAL_STAFF.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.zone})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#a8a29e', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Guest Name (Optional)
+                </label>
+                <input
+                  type="text"
+                  className="fb-input"
+                  placeholder="e.g. Sultana Begum or Table Guest"
+                  value={addFormData.customerName}
+                  onChange={(e) => setAddFormData(prev => ({ ...prev, customerName: e.target.value }))}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#a8a29e', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Report Details / Note
+                </label>
+                <textarea
+                  rows={3}
+                  className="fb-input"
+                  placeholder="Describe the complaint, compliment, feedback, or table note..."
+                  value={addFormData.note}
+                  onChange={(e) => setAddFormData(prev => ({ ...prev, note: e.target.value }))}
+                  style={{ width: '100%', height: 'auto', minHeight: '80px', padding: '10px' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', marginTop: '20px', paddingTop: '14px', borderTop: '1px solid #292524' }}>
+              <button
+                type="button"
+                className="fb-btn fb-btn--ghost"
+                onClick={() => setShowAddModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!addFormData.note.trim()}
+                className="fb-btn fb-btn--primary"
+                onClick={() => {
+                  handleCreateCustomerReport(addFormData);
+                  setShowAddModal(false);
+                  setAddFormData(prev => ({ ...prev, note: '', customerName: '' }));
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Send className="fb-icon" aria-hidden="true" />
+                <span>Save & Broadcast to Telegram</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

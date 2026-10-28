@@ -2,9 +2,39 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { MessageCircle, X, Send } from 'lucide-react';
 import { api } from '../convexApi';
+import { sendGuestChatToTelegramChannel } from '../services/telegramClient';
 
 const GUEST_KEY = 'smartdine_guest_id';
+const GUEST_CHAT_PREFIX = 'smartdine_guest_chat_';
 let memoryGuestId = '';
+
+/** Storage helper for local conversation history per table */
+function getStorageKey(tableNumber) {
+  return `${GUEST_CHAT_PREFIX}${tableNumber}`;
+}
+
+function loadLocalChat(tableNumber) {
+  if (!tableNumber) return [];
+  try {
+    const raw = localStorage.getItem(getStorageKey(tableNumber));
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (err) {
+    console.warn('[GuestChat] Failed to load local conversation from localStorage:', err);
+  }
+  return [];
+}
+
+function saveLocalChat(tableNumber, messages) {
+  if (!tableNumber) return;
+  try {
+    localStorage.setItem(getStorageKey(tableNumber), JSON.stringify(messages));
+  } catch (err) {
+    console.warn('[GuestChat] Failed to save local conversation to localStorage:', err);
+  }
+}
 
 /** Random id kept on this phone so the guest only ever sees their own conversation */
 function getGuestId() {
@@ -48,15 +78,75 @@ export default function GuestChat({ tableNumber, raised = false, hidden = false 
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [localMessages, setLocalMessages] = useState(() => loadLocalChat(table));
   const endRef = useRef(null);
 
-  const messages = data?.messages || [];
+  // Sync local conversation cache when table changes
+  useEffect(() => {
+    setLocalMessages(loadLocalChat(table));
+  }, [table]);
+
+  // Merge incoming Convex messages (including management replies) into local storage
+  useEffect(() => {
+    if (data?.messages && data.messages.length > 0 && table > 0) {
+      setLocalMessages((prevLocal) => {
+        let changed = false;
+        const merged = [...prevLocal];
+        for (const cm of data.messages) {
+          const exists = merged.some(
+            (lm) =>
+              lm._id === cm._id ||
+              (lm.fromGuest === cm.fromGuest &&
+                lm.text === cm.text &&
+                Math.abs((lm.createdAt || 0) - (cm.createdAt || 0)) < 15000)
+          );
+          if (!exists) {
+            merged.push(cm);
+            changed = true;
+          }
+        }
+        if (changed) {
+          merged.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+          saveLocalChat(table, merged);
+          return merged;
+        }
+        return prevLocal;
+      });
+    }
+  }, [data?.messages, table]);
+
+  // Combined messages to display
+  const messages = useMemo(() => {
+    const convexMsgs = data?.messages || [];
+    const localMsgs = localMessages || [];
+
+    if (!convexMsgs.length) return localMsgs;
+    if (!localMsgs.length) return convexMsgs;
+
+    const combined = [...localMsgs];
+    for (const cm of convexMsgs) {
+      const exists = combined.some(
+        (lm) =>
+          lm._id === cm._id ||
+          (lm.fromGuest === cm.fromGuest &&
+            lm.text === cm.text &&
+            Math.abs((lm.createdAt || 0) - (cm.createdAt || 0)) < 15000)
+      );
+      if (!exists) {
+        combined.push(cm);
+      }
+    }
+    return combined.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  }, [data?.messages, localMessages]);
+
   const unread = !!data?.unread;
 
   // Mark read while open, and scroll to the newest message
   useEffect(() => {
     if (!open || table <= 0) return;
-    if (unread) markRead({ tableNumber: table, guestId }).catch(() => {});
+    if (unread && typeof markRead === 'function') {
+      markRead({ tableNumber: table, guestId }).catch(() => {});
+    }
     endRef.current?.scrollIntoView({ block: 'end' });
   }, [open, messages.length, unread, table, guestId, markRead]);
 
@@ -68,11 +158,38 @@ export default function GuestChat({ tableNumber, raised = false, hidden = false 
     if (!text || sending) return;
     setSending(true);
     setError('');
+
+    const newMsg = {
+      _id: `guest_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      fromGuest: true,
+      text,
+      createdAt: Date.now(),
+    };
+
+    // 1. Immediately store conversation locally in localStorage (`smartdine_guest_chat_<tableNumber>`)
+    const currentLocal = loadLocalChat(table);
+    const updatedLocal = [...currentLocal, newMsg];
+    saveLocalChat(table, updatedLocal);
+    setLocalMessages(updatedLocal);
+    setDraft('');
+
+    // 2. Post message to Telegram Channel formatted with table number and time
     try {
-      await send({ tableNumber: table, guestId, text });
-      setDraft('');
+      sendGuestChatToTelegramChannel(table, text).catch((tgErr) => {
+        console.warn('[GuestChat] Telegram dispatch warning:', tgErr);
+      });
+    } catch (tgErr) {
+      console.warn('[GuestChat] Telegram dispatch exception:', tgErr);
+    }
+
+    // 3. Ensure no unhandled Convex mutation failure blocks chat submission
+    try {
+      if (typeof send === 'function') {
+        await send({ tableNumber: table, guestId, text });
+      }
     } catch (err) {
-      setError(errorText(err));
+      console.warn('[GuestChat] Convex mutation failed (saved locally & dispatched to Telegram):', err);
+      // Non-blocking: chat submission succeeds locally and over Telegram
     } finally {
       setSending(false);
     }
@@ -118,8 +235,8 @@ export default function GuestChat({ tableNumber, raised = false, hidden = false 
             </header>
 
             <div className="flex-1 min-h-[200px] overflow-y-auto px-4 py-3 space-y-2.5">
-              {data === undefined && <p className="text-xs text-zinc-500 text-center mt-6">Loading…</p>}
-              {data && messages.length === 0 && (
+              {data === undefined && messages.length === 0 && <p className="text-xs text-zinc-500 text-center mt-6">Loading…</p>}
+              {messages.length === 0 && data !== undefined && (
                 <p className="text-xs text-zinc-500 text-center mt-6">Need something? Ask here and we'll reply right away.</p>
               )}
               {messages.map((m) => (

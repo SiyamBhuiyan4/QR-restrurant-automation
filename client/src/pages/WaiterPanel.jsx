@@ -389,6 +389,15 @@ export default function WaiterPanel() {
         if (restaurant?.setAssistanceCalls) {
           restaurant.setAssistanceCalls(msg.data);
         }
+      } else if (msg.type === 'CALL_RESOLVED') {
+        const resolvedId = msg.data?.id;
+        const resolvedTable = msg.data?.tableNumber || msg.data?.table;
+        setLocallyResolvedIds(prev => {
+          const next = new Set(prev);
+          if (resolvedId) next.add(String(resolvedId));
+          if (resolvedTable) next.add(`tbl_${resolvedTable}`);
+          return next;
+        });
       }
     };
 
@@ -397,6 +406,23 @@ export default function WaiterPanel() {
       bc.removeEventListener('message', handleBroadcastMessage);
       bc.close();
     };
+  }, [restaurant]);
+
+  // Storage event listener for cross-tab localStorage updates
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleStorage = (e) => {
+      if (e.key === 'smartdine_active_assistance_calls') {
+        try {
+          const parsed = e.newValue ? JSON.parse(e.newValue) : [];
+          if (Array.isArray(parsed) && restaurant?.setAssistanceCalls) {
+            restaurant.setAssistanceCalls(parsed);
+          }
+        } catch (_) {}
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, [restaurant]);
 
   // Real-time Socket.IO listeners
@@ -722,12 +748,53 @@ export default function WaiterPanel() {
       restaurant.resolveAssistanceCall(finalTable || callId);
     }
 
-    // 3. Broadcast resolve event via Socket.IO
+    // 3. Update localStorage 'smartdine_active_assistance_calls' cleanly
+    let updatedActiveCalls = [];
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('smartdine_active_assistance_calls');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            updatedActiveCalls = parsed.filter(c => {
+              const cId = String(c.id || c._id);
+              const cTbl = Number(c.table_number ?? c.tableNumber ?? c.table);
+              if (callId && cId === String(callId)) return false;
+              if (finalTable && cTbl === finalTable) return false;
+              return true;
+            });
+            localStorage.setItem('smartdine_active_assistance_calls', JSON.stringify(updatedActiveCalls));
+          }
+        }
+      } catch (err) {
+        console.warn('[WaiterPanel] Error updating localStorage active calls:', err);
+      }
+    }
+
+    // 4. Update BroadcastChannel across all open tabs
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('smartdine_restaurant_state');
+        bc.postMessage({
+          type: 'CALLS_UPDATED',
+          data: updatedActiveCalls
+        });
+        bc.postMessage({
+          type: 'CALL_RESOLVED',
+          data: { id: callId, tableNumber: finalTable, table: finalTable }
+        });
+        bc.close();
+      }
+    } catch (bcErr) {
+      console.warn('[WaiterPanel] BroadcastChannel error:', bcErr);
+    }
+
+    // 5. Broadcast resolve event via Socket.IO
     if (socket?.connected) {
       socket.emit('waiter:resolve', { id: callId, table: finalTable });
     }
 
-    // 4. Resolve in Convex Cloud if active
+    // 6. Resolve in Convex Cloud if active
     if (resolveConvexCall && typeof callId === 'string' && !callId.startsWith('call_')) {
       try {
         await resolveConvexCall({ callId });

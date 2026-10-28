@@ -38,6 +38,7 @@ export function useVoiceRecorder(options = {}) {
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(() => formatRecordingTime(0, maxDuration));
+  const [duration, setDuration] = useState(0);
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
   const [error, setError] = useState(null);
@@ -70,14 +71,19 @@ export function useVoiceRecorder(options = {}) {
 
   const resetRecording = useCallback(() => {
     clearTimer();
-    stopAudioTracks();
 
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+    if (mediaRecorderRef.current) {
       try {
-        mediaRecorderRef.current.stop();
+        // Detach onstop callback before stopping so it won't overwrite reset state
+        mediaRecorderRef.current.onstop = null;
+        if (mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
+        }
       } catch (_) {}
+      mediaRecorderRef.current = null;
     }
-    mediaRecorderRef.current = null;
+
+    stopAudioTracks();
     chunksRef.current = [];
 
     setAudioUrl((prevUrl) => {
@@ -90,6 +96,7 @@ export function useVoiceRecorder(options = {}) {
     });
 
     setAudioBlob(null);
+    setDuration(0);
     setIsRecording(false);
     setError(null);
     setRecordingTime(formatRecordingTime(0, maxDuration));
@@ -103,10 +110,12 @@ export function useVoiceRecorder(options = {}) {
         mediaRecorderRef.current.stop();
       } catch (err) {
         console.warn('[useVoiceRecorder] Error stopping MediaRecorder:', err);
+        stopAudioTracks();
       }
+    } else {
+      stopAudioTracks();
     }
 
-    stopAudioTracks();
     setIsRecording(false);
   }, [clearTimer, stopAudioTracks]);
 
@@ -128,28 +137,42 @@ export function useVoiceRecorder(options = {}) {
     }
     setAudioBlob(null);
     setAudioUrl(null);
+    setDuration(0);
     chunksRef.current = [];
     setRecordingTime(formatRecordingTime(0, maxDuration));
 
     try {
-      // 3. Request user microphone permission
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
+      // 3. Request user microphone permission with fallback for constrained mobile audio
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+      } catch (constraintErr) {
+        if (
+          constraintErr.name === 'OverconstrainedError' ||
+          constraintErr.name === 'ConstraintNotSatisfiedError'
+        ) {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } else {
+          throw constraintErr;
         }
-      });
+      }
       audioStreamRef.current = stream;
 
-      // 4. Select supported mime type
+      // 4. Select supported mime type (prefer WebM -> OGG -> MP4/AAC)
       let selectedMimeType = '';
       if (typeof MediaRecorder !== 'undefined') {
         const types = [
           'audio/webm;codecs=opus',
           'audio/webm',
-          'audio/mp4',
           'audio/ogg;codecs=opus',
+          'audio/ogg',
+          'audio/mp4',
           'audio/aac'
         ];
         for (const t of types) {
@@ -159,11 +182,13 @@ export function useVoiceRecorder(options = {}) {
           }
         }
       }
-      mimeTypeRef.current = selectedMimeType || 'audio/webm';
 
       const recorderOptions = selectedMimeType ? { mimeType: selectedMimeType } : undefined;
       const mediaRecorder = new MediaRecorder(stream, recorderOptions);
       mediaRecorderRef.current = mediaRecorder;
+
+      const actualMimeType = mediaRecorder.mimeType || selectedMimeType || 'audio/webm';
+      mimeTypeRef.current = actualMimeType;
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
@@ -172,13 +197,45 @@ export function useVoiceRecorder(options = {}) {
       };
 
       mediaRecorder.onstop = () => {
+        if (!chunksRef.current || chunksRef.current.length === 0) {
+          setIsRecording(false);
+          stopAudioTracks();
+          return;
+        }
+
+        const effectiveMimeType = mediaRecorder.mimeType || mimeTypeRef.current || 'audio/webm';
         const finalBlob = new Blob(chunksRef.current, {
-          type: mimeTypeRef.current || 'audio/webm'
+          type: effectiveMimeType
         });
+
+        if (finalBlob.size === 0) {
+          setIsRecording(false);
+          stopAudioTracks();
+          return;
+        }
+
+        // Calculate recorded duration in seconds
+        const recordedSeconds = startTimeRef.current
+          ? Math.round(((Date.now() - startTimeRef.current) / 1000) * 10) / 10
+          : 0;
+
+        // Determine file extension from MIME type
+        const lowerMime = effectiveMimeType.toLowerCase();
+        let ext = 'webm';
+        if (lowerMime.includes('ogg')) ext = 'ogg';
+        else if (lowerMime.includes('mp4')) ext = 'mp4';
+        else if (lowerMime.includes('aac')) ext = 'm4a';
+        else if (lowerMime.includes('wav')) ext = 'wav';
+
+        // Tag blob with metadata for consumers (Telegram client, preview UI)
+        finalBlob.duration = recordedSeconds;
+        finalBlob.name = `voice_instruction_${Date.now()}.${ext}`;
+
         const finalUrl = URL.createObjectURL(finalBlob);
 
         setAudioBlob(finalBlob);
         setAudioUrl(finalUrl);
+        setDuration(recordedSeconds);
         setIsRecording(false);
         stopAudioTracks();
       };
@@ -189,8 +246,13 @@ export function useVoiceRecorder(options = {}) {
         stopRecording();
       };
 
-      // Start recording with 200ms chunk slices
-      mediaRecorder.start(200);
+      // Start recording with 200ms chunk slices (fallback for older engines)
+      try {
+        mediaRecorder.start(200);
+      } catch (_) {
+        mediaRecorder.start();
+      }
+
       setIsRecording(true);
       startTimeRef.current = Date.now();
 
@@ -246,6 +308,7 @@ export function useVoiceRecorder(options = {}) {
   return {
     isRecording,
     recordingTime,
+    duration,
     audioBlob,
     audioUrl,
     error,

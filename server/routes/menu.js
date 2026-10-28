@@ -31,18 +31,46 @@ const mediaUpload = multer({
 
 /**
  * POST /api/menu/upload
- * Upload dish pictures or kitchen making-videos to local storage
+ * Upload dish pictures or kitchen making-videos directly to Telegram CDN
  */
-router.post('/upload', mediaUpload.single('file'), (req, res) => {
+router.post('/upload', mediaUpload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, error: 'No file provided' });
     }
     const isVideo = req.file.mimetype.startsWith('video/');
-    const relativeUrl = `/uploads/${isVideo ? 'videos' : 'photos'}/${req.file.filename}`;
+    const localFallbackUrl = `/uploads/${isVideo ? 'videos' : 'photos'}/${req.file.filename}`;
+
+    // Upload directly to Telegram CDN
+    try {
+      const { storeMediaInTelegram } = require('../telegram');
+      const caption = req.body.caption || (isVideo ? '🎥 Kitchen Making Video' : '📸 Dish Photo');
+      const tgRes = await storeMediaInTelegram(req.file.path, caption, {
+        filename: req.file.originalname || req.file.filename
+      });
+
+      if (tgRes && tgRes.success && tgRes.permanentUrl) {
+        // Optionally remove temporary disk upload to keep server 100% stateless
+        try { fs.unlinkSync(req.file.path); } catch (_) {}
+
+        return res.status(200).json({
+          success: true,
+          url: tgRes.permanentUrl,
+          cdnUrl: tgRes.cdnUrl,
+          fileId: tgRes.fileId,
+          mediaType: tgRes.mediaType,
+          filename: req.file.filename,
+          mimetype: req.file.mimetype,
+          size: req.file.size
+        });
+      }
+    } catch (tgErr) {
+      console.warn('[Telegram CDN Upload Warning, using local fallback]:', tgErr.message);
+    }
+
     return res.status(200).json({
       success: true,
-      url: relativeUrl,
+      url: localFallbackUrl,
       filename: req.file.filename,
       mimetype: req.file.mimetype,
       size: req.file.size
