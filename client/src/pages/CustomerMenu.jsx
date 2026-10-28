@@ -899,12 +899,14 @@ export default function CustomerMenu({
   const touchStartRef = React.useRef({ x: 0, y: 0 });
 
   const handleTouchStart = (e) => {
+    if (isReelsOpen) return;
     if (e.touches && e.touches[0]) {
       touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   };
 
   const handleTouchEnd = (e) => {
+    if (isReelsOpen) return;
     if (e.changedTouches && e.changedTouches[0]) {
       const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
       const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;

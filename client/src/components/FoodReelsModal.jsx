@@ -210,11 +210,10 @@ export default function FoodReelsModal({
       });
     }
 
-    // If fewer than 3 dishes have reels, supplement with rich demo reels
+    // If fewer dishes have reels, supplement with rich demo reels
     if (list.length < DEMO_FOOD_REELS.length) {
       DEMO_FOOD_REELS.forEach((demo) => {
-        if (!list.some((r) => r.dishId === demo.dishId || r.name === demo.name)) {
-          // Attempt to find matching item in menuItems to get real pricing/cart hook
+        if (!list.some((r) => String(r.dishId) === String(demo.dishId) || r.name === demo.name)) {
           const matchedItem = menuItems.find((m) => String(m.id) === String(demo.dishId) || (m.name && m.name.toLowerCase().includes(demo.name.toLowerCase().split(' ')[0])));
           list.push({
             ...demo,
@@ -234,27 +233,20 @@ export default function FoodReelsModal({
     return list.length > 0 ? list : DEMO_FOOD_REELS;
   }, [menuItems]);
 
-  // Current reel index
+  // Current reel index (synced with scroll position)
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // When initialDishId changes, set current index to that dish
-  useEffect(() => {
-    if (initialDishId && activeReels.length > 0) {
-      const idx = activeReels.findIndex((r) => String(r.dishId) === String(initialDishId));
-      if (idx !== -1) setCurrentIndex(idx);
-    }
-  }, [initialDishId, activeReels]);
-
-  const currentReel = activeReels[currentIndex] || activeReels[0];
-
-  // Play / Pause & Volume states
-  const [isPlaying, setIsPlaying] = useState(true);
+  // Sound Muted state
   const [isMuted, setIsMuted] = useState(true);
-  const [showPlayIcon, setShowPlayIcon] = useState(false);
-  const [heartBurst, setHeartBurst] = useState(false);
 
-  // Video element reference
-  const videoRef = useRef(null);
+  // Playing state per reel index
+  const [playingMap, setPlayingMap] = useState({});
+
+  // Central play/pause icon flash state
+  const [playIconFlash, setPlayIconFlash] = useState(null);
+
+  // Heart Burst state per reel index
+  const [heartBurstMap, setHeartBurstMap] = useState({});
 
   // Ingredients Blur Modal State
   const [showIngredients, setShowIngredients] = useState(false);
@@ -285,58 +277,129 @@ export default function FoodReelsModal({
   // Quantity Selector for Add to Cart
   const [orderQuantity, setOrderQuantity] = useState(1);
   const [addedSuccess, setAddedSuccess] = useState(false);
+  const [copiedToast, setCopiedToast] = useState(false);
 
-  // Reset states on reel change
+  // DOM Refs
+  const scrollContainerRef = useRef(null);
+  const reelElementsRef = useRef([]);
+  const videoRefs = useRef([]);
+  const lastTapTimes = useRef({});
+  const tapTimeoutRefs = useRef({});
+  const wheelLockedRef = useRef(false);
+
+  const currentReel = activeReels[currentIndex] || activeReels[0];
+
+  // Scroll to a specific reel index smoothly
+  const scrollToReel = useCallback((targetIndex) => {
+    const bounded = Math.max(0, Math.min(targetIndex, activeReels.length - 1));
+    const el = reelElementsRef.current[bounded];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setCurrentIndex(bounded);
+    }
+  }, [activeReels.length]);
+
+  // Jump to initial dish if specified
+  useEffect(() => {
+    if (isOpen && initialDishId && activeReels.length > 0) {
+      const idx = activeReels.findIndex((r) => String(r.dishId) === String(initialDishId));
+      if (idx !== -1) {
+        setTimeout(() => {
+          scrollToReel(idx);
+        }, 120);
+      }
+    }
+  }, [isOpen, initialDishId, activeReels, scrollToReel]);
+
+  // Observe which reel is currently snapped into view (Real Reels Snap Observer)
+  useEffect(() => {
+    if (!isOpen) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = Number(entry.target.getAttribute('data-index'));
+            if (!isNaN(idx)) {
+              setCurrentIndex(idx);
+            }
+          }
+        });
+      },
+      {
+        root: container,
+        threshold: 0.6
+      }
+    );
+
+    reelElementsRef.current.forEach((el) => {
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [isOpen, activeReels.length]);
+
+  // Video playback management: Play active reel video, pause and reset all other videos
   useEffect(() => {
     setShowIngredients(false);
     setOrderQuantity(1);
     setAddedSuccess(false);
-    setIsPlaying(true);
 
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      const playPromise = videoRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Autoplay was prevented, mute to allow play
-          if (videoRef.current) {
-            videoRef.current.muted = true;
-            setIsMuted(true);
-            videoRef.current.play().catch(() => {});
-          }
-        });
+    videoRefs.current.forEach((videoEl, idx) => {
+      if (!videoEl) return;
+      if (idx === currentIndex) {
+        videoEl.currentTime = 0;
+        videoEl.muted = isMuted;
+        const playPromise = videoEl.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              setPlayingMap((prev) => ({ ...prev, [idx]: true }));
+            })
+            .catch(() => {
+              // Browser autoplay blocked -> force mute and replay
+              videoEl.muted = true;
+              setIsMuted(true);
+              videoEl.play().catch(() => {});
+              setPlayingMap((prev) => ({ ...prev, [idx]: true }));
+            });
+        }
+      } else {
+        videoEl.pause();
+        videoEl.currentTime = 0;
+        setPlayingMap((prev) => ({ ...prev, [idx]: false }));
+      }
+    });
+  }, [currentIndex, isMuted]);
+
+  // Sync mute state across all video tags
+  useEffect(() => {
+    videoRefs.current.forEach((v) => {
+      if (v) v.muted = isMuted;
+    });
+  }, [isMuted]);
+
+  // Mouse wheel scroll with smooth spring snapping (for laptop trackpad & mouse wheel)
+  const handleWheel = (e) => {
+    if (showComments || showIngredients) return;
+    if (Math.abs(e.deltaY) > 25) {
+      if (!wheelLockedRef.current) {
+        wheelLockedRef.current = true;
+        if (e.deltaY > 0) {
+          scrollToReel(currentIndex + 1);
+        } else {
+          scrollToReel(currentIndex - 1);
+        }
+        setTimeout(() => {
+          wheelLockedRef.current = false;
+        }, 400);
       }
     }
-  }, [currentIndex]);
-
-  // Touch Swipe Gesture for Next/Prev Reel
-  const touchStartY = useRef(0);
-  const touchEndY = useRef(0);
-
-  const handleTouchStart = (e) => {
-    touchStartY.current = e.targetTouches[0].clientY;
   };
 
-  const handleTouchMove = (e) => {
-    touchEndY.current = e.targetTouches[0].clientY;
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStartY.current || !touchEndY.current) return;
-    const diff = touchStartY.current - touchEndY.current;
-    // Swipe UP -> Next Reel
-    if (diff > 50) {
-      goToNextReel();
-    }
-    // Swipe DOWN -> Prev Reel
-    else if (diff < -50) {
-      goToPrevReel();
-    }
-    touchStartY.current = 0;
-    touchEndY.current = 0;
-  };
-
-  // Keyboard navigation
+  // Keyboard navigation (ArrowDown / ArrowUp / Space / Mute)
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
@@ -345,116 +408,141 @@ export default function FoodReelsModal({
         else if (showComments) setShowComments(false);
         else onClose();
       } else if (e.key === 'ArrowDown' || e.key === 'j') {
-        goToNextReel();
-      } else if (e.key === 'ArrowUp' || e.key === 'k') {
-        goToPrevReel();
-      } else if (e.key === ' ' || e.key === 'k') {
         e.preventDefault();
-        togglePlayPause();
+        scrollToReel(currentIndex + 1);
+      } else if (e.key === 'ArrowUp' || e.key === 'k') {
+        e.preventDefault();
+        scrollToReel(currentIndex - 1);
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        togglePlayPause(currentIndex);
       } else if (e.key === 'm') {
         setIsMuted((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, showIngredients, showComments, currentIndex, activeReels.length]);
+  }, [isOpen, showIngredients, showComments, currentIndex, scrollToReel, onClose]);
 
-  const goToNextReel = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1 < activeReels.length ? prev + 1 : 0));
-  }, [activeReels.length]);
+  // Toggle Play / Pause on video tap
+  const togglePlayPause = (idx) => {
+    const video = videoRefs.current[idx];
+    if (!video) return;
 
-  const goToPrevReel = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 >= 0 ? prev - 1 : activeReels.length - 1));
-  }, [activeReels.length]);
-
-  // Play / Pause Toggle
-  const togglePlayPause = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.play();
-      setIsPlaying(true);
+    if (video.paused) {
+      video.play().catch(() => {});
+      setPlayingMap((prev) => ({ ...prev, [idx]: true }));
+      setPlayIconFlash({ idx, isPlaying: true });
     } else {
-      videoRef.current.pause();
-      setIsPlaying(false);
+      video.pause();
+      setPlayingMap((prev) => ({ ...prev, [idx]: false }));
+      setPlayIconFlash({ idx, isPlaying: false });
     }
-    setShowPlayIcon(true);
-    setTimeout(() => setShowPlayIcon(false), 600);
+
+    setTimeout(() => {
+      setPlayIconFlash(null);
+    }, 700);
   };
 
-  // Double tap to love
-  const lastTapRef = useRef(0);
-  const handleVideoTap = (e) => {
+  // Double-tap vs Single-tap detection on Reel video
+  const handleSlideTap = (e, idx) => {
+    // If ingredients or comments open, close them first
+    if (showIngredients) {
+      setShowIngredients(false);
+      return;
+    }
+    if (showComments) {
+      setShowComments(false);
+      return;
+    }
+
     const now = Date.now();
-    const DOUBLE_TAP_DELAY = 300;
-    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-      // Double Tap!
-      triggerLoveAction();
+    const lastTap = lastTapTimes.current[idx] || 0;
+
+    if (now - lastTap < 320) {
+      // Double Tap -> Instagram Heart Burst!
+      if (tapTimeoutRefs.current[idx]) {
+        clearTimeout(tapTimeoutRefs.current[idx]);
+      }
+      triggerHeartBurst(idx);
+      triggerLoveAction(activeReels[idx]);
+      lastTapTimes.current[idx] = 0;
     } else {
-      // Single Tap!
-      togglePlayPause();
+      lastTapTimes.current[idx] = now;
+      tapTimeoutRefs.current[idx] = setTimeout(() => {
+        togglePlayPause(idx);
+        lastTapTimes.current[idx] = 0;
+      }, 320);
     }
-    lastTapRef.current = now;
   };
 
-  // Love / Like Action
-  const isLoved = Boolean(likesMap[currentReel?.id]?.loved);
-  const currentLikesCount = (currentReel?.initialLikes || 500) + (likesMap[currentReel?.id]?.count || 0);
+  // Heart burst animation trigger
+  const triggerHeartBurst = (idx) => {
+    setHeartBurstMap((prev) => ({ ...prev, [idx]: true }));
+    setTimeout(() => {
+      setHeartBurstMap((prev) => ({ ...prev, [idx]: false }));
+    }, 900);
+  };
 
-  const triggerLoveAction = () => {
-    setHeartBurst(true);
-    setTimeout(() => setHeartBurst(false), 850);
-
+  // Like / Love action handler
+  const triggerLoveAction = (reel) => {
+    if (!reel) return;
+    const reelKey = String(reel.dishId || reel.id);
     setLikesMap((prev) => {
-      const cur = prev[currentReel.id] || { count: 0, loved: false };
-      const nextLoved = !cur.loved;
-      const nextCount = nextLoved ? cur.count + 1 : Math.max(0, cur.count - 1);
-      const nextMap = {
-        ...prev,
-        [currentReel.id]: { count: nextCount, loved: nextLoved }
+      const current = prev[reelKey] || { count: reel.initialLikes, isLoved: false };
+      const updated = {
+        count: current.isLoved ? current.count - 1 : current.count + 1,
+        isLoved: !current.isLoved
       };
+      const nextMap = { ...prev, [reelKey]: updated };
       try {
         localStorage.setItem('smartdine_reels_likes', JSON.stringify(nextMap));
-      } catch {}
+      } catch (_) {}
       return nextMap;
     });
   };
 
-  // Anonymous Comment Submission
-  const activeComments = useMemo(() => {
-    const stored = commentsMap[currentReel?.id] || [];
-    const defaults = currentReel?.initialComments || [];
-    return [...stored, ...defaults];
-  }, [commentsMap, currentReel]);
+  // Submit anonymous comment
+  const handleAddComment = (e) => {
+    e.preventDefault();
+    if (!newCommentText.trim() || !currentReel) return;
 
-  const handlePostComment = (e) => {
-    e?.preventDefault();
-    if (!newCommentText.trim()) return;
+    const reelKey = String(currentReel.dishId || currentReel.id);
+    const author = guestAuthorName.trim() || (tableNumber ? `Table #${tableNumber} Diner` : 'Anonymous Diner');
 
-    const author = guestAuthorName.trim() || `Diner (Table #${tableNumber || 'Guest'})`;
-    const newEntry = {
-      id: `cm-${Date.now()}`,
+    const newComment = {
+      id: `anon-${Date.now()}`,
       author,
       text: newCommentText.trim(),
       time: 'Just now',
-      likes: 0
+      likes: 1
     };
 
     setCommentsMap((prev) => {
-      const list = prev[currentReel.id] || [];
-      const updated = [newEntry, ...list];
-      const nextMap = { ...prev, [currentReel.id]: updated };
+      const existing = prev[reelKey] || currentReel.initialComments || [];
+      const updatedList = [newComment, ...existing];
+      const nextMap = { ...prev, [reelKey]: updatedList };
       try {
         localStorage.setItem('smartdine_reels_comments', JSON.stringify(nextMap));
-      } catch {}
+      } catch (_) {}
       return nextMap;
     });
 
     setNewCommentText('');
   };
 
+  // Share reel link
+  const handleShareReel = (reel) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+      setCopiedToast(true);
+      setTimeout(() => setCopiedToast(false), 2000);
+    }
+  };
+
   // Add to Cart handler
   const handleOrderThisDish = () => {
-    if (!currentReel || !onAddToCart) return;
+    if (!currentReel) return;
     const itemToAdd = currentReel.originalItem || {
       id: currentReel.dishId,
       name: currentReel.name,
@@ -463,375 +551,283 @@ export default function FoodReelsModal({
       image_url: currentReel.poster
     };
 
-    onAddToCart(itemToAdd, orderQuantity);
+    if (onAddToCart) {
+      onAddToCart(itemToAdd, orderQuantity);
+    }
+
     setAddedSuccess(true);
-    setTimeout(() => setAddedSuccess(false), 2000);
+    setTimeout(() => {
+      setAddedSuccess(false);
+    }, 2000);
   };
 
-  if (!isOpen || !currentReel) return null;
+  if (!isOpen) return null;
+
+  // Active reel specific states
+  const currentReelKey = String(currentReel.dishId || currentReel.id);
+  const currentLikeData = likesMap[currentReelKey] || { count: currentReel.initialLikes, isLoved: false };
+  const activeComments = commentsMap[currentReelKey] || currentReel.initialComments || [];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden animate-fadeIn select-none">
-      {/* ── Main Reel Viewport (Mobile 9:16 aspect ratio or full height desktop) ── */}
-      <div
-        className="relative w-full h-full max-w-md sm:h-[94vh] sm:rounded-3xl sm:border sm:border-white/10 sm:overflow-hidden bg-[#0a0a0f] shadow-2xl flex flex-col justify-between"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+    <div className="fixed inset-0 z-50 bg-black/95 sm:bg-black/90 backdrop-blur-md flex items-center justify-center p-0 sm:p-3 select-none animate-fadeIn">
+      {/* 9:16 Canvas Phone Frame */}
+      <div 
+        onWheel={handleWheel}
+        className="relative w-full h-full sm:max-w-[425px] sm:h-[94vh] sm:max-h-[880px] sm:rounded-3xl overflow-hidden bg-black shadow-2xl border-0 sm:border sm:border-white/10 flex flex-col"
       >
-        {/* ── Top Header Controls ── */}
-        <div className="reel-vignette-top" />
-        <header className="relative z-20 flex items-center justify-between p-4 sm:p-5">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-black/50 backdrop-blur-md border border-white/15 rounded-full text-xs font-black text-white shadow-lg">
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping inline-block" />
-              <span className="tracking-wide uppercase text-[11px] text-[#FF7A45]">FOOD REEL</span>
-              <span className="text-white/40 text-[10px]">&bull;</span>
-              <span className="text-white/80 text-[11px] font-semibold">{currentIndex + 1}/{activeReels.length}</span>
-            </div>
+        
+        {/* ── Fixed Top Header ── */}
+        <header className="absolute top-0 inset-x-0 z-30 p-3.5 flex items-center justify-between pointer-events-auto">
+          {/* Brand & Live Indicator */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white shadow-lg">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+            </span>
+            <span className="font-extrabold text-xs tracking-wide">Food Reels</span>
+            <span className="text-[10px] text-white/50 font-mono">
+              {currentIndex + 1}/{activeReels.length}
+            </span>
           </div>
 
+          {/* Quick Header Controls: Sound & Close */}
           <div className="flex items-center gap-2">
-            {/* Sound Toggle */}
+            {/* Sound Toggle Button */}
             <button
               type="button"
               onClick={() => setIsMuted((prev) => !prev)}
-              className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-black/80 hover:scale-105 active:scale-95 cursor-pointer"
-              title={isMuted ? 'Unmute' : 'Mute'}
+              className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-white/20 active:scale-95 cursor-pointer shadow-lg"
+              title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
             >
               {isMuted ? <VolumeX className="w-4 h-4 text-white/80" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
             </button>
 
-            {/* Close Reels */}
+            {/* Close Button */}
             <button
               type="button"
               onClick={onClose}
-              className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-white/20 hover:scale-105 active:scale-95 cursor-pointer"
-              title="Close Reels"
+              className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-white/20 hover:scale-105 active:scale-95 cursor-pointer shadow-lg"
+              title="Close Food Reels"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </header>
 
-        {/* ── Video Player Area ── */}
+        {/* ── Native Vertical Snap-Scroll Reel Feed ── */}
         <div
-          className="absolute inset-0 z-0 reel-video-wrapper cursor-pointer"
-          onClick={handleVideoTap}
+          ref={scrollContainerRef}
+          className="reels-snap-feed"
         >
-          <video
-            ref={videoRef}
-            src={currentReel.videoUrl}
-            poster={currentReel.poster}
-            playsInline
-            loop
-            autoPlay
-            muted={isMuted}
-            className={`reel-video ${showIngredients ? 'is-blurred' : ''}`}
-          />
+          {activeReels.map((reel, index) => {
+            const isSlideLoved = (likesMap[String(reel.dishId || reel.id)] || {}).isLoved;
+            const slideLikesCount = (likesMap[String(reel.dishId || reel.id)] || {}).count || reel.initialLikes;
+            const slideComments = commentsMap[String(reel.dishId || reel.id)] || reel.initialComments || [];
+            const isCurrentSlide = index === currentIndex;
+            const isPlayingThis = playingMap[index] ?? isCurrentSlide;
 
-          {/* Central Play / Pause Flash Indicator */}
-          {showPlayIcon && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-              <div className="w-20 h-20 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center border border-white/20 shadow-2xl animate-scaleUp">
-                {isPlaying ? <Play className="w-10 h-10 ml-1 fill-white" /> : <Pause className="w-10 h-10 fill-white" />}
+            return (
+              <div
+                key={reel.id}
+                data-index={index}
+                ref={(el) => (reelElementsRef.current[index] = el)}
+                className="reel-snap-slide"
+              >
+                {/* 1. Video Element */}
+                <div
+                  className="reel-video-wrapper cursor-pointer"
+                  onClick={(e) => handleSlideTap(e, index)}
+                >
+                  <video
+                    ref={(el) => (videoRefs.current[index] = el)}
+                    src={reel.videoUrl}
+                    poster={reel.poster}
+                    playsInline
+                    loop
+                    muted={isMuted}
+                    preload="auto"
+                    className={`reel-video ${isCurrentSlide && showIngredients ? 'is-blurred' : ''}`}
+                  />
+
+                  {/* Central Play / Pause Icon Flash */}
+                  {playIconFlash && playIconFlash.idx === index && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                      <div className="w-16 h-16 rounded-full bg-black/65 backdrop-blur-md text-white flex items-center justify-center border border-white/20 shadow-2xl animate-scaleUp">
+                        {playIconFlash.isPlaying ? (
+                          <Play className="w-8 h-8 ml-1 fill-white" />
+                        ) : (
+                          <Pause className="w-8 h-8 fill-white" />
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Double Tap Heart Burst Animation */}
+                  {heartBurstMap[index] && (
+                    <div className="heart-burst-animate">
+                      <Heart className="w-24 h-24 text-rose-500 fill-rose-500 drop-shadow-[0_0_25px_rgba(244,63,94,0.95)]" />
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Top and Bottom Vignettes */}
+                <div className="reel-vignette-top" />
+                <div className="reel-vignette-bottom" />
+
+                {/* 3. Right-Side Action Bar (Facebook / Instagram Reels Style) */}
+                <div className="absolute right-3.5 bottom-28 z-20 flex flex-col items-center gap-4 pointer-events-auto">
+                  {/* Heart / Love Button */}
+                  <div className="flex flex-col items-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerHeartBurst(index);
+                        triggerLoveAction(reel);
+                      }}
+                      className={`reel-action-btn ${isSlideLoved ? 'active-heart' : ''}`}
+                      title="Love this Reel"
+                    >
+                      <Heart
+                        className={`w-6 h-6 transition-transform ${
+                          isSlideLoved ? 'fill-rose-500 text-rose-500 scale-110' : 'text-white'
+                        }`}
+                      />
+                    </button>
+                    <span className="text-[11px] font-black text-white mt-1 drop-shadow-md">
+                      {slideLikesCount >= 1000 ? `${(slideLikesCount / 1000).toFixed(1)}k` : slideLikesCount}
+                    </span>
+                  </div>
+
+                  {/* Anonymous Comments Button */}
+                  <div className="flex flex-col items-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowComments(true)}
+                      className="reel-action-btn"
+                      title="Anonymous Comments"
+                    >
+                      <MessageCircle className="w-6 h-6 text-white" />
+                    </button>
+                    <span className="text-[11px] font-black text-white mt-1 drop-shadow-md">
+                      {slideComments.length}
+                    </span>
+                  </div>
+
+                  {/* Ingredients Button (Blurs video to reveal recipe) */}
+                  <div className="flex flex-col items-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowIngredients((prev) => !prev)}
+                      className={`reel-action-btn ${isCurrentSlide && showIngredients ? 'bg-amber-500/30 border-amber-400 text-amber-300' : ''}`}
+                      title="View Recipe Ingredients & Chef Secrets"
+                    >
+                      <ChefHat className="w-6 h-6" />
+                    </button>
+                    <span className="text-[10px] font-extrabold text-amber-300 mt-1 uppercase tracking-tight drop-shadow-md">
+                      Recipe
+                    </span>
+                  </div>
+
+                  {/* Share Button */}
+                  <div className="flex flex-col items-center">
+                    <button
+                      type="button"
+                      onClick={() => handleShareReel(reel)}
+                      className="reel-action-btn"
+                      title="Share Reel Link"
+                    >
+                      <Share2 className="w-5 h-5 text-white" />
+                    </button>
+                    <span className="text-[10px] font-bold text-white/70 mt-1 drop-shadow-md">
+                      Share
+                    </span>
+                  </div>
+                </div>
+
+                {/* 4. Bottom Info Area (Dish Details, Chef Note, Tags) */}
+                <div className="absolute bottom-24 inset-x-0 p-4 z-20 pointer-events-none text-left">
+                  <div className="max-w-[78%] pointer-events-auto">
+                    {/* Tags Bar */}
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-600/90 text-white shadow-xs">
+                        {reel.category}
+                      </span>
+                      {reel.isSpicy && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/25 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                          <Flame className="w-3 h-3 text-amber-400" />
+                          <span>Spicy</span>
+                        </span>
+                      )}
+                      {reel.isVeg && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                          <Leaf className="w-3 h-3 text-emerald-400" />
+                          <span>Veg</span>
+                        </span>
+                      )}
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/40 text-stone-300 border border-white/10 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-stone-400" />
+                        <span>{reel.prepTime}</span>
+                      </span>
+                    </div>
+
+                    {/* Dish Title */}
+                    <h2 className="text-lg sm:text-xl font-black text-white tracking-tight drop-shadow-lg leading-snug">
+                      {reel.name}
+                    </h2>
+
+                    {/* Chef Note */}
+                    <p className="text-xs text-stone-200 mt-1 line-clamp-2 drop-shadow-md font-medium leading-relaxed">
+                      {reel.chefNote || reel.description}
+                    </p>
+
+                    {/* Quick Ingredients Pill Trigger */}
+                    <button
+                      type="button"
+                      onClick={() => setShowIngredients(true)}
+                      className="mt-2 text-[11px] font-bold text-amber-300 hover:text-amber-200 underline underline-offset-4 flex items-center gap-1.5 cursor-pointer drop-shadow-md"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Tap to inspect fresh ingredients &amp; cooking notes</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* Double Tap Heart Burst Animation */}
-          {heartBurst && (
-            <div className="heart-burst-animate">
-              <Heart className="w-24 h-24 text-rose-500 fill-rose-500 drop-shadow-[0_0_25px_rgba(244,63,94,0.9)]" />
-            </div>
-          )}
+            );
+          })}
         </div>
 
-        {/* ── Desktop Up / Down Reel Jump Controls ── */}
+        {/* ── Desktop Quick Up / Down Arrows ── */}
         <div className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 flex-col gap-2 z-20 pointer-events-auto">
           <button
             type="button"
-            onClick={goToPrevReel}
-            className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white/80 hover:text-white hover:bg-black/80 flex items-center justify-center transition cursor-pointer"
-            title="Previous Reel"
+            onClick={() => scrollToReel(currentIndex - 1)}
+            disabled={currentIndex === 0}
+            className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/90 hover:text-white hover:bg-black/80 flex items-center justify-center transition cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+            title="Previous Reel (Arrow Up)"
           >
             <ChevronUp className="w-5 h-5" />
           </button>
           <button
             type="button"
-            onClick={goToNextReel}
-            className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white/80 hover:text-white hover:bg-black/80 flex items-center justify-center transition cursor-pointer"
-            title="Next Reel"
+            onClick={() => scrollToReel(currentIndex + 1)}
+            disabled={currentIndex === activeReels.length - 1}
+            className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/90 hover:text-white hover:bg-black/80 flex items-center justify-center transition cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+            title="Next Reel (Arrow Down)"
           >
             <ChevronDown className="w-5 h-5" />
           </button>
         </div>
 
-        {/* ── Facebook / Instagram Style Right Side Action Bar ── */}
-        <div className="absolute right-3.5 bottom-32 z-20 flex flex-col items-center gap-4 pointer-events-auto">
-          {/* 1. Love / Like Button */}
-          <div className="flex flex-col items-center">
-            <button
-              type="button"
-              onClick={triggerLoveAction}
-              className={`reel-action-btn ${isLoved ? 'active-heart' : ''}`}
-              title="Like this Reel"
-            >
-              <Heart className={`w-6 h-6 transition-all ${isLoved ? 'fill-rose-500 text-rose-500 scale-110' : 'text-white'}`} />
-            </button>
-            <span className="text-[11px] font-black text-white mt-1 drop-shadow-md">
-              {currentLikesCount >= 1000 ? `${(currentLikesCount / 1000).toFixed(1)}k` : currentLikesCount}
-            </span>
-          </div>
-
-          {/* 2. Comments Button */}
-          <div className="flex flex-col items-center">
-            <button
-              type="button"
-              onClick={() => setShowComments(true)}
-              className="reel-action-btn"
-              title="Anonymous Comments"
-            >
-              <MessageCircle className="w-6 h-6 text-white" />
-            </button>
-            <span className="text-[11px] font-black text-white mt-1 drop-shadow-md">
-              {activeComments.length}
-            </span>
-          </div>
-
-          {/* 3. Ingredients Glassmorphic Button */}
-          <div className="flex flex-col items-center">
-            <button
-              type="button"
-              onClick={() => setShowIngredients((prev) => !prev)}
-              className={`reel-action-btn ${showIngredients ? 'bg-amber-500/40 border-amber-400 text-amber-300 ring-2 ring-amber-400/50' : ''}`}
-              title="View Ingredients & Chef Recipe"
-            >
-              <Sparkles className={`w-6 h-6 ${showIngredients ? 'text-amber-300 animate-spin' : 'text-amber-400'}`} />
-            </button>
-            <span className="text-[10px] font-black text-amber-300 mt-1 uppercase tracking-tight drop-shadow-md">
-              Recipe
-            </span>
-          </div>
-
-          {/* 4. Share Button */}
-          <div className="flex flex-col items-center">
-            <button
-              type="button"
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: currentReel.name,
-                    text: `Watch how our chef makes ${currentReel.name} on SmartDine!`,
-                    url: window.location.href
-                  }).catch(() => {});
-                } else if (navigator.clipboard) {
-                  navigator.clipboard.writeText(window.location.href);
-                  alert('Reel link copied to clipboard!');
-                }
-              }}
-              className="reel-action-btn"
-              title="Share Reel"
-            >
-              <Share2 className="w-5 h-5 text-white" />
-            </button>
-            <span className="text-[10px] font-semibold text-white/80 mt-1 drop-shadow-md">
-              Share
-            </span>
-          </div>
-        </div>
-
-        {/* ── Ingredients Blur Overlay (Smoothly blurs video & reveals recipe) ── */}
-        {showIngredients && (
-          <div
-            className="absolute inset-x-3 bottom-28 top-20 z-30 flex flex-col justify-end pointer-events-auto"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setShowIngredients(false);
-            }}
-          >
-            <div className="ingredients-glass-card rounded-3xl p-5 sm:p-6 text-white max-h-[82%] overflow-y-auto border border-amber-500/30">
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
-                    <ChefHat className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400">
-                      Culinary Ingredients & Notes
-                    </h4>
-                    <p className="text-[11px] text-white/60">Crafted by Executive Chef</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowIngredients(false)}
-                  className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Dish Name */}
-              <h3 className="text-lg sm:text-xl font-black text-white mb-1.5 [font-family:Playfair_Display,Georgia,serif]">
-                {currentReel.name}
-              </h3>
-              <p className="text-xs text-white/80 leading-relaxed mb-4">
-                {currentReel.description}
-              </p>
-
-              {/* Chef Note */}
-              {currentReel.chefNote && (
-                <div className="bg-amber-950/40 border border-amber-500/30 rounded-2xl p-3 mb-4 text-xs text-amber-200/90 leading-relaxed">
-                  <span className="font-bold text-amber-400">👨‍🍳 Chef's Technique:</span> {currentReel.chefNote}
-                </div>
-              )}
-
-              {/* Ingredients List */}
-              <h5 className="text-[11px] font-black uppercase tracking-wider text-emerald-400 mb-2 flex items-center gap-1.5">
-                <Leaf className="w-3.5 h-3.5" />
-                <span>Prime Fresh Ingredients:</span>
-              </h5>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                {currentReel.ingredients.map((ing, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white/90"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                    <span>{ing}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Quick Specs */}
-              <div className="flex items-center gap-3 pt-2 border-t border-white/10 text-xs text-white/70">
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-amber-400" />
-                  {currentReel.prepTime}
-                </span>
-                {currentReel.isSpicy && (
-                  <span className="flex items-center gap-1 text-rose-400 font-bold">
-                    <Flame className="w-3.5 h-3.5" />
-                    Spicy Specialty
-                  </span>
-                )}
-                {currentReel.isVeg && (
-                  <span className="flex items-center gap-1 text-emerald-400 font-bold">
-                    <Leaf className="w-3.5 h-3.5" />
-                    Vegetarian
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Anonymous Comments Drawer (Facebook Reels Style) ── */}
-        {showComments && (
-          <div className="absolute inset-x-0 bottom-0 top-1/4 z-30 comments-drawer rounded-t-3xl flex flex-col p-4 sm:p-5 pointer-events-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-[#FF7A45]" />
-                <h3 className="text-sm font-extrabold text-white">
-                  Anonymous Foodie Comments ({activeComments.length})
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowComments(false)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Comment Thread */}
-            <div className="flex-1 overflow-y-auto py-3 space-y-3 pr-1">
-              {activeComments.length === 0 ? (
-                <div className="text-center py-10 text-white/50 text-xs">
-                  No comments yet. Be the first diner to comment on this dish!
-                </div>
-              ) : (
-                activeComments.map((c) => (
-                  <div key={c.id} className="flex items-start gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-rose-500 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm">
-                      {c.author.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-2xl p-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-amber-300 truncate">{c.author}</span>
-                        <span className="text-[10px] text-white/40">{c.time}</span>
-                      </div>
-                      <p className="text-xs text-white/90 mt-1 leading-relaxed break-words">
-                        {c.text}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Add Anonymous Comment Form */}
-            <form onSubmit={handlePostComment} className="pt-2 border-t border-white/10 space-y-2">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={guestAuthorName}
-                  onChange={(e) => setGuestAuthorName(e.target.value)}
-                  placeholder={`Your Nickname (default: Table #${tableNumber || 'Guest'})`}
-                  className="w-1/2 px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#FF5A26]"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={newCommentText}
-                  onChange={(e) => setNewCommentText(e.target.value)}
-                  placeholder="Leave an anonymous foodie review..."
-                  className="flex-1 px-4 py-2.5 rounded-full bg-white/10 border border-white/15 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#FF5A26]"
-                />
-                <button
-                  type="submit"
-                  disabled={!newCommentText.trim()}
-                  className="w-10 h-10 rounded-full bg-[#FF5A26] hover:bg-[#FF7A45] disabled:opacity-40 text-white flex items-center justify-center transition shadow-lg shrink-0 cursor-pointer"
-                >
-                  <Send className="w-4 h-4 ml-0.5" />
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* ── Bottom Overlay: Dish Details & Fixed "Add to Cart" Order Button ── */}
-        <div className="reel-vignette-bottom" />
-        <footer className="relative z-20 p-4 sm:p-5 pt-0 pointer-events-auto space-y-3">
-          {/* Dish Meta Info */}
-          <div className="max-w-[75%] space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/15 backdrop-blur-md text-amber-300 border border-white/15">
-                {currentReel.category}
-              </span>
-              <span className="text-base sm:text-lg font-black text-white">
-                ${Number(currentReel.price).toFixed(2)}
-              </span>
-            </div>
-            <h2 className="text-base sm:text-lg font-black text-white leading-tight drop-shadow-lg [font-family:Playfair_Display,Georgia,serif]">
-              {currentReel.name}
-            </h2>
-            <p className="text-xs text-white/80 line-clamp-2 leading-relaxed drop-shadow-sm font-normal">
-              {currentReel.description}
-            </p>
-          </div>
-
-          {/* ── ALWAYS-VISIBLE "ADD TO CART" ORDER BUTTON ── */}
-          <div className="flex items-center gap-2.5 pt-1">
-            {/* Quantity Selector */}
-            <div className="flex items-center bg-black/60 backdrop-blur-xl border border-white/20 rounded-2xl p-1 text-white shrink-0">
+        {/* ── Fixed Bottom "Add to Order" Sticky Bar ── */}
+        <footer className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black via-black/90 to-transparent z-30 pointer-events-auto">
+          <div className="flex items-center gap-2">
+            {/* Quantity Stepper */}
+            <div className="flex items-center bg-black/70 backdrop-blur-xl border border-white/20 rounded-2xl p-1 text-white shrink-0">
               <button
                 type="button"
                 onClick={() => setOrderQuantity((q) => Math.max(1, q - 1))}
                 className="w-8 h-8 rounded-xl hover:bg-white/10 flex items-center justify-center transition cursor-pointer"
+                aria-label="Decrease quantity"
               >
                 <Minus className="w-3.5 h-3.5" />
               </button>
@@ -842,6 +838,7 @@ export default function FoodReelsModal({
                 type="button"
                 onClick={() => setOrderQuantity((q) => q + 1)}
                 className="w-8 h-8 rounded-xl hover:bg-white/10 flex items-center justify-center transition cursor-pointer"
+                aria-label="Increase quantity"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -865,12 +862,159 @@ export default function FoodReelsModal({
               ) : (
                 <>
                   <ShoppingBag className="w-4 h-4 stroke-[2.5]" />
-                  <span>Add to Order • ${(Number(currentReel.price) * orderQuantity).toFixed(2)}</span>
+                  <span>
+                    Add to Order • ${(Number(currentReel.price) * orderQuantity).toFixed(2)}
+                  </span>
                 </>
               )}
             </button>
           </div>
         </footer>
+
+        {/* ── Blurred Video Recipe & Ingredients Card Overlay ── */}
+        {showIngredients && (
+          <div className="absolute inset-0 z-40 bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-center p-3 animate-fadeIn">
+            <div className="w-full max-h-[75vh] overflow-y-auto ingredients-glass-card rounded-3xl p-5 text-white border border-white/20 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/15">
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 flex items-center justify-center">
+                    <ChefHat className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm tracking-tight">{currentReel.name}</h3>
+                    <p className="text-[11px] text-amber-300 font-semibold">Chef's Fresh Ingredients &amp; Recipe</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowIngredients(false)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Cooking Secret / Chef Note */}
+              <div className="bg-amber-950/40 border border-amber-500/30 p-3 rounded-2xl text-xs text-amber-200 leading-relaxed font-medium">
+                <span className="font-black text-amber-300 block mb-1">👨‍🍳 Cooking Secret:</span>
+                {currentReel.chefNote || currentReel.description}
+              </div>
+
+              {/* Ingredients List */}
+              <div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-stone-300 block mb-2">
+                  Ingredients Used:
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {currentReel.ingredients.map((ing, i) => (
+                    <div
+                      key={i}
+                      className="px-3 py-2 rounded-xl bg-white/10 border border-white/10 text-xs font-semibold flex items-center gap-2"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF5A26]" />
+                      <span>{ing}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick Resume Button */}
+              <button
+                type="button"
+                onClick={() => setShowIngredients(false)}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-amber-500 text-white font-bold text-xs uppercase tracking-wider transition cursor-pointer"
+              >
+                Resume Video Reel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Anonymous Comments Drawer (Facebook / Instagram Style) ── */}
+        {showComments && (
+          <div className="absolute inset-0 z-40 bg-black/60 flex items-end animate-fadeIn">
+            <div className="w-full max-h-[70vh] comments-drawer rounded-t-3xl flex flex-col p-4 text-white">
+              {/* Drawer Handle & Header */}
+              <div className="w-10 h-1 bg-white/30 rounded-full mx-auto mb-3" />
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-[#FF5A26]" />
+                  <h3 className="font-black text-sm tracking-tight">
+                    Anonymous Diners' Feedback ({activeComments.length})
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowComments(false)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Comments Scrollable Feed */}
+              <div className="flex-1 overflow-y-auto py-3 space-y-3 max-h-[42vh] pr-1">
+                {activeComments.length === 0 ? (
+                  <div className="text-center py-8 text-stone-400 text-xs">
+                    No comments yet. Be the first diner to leave anonymous thoughts! 💬
+                  </div>
+                ) : (
+                  activeComments.map((c) => (
+                    <div key={c.id} className="flex items-start gap-2.5 text-left">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#FF5A26] to-amber-500 flex items-center justify-center text-white text-[10px] font-black shrink-0">
+                        {c.author.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl p-2.5 text-xs">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-bold text-stone-200">{c.author}</span>
+                          <span className="text-[10px] text-stone-500">{c.time}</span>
+                        </div>
+                        <p className="text-stone-300 font-medium leading-relaxed">{c.text}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Anonymous Comment Form */}
+              <form onSubmit={handleAddComment} className="pt-2 border-t border-white/10 space-y-2">
+                <input
+                  type="text"
+                  value={guestAuthorName}
+                  onChange={(e) => setGuestAuthorName(e.target.value)}
+                  placeholder="Your Name / Handle (Optional - Defaults to Anonymous Diner)"
+                  className="w-full px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#FF5A26]"
+                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newCommentText}
+                    onChange={(e) => setNewCommentText(e.target.value)}
+                    placeholder="Add an anonymous comment..."
+                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#FF5A26]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newCommentText.trim()}
+                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-amber-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-40 transition active:scale-95"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Post</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ── Link Copied Toast ── */}
+        {copiedToast && (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-black/85 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold border border-white/20 shadow-2xl flex items-center gap-2 animate-fadeIn">
+            <Check className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Reel link copied!</span>
+          </div>
+        )}
+
       </div>
     </div>
   );
