@@ -209,7 +209,8 @@ export default function MenuManager({ className = '' }) {
     telegram_video_file_id: '',
     is_veg: false,
     is_spicy: false,
-    is_available: true
+    is_available: true,
+    show_in_reels: true
   });
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -829,7 +830,8 @@ export default function MenuManager({ className = '' }) {
       telegram_video_file_id: '',
       is_veg: false,
       is_spicy: false,
-      is_available: true
+      is_available: true,
+      show_in_reels: true
     });
     setFormError('');
     setUploadError('');
@@ -855,7 +857,8 @@ export default function MenuManager({ className = '' }) {
       telegram_video_file_id: dish.telegram_video_file_id || dish.telegramVideoFileId || '',
       is_veg: Boolean(dish.is_veg),
       is_spicy: Boolean(dish.is_spicy),
-      is_available: Boolean(dish.is_available)
+      is_available: Boolean(dish.is_available),
+      show_in_reels: dish.show_in_reels !== undefined ? Boolean(dish.show_in_reels) : Boolean(rawVid)
     });
     setFormError('');
     setUploadError('');
@@ -923,7 +926,8 @@ export default function MenuManager({ className = '' }) {
       telegram_video_file_id: formData.telegram_video_file_id || '',
       is_veg: formData.is_veg ? 1 : 0,
       is_spicy: formData.is_spicy ? 1 : 0,
-      is_available: formData.is_available ? 1 : 0
+      is_available: formData.is_available ? 1 : 0,
+      show_in_reels: formData.show_in_reels ? 1 : 0
     };
 
     let updatedList = [...dishes];
@@ -2041,6 +2045,37 @@ export default function MenuManager({ className = '' }) {
                       </div>
                     </div>
                   </details>
+
+                  {/* Food Reels Showcase Placement Toggle */}
+                  <div className="p-3 bg-[var(--adm-surface)] border border-purple-500/30 rounded-xl flex items-center justify-between gap-3 mt-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-600 to-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <Video className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-[var(--adm-text)]">Feature in Food Reels</span>
+                          <span className="text-[10px] font-black uppercase text-amber-400 bg-amber-500/15 px-1.5 py-0.2 rounded border border-amber-500/30">
+                            Reels Feed
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[var(--adm-text-muted)] leading-tight mt-0.5">
+                          {formData.show_in_reels
+                            ? 'Video appears in both the public customer Reels feed (with Add-to-Cart) and dish details.'
+                            : 'Video stays exclusive to dish details modal only (hidden from Reels feed).'}
+                        </p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={formData.show_in_reels}
+                        onChange={(e) => setFormData({ ...formData, show_in_reels: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-10 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-600 peer-checked:to-rose-600 border border-slate-700"></div>
+                    </label>
+                  </div>
 
                 </div>
 

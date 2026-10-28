@@ -263,7 +263,8 @@ export default function FoodDetailModal({
   cartQuantity = 0,
   onAddToCart,
   onUpdateQuantity,
-  currency = '$'
+  currency = '$',
+  onOpenReels
 }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(cartQuantity > 0 ? cartQuantity : 1);
@@ -987,9 +988,21 @@ export default function FoodDetailModal({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-bold shadow-xs whitespace-nowrap shrink-0">
-                <Video className="w-3.5 h-3.5 text-amber-400" />
-                <span>Kitchen Reel</span>
+              <div className="flex items-center gap-2">
+                {onOpenReels && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenReels(dish)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-rose-600 text-white border border-rose-500/40 text-xs font-black shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                    title="Watch in full-screen Food Reels with comments"
+                  >
+                    <span>Watch in Reels 🎬</span>
+                  </button>
+                )}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-bold shadow-xs whitespace-nowrap shrink-0">
+                  <Video className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Kitchen Reel</span>
+                </div>
               </div>
             </div>
 

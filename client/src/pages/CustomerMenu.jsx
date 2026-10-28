@@ -7,6 +7,7 @@ import Navbar from '../components/Navbar';
 import CategoryBar from '../components/CategoryBar';
 import CartDrawer from '../components/CartDrawer';
 import FoodDetailModal from '../components/FoodDetailModal';
+import FoodReelsModal from '../components/FoodReelsModal';
 import GuestChat from '../components/GuestChat';
 import VillageBackground from '../components/VillageBackground';
 import MenuItemCard from '../components/MenuItemCard';
@@ -32,7 +33,8 @@ import {
   BellRing,
   Star,
   MessageCircle,
-  Send
+  Send,
+  Film
 } from 'lucide-react';
 
 // Default initial menu items for full offline or standalone browsing
@@ -890,6 +892,28 @@ export default function CustomerMenu({
 
   // 2. Interactive Food Details & Multimedia Modal
   const [selectedDishModal, setSelectedDishModal] = useState(null);
+
+  // 2.5 Food Reels Modal & Gesture Navigation (Swipe Right to open Reels)
+  const [isReelsOpen, setIsReelsOpen] = useState(false);
+  const [reelsInitialDishId, setReelsInitialDishId] = useState(null);
+  const touchStartRef = React.useRef({ x: 0, y: 0 });
+
+  const handleTouchStart = (e) => {
+    if (e.touches && e.touches[0]) {
+      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (e.changedTouches && e.changedTouches[0]) {
+      const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
+      const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;
+      // Sliding right gesture opens Food Reels
+      if (deltaX > 90 && Math.abs(deltaY) < 70) {
+        setIsReelsOpen(true);
+      }
+    }
+  };
 
   // 3. Live Customer Order Status Tracking
   const [activeOrder, setActiveOrder] = useState(() => {
@@ -1879,7 +1903,11 @@ export default function CustomerMenu({
   };
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-100 pb-32 selection:bg-[#0284c7] selection:text-white relative">
+    <div 
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      className="min-h-screen bg-transparent text-slate-100 pb-32 selection:bg-[#0284c7] selection:text-white relative"
+    >
       {/* Village at dusk: trees, grazing cow, kash flowers in the wind (light SVG + CSS) */}
       <VillageBackground />
       
@@ -2387,6 +2415,11 @@ export default function CustomerMenu({
         dish={selectedDishModal}
         onClose={() => setSelectedDishModal(null)}
         cartQuantity={selectedDishModal && cart[selectedDishModal.id] ? cart[selectedDishModal.id].quantity : 0}
+        onOpenReels={(dish) => {
+          setSelectedDishModal(null);
+          setReelsInitialDishId(dish?.id || null);
+          setIsReelsOpen(true);
+        }}
         onAddToCart={(item, qty, note, voiceUrl) => {
           setCart((prev) => {
             const existing = prev[item.id];
@@ -2404,6 +2437,34 @@ export default function CustomerMenu({
           showToast(`Added ${item.name || item.title} to order! 🌟`);
         }}
         onUpdateQuantity={(itemId, qty) => handleUpdateQuantity(itemId, qty)}
+      />
+
+      {/* FB / Instagram Style Full Functional Food Reels with Anonymous Comments & 1-Tap Order */}
+      <FoodReelsModal
+        isOpen={isReelsOpen}
+        onClose={() => {
+          setIsReelsOpen(false);
+          setReelsInitialDishId(null);
+        }}
+        menuItems={allMenuItems}
+        initialDishId={reelsInitialDishId}
+        tableNumber={tableNumber}
+        onAddToCart={(item, qty) => {
+          setCart((prev) => {
+            const existing = prev[item.id];
+            const newQty = (existing?.quantity || 0) + (qty || 1);
+            return {
+              ...prev,
+              [item.id]: {
+                item,
+                quantity: newQty,
+                note: existing?.note || '',
+                voiceNoteUrl: existing?.voiceNoteUrl || null
+              }
+            };
+          });
+          showToast(`Added ${item.name || item.title} to order! 🌟`);
+        }}
       />
 
       {/* Table Selection Modal (Dark Noir Glass Theme) */}
@@ -2531,6 +2592,25 @@ export default function CustomerMenu({
           </div>
         </div>
       )}
+
+      {/* Floating Food Reels Trigger Pill (FB/IG Reels Style with Swipe-Right gesture) */}
+      <button
+        type="button"
+        onClick={() => {
+          setReelsInitialDishId(null);
+          setIsReelsOpen(true);
+        }}
+        className="fixed right-4 bottom-24 sm:bottom-8 z-40 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-[#FF5A26] via-rose-500 to-pink-600 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-2xl active:scale-95 transition-all cursor-pointer border border-white/20 hover:scale-105 hover:shadow-rose-500/30 group"
+        title="Watch Food Reels with Anonymous Comments & 1-Tap Order (or swipe right)"
+      >
+        <span className="relative flex h-2.5 w-2.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
+        </span>
+        <Film className="w-4 h-4 stroke-[2.5] text-white group-hover:rotate-6 transition-transform" />
+        <span className="tracking-tight font-extrabold">Food Reels</span>
+        <span className="px-1.5 py-0.5 rounded-full bg-black/35 text-[10px] font-black uppercase tracking-wider text-amber-300">Live</span>
+      </button>
 
       {/* Toast Notification */}
       {toastMessage && (
