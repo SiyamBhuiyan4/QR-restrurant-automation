@@ -62,9 +62,26 @@ const updateSW = registerSW({
   onRegisteredSW(swUrl, r) {
     if (r) {
       r.update();
+      // Check for a new deploy whenever someone comes back to the tab
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') r.update().catch(() => {});
+      });
     }
   }
 });
+
+// The new worker takes over by itself (skipWaiting + clientsClaim), but the page on screen
+// was loaded from the old one. Reload once when that happens so a deploy shows right away
+// instead of on the next visit. (Skipped on the very first install: nothing old is showing.)
+if ('serviceWorker' in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
