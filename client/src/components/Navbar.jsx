@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UtensilsCrossed, Bell, BellRing, WifiOff, CheckCircle2, Sun, Moon, ShoppingBag } from 'lucide-react';
+import { UtensilsCrossed, Bell, BellRing, WifiOff, CheckCircle2, ShoppingBag } from 'lucide-react';
 import CallWaiterModal from './CallWaiterModal';
-import useTheme from '../hooks/useTheme';
 
 /**
  * Navbar Component for SmartDine Customer Menu
@@ -116,10 +115,6 @@ export default function Navbar({
     };
   }, []);
 
-  // Light / dark theme toggle (choice stored in localStorage under "wp-theme")
-  const { theme, toggleTheme } = useTheme();
-  const isLight = theme === 'light';
-
   // Waiter call state
   const [showWaiterModal, setShowWaiterModal] = useState(false);
   const [waiterCalled, setWaiterCalled] = useState(false);
@@ -209,18 +204,6 @@ export default function Navbar({
                   <span className="whitespace-nowrap"><span className="hidden min-[420px]:inline">Set </span>Table</span>
                 </button>
               )}
-
-              {/* Theme Toggle */}
-              <button
-                type="button"
-                onClick={toggleTheme}
-                aria-label="Light mode"
-                aria-pressed={isLight}
-                title={isLight ? "Switch to dark mode" : "Switch to light mode"}
-                className="hidden min-[420px]:inline-flex items-center justify-center h-11 w-11 shrink-0 rounded-xl border border-amber-500/40 text-amber-300 bg-emerald-950/60 hover:bg-emerald-900/60 active:scale-95 transition-[background-color,transform] duration-200 cursor-pointer motion-reduce:transition-none motion-reduce:active:scale-100"
-              >
-                {isLight ? <Moon className="w-5 h-5" aria-hidden="true" /> : <Sun className="w-5 h-5" aria-hidden="true" />}
-              </button>
 
               {/* Cart Trigger Button (When items exist in cart) */}
               {cartItemCount > 0 && (

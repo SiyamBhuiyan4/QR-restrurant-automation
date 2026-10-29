@@ -15,7 +15,10 @@
     <script>
       (function () {
         var theme = "dark";
-        try {
+        // The customer site is always dark (light mode doesn't suit the photo background)
+        if ("%VITE_APP_ROLE%" === "customer") {
+          try { window.localStorage.removeItem("wp-theme"); } catch (e) {}
+        } else try {
           var saved = window.localStorage.getItem("wp-theme");
           if (saved === "light" || saved === "dark") {
             theme = saved;
