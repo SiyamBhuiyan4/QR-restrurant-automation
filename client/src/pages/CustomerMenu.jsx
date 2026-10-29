@@ -897,15 +897,17 @@ export default function CustomerMenu({
   // 2. Interactive Food Details & Multimedia Modal
   const [selectedDishModal, setSelectedDishModal] = useState(null);
 
-  // 2.5 Food Reels Modal & Gesture Navigation (Swipe Right to open Reels)
+  // 2.5 Food Reels Modal & Gesture Navigation (Swipe Right to open Reels - Pure Swipe)
   const [isReelsOpen, setIsReelsOpen] = useState(false);
   const [reelsInitialDishId, setReelsInitialDishId] = useState(null);
-  const touchStartRef = useRef({ x: 0, y: 0 });
+  const [showSwipeTutorial, setShowSwipeTutorial] = useState(false);
+  const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
+  const mouseStartRef = useRef({ x: 0, y: 0, isDown: false });
 
   const handleTouchStart = (e) => {
     if (isReelsOpen) return;
     if (e.touches && e.touches[0]) {
-      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
     }
   };
 
@@ -914,10 +916,25 @@ export default function CustomerMenu({
     if (e.changedTouches && e.changedTouches[0]) {
       const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
       const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;
-      // Sliding right gesture opens Food Reels
-      if (deltaX > 90 && Math.abs(deltaY) < 70) {
+      // Responsive horizontal swipe detection (swipe right or swipe from right side)
+      if ((deltaX > 50 || deltaX < -65) && Math.abs(deltaY) < 95) {
         setIsReelsOpen(true);
       }
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    if (isReelsOpen) return;
+    mouseStartRef.current = { x: e.clientX, y: e.clientY, isDown: true };
+  };
+
+  const handleMouseUp = (e) => {
+    if (isReelsOpen || !mouseStartRef.current.isDown) return;
+    mouseStartRef.current.isDown = false;
+    const deltaX = e.clientX - mouseStartRef.current.x;
+    const deltaY = e.clientY - mouseStartRef.current.y;
+    if ((deltaX > 60 || deltaX < -70) && Math.abs(deltaY) < 95) {
+      setIsReelsOpen(true);
     }
   };
 
@@ -1912,6 +1929,8 @@ export default function CustomerMenu({
     <div 
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
       className="min-h-screen bg-transparent text-slate-100 pb-32 selection:bg-[#0284c7] selection:text-white relative"
     >
       {/* Village at dusk: trees, grazing cow, kash flowers in the wind (light SVG + CSS) */}
@@ -1946,6 +1965,26 @@ export default function CustomerMenu({
 
       {/* Main Container: Dedicated 3D Interactive Restaurant Menu Book */}
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 pt-2 pb-16 relative z-10 flex flex-col items-center">
+
+        {/* ── CUSTOMER REELS GESTURE TIP BANNER ── */}
+        <div 
+          onClick={() => {
+            setShowSwipeTutorial(true);
+            setTimeout(() => setShowSwipeTutorial(false), 3500);
+          }}
+          className="w-full max-w-5xl mb-3 py-2 px-3.5 sm:px-4 rounded-2xl bg-gradient-to-r from-rose-950/70 via-zinc-900/85 to-amber-950/60 border border-[#FF5A26]/35 text-white flex items-center justify-between gap-2 shadow-lg backdrop-blur-md select-none cursor-pointer hover:border-[#FF5A26]/60 transition"
+        >
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-bold">
+            <span className="text-base sm:text-lg animate-swipe-hand">👉</span>
+            <span>
+              <strong className="text-amber-300">Swipe Right</strong> across your screen to watch live <strong className="text-rose-400">Food Reels 🎬</strong>
+            </span>
+          </div>
+          <span className="text-[10px] sm:text-xs font-black uppercase text-amber-300/90 bg-black/40 px-2.5 py-0.5 rounded-full border border-white/10 shrink-0 flex items-center gap-1">
+            <span>Swipe</span>
+            <span className="animate-swipe-hand">👉</span>
+          </span>
+        </div>
 
         {/* ── REAL-TIME STAFF DISPATCH MESSAGE BANNER ── */}
         {activeStaffMessage && (
@@ -2599,24 +2638,53 @@ export default function CustomerMenu({
         </div>
       )}
 
-      {/* Floating Food Reels Trigger Pill (FB/IG Reels Style with Swipe-Right gesture) */}
-      <button
-        type="button"
+      {/* ── Customer Swipe-Right Indicator (No Button Click, Pure Swipe Gesture) ── */}
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
         onClick={() => {
-          setReelsInitialDishId(null);
-          setIsReelsOpen(true);
+          // Educate the customer that swiping is required!
+          setShowSwipeTutorial(true);
+          setTimeout(() => setShowSwipeTutorial(false), 3500);
         }}
-        className="fixed right-4 bottom-24 sm:bottom-8 z-40 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-[#FF5A26] via-rose-500 to-pink-600 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-2xl active:scale-95 transition-all cursor-pointer border border-white/20 hover:scale-105 hover:shadow-rose-500/30 group"
-        title="Watch Food Reels with Anonymous Comments & 1-Tap Order (or swipe right)"
+        className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center select-none animate-edge-tab cursor-grab active:cursor-grabbing"
+        title="Swipe your finger across your screen to watch live Food Reels!"
       >
-        <span className="relative flex h-2.5 w-2.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
-        </span>
-        <Film className="w-4 h-4 stroke-[2.5] text-white group-hover:rotate-6 transition-transform" />
-        <span className="tracking-tight font-extrabold">Food Reels</span>
-        <span className="px-1.5 py-0.5 rounded-full bg-black/35 text-[10px] font-black uppercase tracking-wider text-amber-300">Live</span>
-      </button>
+        <div className="bg-gradient-to-l from-rose-600 via-[#FF5A26] to-[#FF7A45] text-white pl-3.5 pr-2.5 py-3 rounded-l-2xl shadow-2xl border-y border-l border-white/25 flex items-center gap-2 backdrop-blur-md">
+          {/* Pulsing live dot */}
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+          </span>
+
+          <Film className="w-4 h-4 text-white stroke-[2.2] shrink-0" />
+
+          <div className="flex flex-col text-left">
+            <span className="text-[11px] font-black uppercase tracking-wider text-amber-200 leading-tight">
+              Food Reels
+            </span>
+            <span className="text-[10px] font-bold text-white/90 flex items-center gap-1 leading-tight">
+              <span>Swipe Right</span>
+              <span className="animate-swipe-hand inline-block">👉</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Visual Gesture Tutorial Toast when customer taps instead of swiping ── */}
+      {showSwipeTutorial && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-[#161619]/95 backdrop-blur-md text-white px-5 py-3.5 rounded-2xl shadow-2xl text-xs sm:text-sm font-bold flex items-center gap-3 border border-amber-500/40 ring-2 ring-[#FF5A26]/40 animate-fadeIn">
+          <span className="text-xl animate-swipe-hand">👉</span>
+          <div className="text-left">
+            <div className="font-black text-amber-300">Swipe Right to Open Reels!</div>
+            <div className="text-[11px] text-zinc-300 font-medium">
+              Drag your finger across the screen to watch Facebook-style Food Reels 🎬
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toastMessage && (

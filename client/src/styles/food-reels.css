@@ -216,3 +216,38 @@
 .custom-caption-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.6);
 }
+
+/* Animated Swipe Gesture Hints for Customers */
+@keyframes swipeHandMotion {
+  0% {
+    transform: translateX(0px);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateX(16px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0px);
+    opacity: 0.85;
+  }
+}
+
+.animate-swipe-hand {
+  animation: swipeHandMotion 1.3s ease-in-out infinite;
+}
+
+@keyframes edgeTabPulse {
+  0%, 100% {
+    transform: translateY(-50%) translateX(0px);
+    box-shadow: 0 0 15px rgba(255, 90, 38, 0.4);
+  }
+  50% {
+    transform: translateY(-50%) translateX(-5px);
+    box-shadow: 0 0 25px rgba(255, 90, 38, 0.8);
+  }
+}
+
+.animate-edge-tab {
+  animation: edgeTabPulse 2.2s ease-in-out infinite;
+}
