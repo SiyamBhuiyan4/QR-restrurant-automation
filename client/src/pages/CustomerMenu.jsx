@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspens
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
+import { permanentMediaUrl } from '../utils/mediaUrl.js';
 import { useRestaurant } from '../context/RestaurantContext';
 import { getCachedMenu } from '../db/indexedDb.js';
 import Navbar from '../components/Navbar';
@@ -777,9 +778,9 @@ export const normalizeDishItem = (item, defaultCategory = 'Mains') => {
   const price = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
   const description = item.description || '';
 
-  // Extract candidate media links
-  const explicitVideo = item.videoUrl || item.video_url || item.makingVideoUrl || item.making_video_url || item.makingVideo || item.video;
-  const explicitImage = item.imageUrl || item.image_url || item.image;
+  // Extract candidate media links (Telegram files always via their permanent link)
+  const explicitVideo = permanentMediaUrl(item.videoUrl || item.video_url || item.makingVideoUrl || item.making_video_url || item.makingVideo || item.video);
+  const explicitImage = permanentMediaUrl(item.imageUrl || item.image_url || item.image);
 
   // Identify if image candidate is actually a 360° video (e.g. uploaded directly as the primary dish media)
   const isExplicitImageVideo = isVideoMediaUrl(explicitImage);
@@ -791,7 +792,7 @@ export const normalizeDishItem = (item, defaultCategory = 'Mains') => {
   let resolvedImage = (!isExplicitImageVideo && explicitImage) ? explicitImage : null;
   if (!resolvedImage && Array.isArray(item.images)) {
     const nonVideo = item.images.find(img => typeof img === 'string' && !isVideoMediaUrl(img));
-    if (nonVideo) resolvedImage = nonVideo;
+    if (nonVideo) resolvedImage = permanentMediaUrl(nonVideo);
   }
   if (!resolvedImage) {
     resolvedImage = 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80';

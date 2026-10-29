@@ -30,6 +30,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
+import { permanentMediaUrl } from '../utils/mediaUrl';
 import '../styles/food-reels.css';
 
 // Curated high-res streaming demo food reels if dishes don't have custom videos
@@ -398,8 +399,8 @@ export default function FoodReelsModal({
         id: `fun-${r._id}`,
         name: r.title,
         category: 'Reel',
-        videoUrl: r.videoUrl,
-        poster: r.posterUrl || '',
+        videoUrl: permanentMediaUrl(r.videoUrl),
+        poster: permanentMediaUrl(r.posterUrl || ''),
         caption: r.caption || '',
         description: r.caption || '',
         initialLikes: 300 + (String(r._id).charCodeAt(0) % 9) * 70,

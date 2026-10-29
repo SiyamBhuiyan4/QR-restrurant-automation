@@ -1,3 +1,4 @@
+import { telegramMediaUrl } from '../utils/mediaUrl.js';
 import {
   createStaffCredential,
   hasStaffCredentialHash,
@@ -214,12 +215,8 @@ export async function uploadPhotoToTelegram(file) {
     throw new Error('No photo file_id returned from Telegram');
   }
 
-  let cdnUrl = '';
-  try {
-    cdnUrl = await resolveTelegramFileUrl(fileId);
-  } catch (err) {
-    console.warn('[TelegramClient] Failed to resolve photo CDN path from getFile:', err.message);
-  }
+  // Permanent link (Telegram's own getFile links expire after about an hour)
+  let cdnUrl = telegramMediaUrl(fileId, 'jpg');
 
   // Fallback to channel link if direct getFile failed
   if (!cdnUrl && data.result?.message_id) {
@@ -292,15 +289,9 @@ export async function uploadVideoToTelegram(file) {
 
   const videoObj = data.result?.video || data.result?.animation || data.result?.document || null;
   const fileId = videoObj ? videoObj.file_id : null;
-  let cdnUrl = '';
-
-  if (fileId) {
-    try {
-      cdnUrl = await resolveTelegramFileUrl(fileId);
-    } catch (err) {
-      console.warn('[TelegramClient] Failed to resolve video CDN path from Telegram getFile:', err.message);
-    }
-  }
+  // Permanent link (Telegram's own getFile links expire after about an hour)
+  const videoExt = (String(fileName).match(/\.(mp4|mov|webm|m4v)$/i)?.[1] || 'mp4').toLowerCase().replace('m4v', 'mp4');
+  let cdnUrl = fileId ? telegramMediaUrl(fileId, videoExt) : '';
 
   // Fallback to public t.me link if direct bot file path could not be resolved
   if (!cdnUrl && data.result?.message_id) {

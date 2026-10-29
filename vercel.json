@@ -38,7 +38,7 @@
       ]
     },
     {
-      "source": "/((?!assets/|videos/|sw\\.js).*)",
+      "source": "/((?!assets/|videos/|api/|sw\\.js).*)",
       "headers": [
         {
           "key": "Cache-Control",
