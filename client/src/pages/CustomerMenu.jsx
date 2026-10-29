@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { useRestaurant } from '../context/RestaurantContext';
@@ -900,7 +900,7 @@ export default function CustomerMenu({
   // 2.5 Food Reels Modal & Gesture Navigation (Swipe Right to open Reels)
   const [isReelsOpen, setIsReelsOpen] = useState(false);
   const [reelsInitialDishId, setReelsInitialDishId] = useState(null);
-  const touchStartRef = React.useRef({ x: 0, y: 0 });
+  const touchStartRef = useRef({ x: 0, y: 0 });
 
   const handleTouchStart = (e) => {
     if (isReelsOpen) return;

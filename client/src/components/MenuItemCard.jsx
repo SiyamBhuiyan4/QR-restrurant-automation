@@ -1,14 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { startVisibleVideos } from '../utils/visibleVideos';
-
-// Card thumbnails are small; ask Unsplash for a 480px image instead of the 800px original.
-const thumb = (url) => (typeof url === 'string' && url.includes('images.unsplash.com')
-  ? url.replace(/([?&])w=\d+/, '$1w=480')
-  : url);
-
-// Dish videos play only while on screen (see utils/visibleVideos.js)
-startVisibleVideos();
 import { 
   Plus, 
   Minus, 
@@ -32,6 +24,14 @@ import {
   Play
 } from 'lucide-react';
 import '../styles/menu-orbit.css';
+
+// Card thumbnails are small; ask Unsplash for a 480px image instead of the 800px original.
+const thumb = (url) => (typeof url === 'string' && url.includes('images.unsplash.com')
+  ? url.replace(/([?&])w=\d+/, '$1w=480')
+  : url);
+
+// Dish videos play only while on screen (see utils/visibleVideos.js)
+startVisibleVideos();
 
 // Reads the OS "reduce motion" preference; guarded so it is safe outside the browser
 const prefersReducedMotion = () =>

@@ -412,6 +412,8 @@ export default function FoodReelsModal({
   // Current reel index (synced with scroll position)
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  const currentReel = activeReels[currentIndex] || activeReels[0];
+
   // Sound Muted state
   const [isMuted, setIsMuted] = useState(true);
 
@@ -554,8 +556,6 @@ export default function FoodReelsModal({
   const lastTapTimes = useRef({});
   const tapTimeoutRefs = useRef({});
   const wheelLockedRef = useRef(false);
-
-  const currentReel = activeReels[currentIndex] || activeReels[0];
 
   // Scroll to a specific reel index smoothly
   const scrollToReel = useCallback((targetIndex) => {
