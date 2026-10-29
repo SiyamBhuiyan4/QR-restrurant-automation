@@ -62,6 +62,7 @@ const DEFAULT_MENU_ITEMS = [
     videoUrl: '/videos/reel-chef.mp4',
     makingVideoUrl: '/videos/reel-chef.mp4',
     making_video_url: '/videos/reel-chef.mp4',
+    reel_caption: 'Wok-tossed straight out of the hot peanut oil! 🔥🌶️ Double-dusted crispy organic wings glazed with authentic Minangkabau chili balado, torn kaffir lime leaf, shallot confit, and natural palm sugar.\n\nCrisp on the outside, juicy on the inside with a spicy-tangy kick that builds with every bite!\n\n#SpicyWings #BaladoWings #ChefTanvir #StreetFoodGourmet #CrispyChicken #HotEats',
     ingredients: ['Crispy Farm Wings', 'Authentic Red Balado Paste', 'Kaffir Lime Leaf', 'Shallot Confit', 'Palm Sugar']
   },
   {
@@ -831,7 +832,10 @@ export const normalizeDishItem = (item, defaultCategory = 'Mains') => {
     is_available: isAvailable ? 1 : 0,
     ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
     isPopular: Boolean(item.isPopular || item.popular),
-    prepTime: item.prepTime || '15 min'
+    prepTime: item.prepTime || '15 min',
+    show_in_reels: item.show_in_reels !== undefined ? item.show_in_reels : (resolvedVideo ? 1 : 0),
+    reel_caption: item.reel_caption || item.caption || item.description || '',
+    caption: item.reel_caption || item.caption || item.description || ''
   };
 };
 

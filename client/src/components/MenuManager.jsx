@@ -210,7 +210,8 @@ export default function MenuManager({ className = '' }) {
     is_veg: false,
     is_spicy: false,
     is_available: true,
-    show_in_reels: true
+    show_in_reels: true,
+    reel_caption: ''
   });
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -256,7 +257,9 @@ export default function MenuManager({ className = '' }) {
       telegram_video_file_id: item.telegram_video_file_id || item.telegramVideoFileId || '',
       is_veg: item.is_veg === 1 || item.is_veg === true || item.isVeg === true || item.veg === true ? 1 : 0,
       is_spicy: item.is_spicy === 1 || item.is_spicy === true || item.isSpicy === true || item.spicy === true ? 1 : 0,
-      is_available: item.is_available === 0 || item.is_available === false || item.isAvailable === false || item.available === false ? 0 : 1
+      is_available: item.is_available === 0 || item.is_available === false || item.isAvailable === false || item.available === false ? 0 : 1,
+      show_in_reels: item.show_in_reels !== 0 && item.show_in_reels !== false,
+      reel_caption: item.reel_caption || item.caption || ''
     };
   }, []);
 
@@ -831,7 +834,8 @@ export default function MenuManager({ className = '' }) {
       is_veg: false,
       is_spicy: false,
       is_available: true,
-      show_in_reels: true
+      show_in_reels: true,
+      reel_caption: ''
     });
     setFormError('');
     setUploadError('');
@@ -858,7 +862,8 @@ export default function MenuManager({ className = '' }) {
       is_veg: Boolean(dish.is_veg),
       is_spicy: Boolean(dish.is_spicy),
       is_available: Boolean(dish.is_available),
-      show_in_reels: dish.show_in_reels !== undefined ? Boolean(dish.show_in_reels) : Boolean(rawVid)
+      show_in_reels: dish.show_in_reels !== undefined ? Boolean(dish.show_in_reels) : Boolean(rawVid),
+      reel_caption: dish.reel_caption || dish.caption || ''
     });
     setFormError('');
     setUploadError('');
@@ -927,7 +932,8 @@ export default function MenuManager({ className = '' }) {
       is_veg: formData.is_veg ? 1 : 0,
       is_spicy: formData.is_spicy ? 1 : 0,
       is_available: formData.is_available ? 1 : 0,
-      show_in_reels: formData.show_in_reels ? 1 : 0
+      show_in_reels: formData.show_in_reels ? 1 : 0,
+      reel_caption: (formData.reel_caption || '').trim()
     };
 
     let updatedList = [...dishes];
@@ -2076,6 +2082,48 @@ export default function MenuManager({ className = '' }) {
                       <div className="w-10 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-600 peer-checked:to-rose-600 border border-slate-700"></div>
                     </label>
                   </div>
+
+                  {/* Food Reel Video Caption / Story (Facebook-Style Caption) */}
+                  {formData.show_in_reels && (
+                    <div className="p-3 bg-[var(--adm-surface)] border border-rose-500/20 rounded-xl space-y-1.5 animate-fadeIn">
+                      <div className="flex items-center justify-between flex-wrap gap-1.5">
+                        <label className="text-xs font-bold text-[var(--adm-text)] flex items-center gap-1.5">
+                          <span>🎬 Reel Video Caption &amp; Story</span>
+                          <span className="text-[10px] text-rose-400 font-semibold bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
+                            FB Reels Description
+                          </span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const sample = `Sizzling hot and made fresh to order! 🔥👨‍🍳 Our chef's signature ${formData.name || 'culinary creation'} prepared with artisanal ingredients, secret spice reductions, and fresh garden herbs.\n\nCrafted with passion to deliver unforgettable crunch, rich aromas, and authentic gourmet depth in every single bite. Don't forget to tap 'Add to Order' below to try it today!\n\n#${(formData.name || 'GourmetFood').replace(/[^a-zA-Z0-9]/g, '')} #FoodReels #ChefSpecial #FoodPorn #DhakaEats #CrispyDelight #RestaurantFavorites`;
+                            setFormData(prev => ({ ...prev, reel_caption: sample }));
+                          }}
+                          className="text-[11px] font-bold text-amber-300 hover:text-amber-200 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 px-2 py-0.5 rounded-md cursor-pointer transition flex items-center gap-1 active:scale-95"
+                          title="Auto-fill with sample Facebook Reels story and hashtags"
+                        >
+                          <span>✨ Insert Demo Caption</span>
+                        </button>
+                      </div>
+                      <textarea
+                        rows={3}
+                        value={formData.reel_caption}
+                        onChange={(e) => setFormData({ ...formData, reel_caption: e.target.value })}
+                        placeholder="Write your reel story, chef notes, emojis, or hashtags... (e.g. Sizzling wagyu smash patty caramelized to crisp umami perfection! 🔥 Melted aged cheddar and toasted brioche. #WagyuLovers #DhakaFoodie)"
+                        className="admin-dark-input w-full text-xs placeholder-[var(--adm-text-muted)] resize-none"
+                        style={{
+                          backgroundColor: 'var(--adm-surface-2)',
+                          color: 'var(--adm-text)',
+                          border: '1px solid var(--adm-border)',
+                          padding: '8px 12px',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <p className="text-[10px] text-[var(--adm-text-muted)]">
+                        Guests will see the first 2 lines on the video reel, and can click <strong>&ldquo;...see more&rdquo;</strong> to expand and scroll through the entire story!
+                      </p>
+                    </div>
+                  )}
 
                 </div>
 

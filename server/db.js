@@ -280,7 +280,8 @@ function createMenuItem({
   is_veg = 0,
   is_spicy = 0,
   is_available = 1,
-  show_in_reels = undefined
+  show_in_reels = undefined,
+  reel_caption = ''
 }) {
   if (!name || price === undefined || price === null) {
     throw new Error('Menu item name and price are required');
@@ -301,7 +302,8 @@ function createMenuItem({
     is_veg: is_veg ? 1 : 0,
     is_spicy: is_spicy ? 1 : 0,
     is_available: is_available ? 1 : 0,
-    show_in_reels: finalShowInReels
+    show_in_reels: finalShowInReels,
+    reel_caption: String(reel_caption || '').trim()
   };
 
   state.menu_items.push(newItem);
@@ -314,7 +316,7 @@ function updateMenuItem(id, updates = {}) {
   if (index === -1) return null;
 
   const current = state.menu_items[index];
-  const fields = ['category_id', 'name', 'description', 'price', 'image_url', 'making_video_url', 'is_veg', 'is_spicy', 'is_available', 'show_in_reels'];
+  const fields = ['category_id', 'name', 'description', 'price', 'image_url', 'making_video_url', 'is_veg', 'is_spicy', 'is_available', 'show_in_reels', 'reel_caption'];
 
   for (const field of fields) {
     if (updates[field] !== undefined) {

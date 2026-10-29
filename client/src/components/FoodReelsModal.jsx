@@ -40,6 +40,7 @@ export const DEMO_FOOD_REELS = [
     poster: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80',
     description: 'Double custom wagyu patty seared crisp on a 500°F flat-top, double aged cheddar melt, caramelized shallots, secret sauce, and toasted milk brioche.',
     chefNote: 'Our signature house-ground wagyu patty creates an ultra-crisp umami crust while keeping the center succulent.',
+    caption: 'Sizzling hot on a 500°F seasoned cast-iron flat-top! 🍔🔥 Double house-ground American Wagyu patties smashed razor-thin for maximum crispy umami lace edges, covered with double melted Wisconsin sharp cheddar and sweet slow-caramelized shallot jam on buttered brioche.\n\nPrepared fresh to order every single time. Try it once and you\'ll never look at normal burgers the same way again!\n\n#WagyuSmash #BurgerPorn #StreetFoodGourmet #CrispyEdges #ChefSecrets #DhakaFoodie',
     prepTime: '12 min',
     isSpicy: false,
     isVeg: false,
@@ -68,6 +69,7 @@ export const DEMO_FOOD_REELS = [
     poster: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80',
     description: 'Flash-fried organic chicken wings tossed in fiery Minangkabau red chili glaze, crushed kaffir lime leaf, and caramelized shallot oil.',
     chefNote: 'Glazed sizzling hot straight from the wok to preserve the exterior crunch while sealing in the zesty chili aroma.',
+    caption: 'Wok-tossed straight out of the sizzling peanut oil! 🔥🌶️ Double-dusted crispy organic chicken wings glazed with our authentic Minangkabau chili balado reduction, infused with torn kaffir lime leaf, caramelized shallot confit, and natural coconut palm sugar.\n\nPerfect balance of bold heat, citrus freshness, and crunch that builds with every bite. Warning: extremely addictive!\n\n#SpicyWings #BaladoWings #IndonesianFlavors #CrispyCrunch #WokHei #HotAndSpicy',
     prepTime: '15 min',
     isSpicy: true,
     isVeg: false,
@@ -95,6 +97,7 @@ export const DEMO_FOOD_REELS = [
     poster: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=900&auto=format&fit=crop&q=80',
     description: 'Crispy skin-on russet potatoes infused with aromatic white Italian truffle oil, 24-month aged parmesan snowfall, and roasted garlic aioli.',
     chefNote: 'Double-fried at two different temperatures to ensure the exterior stays crisp even under generous parmesan grating.',
+    caption: 'Double-fried hand-cut Idaho russet potatoes drenched in pure white Italian truffle oil and a blizzard of 24-month aged Parmigiano-Reggiano! 🍟🧀\n\nTossed with fresh garden Italian parsley and flaky sea salt crystals, served alongside our house roasted garlic confit aioli.\n\n#TruffleFries #ParmesanSnow #GourmetFries #FoodieFavorites #LoadedFries #ChefSpecial',
     prepTime: '8 min',
     isSpicy: false,
     isVeg: true,
@@ -122,6 +125,7 @@ export const DEMO_FOOD_REELS = [
     poster: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=900&auto=format&fit=crop&q=80',
     description: 'Crisp-skin Norwegian salmon filet served over saffron risotto, tender asparagus spears, and a lemon-dill beurre blanc.',
     chefNote: 'Seared skin-down in cast iron for 4 minutes until glass-crisp, then basted with thyme compound butter.',
+    caption: 'Wild Norwegian salmon fillet seared skin-side down until shatteringly crisp! 🐟✨\n\nBasted with French thyme compound butter and served over creamy Spanish saffron risotto, charred baby asparagus, and a velvety citrus-dill beurre blanc. Pure culinary luxury crafted with love.\n\n#AtlanticSalmon #CrispySkin #SeafoodLovers #RisottoLove #FineDining #ChefTanvir',
     prepTime: '18 min',
     isSpicy: false,
     isVeg: false,
@@ -147,6 +151,7 @@ export const DEMO_FOOD_REELS = [
     poster: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80',
     description: 'Warm Valrhona molten dark chocolate cake flowing onto Madagascar vanilla bean gelato and crushed raspberry dust.',
     chefNote: 'Baked to exact 11 minutes so the chocolate core flows warm and silky upon the first spoon cut.',
+    caption: 'Warm Belgian 70% Valrhona molten dark chocolate cake with a rich liquid heart that flows like velvet upon the very first spoon cut! 🍫🍨\n\nPaired with cold Madagascar Bourbon vanilla bean gelato, tart raspberry coulis, and Dutch cocoa dust. Baked fresh to order in exactly 11 minutes.\n\n#ChocolateLava #MoltenCake #Valrhona #DessertHeaven #SweetTooth #ChocoLover',
     prepTime: '14 min',
     isSpicy: false,
     isVeg: true,
@@ -161,6 +166,116 @@ export const DEMO_FOOD_REELS = [
     initialComments: [
       { id: 'c9', author: 'SweetTooth', text: 'The chocolate eruption is glorious! 🤤', time: '12m ago', likes: 52 },
       { id: 'c10', author: 'Table 9', text: 'Best dessert in the city hands down.', time: '1h ago', likes: 19 }
+    ]
+  },
+  {
+    id: 'reel-ribeye-steak',
+    dishId: 4,
+    name: 'Char-Grilled Prime Ribeye Steak',
+    category: 'Mains',
+    price: 29.50,
+    videoUrl: '/videos/reel-chef.mp4',
+    poster: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
+    description: '300g Prime grass-fed ribeye seared over white-hot binchotan charcoal, roasted garlic herb butter, and charred asparagus.',
+    chefNote: 'Seared to a textbook medium-rare, locking in juices with garlic rosemary butter baste.',
+    caption: 'Listen to that sizzling crust on the hot cast iron! 🥩🔥 300g Prime grass-fed ribeye steak seared over white-hot binchotan charcoal, basted continuously with roasted garlic cloves, fresh rosemary, and Normandy cultured butter.\n\nRested to a tender medium-rare with our signature chimichurri and charred asparagus spears. Every bite melts in your mouth with deep wood-fired smokiness.\n\n#RibeyeSteak #SteakLover #CharcoalGrilled #MediumRare #MeatPorn #SteakhouseGourmet #FoodieLife',
+    prepTime: '20 min',
+    isSpicy: false,
+    isVeg: false,
+    ingredients: [
+      '300g Prime Grass-Fed Ribeye',
+      'Normandy Cultured Butter',
+      'Fresh Rosemary & Thyme',
+      'Roasted Garlic Confit',
+      'Charred Asparagus Spears',
+      'House Herb Chimichurri'
+    ],
+    initialLikes: 2890,
+    initialComments: [
+      { id: 'c11', author: 'CarnivoreDaily', text: 'That butter baste is hypnotic! 🔥', time: '8m ago', likes: 31 },
+      { id: 'c12', author: 'VIP Diner', text: 'Tender as butter, ordered it rare. Perfect.', time: '40m ago', likes: 15 }
+    ]
+  },
+  {
+    id: 'reel-margherita-pizza',
+    dishId: 3,
+    name: 'Artisan Wood-Fired Margherita Pizza',
+    category: 'Pizza',
+    price: 18.00,
+    videoUrl: '/videos/reel-chef.mp4',
+    poster: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=900&auto=format&fit=crop&q=80',
+    description: 'San Marzano tomatoes, fresh buffalo mozzarella, extra virgin olive oil, sweet basil.',
+    chefNote: 'Stone-baked at 900°F for 90 seconds to produce airy leopard-spotted crust blisters.',
+    caption: 'Baked at blistering 900°F inside our stone wood-fired oven in under 90 seconds! 🍕🔥 Look at those gorgeous leopard-spotted crust blisters puffing up live in the flames.\n\nCrafted with 72-hour cold-fermented sourdough, crushed San Marzano DOP tomatoes, imported buffalo mozzarella medallions, and freshly plucked sweet basil leaves drizzled with cold-pressed Sicilian olive oil.\n\n#NeapolitanPizza #WoodFired #Margherita #SourdoughPizza #PizzaLover #CheesyGoodness',
+    prepTime: '10 min',
+    isSpicy: false,
+    isVeg: true,
+    ingredients: [
+      '72-Hour Fermented Dough',
+      'San Marzano D.O.P. Tomatoes',
+      'Fresh Buffalo Mozzarella',
+      'Sweet Genovese Basil',
+      'Extra Virgin Sicilian Olive Oil',
+      'Fleur de Sel'
+    ],
+    initialLikes: 4120,
+    initialComments: [
+      { id: 'c13', author: 'NapoliFan', text: 'The crust bubble rise is art! 🍕', time: '14m ago', likes: 64 },
+      { id: 'c14', author: 'FoodReviewBD', text: 'Best wood-fired crust in town.', time: '2h ago', likes: 23 }
+    ]
+  },
+  {
+    id: 'reel-passion-mocktail',
+    dishId: 6,
+    name: 'Signature Passionfruit Mint Cooler',
+    category: 'Beverages',
+    price: 7.50,
+    videoUrl: '/videos/reel-chef.mp4',
+    poster: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
+    description: 'Fresh passionfruit pulp vigorously shaken with spearmint, raw agave, and key lime juice over crystal ice.',
+    chefNote: 'Cold-pressed mint release creates an ultra-crisp aromatic aroma.',
+    caption: 'The ultimate tropical refresher! 🍹🌴 Freshly scooped golden passionfruit pulp vigorously shaken with muddled Moroccan spearmint, raw agave nectar, and freshly squeezed key lime juice, topped with sparkling club soda over hand-carved crystal ice.\n\nZesty, bubbly, and thirst-quenching. The ideal companion to balance our spicy dishes!\n\n#MocktailBar #PassionfruitCooler #CraftBeverages #Refreshment #ZeroProof #TropicalVibes',
+    prepTime: '4 min',
+    isSpicy: false,
+    isVeg: true,
+    ingredients: [
+      'Fresh Passionfruit Pulp',
+      'Moroccan Spearmint',
+      'Key Lime Juice',
+      'Organic Blue Agave',
+      'Sparkling Club Soda',
+      'Crushed Crystal Ice'
+    ],
+    initialLikes: 1940,
+    initialComments: [
+      { id: 'c15', author: 'SummerVibes', text: 'So refreshing with the wings! 🍹', time: '20m ago', likes: 11 }
+    ]
+  },
+  {
+    id: 'reel-nachos-fiery',
+    dishId: 5,
+    name: 'Fiery Loaded Jalapeño Nachos',
+    category: 'Starters',
+    price: 11.25,
+    videoUrl: '/videos/reel-chef.mp4',
+    poster: 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=900&auto=format&fit=crop&q=80',
+    description: 'Stone ground tortilla chips, melted cheddar blend, pickled jalapeños, pico de gallo, guacamole.',
+    chefNote: 'Layered in three tiers so every single chip gets melted cheese coverage.',
+    caption: 'Ultimate crunchy comfort food! 🧀🌮 Thick stone-ground yellow corn tortilla chips piled high and smothered in a bubbling blanket of triple-cheddar fondue, house-pickled fiery jalapeño slices, fresh pico de gallo, and cool Haas avocado crema.\n\nPull a chip and watch the glorious cheese stretch! Perfect for sharing with friends at your table.\n\n#LoadedNachos #CheesePull #JalapenoLovers #ComfortFood #BarBites #TexMexFlavors',
+    prepTime: '10 min',
+    isSpicy: true,
+    isVeg: true,
+    ingredients: [
+      'Stone-Ground Corn Chips',
+      'Aged Triple-Cheddar Blend',
+      'House-Pickled Jalapeños',
+      'Fresh Pico de Gallo',
+      'Haas Avocado Crema',
+      'Cilantro Garnish'
+    ],
+    initialLikes: 2310,
+    initialComments: [
+      { id: 'c16', author: 'SnackMonster', text: 'Look at that cheese pull!! 🤤', time: '18m ago', likes: 29 }
     ]
   }
 ];
@@ -194,6 +309,7 @@ export default function FoodReelsModal({
             poster: item.image_url || item.imageUrl || item.image || '',
             description: item.description || 'Chef special culinary creation.',
             chefNote: item.chefNote || 'Prepared fresh upon order by our kitchen team.',
+            caption: item.reel_caption || item.caption || item.description || item.chefNote || '',
             prepTime: item.prepTime || '15 min',
             isSpicy: Boolean(item.is_spicy || item.isSpicy),
             isVeg: Boolean(item.is_veg || item.isVeg),
@@ -278,6 +394,16 @@ export default function FoodReelsModal({
   const [orderQuantity, setOrderQuantity] = useState(1);
   const [addedSuccess, setAddedSuccess] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
+
+  // Facebook-Style 2-Line Caption Expand / Scroll State
+  const [expandedCaptions, setExpandedCaptions] = useState({});
+
+  const toggleCaptionExpand = (idx) => {
+    setExpandedCaptions((prev) => ({
+      ...prev,
+      [idx]: !prev[idx]
+    }));
+  };
 
   // DOM Refs
   const scrollContainerRef = useRef(null);
@@ -775,10 +901,55 @@ export default function FoodReelsModal({
                       {reel.name}
                     </h2>
 
-                    {/* Chef Note */}
-                    <p className="text-xs text-stone-200 mt-1 line-clamp-2 drop-shadow-md font-medium leading-relaxed">
-                      {reel.chefNote || reel.description}
-                    </p>
+                    {/* Facebook-Style 2-Line Reel Caption & Scrollable Story */}
+                    {(() => {
+                      const captionText = reel.caption || reel.description || reel.chefNote || '';
+                      if (!captionText) return null;
+                      const isExpanded = Boolean(expandedCaptions[index]);
+
+                      return (
+                        <div className="mt-1 relative pointer-events-auto">
+                          {!isExpanded ? (
+                            <div className="text-xs text-stone-200 leading-relaxed font-normal drop-shadow-md">
+                              <span className="line-clamp-2 inline">
+                                {captionText}
+                              </span>
+                              {captionText.length > 60 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleCaptionExpand(index);
+                                  }}
+                                  className="inline-block ml-1.5 font-black text-white text-xs hover:text-amber-300 hover:underline cursor-pointer bg-black/50 backdrop-blur-xs px-1.5 py-0.5 rounded shadow-xs"
+                                >
+                                  ...see more
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <div 
+                              onClick={(e) => e.stopPropagation()}
+                              className="max-h-36 sm:max-h-44 overflow-y-auto pr-1.5 bg-black/80 backdrop-blur-md rounded-2xl p-3 border border-white/20 text-xs text-stone-100 leading-relaxed font-normal shadow-2xl animate-fadeIn custom-caption-scrollbar"
+                            >
+                              <p className="whitespace-pre-line leading-relaxed text-stone-200">
+                                {captionText}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleCaptionExpand(index);
+                                }}
+                                className="mt-2 text-[11px] font-black text-amber-300 hover:text-amber-200 flex items-center gap-1 cursor-pointer underline underline-offset-2"
+                              >
+                                <span>see less</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Quick Ingredients Pill Trigger */}
                     <button
