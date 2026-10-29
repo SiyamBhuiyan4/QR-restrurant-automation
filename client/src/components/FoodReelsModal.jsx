@@ -343,6 +343,7 @@ function ReelVoiceCommentPlayer({ audioUrl }) {
 export default function FoodReelsModal({
   isOpen,
   onClose,
+  enterDir = 'left',
   menuItems = [],
   onAddToCart,
   initialDishId = null,
@@ -460,30 +461,35 @@ export default function FoodReelsModal({
   // Swipe Left Tutorial Pill when Reels opens
   const [showBackTutorial, setShowBackTutorial] = useState(false);
 
-  // Smooth exit state & opening momentum protection
+  // Smooth exit state & opening momentum protection.
+  // exitDir is the direction the reels travel away ('left' | 'right'); the parent is told at the
+  // same moment so the menu slides in alongside instead of waiting for the reels to finish.
   const [isExiting, setIsExiting] = useState(false);
+  const [exitDir, setExitDir] = useState('right');
   const mountTimeRef = useRef(0);
+  const exitTimerRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
+      clearTimeout(exitTimerRef.current);
       setIsExiting(false);
       mountTimeRef.current = Date.now();
       setShowBackTutorial(true);
       const timer = setTimeout(() => setShowBackTutorial(false), 3500);
       return () => clearTimeout(timer);
-    } else {
-      setIsExiting(false);
     }
+    return undefined;
   }, [isOpen]);
 
-  const handleSmoothClose = useCallback(() => {
-    if (isExiting) return;
+  useEffect(() => () => clearTimeout(exitTimerRef.current), []);
+
+  const handleSmoothClose = useCallback((dir = 'right') => {
+    if (isExiting || !isOpen) return;
+    setExitDir(dir);
     setIsExiting(true);
-    setTimeout(() => {
-      setIsExiting(false);
-      onClose();
-    }, 320);
-  }, [isExiting, onClose]);
+    onClose(dir);
+    exitTimerRef.current = setTimeout(() => setIsExiting(false), 440);
+  }, [isExiting, isOpen, onClose]);
 
   // Facebook-Style 2-Line Caption Expand / Scroll State
   const [expandedCaptions, setExpandedCaptions] = useState({});
@@ -691,7 +697,8 @@ export default function FoodReelsModal({
     if (Date.now() - mountTimeRef.current > 700 && absX > 28 && absX > absY * 1.2) {
       if (!wheelLockedRef.current) {
         wheelLockedRef.current = true;
-        handleSmoothClose();
+        // Natural scrolling: fingers moving left produce a positive deltaX
+        handleSmoothClose(e.deltaX > 0 ? 'left' : 'right');
         setTimeout(() => {
           wheelLockedRef.current = false;
         }, 800);
@@ -742,9 +749,9 @@ export default function FoodReelsModal({
       if (e.changedTouches && e.changedTouches[0]) {
         const deltaX = e.changedTouches[0].clientX - touchStartX;
         const deltaY = e.changedTouches[0].clientY - touchStartY;
-        // Swipe left -> Smoothly close and return to menu
-        if (deltaX < -45 && Math.abs(deltaY) < 120) {
-          handleSmoothClose();
+        // Swipe left or right -> slide back to the menu in the same direction
+        if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3) {
+          handleSmoothClose(deltaX < 0 ? 'left' : 'right');
         }
       }
     };
@@ -767,8 +774,8 @@ export default function FoodReelsModal({
       isMouseDown = false;
       if (Date.now() - mountTimeRef.current < 400) return;
       const deltaX = e.clientX - mouseStartX;
-      if (deltaX < -55) {
-        handleSmoothClose();
+      if (Math.abs(deltaX) > 55) {
+        handleSmoothClose(deltaX < 0 ? 'left' : 'right');
       }
     };
 
@@ -791,10 +798,10 @@ export default function FoodReelsModal({
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
-      if (e.key === 'ArrowLeft' || e.key === 'Escape') {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Escape') {
         if (showIngredients) setShowIngredients(false);
         else if (showComments) setShowComments(false);
-        else handleSmoothClose();
+        else handleSmoothClose(e.key === 'ArrowRight' ? 'left' : 'right');
       } else if (e.key === 'ArrowDown' || e.key === 'j') {
         e.preventDefault();
         scrollToReel(currentIndex + 1);
@@ -957,12 +964,16 @@ export default function FoodReelsModal({
   const activeComments = commentsMap[currentReelKey] || currentReel.initialComments || [];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-0 sm:p-3 select-none animate-fadeIn">
-      {/* 9:16 Canvas Phone Frame with silky hardware-accelerated slide swap physics */}
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-3 select-none ${isExiting ? 'pointer-events-none' : ''}`}
+      style={{ overflow: 'hidden' }}
+    >
+      {/* 9:16 Canvas Phone Frame: slides in/out sideways over the same village background as the menu */}
       <div 
-        onWheel={handleWheel}
         className={`relative z-10 w-full h-full sm:max-w-[425px] sm:h-[94vh] sm:max-h-[880px] sm:rounded-3xl overflow-hidden bg-black shadow-2xl border-0 sm:border sm:border-white/15 flex flex-col ${
-          isExiting ? 'animate-reel-slide-out' : 'animate-reel-slide-in'
+          isExiting
+            ? `swap-out-to-${exitDir}`
+            : `swap-in-from-${enterDir === 'left' ? 'right' : 'left'}`
         }`}
       >
         
@@ -972,13 +983,13 @@ export default function FoodReelsModal({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={handleSmoothClose}
+              onClick={() => handleSmoothClose('right')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white transition hover:bg-white/25 active:scale-95 cursor-pointer shadow-lg text-xs font-bold"
-              title="Swipe left or click to return to Food Menu"
+              title="Swipe left or right, or click, to return to the Food Menu"
             >
               <span className="text-sm">⇦</span>
               <span className="font-extrabold tracking-wide">Menu</span>
-              <span className="text-[10px] text-white/60 hidden sm:inline">• 👈 Swipe Left</span>
+              <span className="text-[10px] text-white/60 hidden sm:inline">• ⇆ Swipe</span>
             </button>
 
             <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white shadow-lg">
@@ -1007,9 +1018,9 @@ export default function FoodReelsModal({
             {/* Close Button */}
             <button
               type="button"
-              onClick={handleSmoothClose}
+              onClick={() => handleSmoothClose('right')}
               className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-white/20 hover:scale-105 active:scale-95 cursor-pointer shadow-lg"
-              title="Close Food Reels (or Swipe Left)"
+              title="Close Food Reels (or swipe left / right)"
             >
               <X className="w-5 h-5" />
             </button>
@@ -1019,8 +1030,8 @@ export default function FoodReelsModal({
         {/* ── Visual Swipe Left Tutorial Toast on First Open ── */}
         {showBackTutorial && (
           <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-fadeIn bg-black/85 backdrop-blur-md border border-white/25 text-white px-3.5 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-2 shadow-2xl">
-            <span className="animate-swipe-left-hand text-sm">👈</span>
-            <span>Swipe Left (or Trackpad Horizontal) to return to Food Menu</span>
+            <span className="animate-swipe-both text-sm" aria-hidden="true">⇆</span>
+            <span>Swipe left or right to go back to the menu</span>
           </div>
         )}
 

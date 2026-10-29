@@ -897,13 +897,45 @@ export default function CustomerMenu({
   // 2. Interactive Food Details & Multimedia Modal
   const [selectedDishModal, setSelectedDishModal] = useState(null);
 
-  // 2.5 Food Reels Modal & Gesture Navigation (Swipe Right to open Reels - Pure Swipe)
+  // 2.5 Food Reels & Gesture Navigation: a horizontal swipe in either direction swaps Menu <-> Reels.
+  // swipeDir is the direction the content travels ('left' | 'right'), so the menu leaves the
+  // way the finger moved and the reels follow in from the opposite edge (and vice versa on return).
   const [isReelsOpen, setIsReelsOpen] = useState(false);
   const [reelsInitialDishId, setReelsInitialDishId] = useState(null);
   const [showSwipeTutorial, setShowSwipeTutorial] = useState(false);
-  const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
-  const mouseStartRef = useRef({ x: 0, y: 0, isDown: false });
+  const [swipeDir, setSwipeDir] = useState('left');
+  const [menuEnterDir, setMenuEnterDir] = useState(null);
   const lastReelsToggleTime = useRef(0);
+
+  const openReels = useCallback((dir = 'left', dishId = null) => {
+    lastReelsToggleTime.current = Date.now();
+    setShowSwipeTutorial(false);
+    setMenuEnterDir(null);
+    setSwipeDir(dir);
+    setReelsInitialDishId(dishId);
+    setIsReelsOpen(true);
+  }, []);
+
+  // Menu slides back in from the side opposite to the swipe, then drops its transform so the
+  // sticky navbar and fixed overlays behave normally again.
+  useEffect(() => {
+    if (!menuEnterDir) return undefined;
+    const t = setTimeout(() => setMenuEnterDir(null), 480);
+    return () => clearTimeout(t);
+  }, [menuEnterDir]);
+
+  // First-visit coach mark explaining the two-way swipe (shown once per device)
+  useEffect(() => {
+    let seen = false;
+    try { seen = localStorage.getItem('smartdine_swipe_guide_seen') === '1'; } catch (_) {}
+    if (seen) return undefined;
+    const show = setTimeout(() => {
+      setShowSwipeTutorial(true);
+      try { localStorage.setItem('smartdine_swipe_guide_seen', '1'); } catch (_) {}
+    }, 1200);
+    const hide = setTimeout(() => setShowSwipeTutorial(false), 7200);
+    return () => { clearTimeout(show); clearTimeout(hide); };
+  }, []);
 
   // ── Global Horizontal Gesture & Trackpad Swipe Listener (To Open Food Reels) ──
   useEffect(() => {
@@ -937,8 +969,8 @@ export default function CustomerMenu({
       // Horizontal trackpad gesture detection: horizontal delta dominant over vertical delta
       if (absX > 28 && absX > absY * 1.2) {
         isGestureLocked = true;
-        lastReelsToggleTime.current = Date.now();
-        setIsReelsOpen(true);
+        // Natural scrolling: fingers moving left produce a positive deltaX
+        openReels(e.deltaX > 0 ? 'left' : 'right');
         setTimeout(() => {
           isGestureLocked = false;
         }, 800);
@@ -958,6 +990,7 @@ export default function CustomerMenu({
       if (target && target.closest && (
         target.closest('input') || 
         target.closest('textarea') || 
+        target.closest('.category-bar-scroll') ||
         target.closest('[data-no-reels-swipe]')
       )) {
         return;
@@ -966,9 +999,9 @@ export default function CustomerMenu({
       const deltaX = e.changedTouches[0].clientX - touchStartX;
       const deltaY = e.changedTouches[0].clientY - touchStartY;
 
-      // Horizontal swipe (swipe right across screen or swipe from right edge)
-      if ((deltaX > 50 || deltaX < -65) && Math.abs(deltaY) < 110) {
-        setIsReelsOpen(true);
+      // Horizontal swipe either way, as long as it is clearly more sideways than vertical
+      if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3) {
+        openReels(deltaX < 0 ? 'left' : 'right');
       }
     };
 
@@ -992,17 +1025,16 @@ export default function CustomerMenu({
       isMouseDown = false;
       const deltaX = e.clientX - mouseStartX;
       if (Math.abs(deltaX) > 70) {
-        setIsReelsOpen(true);
+        openReels(deltaX < 0 ? 'left' : 'right');
       }
     };
 
-    // 4. Keyboard Arrow Right
+    // 4. Keyboard Arrow Left / Right
     const handleGlobalKeyDown = (e) => {
       if (isReelsOpen) return;
       if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-      if (e.key === 'ArrowRight') {
-        setIsReelsOpen(true);
-      }
+      if (e.key === 'ArrowRight') openReels('left');
+      else if (e.key === 'ArrowLeft') openReels('right');
     };
 
     window.addEventListener('wheel', handleGlobalWheel, { passive: true });
@@ -1020,41 +1052,7 @@ export default function CustomerMenu({
       window.removeEventListener('mouseup', handleGlobalMouseUp);
       window.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, [isReelsOpen]);
-
-  const handleTouchStart = (e) => {
-    if (isReelsOpen) return;
-    if (e.touches && e.touches[0]) {
-      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
-    }
-  };
-
-  const handleTouchEnd = (e) => {
-    if (isReelsOpen) return;
-    if (e.changedTouches && e.changedTouches[0]) {
-      const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
-      const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;
-      // Responsive horizontal swipe detection
-      if ((deltaX > 45 || deltaX < -55) && Math.abs(deltaY) < 100) {
-        setIsReelsOpen(true);
-      }
-    }
-  };
-
-  const handleMouseDown = (e) => {
-    if (isReelsOpen) return;
-    mouseStartRef.current = { x: e.clientX, y: e.clientY, isDown: true };
-  };
-
-  const handleMouseUp = (e) => {
-    if (isReelsOpen || !mouseStartRef.current.isDown) return;
-    mouseStartRef.current.isDown = false;
-    const deltaX = e.clientX - mouseStartRef.current.x;
-    const deltaY = e.clientY - mouseStartRef.current.y;
-    if ((deltaX > 50 || deltaX < -60) && Math.abs(deltaY) < 100) {
-      setIsReelsOpen(true);
-    }
-  };
+  }, [isReelsOpen, openReels]);
 
   // 3. Live Customer Order Status Tracking
   const [activeOrder, setActiveOrder] = useState(() => {
@@ -2045,15 +2043,23 @@ export default function CustomerMenu({
 
   return (
     <div 
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
       className="min-h-screen bg-transparent text-slate-100 pb-32 selection:bg-[#0284c7] selection:text-white relative"
+      style={{ overflowX: 'clip' }}
     >
       {/* Village at dusk: trees, grazing cow, kash flowers in the wind (light SVG + CSS) */}
       <VillageBackground />
-      
+
+      {/* Menu stage: slides out sideways when Reels open, and back in when they close */}
+      <div
+        className={
+          isReelsOpen
+            ? `menu-swap-stage swap-out-to-${swipeDir}`
+            : menuEnterDir
+              ? `menu-swap-stage swap-in-from-${menuEnterDir === 'left' ? 'right' : 'left'}`
+              : ''
+        }
+        aria-hidden={isReelsOpen || undefined}
+      >
       {/* 1. Header Navigation */}
       <Navbar
         tableNumber={tableNumber}
@@ -2092,15 +2098,17 @@ export default function CustomerMenu({
           }}
           className="w-full max-w-5xl mb-3 py-2 px-3.5 sm:px-4 rounded-2xl bg-gradient-to-r from-rose-950/70 via-zinc-900/85 to-amber-950/60 border border-[#FF5A26]/35 text-white flex items-center justify-between gap-2 shadow-lg backdrop-blur-md select-none cursor-pointer hover:border-[#FF5A26]/60 transition"
         >
-          <div className="flex items-center gap-2 text-xs sm:text-sm font-bold">
-            <span className="text-base sm:text-lg animate-swipe-hand">👉</span>
+          <div className="flex items-center gap-2.5 text-xs sm:text-sm font-bold">
+            <span className="swipe-hint-track shrink-0" aria-hidden="true">
+              <span className="swipe-hint-dot" />
+            </span>
             <span>
-              <strong className="text-amber-300">Swipe Right</strong> across your screen to watch live <strong className="text-rose-400">Food Reels 🎬</strong>
+              <strong className="text-amber-300">Swipe left or right</strong> anywhere to watch our <strong className="text-rose-400">Food Reels</strong>
             </span>
           </div>
-          <span className="text-[10px] sm:text-xs font-black uppercase text-amber-300/90 bg-black/40 px-2.5 py-0.5 rounded-full border border-white/10 shrink-0 flex items-center gap-1">
-            <span>Swipe</span>
-            <span className="animate-swipe-hand">👉</span>
+          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-300/90 bg-black/40 px-2.5 py-0.5 rounded-full border border-white/10 shrink-0 flex items-center gap-1">
+            <span aria-hidden="true">⇆</span>
+            <span>Reels</span>
           </span>
         </div>
 
@@ -2505,9 +2513,10 @@ export default function CustomerMenu({
           )}
         </section>
       </main>
+      </div>
 
       {/* Floating Bottom Cart Summary Bar */}
-      {cartSummary.totalCount > 0 && (
+      {cartSummary.totalCount > 0 && !isReelsOpen && (
         <aside
           aria-label="Order Cart Summary"
           className="fixed bottom-0 left-0 right-0 z-40 p-3 sm:p-4 bg-gradient-to-t from-[#0a0a0c] via-[#0a0a0c]/90 to-transparent backdrop-blur-xs pointer-events-none"
@@ -2580,8 +2589,7 @@ export default function CustomerMenu({
         cartQuantity={selectedDishModal && cart[selectedDishModal.id] ? cart[selectedDishModal.id].quantity : 0}
         onOpenReels={(dish) => {
           setSelectedDishModal(null);
-          setReelsInitialDishId(dish?.id || null);
-          setIsReelsOpen(true);
+          openReels('left', dish?.id || null);
         }}
         onAddToCart={(item, qty, note, voiceUrl) => {
           setCart((prev) => {
@@ -2605,8 +2613,10 @@ export default function CustomerMenu({
       {/* FB / Instagram Style Full Functional Food Reels with Anonymous Comments & 1-Tap Order */}
       <FoodReelsModal
         isOpen={isReelsOpen}
-        onClose={() => {
+        enterDir={swipeDir}
+        onClose={(dir = 'right') => {
           lastReelsToggleTime.current = Date.now();
+          setMenuEnterDir(dir);
           setIsReelsOpen(false);
           setReelsInitialDishId(null);
         }}
@@ -2757,52 +2767,66 @@ export default function CustomerMenu({
         </div>
       )}
 
-      {/* ── Customer Swipe-Right Indicator (No Button Click, Pure Swipe Gesture) ── */}
-      <div
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onClick={() => {
-          // Educate the customer on both mobile swipe & laptop 2-3 finger trackpad gesture
-          setShowSwipeTutorial(true);
-          setTimeout(() => setShowSwipeTutorial(false), 4000);
-        }}
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center select-none animate-edge-tab cursor-grab active:cursor-grabbing"
-        title="Swipe right on screen or swipe horizontally with 2/3 fingers on laptop trackpad to watch live Food Reels!"
-      >
-        <div className="bg-gradient-to-l from-rose-600 via-[#FF5A26] to-[#FF7A45] text-white pl-3.5 pr-2.5 py-3 rounded-l-2xl shadow-2xl border-y border-l border-white/25 flex items-center gap-2 backdrop-blur-md">
-          {/* Pulsing live dot */}
-          <span className="relative flex h-2 w-2 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
-          </span>
-
-          <Film className="w-4 h-4 text-white stroke-[2.2] shrink-0" />
-
-          <div className="flex flex-col text-left">
-            <span className="text-[11px] font-black uppercase tracking-wider text-amber-200 leading-tight">
-              Food Reels
+      {/* ── Food Reels edge tab: tells the customer a sideways swipe opens Reels (tap shows the guide) ── */}
+      {!isReelsOpen && (
+        <button
+          type="button"
+          onClick={() => {
+            setShowSwipeTutorial(true);
+            setTimeout(() => setShowSwipeTutorial(false), 5000);
+          }}
+          className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center select-none animate-edge-tab cursor-pointer"
+          title="Swipe left or right anywhere (or 2 fingers sideways on a trackpad) to watch Food Reels"
+        >
+          <div className="bg-gradient-to-l from-rose-600 via-[#FF5A26] to-[#FF7A45] text-white pl-3 pr-2.5 py-2.5 rounded-l-2xl shadow-2xl border-y border-l border-white/25 flex items-center gap-2 backdrop-blur-md">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
             </span>
-            <span className="text-[10px] font-bold text-white/90 flex items-center gap-1 leading-tight">
-              <span>Swipe Right</span>
-              <span className="animate-swipe-hand inline-block">👉</span>
-            </span>
-            <span className="text-[8.5px] text-white/70 font-semibold leading-tight hidden sm:block">
-              (2–3 Fingers on Trackpad)
-            </span>
+            <Film className="w-4 h-4 text-white stroke-[2.2] shrink-0" />
+            <div className="flex flex-col text-left">
+              <span className="text-[11px] font-black uppercase tracking-wider text-amber-200 leading-tight">
+                Reels
+              </span>
+              <span className="text-[10px] font-bold text-white/90 flex items-center gap-1 leading-tight">
+                <span className="animate-swipe-both inline-block" aria-hidden="true">⇆</span>
+                <span>Swipe</span>
+              </span>
+            </div>
           </div>
-        </div>
-      </div>
+        </button>
+      )}
 
-      {/* ── Visual Gesture Tutorial Toast when customer taps instead of swiping ── */}
-      {showSwipeTutorial && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-[#161619]/95 backdrop-blur-md text-white px-5 py-3.5 rounded-2xl shadow-2xl text-xs sm:text-sm font-bold flex items-center gap-3 border border-amber-500/40 ring-2 ring-[#FF5A26]/40 animate-fadeIn">
-          <span className="text-xl animate-swipe-hand">👉</span>
-          <div className="text-left">
-            <div className="font-black text-amber-300">Swipe Right to Open Reels!</div>
-            <div className="text-[11px] text-zinc-300 font-medium">
-              Swipe across screen on mobile, or swipe horizontally with 2–3 fingers on laptop trackpad 🎬
+      {/* ── Two-way swipe guide (first visit, or when the customer taps a hint) ── */}
+      {showSwipeTutorial && !isReelsOpen && (
+        <div
+          role="status"
+          onClick={() => setShowSwipeTutorial(false)}
+          className="fixed inset-x-0 top-24 z-50 flex justify-center px-4 animate-fadeIn"
+        >
+          <div className="w-full max-w-sm bg-[#161619]/95 backdrop-blur-md text-white rounded-3xl shadow-2xl border border-amber-500/30 ring-1 ring-[#FF5A26]/30 p-4 cursor-pointer">
+            <div className="swipe-guide-demo" aria-hidden="true">
+              <div className="swipe-guide-panes">
+                <div className="swipe-guide-pane swipe-guide-pane--menu">
+                  <span>🍽️</span>
+                  <span>Menu</span>
+                </div>
+                <div className="swipe-guide-pane swipe-guide-pane--reels">
+                  <span>🎬</span>
+                  <span>Reels</span>
+                </div>
+              </div>
+              <span className="swipe-guide-hand">👆</span>
+            </div>
+            <div className="mt-3 text-center">
+              <div className="font-black text-amber-300 text-sm">Swipe sideways to switch</div>
+              <div className="text-[11px] text-zinc-300 font-medium mt-1 leading-relaxed">
+                Swipe <strong className="text-white">left or right</strong> on the menu to watch Food Reels.
+                Swipe either way again to come back to the menu.
+              </div>
+              <div className="text-[10px] text-zinc-500 font-medium mt-1.5 hidden sm:block">
+                On a laptop: two fingers sideways on the trackpad, or the ← → keys
+              </div>
             </div>
           </div>
         </div>
