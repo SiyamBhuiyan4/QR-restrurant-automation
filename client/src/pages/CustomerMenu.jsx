@@ -18,7 +18,7 @@ const loadFoodReelsModal = () => import('../components/FoodReelsModal');
 const CartDrawer = lazy(loadCartDrawer);
 const FoodDetailModal = lazy(loadFoodDetailModal);
 const FoodReelsModal = lazy(loadFoodReelsModal);
-import VillageBackground from '../components/VillageBackground';
+import SceneryBackground from '../components/SceneryBackground';
 import useMenuReelsSwipe from '../hooks/useMenuReelsSwipe';
 import MenuItemCard from '../components/MenuItemCard';
 import '../styles/customer-hero.css';
@@ -2002,8 +2002,8 @@ export default function CustomerMenu({
       className="customer-still min-h-screen bg-transparent text-slate-100 pb-32 selection:bg-[#0284c7] selection:text-white relative"
       style={{ overflowX: 'clip' }}
     >
-      {/* Village at dusk: trees, grazing cow, kash flowers in the wind (light SVG + CSS) */}
-      <VillageBackground />
+      {/* Lakeside Swiss town photo, cropped to the screen (see SceneryBackground.jsx) */}
+      <SceneryBackground />
 
       {/* Menu stage: the pager moves it sideways with the finger; parked off screen while Reels are open */}
       <div
