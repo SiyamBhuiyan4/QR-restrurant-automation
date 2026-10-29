@@ -27,10 +27,12 @@ import {
   Smile,
   Info,
   Mic,
-  Trash2
+  Trash2,
+  Forward,
+  MoreHorizontal
 } from 'lucide-react';
 import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
-import { permanentMediaUrl, isPlaceholderVideo } from '../utils/mediaUrl';
+import { permanentMediaUrl } from '../utils/mediaUrl';
 import { prefetchVideos } from '../utils/videoCache';
 import '../styles/food-reels.css';
 
@@ -360,6 +362,7 @@ function dishPhoto(item) {
 export default function FoodReelsModal({
   isOpen,
   present = false,
+  warm = false,
   rootRef,
   onRequestClose,
   menuItems = [],
@@ -375,7 +378,7 @@ export default function FoodReelsModal({
 
     if (Array.isArray(menuItems) && menuItems.length > 0) {
       menuItems.forEach((item) => {
-        const vidUrl = item.making_video_url || item.makingVideoUrl || item.videoUrl;
+        const vidUrl = permanentMediaUrl(item.making_video_url || item.makingVideoUrl || item.videoUrl);
         const flag = item.showInReels !== undefined ? item.showInReels : item.show_in_reels;
         const isReelAllowed = flag === undefined || flag === 1 || flag === true || item.is_reel === 1;
 
@@ -459,8 +462,8 @@ export default function FoodReelsModal({
   }, [menuItems, funReels]);
 
   const isFunReel = (reel) => reel?.kind === 'fun';
-  // Dishes without their own video (only the demo placeholder) are shown as a full-screen photo
-  const isPhotoReel = (reel) => !reel?.videoUrl || isPlaceholderVideo(reel.videoUrl);
+  // A reel without any video is shown as a full-screen photo of the dish
+  const isPhotoReel = (reel) => !reel?.videoUrl;
 
   // Current reel index (synced with scroll position)
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -650,7 +653,7 @@ export default function FoodReelsModal({
       return;
     }
 
-    const duration = Math.min(620, 380 + Math.abs(distance) * 0.12);
+    const duration = Math.min(420, 260 + Math.abs(distance) * 0.08);
     const ease = (t) => 1 - Math.pow(1 - t, 4); // easeOutQuart: quick start, soft landing
     const start = performance.now();
     container.style.scrollSnapType = 'none';
@@ -801,8 +804,8 @@ export default function FoodReelsModal({
     const w = wheelGestureRef.current;
     const quietFor = now - w.lastTime;
     const dir = Math.sign(e.deltaY);
-    const freshSwipe = w.locked && now - w.firedAt > 250 && absY > w.lastMag * 1.6 + 4;
-    if (quietFor > 180 || freshSwipe) {
+    const freshSwipe = w.locked && now - w.firedAt > 140 && absY > w.lastMag * 1.3 + 2;
+    if (quietFor > 120 || freshSwipe) {
       w.locked = false;
       w.sum = 0;
     }
@@ -989,7 +992,38 @@ export default function FoodReelsModal({
     }, 2000);
   };
 
-  if (!present && !isOpen) return null;
+  // Each reel's card takes the shape of its own video / photo (landscape or portrait)
+  const [aspectMap, setAspectMap] = useState({});
+  const noteAspect = useCallback((idx, w, h) => {
+    if (!w || !h) return;
+    const ratio = Math.round((w / h) * 1000) / 1000;
+    setAspectMap((prev) => (prev[idx] === ratio ? prev : { ...prev, [idx]: ratio }));
+  }, []);
+
+  // Spinner only while the reel on screen is actually waiting for data
+  const [bufferingIndex, setBufferingIndex] = useState(null);
+  useEffect(() => setBufferingIndex(null), [currentIndex]);
+
+  // Thin progress line under the playing video, written straight to the DOM each frame
+  const progressRefs = useRef([]);
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    let raf = 0;
+    const tick = () => {
+      const v = videoRefs.current[currentIndex];
+      const bar = progressRefs.current[currentIndex];
+      if (v && bar && v.duration) bar.style.transform = `scaleX(${v.currentTime / v.duration})`;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [isOpen, currentIndex]);
+
+  const formatCount = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, '')}K` : String(n));
+
+  if (!present && !isOpen && !warm) return null;
+  // Off screen and idle: only the first reel is loaded, ready for the next swipe in
+  const live = isOpen || present;
 
   // Active reel specific states
   const currentReelKey = String(currentReel.dishId || currentReel.id);
@@ -999,97 +1033,48 @@ export default function FoodReelsModal({
   return (
     <div
       ref={rootRef}
-      className={`reels-pager fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-3 select-none ${isOpen ? 'is-open' : ''}`}
-      style={{ overflow: 'hidden' }}
+      className={`reels-pager reels-screen fixed inset-0 z-50 select-none ${isOpen ? 'is-open' : ''}`}
     >
-      {/* 9:16 Canvas Phone Frame over the same village background as the menu; the pager slides it */}
-      <div 
-        className="relative z-10 w-full h-full sm:max-w-[425px] sm:h-[94vh] sm:max-h-[880px] sm:rounded-3xl overflow-hidden bg-black shadow-2xl border-0 sm:border sm:border-white/15 flex flex-col"
-      >
-        
-        {/* ── Fixed Top Header: story-style progress, back, title, sound ── */}
-        <header className="absolute top-0 inset-x-0 z-30 px-3 pt-2.5 pb-2 pointer-events-auto">
-          <div className="flex items-center gap-1 h-[3px] mb-2.5" aria-hidden="true">
-            {activeReels.length <= 24 ? (
-              activeReels.map((reel, i) => (
-                <span
-                  key={reel.id || i}
-                  className={`flex-1 h-full rounded-full transition-colors duration-300 ${
-                    i <= currentIndex ? 'bg-white/90' : 'bg-white/25'
-                  }`}
-                />
-              ))
-            ) : (
-              <span className="relative flex-1 h-full rounded-full bg-white/25 overflow-hidden">
-                <span
-                  className="absolute inset-y-0 left-0 bg-white/90 rounded-full transition-[width] duration-300"
-                  style={{ width: `${((currentIndex + 1) / activeReels.length) * 100}%` }}
-                />
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-[2.5rem_1fr_2.5rem] items-center">
-            <button
-              type="button"
-              onClick={() => handleSmoothClose('right')}
-              className="reel-header-btn"
-              aria-label="Back to menu"
-              title="Back to menu"
-            >
-              <ChevronLeft className="w-5 h-5 -ml-px" strokeWidth={2.4} />
-            </button>
-
-            <div className="text-center leading-tight min-w-0">
-              <div className="text-[15px] font-semibold text-white tracking-tight drop-shadow">Food Reels</div>
-              <div className="text-[11px] font-medium text-white/65 tabular-nums">
-                {currentIndex + 1} of {activeReels.length}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsMuted((prev) => !prev)}
-              style={isPhotoReel(currentReel) ? { visibility: 'hidden' } : undefined}
-              className="reel-header-btn justify-self-end"
-              aria-label={isMuted ? 'Unmute sound' : 'Mute sound'}
-              title={isMuted ? 'Unmute sound' : 'Mute sound'}
-            >
-              {isMuted ? <VolumeX className="w-[18px] h-[18px]" /> : <Volume2 className="w-[18px] h-[18px]" />}
-            </button>
-          </div>
-        </header>
-
-        {/* ── Swipe hint on open ── */}
-        {showBackTutorial && (
-          <div className="absolute top-[4.75rem] left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-fadeIn bg-black/55 backdrop-blur-md border border-white/10 text-white/90 px-3 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 whitespace-nowrap">
-            <span className="animate-swipe-both" aria-hidden="true">⇆</span>
-            <span>Swipe sideways to return to the menu</span>
-          </div>
-        )}
-
-        {/* ── Native Vertical Snap-Scroll Reel Feed ── */}
-        <div
-          ref={scrollContainerRef}
-          className="reels-snap-feed"
+      {/* Close + title (top-left of the screen, like Facebook Reels) */}
+      <div className="absolute top-3 left-3 z-40 flex items-center gap-2.5 pointer-events-auto">
+        <button
+          type="button"
+          onClick={() => handleSmoothClose('right')}
+          className="reel-round-btn reel-round-btn--light"
+          aria-label="Back to menu"
+          title="Back to menu"
         >
-          {activeReels.map((reel, index) => {
-            const isSlideLoved = (likesMap[String(reel.dishId || reel.id)] || {}).isLoved;
-            const slideLikesCount = (likesMap[String(reel.dishId || reel.id)] || {}).count || reel.initialLikes;
-            const slideComments = commentsMap[String(reel.dishId || reel.id)] || reel.initialComments || [];
-            const isCurrentSlide = index === currentIndex;
-            const isPlayingThis = playingMap[index] ?? isCurrentSlide;
+          <X className="w-5 h-5" strokeWidth={2.4} />
+        </button>
+        <span className="text-white text-xl font-bold tracking-tight drop-shadow">Reels</span>
+      </div>
 
-            return (
-              <div
-                key={reel.id}
-                data-index={index}
-                ref={(el) => (reelElementsRef.current[index] = el)}
-                className="reel-snap-slide"
-              >
-                {/* 1. Video Element */}
+      {/* Vertical feed: one reel per screen */}
+      <div ref={scrollContainerRef} className="reels-snap-feed">
+        {activeReels.map((reel, index) => {
+          const reelKey = String(reel.dishId || reel.id);
+          const isSlideLoved = (likesMap[reelKey] || {}).isLoved;
+          const slideLikesCount = (likesMap[reelKey] || {}).count || reel.initialLikes;
+          const slideComments = commentsMap[reelKey] || reel.initialComments || [];
+          const isCurrentSlide = index === currentIndex;
+          const near = Math.abs(index - currentIndex);
+          const aspect = aspectMap[index] || 16 / 9;
+          const captionText = reel.caption || reel.description || '';
+          const isExpanded = Boolean(expandedCaptions[index]);
+          const isDish = !isFunReel(reel);
+
+          return (
+            <div
+              key={reel.id}
+              data-index={index}
+              ref={(el) => (reelElementsRef.current[index] = el)}
+              className="reel-snap-slide"
+            >
+              <div className="reel-stage">
+                {/* The video card, sized to the video's own shape */}
                 <div
-                  className="reel-video-wrapper cursor-pointer"
+                  className="reel-card"
+                  style={{ '--reel-aspect': aspect }}
                   onClick={(e) => handleSlideTap(e, index)}
                 >
                   {isPhotoReel(reel) ? (
@@ -1097,521 +1082,295 @@ export default function FoodReelsModal({
                       ref={() => (videoRefs.current[index] = null)}
                       src={reel.poster}
                       alt={reel.name}
-                      loading={Math.abs(index - currentIndex) <= 2 ? 'eager' : 'lazy'}
+                      loading={near <= 2 ? 'eager' : 'lazy'}
                       decoding="async"
                       referrerPolicy="no-referrer"
-                      className={`reel-video ${isCurrentSlide && showIngredients ? 'is-blurred' : ''}`}
+                      onLoad={(e) => noteAspect(index, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
+                      className={`reel-video ${aspect < 1 ? 'is-portrait' : ''}`}
                     />
                   ) : (
                     <video
                       ref={(el) => (videoRefs.current[index] = el)}
-                      src={reel.videoUrl}
+                      src={near <= (live ? 3 : 0) ? reel.videoUrl : undefined}
                       poster={reel.poster}
                       playsInline
                       loop
                       muted={isMuted}
-                      preload={Math.abs(index - currentIndex) <= 2 ? 'auto' : 'none'}
-                      className={`reel-video ${isCurrentSlide && showIngredients ? 'is-blurred' : ''}`}
+                      preload={!live ? (near === 0 ? 'auto' : 'none') : near <= 1 ? 'auto' : near <= 3 ? 'metadata' : 'none'}
+                      onLoadedMetadata={(e) => noteAspect(index, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}
+                      onWaiting={() => isCurrentSlide && setBufferingIndex(index)}
+                      onPlaying={() => setBufferingIndex((b) => (b === index ? null : b))}
+                      className={`reel-video ${aspect < 1 ? 'is-portrait' : ''}`}
                     />
                   )}
 
-                  {/* Central Play / Pause Icon Flash */}
+                  <div className="reel-shade" />
+
+                  {/* Loading spinner while the current video buffers */}
+                  {isCurrentSlide && bufferingIndex === index && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                      <span className="reel-spinner" />
+                    </div>
+                  )}
+
+                  {/* Sound (top-left of the card on desktop, top-right on phones) */}
+                  {!isPhotoReel(reel) && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsMuted((prev) => !prev);
+                      }}
+                      className="reel-round-btn reel-mute-btn"
+                      aria-label={isMuted ? 'Unmute sound' : 'Mute sound'}
+                      title={isMuted ? 'Unmute' : 'Mute'}
+                    >
+                      {isMuted ? <VolumeX className="w-[18px] h-[18px]" /> : <Volume2 className="w-[18px] h-[18px]" />}
+                    </button>
+                  )}
+
+                  {/* Play / pause flash */}
                   {playIconFlash && playIconFlash.idx === index && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                      <div className="w-16 h-16 rounded-full bg-black/65 backdrop-blur-md text-white flex items-center justify-center border border-white/20 shadow-2xl animate-scaleUp">
-                        {playIconFlash.isPlaying ? (
-                          <Play className="w-8 h-8 ml-1 fill-white" />
-                        ) : (
-                          <Pause className="w-8 h-8 fill-white" />
-                        )}
+                      <div className="w-16 h-16 rounded-full bg-black/55 text-white flex items-center justify-center animate-scaleUp">
+                        {playIconFlash.isPlaying ? <Play className="w-8 h-8 ml-1 fill-white" /> : <Pause className="w-8 h-8 fill-white" />}
                       </div>
                     </div>
                   )}
 
-                  {/* Double Tap Heart Burst Animation */}
+                  {/* Double-tap like */}
                   {heartBurstMap[index] && (
                     <div className="heart-burst-animate">
-                      <Heart className="w-24 h-24 text-rose-500 fill-rose-500 drop-shadow-[0_0_25px_rgba(244,63,94,0.95)]" />
+                      <ThumbsUp className="w-24 h-24 text-white fill-[#1877F2] drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
                     </div>
                   )}
-                </div>
 
-                {/* 2. Top and Bottom Vignettes */}
-                <div className="reel-vignette-top" />
-                <div className="reel-vignette-bottom" />
-
-                {/* 3. Right-Side Action Bar (Facebook / Instagram Reels Style) */}
-                <div className="absolute right-3.5 bottom-28 z-20 flex flex-col items-center gap-4 pointer-events-auto">
-                  {/* Heart / Love Button */}
-                  <div className="flex flex-col items-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        triggerHeartBurst(index);
-                        triggerLoveAction(reel);
-                      }}
-                      className={`reel-action-btn ${isSlideLoved ? 'active-heart' : ''}`}
-                      title="Love this Reel"
-                    >
-                      <Heart
-                        className={`w-6 h-6 transition-transform ${
-                          isSlideLoved ? 'fill-rose-500 text-rose-500 scale-110' : 'text-white'
-                        }`}
+                  {/* Bottom: dish, caption, order */}
+                  <div className="reel-info" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <img
+                        src={reel.poster}
+                        alt=""
+                        className="w-8 h-8 rounded-full object-cover border border-white/30 shrink-0"
+                        referrerPolicy="no-referrer"
                       />
-                    </button>
-                    <span className="text-[11px] font-black text-white mt-1 drop-shadow-md">
-                      {slideLikesCount >= 1000 ? `${(slideLikesCount / 1000).toFixed(1)}k` : slideLikesCount}
-                    </span>
-                  </div>
-
-                  {/* Anonymous Comments Button */}
-                  <div className="flex flex-col items-center">
-                    <button
-                      type="button"
-                      onClick={() => setShowComments(true)}
-                      className="reel-action-btn"
-                      title="Anonymous Comments"
-                    >
-                      <MessageCircle className="w-6 h-6 text-white" />
-                    </button>
-                    <span className="text-[11px] font-black text-white mt-1 drop-shadow-md">
-                      {slideComments.length}
-                    </span>
-                  </div>
-
-                  {/* Ingredients Button (Blurs video to reveal recipe) */}
-                  {!isFunReel(reel) && (
-                  <div className="flex flex-col items-center">
-                    <button
-                      type="button"
-                      onClick={() => setShowIngredients((prev) => !prev)}
-                      className={`reel-action-btn ${isCurrentSlide && showIngredients ? 'bg-amber-500/30 border-amber-400 text-amber-300' : ''}`}
-                      title="View Recipe Ingredients & Chef Secrets"
-                    >
-                      <ChefHat className="w-6 h-6" />
-                    </button>
-                    <span className="text-[10px] font-extrabold text-amber-300 mt-1 uppercase tracking-tight drop-shadow-md">
-                      Recipe
-                    </span>
-                  </div>
-                  )}
-
-                  {/* Share Button */}
-                  <div className="flex flex-col items-center">
-                    <button
-                      type="button"
-                      onClick={() => handleShareReel(reel)}
-                      className="reel-action-btn"
-                      title="Share Reel Link"
-                    >
-                      <Share2 className="w-5 h-5 text-white" />
-                    </button>
-                    <span className="text-[10px] font-bold text-white/70 mt-1 drop-shadow-md">
-                      Share
-                    </span>
-                  </div>
-                </div>
-
-                {/* 4. Bottom Info Area (Dish Details, Chef Note, Tags) */}
-                <div className={`absolute ${isFunReel(reel) ? 'bottom-4' : 'bottom-24'} inset-x-0 p-4 z-20 pointer-events-none text-left`}>
-                  <div className="max-w-[78%] pointer-events-auto">
-                    {/* Tags Bar */}
-                    <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-                      {isFunReel(reel) ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/15 text-white border border-white/20 backdrop-blur-sm">
-                          From our kitchen
-                        </span>
-                      ) : (
-                      <>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-600/90 text-white shadow-xs">
-                        {reel.category}
-                      </span>
-                      {reel.isSpicy && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/25 text-amber-300 border border-amber-500/40 flex items-center gap-1">
-                          <Flame className="w-3 h-3 text-amber-400" />
-                          <span>Spicy</span>
-                        </span>
+                      <span className="text-white text-sm font-semibold truncate drop-shadow">{reel.name}</span>
+                      {isDish && (
+                        <>
+                          <span className="text-white/70 text-sm shrink-0">·</span>
+                          <span className="text-white text-sm font-semibold shrink-0 tabular-nums">
+                            ${Number(reel.price || 0).toFixed(2)}
+                          </span>
+                        </>
                       )}
-                      {reel.isVeg && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-                          <Leaf className="w-3 h-3 text-emerald-400" />
-                          <span>Veg</span>
-                        </span>
-                      )}
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/40 text-stone-300 border border-white/10 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-stone-400" />
-                        <span>{reel.prepTime}</span>
-                      </span>
-                      </>
-                      )}
+                    </div>
 
-                      {/* Voice Read Aloud (Narrator Button) */}
+                    {captionText && (
+                      <p
+                        className={`mt-1.5 text-white/95 text-[13px] leading-snug drop-shadow cursor-pointer ${isExpanded ? 'reel-caption-open' : 'line-clamp-1'}`}
+                        onClick={() => toggleCaptionExpand(index)}
+                      >
+                        {captionText}
+                      </p>
+                    )}
+
+                    {isDish && isCurrentSlide && (
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const speechText = `${reel.name}. ${reel.caption || reel.description || reel.chefNote || ''}`;
-                          toggleSpeakCaption(speechText);
-                        }}
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border transition flex items-center gap-1 cursor-pointer shadow-md ${
-                          isSpeaking && currentIndex === index
-                            ? 'bg-amber-400 text-black border-amber-300 animate-pulse'
-                            : 'bg-black/50 text-amber-300 border-amber-400/40 hover:bg-black/75'
-                        }`}
-                        title="Listen to story read aloud"
+                        onClick={handleOrderThisDish}
+                        className={`reel-order-btn ${addedSuccess ? 'is-added' : ''}`}
                       >
-                        <Volume2 className="w-3 h-3" />
-                        <span>{isSpeaking && currentIndex === index ? 'Reading…' : 'Voice Read 🔊'}</span>
+                        {addedSuccess ? <Check className="w-4 h-4" strokeWidth={3} /> : <Plus className="w-4 h-4" strokeWidth={3} />}
+                        <span>{addedSuccess ? 'Added to order' : 'Add to order'}</span>
                       </button>
-                    </div>
-
-                    {/* Dish Title */}
-                    <h2 className="text-lg sm:text-xl font-black text-white tracking-tight drop-shadow-lg leading-snug">
-                      {reel.name}
-                    </h2>
-
-                    {/* Facebook-Style 2-Line Reel Caption & Scrollable Story */}
-                    {(() => {
-                      const captionText = reel.caption || reel.description || reel.chefNote || '';
-                      if (!captionText) return null;
-                      const isExpanded = Boolean(expandedCaptions[index]);
-
-                      return (
-                        <div className="mt-1 relative pointer-events-auto">
-                          {!isExpanded ? (
-                            <div className="text-xs text-stone-200 leading-relaxed font-normal drop-shadow-md">
-                              {/* Two lines, then "more" (line-clamp needs block display) */}
-                              <p className="line-clamp-2">
-                                {captionText}
-                              </p>
-                              {captionText.length > 90 && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleCaptionExpand(index);
-                                  }}
-                                  className="mt-0.5 font-semibold text-white/90 text-xs hover:text-white cursor-pointer"
-                                >
-                                  more
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <div 
-                              onClick={(e) => e.stopPropagation()}
-                              className="max-h-36 sm:max-h-44 overflow-y-auto pr-1.5 bg-black/80 backdrop-blur-md rounded-2xl p-3 border border-white/20 text-xs text-stone-100 leading-relaxed font-normal shadow-2xl animate-fadeIn custom-caption-scrollbar"
-                            >
-                              <p className="whitespace-pre-line leading-relaxed text-stone-200">
-                                {captionText}
-                              </p>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleCaptionExpand(index);
-                                }}
-                                className="mt-2 text-[11px] font-black text-amber-300 hover:text-amber-200 flex items-center gap-1 cursor-pointer underline underline-offset-2"
-                              >
-                                <span>see less</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-
-                    {/* Quick Ingredients Pill Trigger */}
-                    {!isFunReel(reel) && (
-                    <button
-                      type="button"
-                      onClick={() => setShowIngredients(true)}
-                      className="mt-2 text-[11px] font-bold text-amber-300 hover:text-amber-200 underline underline-offset-4 flex items-center gap-1.5 cursor-pointer drop-shadow-md"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Tap to inspect fresh ingredients &amp; cooking notes</span>
-                    </button>
                     )}
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
 
-        {/* ── Fixed Bottom "Add to Order" Sticky Bar (dish reels only) ── */}
-        {!isFunReel(currentReel) && (
-        <footer className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black via-black/90 to-transparent z-30 pointer-events-auto">
-          <div className="flex items-center gap-2">
-            {/* Quantity Stepper */}
-            <div className="flex items-center bg-black/70 backdrop-blur-xl border border-white/20 rounded-2xl p-1 text-white shrink-0">
-              <button
-                type="button"
-                onClick={() => setOrderQuantity((q) => Math.max(1, q - 1))}
-                className="w-8 h-8 rounded-xl hover:bg-white/10 flex items-center justify-center transition cursor-pointer"
-                aria-label="Decrease quantity"
-              >
-                <Minus className="w-3.5 h-3.5" />
-              </button>
-              <span className="w-7 text-center text-xs font-black">
-                {orderQuantity}
-              </span>
-              <button
-                type="button"
-                onClick={() => setOrderQuantity((q) => q + 1)}
-                className="w-8 h-8 rounded-xl hover:bg-white/10 flex items-center justify-center transition cursor-pointer"
-                aria-label="Increase quantity"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Glowing Add to Cart Order Button */}
-            <button
-              type="button"
-              onClick={handleOrderThisDish}
-              className={`flex-1 py-3 px-4 rounded-2xl font-black text-xs sm:text-sm text-white flex items-center justify-center gap-2 shadow-xl transition-all cursor-pointer active:scale-95 ${
-                addedSuccess
-                  ? 'bg-emerald-600 shadow-emerald-500/50'
-                  : 'bg-gradient-to-r from-[#FF5A26] via-[#FF7A45] to-amber-500 hover:brightness-110 shadow-[#FF5A26]/40'
-              }`}
-            >
-              {addedSuccess ? (
-                <>
-                  <Check className="w-4 h-4 stroke-[3]" />
-                  <span>Added to Order!</span>
-                </>
-              ) : (
-                <>
-                  <ShoppingBag className="w-4 h-4 stroke-[2.5]" />
-                  <span>
-                    Add to Order • ${(Number(currentReel.price) * orderQuantity).toFixed(2)}
-                  </span>
-                </>
-              )}
-            </button>
-          </div>
-        </footer>
-        )}
-
-        {/* ── Blurred Video Recipe & Ingredients Card Overlay ── */}
-        {showIngredients && (
-          <div className="absolute inset-0 z-40 bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-center p-3 animate-fadeIn">
-            <div className="w-full max-h-[75vh] overflow-y-auto ingredients-glass-card rounded-3xl p-5 text-white border border-white/20 shadow-2xl space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-white/15">
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 flex items-center justify-center">
-                    <ChefHat className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-sm tracking-tight">{currentReel.name}</h3>
-                    <p className="text-[11px] text-amber-300 font-semibold">Chef's Fresh Ingredients &amp; Recipe</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowIngredients(false)}
-                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Cooking Secret / Chef Note */}
-              <div className="bg-amber-950/40 border border-amber-500/30 p-3 rounded-2xl text-xs text-amber-200 leading-relaxed font-medium">
-                <span className="font-black text-amber-300 block mb-1">👨‍🍳 Cooking Secret:</span>
-                {currentReel.chefNote || currentReel.description}
-              </div>
-
-              {/* Ingredients List */}
-              <div>
-                <span className="text-[11px] font-black uppercase tracking-wider text-stone-300 block mb-2">
-                  Ingredients Used:
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {currentReel.ingredients.map((ing, i) => (
-                    <div
-                      key={i}
-                      className="px-3 py-2 rounded-xl bg-white/10 border border-white/10 text-xs font-semibold flex items-center gap-2"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF5A26]" />
-                      <span>{ing}</span>
+                  {/* Video progress */}
+                  {!isPhotoReel(reel) && (
+                    <div className="reel-progress">
+                      <span ref={(el) => (progressRefs.current[index] = el)} className="reel-progress-fill" />
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
 
-              {/* Quick Resume Button */}
-              <button
-                type="button"
-                onClick={() => setShowIngredients(false)}
-                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-amber-500 text-white font-bold text-xs uppercase tracking-wider transition cursor-pointer"
-              >
-                Resume Video Reel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Anonymous Comments Drawer (Facebook / Instagram Style) ── */}
-        {showComments && (
-          <div className="absolute inset-0 z-40 bg-black/60 flex items-end animate-fadeIn">
-            <div className="w-full max-h-[70vh] comments-drawer rounded-t-3xl flex flex-col p-4 text-white">
-              {/* Drawer Handle & Header */}
-              <div className="w-10 h-1 bg-white/30 rounded-full mx-auto mb-3" />
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-[#FF5A26]" />
-                  <h3 className="font-black text-sm tracking-tight">
-                    Anonymous Diners' Feedback ({activeComments.length})
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowComments(false)}
-                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Comments Scrollable Feed */}
-              <div className="flex-1 overflow-y-auto py-3 space-y-3 max-h-[42vh] pr-1">
-                {activeComments.length === 0 ? (
-                  <div className="text-center py-8 text-stone-400 text-xs">
-                    No comments yet. Be the first diner to leave anonymous thoughts! 💬
-                  </div>
-                ) : (
-                  activeComments.map((c) => (
-                    <div key={c.id} className="flex items-start gap-2.5 text-left">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#FF5A26] to-amber-500 flex items-center justify-center text-white text-[10px] font-black shrink-0">
-                        {c.author.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl p-2.5 text-xs">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold text-stone-200">{c.author}</span>
-                          <span className="text-[10px] text-stone-500">{c.time}</span>
-                        </div>
-                        <p className="text-stone-300 font-medium leading-relaxed">{c.text}</p>
-                        {c.audioUrl && <ReelVoiceCommentPlayer audioUrl={c.audioUrl} />}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Anonymous Comment Form with Voice Comment option */}
-              <div className="pt-2 border-t border-white/10 space-y-2">
-                <input
-                  type="text"
-                  value={guestAuthorName}
-                  onChange={(e) => setGuestAuthorName(e.target.value)}
-                  placeholder="Your Name / Handle (Optional - Defaults to Anonymous Diner)"
-                  className="w-full px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#FF5A26]"
-                />
-
-                {isRecordingVoiceComment ? (
-                  /* Recording Voice Comment Bar */
-                  <div className="flex items-center justify-between gap-2 bg-rose-950/50 border border-rose-500/50 rounded-xl px-3 py-2 animate-fadeIn">
-                    <div className="flex items-center gap-2">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-                      </span>
-                      <span className="text-xs font-bold text-rose-300">Recording Voice…</span>
-                      <span className="text-xs font-mono text-white bg-black/40 px-1.5 py-0.5 rounded font-bold">
-                        {voiceCommentTime}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={resetVoiceComment}
-                        className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-stone-300 cursor-pointer"
-                        title="Cancel"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleSendVoiceComment}
-                        className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#FF5A26] to-amber-500 text-white font-bold text-xs flex items-center gap-1 shadow-sm active:scale-95 cursor-pointer"
-                      >
-                        <Send className="w-3 h-3" />
-                        <span>Post Voice</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* Text & Mic Comment Form */
-                  <form onSubmit={handleAddComment} className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newCommentText}
-                      onChange={(e) => setNewCommentText(e.target.value)}
-                      placeholder="Add an anonymous comment or record voice..."
-                      className="flex-1 px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#FF5A26]"
-                    />
-                    
-                    {/* Record Voice Comment Button */}
-                    <button
-                      type="button"
-                      onClick={startVoiceComment}
-                      className="px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-stone-200 hover:text-rose-400 border border-white/15 text-xs flex items-center justify-center transition active:scale-95 cursor-pointer"
-                      title="Record and post a voice comment"
-                    >
-                      <Mic className="w-4 h-4" />
+                {/* Actions (beside the card on desktop, over it on phones) */}
+                <div className="reel-actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isSlideLoved) triggerHeartBurst(index);
+                      triggerLoveAction(reel);
+                    }}
+                    className="reel-action"
+                    aria-label="Like"
+                  >
+                    <ThumbsUp className={`w-7 h-7 ${isSlideLoved ? 'fill-[#1877F2] text-[#1877F2]' : ''}`} strokeWidth={1.8} />
+                    <span>{formatCount(slideLikesCount)}</span>
+                  </button>
+                  <button type="button" onClick={() => setShowComments(true)} className="reel-action" aria-label="Comments">
+                    <MessageCircle className="w-7 h-7" strokeWidth={1.8} />
+                    <span>{slideComments.length}</span>
+                  </button>
+                  <button type="button" onClick={() => handleShareReel(reel)} className="reel-action" aria-label="Share">
+                    <Forward className="w-7 h-7" strokeWidth={1.8} />
+                    <span>Share</span>
+                  </button>
+                  {isDish && (
+                    <button type="button" onClick={() => setShowIngredients(true)} className="reel-action" aria-label="Dish details">
+                      <MoreHorizontal className="w-7 h-7" strokeWidth={1.8} />
                     </button>
-
-                    <button
-                      type="submit"
-                      disabled={!newCommentText.trim()}
-                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-amber-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-40 transition active:scale-95"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Post</span>
-                    </button>
-                  </form>
-                )}
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* ── Link Copied Toast ── */}
-        {copiedToast && (
-          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-black/85 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold border border-white/20 shadow-2xl flex items-center gap-2 animate-fadeIn">
-            <Check className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Reel link copied!</span>
-          </div>
-        )}
-
+          );
+        })}
       </div>
 
-      {/* ── Desktop Up / Down arrows: beside the phone frame, never over the reel's own buttons ── */}
+      {/* Previous / next (desktop) */}
       {isOpen && (
-        <div className="hidden sm:flex absolute top-1/2 -translate-y-1/2 left-[calc(50%+228px)] flex-col gap-2 z-20 animate-fadeIn">
+        <div className="hidden sm:flex absolute right-6 top-1/2 -translate-y-1/2 flex-col gap-3 z-30">
           <button
             type="button"
             onClick={() => scrollToReel(currentIndex - 1)}
             disabled={currentIndex === 0}
-            className="reel-header-btn disabled:opacity-30 disabled:pointer-events-none"
+            className="reel-round-btn reel-nav-btn"
             aria-label="Previous reel"
-            title="Previous reel (↑)"
+            title="Previous (↑)"
           >
-            <ChevronUp className="w-5 h-5" />
+            <ChevronUp className="w-6 h-6" strokeWidth={2.2} />
           </button>
           <button
             type="button"
             onClick={() => scrollToReel(currentIndex + 1)}
             disabled={currentIndex === activeReels.length - 1}
-            className="reel-header-btn disabled:opacity-30 disabled:pointer-events-none"
+            className="reel-round-btn reel-nav-btn"
             aria-label="Next reel"
-            title="Next reel (↓)"
+            title="Next (↓)"
           >
-            <ChevronDown className="w-5 h-5" />
+            <ChevronDown className="w-6 h-6" strokeWidth={2.2} />
           </button>
+        </div>
+      )}
+
+      {/* Dish details (… button) */}
+      {showIngredients && (
+        <div className="absolute inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-3 animate-fadeIn" onClick={() => setShowIngredients(false)}>
+          <div
+            className="ingredients-glass-card w-full max-w-md max-h-[75vh] overflow-y-auto rounded-2xl p-5 text-white space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="font-bold text-base leading-tight">{currentReel.name}</h3>
+                {!isFunReel(currentReel) && (
+                  <p className="text-sm text-white/70 mt-0.5">${Number(currentReel.price || 0).toFixed(2)} · {currentReel.prepTime}</p>
+                )}
+              </div>
+              <button type="button" onClick={() => setShowIngredients(false)} className="reel-round-btn shrink-0" aria-label="Close">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {(currentReel.chefNote || currentReel.description) && (
+              <p className="text-sm text-white/85 leading-relaxed">{currentReel.chefNote || currentReel.description}</p>
+            )}
+            {Array.isArray(currentReel.ingredients) && currentReel.ingredients.length > 0 && (
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-2">Ingredients</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentReel.ingredients.map((ing, i) => (
+                    <span key={i} className="px-2.5 py-1 rounded-full bg-white/10 text-xs">{ing}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Comments drawer ── */}
+      {showComments && (
+        <div className="absolute inset-0 z-50 bg-black/60 flex items-end justify-center animate-fadeIn" onClick={() => setShowComments(false)}>
+          <div className="w-full sm:max-w-lg max-h-[70vh] comments-drawer rounded-t-2xl flex flex-col p-4 text-white" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <h3 className="font-bold text-sm">Comments ({activeComments.length})</h3>
+              <button type="button" onClick={() => setShowComments(false)} className="reel-round-btn" aria-label="Close comments">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-3 space-y-3 max-h-[42vh] pr-1">
+              {activeComments.length === 0 ? (
+                <div className="text-center py-8 text-white/50 text-xs">No comments yet. Be the first!</div>
+              ) : (
+                activeComments.map((c) => (
+                  <div key={c.id} className="flex items-start gap-2.5 text-left">
+                    <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      {c.author.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 bg-white/[0.08] rounded-2xl px-3 py-2 text-[13px]">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="font-semibold">{c.author}</span>
+                        <span className="text-[11px] text-white/45">{c.time}</span>
+                      </div>
+                      <p className="text-white/85 leading-snug">{c.text}</p>
+                      {c.audioUrl && <ReelVoiceCommentPlayer audioUrl={c.audioUrl} />}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-white/10">
+              {isRecordingVoiceComment ? (
+                <div className="flex items-center justify-between gap-2 bg-rose-950/50 border border-rose-500/50 rounded-xl px-3 py-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                    <span className="font-semibold text-rose-300">Recording</span>
+                    <span className="font-mono">{voiceCommentTime}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button type="button" onClick={resetVoiceComment} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20" title="Cancel">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button type="button" onClick={handleSendVoiceComment} className="px-3 py-1.5 rounded-lg bg-[#1877F2] text-white font-semibold text-xs flex items-center gap-1">
+                      <Send className="w-3 h-3" />
+                      <span>Post</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleAddComment} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newCommentText}
+                    onChange={(e) => setNewCommentText(e.target.value)}
+                    placeholder="Write a comment…"
+                    className="flex-1 px-3.5 py-2.5 rounded-full bg-white/10 border border-white/15 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/40"
+                  />
+                  <button type="button" onClick={startVoiceComment} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center" title="Voice comment">
+                    <Mic className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!newCommentText.trim()}
+                    className="w-10 h-10 rounded-full bg-[#1877F2] text-white flex items-center justify-center disabled:opacity-40"
+                    aria-label="Post comment"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {copiedToast && (
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 z-50 bg-white text-black px-4 py-2 rounded-full text-sm font-semibold shadow-xl flex items-center gap-2 animate-fadeIn">
+          <Check className="w-4 h-4 text-emerald-600" />
+          <span>Link copied</span>
         </div>
       )}
     </div>

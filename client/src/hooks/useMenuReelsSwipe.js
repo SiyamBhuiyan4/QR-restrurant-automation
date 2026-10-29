@@ -16,15 +16,15 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
  * open(side) / close(side) run the same slide for buttons and keys; side -1 = content moves
  * left (the other screen comes in from the right), +1 = moves right.
  */
-const SETTLE_MS = 280;
+const SETTLE_MS = 220;
 const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const COMMIT_RATIO = 0.22;
 const FLICK_PX_PER_MS = 0.45;
-const WHEEL_END_MS = 110;
+const WHEEL_END_MS = 90;
 const EXCLUDE = 'input, textarea, select, .category-bar-scroll, .comments-drawer, .ingredients-glass-card, [data-no-reels-swipe]';
 
 export default function useMenuReelsSwipe({ isOpen, setOpen, setReelsPresent, menuRef, reelsRef, enabled }) {
-  const st = useRef({ touch: null, wheel: null, animating: false, pendingClear: false, wheelQuietUntil: 0 });
+  const st = useRef({ touch: null, wheel: null, animating: false, pendingClear: false, wheelQuietUntil: 0, coastMag: 0, endedAt: 0 });
   const openRef = useRef(isOpen);
   openRef.current = isOpen;
   const enabledRef = useRef(enabled);
@@ -46,10 +46,8 @@ export default function useMenuReelsSwipe({ isOpen, setOpen, setReelsPresent, me
     }
     if (coming) {
       // The incoming screen starts just past the screen edge and reaches its place as the drag
-      // completes. On wide screens Reels are a centred phone-sized frame, so it only needs to
-      // travel far enough to hide that frame (it peeks in as soon as the finger moves).
-      const frame = coming === reels ? coming.firstElementChild : null;
-      const travel = frame ? Math.min(w, (w + frame.offsetWidth) / 2 + 16) : w;
+      // completes
+      const travel = w;
       const progress = Math.min(1, Math.abs(dx) / w);
       const offset = travel * (1 - progress) * (side < 0 ? 1 : -1);
       coming.style.transform = `translate3d(${offset}px,0,0)`;
@@ -188,21 +186,31 @@ export default function useMenuReelsSwipe({ isOpen, setOpen, setReelsPresent, me
       clearTimeout(g.timer);
       const side = g.dx < 0 ? -1 : 1;
       settle(g.from, g.dx, side, shouldCommit(g.dx, velocity(g.samples)));
-      // Ignore the rest of this swipe's momentum
-      s.wheelQuietUntil = performance.now() + 450;
+      // Ignore the rest of this swipe's momentum (a new swipe still gets through, see onWheel)
+      s.endedAt = performance.now();
+      s.wheelQuietUntil = s.endedAt + 350;
+      s.coastMag = Math.abs(g.lastDelta || 0);
     };
     const onWheel = (e) => {
       const now = performance.now();
       const horizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
       if (!s.wheel) {
         if (!horizontal || e.ctrlKey || !enabledRef.current || excluded(e.target)) return;
-        if (now < s.wheelQuietUntil) {
-          s.wheelQuietUntil = now + 120; // still coasting from the last swipe
+        const mag = Math.abs(e.deltaX);
+        // Momentum only ever slows down, so a delta that grows again is the fingers starting
+        // a fresh swipe: let it through straight away instead of waiting for the coast to end.
+        const freshSwipe = now - s.endedAt > 120 && mag > s.coastMag * 1.3 + 2;
+        if (now < s.wheelQuietUntil && !freshSwipe) {
+          s.wheelQuietUntil = now + 100; // still coasting from the last swipe
+          s.coastMag = mag;
           if (e.cancelable) e.preventDefault();
           return;
         }
-        if (s.animating || Math.abs(e.deltaX) < 2) return;
-        s.wheel = { from: openRef.current ? 'reels' : 'menu', dx: 0, samples: [], timer: 0 };
+        if (s.animating || mag < 2) {
+          if (e.cancelable) e.preventDefault();
+          return;
+        }
+        s.wheel = { from: openRef.current ? 'reels' : 'menu', dx: 0, samples: [], timer: 0, peak: 0, prevMag: 0, falling: 0 };
         if (s.wheel.from === 'menu') setReelsPresent(true);
         setTransition(false);
       }
@@ -210,11 +218,19 @@ export default function useMenuReelsSwipe({ isOpen, setOpen, setReelsPresent, me
       if (e.cancelable) e.preventDefault(); // also stops the browser's back/forward swipe
       // Natural scrolling: fingers moving left give a positive deltaX
       g.dx = clamp(g.dx - e.deltaX);
+      g.lastDelta = e.deltaX;
       g.samples.push({ x: g.dx, t: now });
       if (g.samples.length > 12) g.samples.shift();
       place(g.from, g.dx, g.dx < 0 ? -1 : 1);
       clearTimeout(g.timer);
-      if (Math.abs(g.dx) >= width() * 0.98) endWheel(); // pushed all the way: finish now
+      // Fingers lifted: the deltas keep shrinking (that is the trackpad's momentum). Finish now
+      // rather than riding the momentum out, so the next swipe can start right away.
+      const mag = Math.abs(e.deltaX);
+      g.falling = mag < g.prevMag ? g.falling + 1 : 0;
+      g.prevMag = mag;
+      g.peak = Math.max(g.peak, mag);
+      const lifted = g.falling >= 3 && mag < g.peak * 0.6;
+      if (lifted || Math.abs(g.dx) >= width() * 0.98) endWheel(); // or pushed all the way
       else g.timer = setTimeout(endWheel, WHEEL_END_MS);
     };
 

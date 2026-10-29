@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { startVisibleVideos } from '../utils/visibleVideos';
 import { startCardReveal } from '../utils/cardReveal';
-import { cardVideoUrl, isPlaceholderVideo } from '../utils/mediaUrl';
+import { cardVideoUrl } from '../utils/mediaUrl';
 import { 
   Plus, 
   Minus, 
@@ -159,12 +159,8 @@ export default function MenuItemCard({
     item.images,
     item.videos,
   ]);
-  // Only the dish's own video plays on the card (light 360p copy where one exists); the demo
-  // placeholder clip is never shown as food, so those cards show the dish photo
-  const dishVideo = useMemo(
-    () => (rawDishVideo && !isPlaceholderVideo(rawDishVideo) ? cardVideoUrl(rawDishVideo) : null),
-    [rawDishVideo]
-  );
+  // Cards play the light 360p copy where one exists (see utils/mediaUrl.js)
+  const dishVideo = useMemo(() => cardVideoUrl(rawDishVideo), [rawDishVideo]);
 
   const hasVideo = Boolean(dishVideo);
   const [isVideoMode, setIsVideoMode] = useState(Boolean(dishVideo));

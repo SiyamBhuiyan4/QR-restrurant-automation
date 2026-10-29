@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspens
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
-import { permanentMediaUrl, cardVideoUrl, isPlaceholderVideo } from '../utils/mediaUrl.js';
+import { permanentMediaUrl, cardVideoUrl } from '../utils/mediaUrl.js';
 import { prefetchVideos } from '../utils/videoCache.js';
 import { useRestaurant } from '../context/RestaurantContext';
 import { getCachedMenu } from '../db/indexedDb.js';
@@ -1666,7 +1666,7 @@ export default function CustomerMenu({
     // Cache the files the cards actually play (the 360p copy where there is one)
     const urls = allMenuItems
       .map((item) => item.videoUrl || item.making_video_url || item.makingVideoUrl)
-      .filter((url) => url && !isPlaceholderVideo(url))
+      .filter(Boolean)
       .map(cardVideoUrl);
     const start = () => prefetchVideos(urls);
     if (typeof window.requestIdleCallback === 'function') {
@@ -2566,6 +2566,7 @@ export default function CustomerMenu({
       {/* FB / Instagram Style Full Functional Food Reels with Anonymous Comments & 1-Tap Order */}
       <FoodReelsModal
         present={reelsPresent || isReelsOpen}
+        warm
         isOpen={isReelsOpen}
         rootRef={reelsPagerRef}
         onRequestClose={(dir = 'right') => pager.close(dir === 'left' ? -1 : 1)}

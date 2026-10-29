@@ -493,3 +493,218 @@
   transform: none;
   visibility: visible;
 }
+
+/* ── Reels screen (Facebook Reels layout) ──
+   Phones: the card fills the screen and the actions sit over its right edge.
+   Desktop: a rounded card sized to the video, actions beside it, prev/next on the far right. */
+.reels-screen {
+  background: #000;
+}
+
+.reel-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reel-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  cursor: pointer;
+}
+
+.reel-card .reel-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: none;
+}
+.reel-card .reel-video.is-portrait {
+  object-fit: cover;
+}
+
+.reel-shade {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 42%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.3) 55%, transparent);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.reel-info {
+  position: absolute;
+  left: 14px;
+  right: 72px;
+  bottom: 18px;
+  z-index: 20;
+  cursor: default;
+}
+
+.reel-caption-open {
+  max-height: 30vh;
+  overflow-y: auto;
+  white-space: pre-line;
+}
+
+.reel-order-btn {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  background: #fff;
+  color: #050505;
+  font-size: 14px;
+  font-weight: 600;
+  transition: transform 0.12s ease, background-color 0.2s ease;
+}
+.reel-order-btn:active {
+  transform: scale(0.95);
+}
+.reel-order-btn.is-added {
+  background: #16a34a;
+  color: #fff;
+}
+
+.reel-progress {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 6px;
+  height: 3px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.28);
+  overflow: hidden;
+  z-index: 20;
+  pointer-events: none;
+}
+.reel-progress-fill {
+  display: block;
+  height: 100%;
+  background: #fff;
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+
+.reel-round-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  transition: background-color 0.15s ease, transform 0.12s ease, opacity 0.15s ease;
+  cursor: pointer;
+}
+.reel-round-btn:hover {
+  background: rgba(60, 60, 60, 0.7);
+}
+.reel-round-btn:active {
+  transform: scale(0.92);
+}
+.reel-round-btn--light {
+  background: #e4e6eb;
+  color: #050505;
+}
+.reel-round-btn--light:hover {
+  background: #d8dadf;
+}
+
+.reel-mute-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 25;
+}
+
+.reel-nav-btn {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+}
+.reel-nav-btn:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.reel-actions {
+  position: absolute;
+  right: 8px;
+  bottom: 96px;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.reel-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 48px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  transition: transform 0.12s ease, opacity 0.15s ease;
+  cursor: pointer;
+}
+.reel-action:hover {
+  opacity: 0.8;
+}
+.reel-action:active {
+  transform: scale(0.9);
+}
+
+.reel-spinner {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  animation: reelSpin 0.8s linear infinite;
+}
+@keyframes reelSpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (min-width: 640px) {
+  .reel-stage {
+    padding: 16px 0;
+    gap: 20px;
+  }
+  .reel-card {
+    width: auto;
+    aspect-ratio: var(--reel-aspect, 1.7778);
+    max-width: calc(100vw - 260px);
+    border-radius: 12px;
+  }
+  .reel-mute-btn {
+    right: auto;
+    left: 12px;
+  }
+  .reel-info {
+    right: 16px;
+  }
+  .reel-actions {
+    position: static;
+    align-self: flex-end;
+    margin-bottom: 28px;
+    gap: 22px;
+    filter: none;
+  }
+}
