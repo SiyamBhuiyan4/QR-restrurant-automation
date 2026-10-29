@@ -1143,7 +1143,7 @@ export default function FoodReelsModal({
                     playsInline
                     loop
                     muted={isMuted}
-                    preload={Math.abs(index - currentIndex) <= 1 ? 'auto' : 'none'}
+                    preload={index >= currentIndex - 1 && index <= currentIndex + 3 ? 'auto' : 'none'}
                     className={`reel-video ${isCurrentSlide && showIngredients ? 'is-blurred' : ''}`}
                   />
 
