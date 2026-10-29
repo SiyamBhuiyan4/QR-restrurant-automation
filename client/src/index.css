@@ -738,3 +738,17 @@ header[data-hidden="false"] {
   transform: translateY(0) !important;
 }
 
+
+/* Customer menu: no looping decoration (blinking dots, pulsing tabs, nudging arrows).
+   One-off motion people trigger (menu/reels slide, card glide, first-visit guide) stays. */
+.customer-still .animate-ping { display: none; }
+.customer-still .animate-pulse,
+.customer-still .animate-edge-tab,
+.customer-still .animate-swipe-both,
+.customer-still .animate-swipe-hand,
+.customer-still .animate-swipe-left-hand,
+.customer-still .swipe-hint-dot,
+.customer-still .reels-pill-btn {
+  animation: none !important;
+}
+.customer-still .animate-edge-tab { transform: translateY(-50%); }

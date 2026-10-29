@@ -2132,7 +2132,7 @@ export default function CustomerMenu({
 
   return (
     <div 
-      className="min-h-screen bg-transparent text-slate-100 pb-32 selection:bg-[#0284c7] selection:text-white relative"
+      className="customer-still min-h-screen bg-transparent text-slate-100 pb-32 selection:bg-[#0284c7] selection:text-white relative"
       style={{ overflowX: 'clip' }}
     >
       {/* Village at dusk: trees, grazing cow, kash flowers in the wind (light SVG + CSS) */}

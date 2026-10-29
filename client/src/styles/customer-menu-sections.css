@@ -109,6 +109,10 @@
   cursor: pointer;
   /* Keep each card's repaints inside the card (playing videos otherwise repaint the page) */
   contain: layout paint;
+  /* Cards far off screen are skipped entirely until you scroll near them; `auto` remembers
+     each card's real height once drawn, so the page doesn't jump */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
 }
 
 .plate-card:hover {

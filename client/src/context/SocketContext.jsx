@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
-import { io } from 'socket.io-client';
 
 const SocketContext = createContext({
   socket: null,
@@ -37,27 +36,26 @@ export const resolveServerUrl = () => {
   return window.location.origin;
 };
 
+// True where the Node live-update server can exist: an explicit server URL, or the app served
+// from the restaurant's own machine / local network. Hosted copies (Vercel) have no server.
+const hasSocketServer = () => {
+  if (import.meta.env?.VITE_SERVER_URL || window.__SERVER_URL__) return true;
+  return !/\.vercel\.app$/i.test(window.location.hostname);
+};
+
 export function SocketProvider({ children, serverUrl: propServerUrl }) {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState(null);
   const socketRef = useRef(null);
 
   useEffect(() => {
+    // The live-update server (server/index.js) only runs on the restaurant's own network.
+    // Hosted copies have none, and connecting there would just retry forever in the background.
+    if (!propServerUrl && !hasSocketServer()) return undefined;
     const targetUrl = propServerUrl || resolveServerUrl();
 
-    // Initialize socket connection with reconnection options
-    const socketInstance = io(targetUrl, {
-      autoConnect: true,
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000,
-      transports: ['websocket', 'polling'],
-      withCredentials: true,
-    });
-
-    socketRef.current = socketInstance;
+    let cancelled = false;
+    let socketInstance = null;
 
     const handleConnect = () => {
       setIsConnected(true);
@@ -68,7 +66,7 @@ export function SocketProvider({ children, serverUrl: propServerUrl }) {
       setIsConnected(false);
       if (reason === 'io server disconnect') {
         // the disconnection was initiated by the server, reconnect manually
-        socketInstance.connect();
+        socketInstance?.connect();
       }
     };
 
@@ -82,17 +80,36 @@ export function SocketProvider({ children, serverUrl: propServerUrl }) {
       setConnectionError(null);
     };
 
-    socketInstance.on('connect', handleConnect);
-    socketInstance.on('disconnect', handleDisconnect);
-    socketInstance.on('connect_error', handleConnectError);
-    socketInstance.on('reconnect', handleReconnect);
+    // socket.io is loaded only where it is used, so hosted pages never download it
+    import('socket.io-client').then(({ io }) => {
+      if (cancelled) return;
+      // Initialize socket connection with reconnection options
+      socketInstance = io(targetUrl, {
+        autoConnect: true,
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
+        transports: ['websocket', 'polling'],
+        withCredentials: true,
+      });
+      socketRef.current = socketInstance;
 
-    // Initial check in case it connected synchronously
-    if (socketInstance.connected) {
-      setIsConnected(true);
-    }
+      socketInstance.on('connect', handleConnect);
+      socketInstance.on('disconnect', handleDisconnect);
+      socketInstance.on('connect_error', handleConnectError);
+      socketInstance.on('reconnect', handleReconnect);
+
+      // Initial check in case it connected synchronously
+      if (socketInstance.connected) {
+        setIsConnected(true);
+      }
+    }).catch(() => {});
 
     return () => {
+      cancelled = true;
+      if (!socketInstance) return;
       socketInstance.off('connect', handleConnect);
       socketInstance.off('disconnect', handleDisconnect);
       socketInstance.off('connect_error', handleConnectError);
