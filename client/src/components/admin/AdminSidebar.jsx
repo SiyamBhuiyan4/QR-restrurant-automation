@@ -8,6 +8,7 @@ import {
   ShoppingBag,
   ChefHat,
   UtensilsCrossed,
+  Film,
   QrCode,
   Users,
   MessageSquareWarning,
@@ -63,6 +64,7 @@ export default function AdminSidebar({
       title: 'Catalog',
       items: [
         { id: 'menu', label: 'Menu', icon: UtensilsCrossed },
+        { id: 'reels', label: 'Reels', icon: Film },
         { id: 'qr', label: 'QR Codes', icon: QrCode }
       ]
     },

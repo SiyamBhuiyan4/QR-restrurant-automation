@@ -258,8 +258,10 @@ export default function MenuManager({ className = '' }) {
       is_veg: item.is_veg === 1 || item.is_veg === true || item.isVeg === true || item.veg === true ? 1 : 0,
       is_spicy: item.is_spicy === 1 || item.is_spicy === true || item.isSpicy === true || item.spicy === true ? 1 : 0,
       is_available: item.is_available === 0 || item.is_available === false || item.isAvailable === false || item.available === false ? 0 : 1,
-      show_in_reels: item.show_in_reels !== 0 && item.show_in_reels !== false,
-      reel_caption: item.reel_caption || item.caption || ''
+      show_in_reels: item.showInReels !== undefined
+        ? Boolean(item.showInReels)
+        : item.show_in_reels !== 0 && item.show_in_reels !== false,
+      reel_caption: item.reelCaption || item.reel_caption || item.caption || ''
     };
   }, []);
 
@@ -952,6 +954,8 @@ export default function MenuManager({ className = '' }) {
               imageUrl: finalImageUrl,
               images: [finalImageUrl].filter(Boolean),
               makingVideoUrl: finalVideoUrl || undefined,
+              showInReels: Boolean(finalVideoUrl && formData.show_in_reels),
+              reelCaption: (formData.reel_caption || '').trim(),
               isVeg: Boolean(formData.is_veg),
               isSpicy: Boolean(formData.is_spicy),
               isAvailable: Boolean(formData.is_available)
@@ -988,6 +992,8 @@ export default function MenuManager({ className = '' }) {
               imageUrl: finalImageUrl,
               images: [finalImageUrl].filter(Boolean),
               makingVideoUrl: finalVideoUrl || undefined,
+              showInReels: Boolean(finalVideoUrl && formData.show_in_reels),
+              reelCaption: (formData.reel_caption || '').trim(),
               isVeg: Boolean(formData.is_veg),
               isSpicy: Boolean(formData.is_spicy),
               isAvailable: Boolean(formData.is_available)
@@ -1005,6 +1011,8 @@ export default function MenuManager({ className = '' }) {
               imageUrl: finalImageUrl,
               images: [finalImageUrl].filter(Boolean),
               makingVideoUrl: finalVideoUrl || undefined,
+              showInReels: Boolean(finalVideoUrl && formData.show_in_reels),
+              reelCaption: (formData.reel_caption || '').trim(),
               isVeg: Boolean(formData.is_veg),
               isSpicy: Boolean(formData.is_spicy),
               isAvailable: Boolean(formData.is_available)
@@ -1829,6 +1837,37 @@ export default function MenuManager({ className = '' }) {
                     className="hidden"
                   />
 
+                  {/* Reels placement: decided before the video is added */}
+                  <div className="p-3 bg-[var(--adm-surface)] border border-purple-500/30 rounded-xl flex items-center justify-between gap-3 mb-1">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-600 to-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <Video className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-[var(--adm-text)]">Show this dish's video in Reels</span>
+                          <span className={`text-[10px] font-black uppercase px-1.5 py-0.2 rounded border ${formData.show_in_reels ? 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30' : 'text-slate-400 bg-slate-500/15 border-slate-500/30'}`}>
+                            {formData.show_in_reels ? 'In Reels' : 'Not in Reels'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[var(--adm-text-muted)] leading-tight mt-0.5">
+                          {formData.show_in_reels
+                            ? 'Customers will see this video in the Reels feed with an "Add to Order" button.'
+                            : 'The video only plays on the dish page. It will not appear in Reels.'}
+                        </p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={formData.show_in_reels}
+                        onChange={(e) => setFormData({ ...formData, show_in_reels: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-10 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-600 peer-checked:to-rose-600 border border-slate-700"></div>
+                    </label>
+                  </div>
+
                   {/* Dual High-Visibility Upload Buttons */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {/* [📸 Upload Photo to Telegram] (Sky blue button triggering photoInputRef) */}
@@ -2051,37 +2090,6 @@ export default function MenuManager({ className = '' }) {
                       </div>
                     </div>
                   </details>
-
-                  {/* Food Reels Showcase Placement Toggle */}
-                  <div className="p-3 bg-[var(--adm-surface)] border border-purple-500/30 rounded-xl flex items-center justify-between gap-3 mt-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-600 to-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                        <Video className="w-3.5 h-3.5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-[var(--adm-text)]">Feature in Food Reels</span>
-                          <span className="text-[10px] font-black uppercase text-amber-400 bg-amber-500/15 px-1.5 py-0.2 rounded border border-amber-500/30">
-                            Reels Feed
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[var(--adm-text-muted)] leading-tight mt-0.5">
-                          {formData.show_in_reels
-                            ? 'Video appears in both the public customer Reels feed (with Add-to-Cart) and dish details.'
-                            : 'Video stays exclusive to dish details modal only (hidden from Reels feed).'}
-                        </p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={formData.show_in_reels}
-                        onChange={(e) => setFormData({ ...formData, show_in_reels: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-10 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-600 peer-checked:to-rose-600 border border-slate-700"></div>
-                    </label>
-                  </div>
 
                   {/* Food Reel Video Caption / Story (Facebook-Style Caption) */}
                   {formData.show_in_reels && (

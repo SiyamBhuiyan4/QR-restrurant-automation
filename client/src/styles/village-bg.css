@@ -97,7 +97,9 @@
 
 /* Paused while scrolling, and for reduced motion */
 .vb-root.is-still *,
-.vb-root.is-still { animation-play-state: paused !important; }
+.vb-root.is-still,
+.vb-root.is-paused *,
+.vb-root.is-paused { animation-play-state: paused !important; }
 @media (prefers-reduced-motion: reduce) {
   .vb-root * { animation: none !important; }
   .vb-seed { opacity: 0.6; }

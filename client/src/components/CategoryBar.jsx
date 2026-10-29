@@ -119,7 +119,7 @@ export default function CategoryBar({
 
   return (
     <div
-      className={`relative w-full bg-[#0b0f19]/70 backdrop-blur-md border-b border-emerald-500/20 py-2.5 ${className}`}
+      className={`relative w-full bg-[#0b0f19]/90 border-b border-emerald-500/20 py-2.5 ${className}`}
     >
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 relative flex items-center min-w-0">
 

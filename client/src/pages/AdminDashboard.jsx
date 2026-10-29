@@ -21,6 +21,7 @@ import useAdminShortcuts from '../hooks/useAdminShortcuts';
 import KitchenMonitorModule from '../components/admin/KitchenMonitorModule';
 import StaffManagementModule from '../components/admin/StaffManagementModule';
 import MenuManager from '../components/MenuManager';
+import ReelsManager from '../components/admin/ReelsManager';
 import QRBatchGenerator from './QRBatchGenerator';
 import { ExternalLink } from 'lucide-react';
 import { settleTableOrders } from '../components/admin/BillReceipt';
@@ -91,6 +92,7 @@ export default function AdminDashboard({ className = '' }) {
         'orders',
         'kds',
         'menu',
+        'reels',
         'qr',
         'employees',
         'reports'
@@ -199,6 +201,7 @@ export default function AdminDashboard({ className = '' }) {
         'orders',
         'kds',
         'menu',
+        'reels',
         'qr',
         'employees',
         'reports'
@@ -670,6 +673,13 @@ export default function AdminDashboard({ className = '' }) {
           {activeTab === 'menu' && (
             <div className="animate-fadeIn">
               <MenuManager />
+            </div>
+          )}
+
+          {/* TAB 7: REELS (dish reels summary + stand-alone fun reels) */}
+          {activeTab === 'reels' && (
+            <div className="animate-fadeIn">
+              <ReelsManager onOpenMenu={() => handleSelectTab('menu')} />
             </div>
           )}
 

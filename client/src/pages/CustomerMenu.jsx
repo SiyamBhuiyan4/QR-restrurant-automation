@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
+import { convex } from '../convexClient.js';
 import { useRestaurant } from '../context/RestaurantContext';
 import { getCachedMenu } from '../db/indexedDb.js';
 import Navbar from '../components/Navbar';
@@ -833,9 +834,11 @@ export const normalizeDishItem = (item, defaultCategory = 'Mains') => {
     ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
     isPopular: Boolean(item.isPopular || item.popular),
     prepTime: item.prepTime || '15 min',
-    show_in_reels: item.show_in_reels !== undefined ? item.show_in_reels : (resolvedVideo ? 1 : 0),
-    reel_caption: item.reel_caption || item.caption || item.description || '',
-    caption: item.reel_caption || item.caption || item.description || ''
+    show_in_reels: item.showInReels !== undefined
+      ? (item.showInReels ? 1 : 0)
+      : item.show_in_reels !== undefined ? item.show_in_reels : (resolvedVideo ? 1 : 0),
+    reel_caption: item.reelCaption || item.reel_caption || item.caption || item.description || '',
+    caption: item.reelCaption || item.reel_caption || item.caption || item.description || ''
   };
 };
 
@@ -1674,6 +1677,26 @@ export default function CustomerMenu({
 
   // Query real-time Convex menu
   const convexMenu = useQuery(api.menu.getMenu);
+  // Admin's stand-alone fun reels (no Add to Order). Kept on the device so Reels open instantly;
+  // fetched once per visit, and a failed fetch just keeps the saved copy.
+  const [funReels, setFunReels] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('smartdine_fun_reels') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    let cancelled = false;
+    convex.query(api.reels.listPublic, {})
+      .then((list) => {
+        if (cancelled || !Array.isArray(list)) return;
+        setFunReels(list);
+        try { localStorage.setItem('smartdine_fun_reels', JSON.stringify(list)); } catch (_) {}
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   // Auto-seed Convex menu if connected and empty
   const seedMenuMutation = useMutation(api.menu.seedMenu);
@@ -2047,7 +2070,7 @@ export default function CustomerMenu({
       style={{ overflowX: 'clip' }}
     >
       {/* Village at dusk: trees, grazing cow, kash flowers in the wind (light SVG + CSS) */}
-      <VillageBackground />
+      <VillageBackground paused={isReelsOpen} />
 
       {/* Menu stage: slides out sideways when Reels open, and back in when they close */}
       <div
@@ -2096,7 +2119,7 @@ export default function CustomerMenu({
             setShowSwipeTutorial(true);
             setTimeout(() => setShowSwipeTutorial(false), 3500);
           }}
-          className="w-full max-w-5xl mb-3 py-2 px-3.5 sm:px-4 rounded-2xl bg-gradient-to-r from-rose-950/70 via-zinc-900/85 to-amber-950/60 border border-[#FF5A26]/35 text-white flex items-center justify-between gap-2 shadow-lg backdrop-blur-md select-none cursor-pointer hover:border-[#FF5A26]/60 transition"
+          className="w-full max-w-5xl mb-3 py-2 px-3.5 sm:px-4 rounded-2xl bg-gradient-to-r from-rose-950/70 via-zinc-900/85 to-amber-950/80 border border-[#FF5A26]/35 text-white flex items-center justify-between gap-2 shadow-lg select-none cursor-pointer hover:border-[#FF5A26]/60 transition"
         >
           <div className="flex items-center gap-2.5 text-xs sm:text-sm font-bold">
             <span className="swipe-hint-track shrink-0" aria-hidden="true">
@@ -2519,10 +2542,10 @@ export default function CustomerMenu({
       {cartSummary.totalCount > 0 && !isReelsOpen && (
         <aside
           aria-label="Order Cart Summary"
-          className="fixed bottom-0 left-0 right-0 z-40 p-3 sm:p-4 bg-gradient-to-t from-[#0a0a0c] via-[#0a0a0c]/90 to-transparent backdrop-blur-xs pointer-events-none"
+          className="fixed bottom-0 left-0 right-0 z-40 p-3 sm:p-4 bg-gradient-to-t from-[#0a0a0c] via-[#0a0a0c]/90 to-transparent pointer-events-none"
         >
           <div className="max-w-xl mx-auto pointer-events-auto">
-            <div className="bg-[#141418]/95 backdrop-blur-xl text-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 shadow-2xl shadow-black/80 flex items-center justify-between gap-3.5 border border-zinc-800 ring-1 ring-[#FF5A26]/20 animate-slideUp">
+            <div className="bg-[#141418]/95 text-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 shadow-2xl shadow-black/80 flex items-center justify-between gap-3.5 border border-zinc-800 ring-1 ring-[#FF5A26]/20 animate-slideUp">
               
               {/* Left: Cart Info */}
               <div className="flex items-center gap-3.5">
@@ -2621,6 +2644,7 @@ export default function CustomerMenu({
           setReelsInitialDishId(null);
         }}
         menuItems={allMenuItems}
+        funReels={funReels || []}
         initialDishId={reelsInitialDishId}
         tableNumber={tableNumber}
         onAddToCart={(item, qty) => {
@@ -2778,7 +2802,7 @@ export default function CustomerMenu({
           className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center select-none animate-edge-tab cursor-pointer"
           title="Swipe left or right anywhere (or 2 fingers sideways on a trackpad) to watch Food Reels"
         >
-          <div className="bg-gradient-to-l from-rose-600 via-[#FF5A26] to-[#FF7A45] text-white pl-3 pr-2.5 py-2.5 rounded-l-2xl shadow-2xl border-y border-l border-white/25 flex items-center gap-2 backdrop-blur-md">
+          <div className="bg-gradient-to-l from-rose-600 via-[#FF5A26] to-[#FF7A45] text-white pl-3 pr-2.5 py-2.5 rounded-l-2xl shadow-2xl border-y border-l border-white/25 flex items-center gap-2">
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />

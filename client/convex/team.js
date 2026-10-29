@@ -116,7 +116,7 @@ function publicAccount(acc, now = Date.now()) {
   };
 }
 
-async function requireAdmin(ctx, adminToken) {
+export async function requireAdmin(ctx, adminToken) {
   const token = String(adminToken ?? "");
   if (!token) throw new ConvexError("Admin sign-in required");
   const session = await ctx.db

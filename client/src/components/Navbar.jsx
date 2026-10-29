@@ -153,7 +153,7 @@ export default function Navbar({
         ref={headerRef}
         data-scrolled="false"
         data-hidden="false"
-        className={`sticky top-0 z-40 w-full max-w-[100vw] overflow-hidden bg-[#06140e]/90 backdrop-blur-2xl saturate-150 border-b border-[#d4af37]/25 shadow-none transition-[transform,box-shadow,background-color,border-color] duration-300 ease-in-out will-change-transform data-[hidden=true]:-translate-y-full data-[hidden=false]:translate-y-0 motion-reduce:transition-none data-[scrolled=true]:bg-[#06140e]/95 data-[scrolled=true]:border-[#d4af37]/40 data-[scrolled=true]:shadow-[0_10px_30px_-8px_rgba(0,0,0,0.8)] ${className}`}
+        className={`sticky top-0 z-40 w-full max-w-[100vw] overflow-hidden bg-[#06140e]/95 border-b border-[#d4af37]/25 shadow-none transition-[transform,box-shadow,background-color,border-color] duration-300 ease-in-out will-change-transform data-[hidden=true]:-translate-y-full data-[hidden=false]:translate-y-0 motion-reduce:transition-none data-[scrolled=true]:bg-[#06140e]/95 data-[scrolled=true]:border-[#d4af37]/40 data-[scrolled=true]:shadow-[0_10px_30px_-8px_rgba(0,0,0,0.8)] ${className}`}
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-2 sm:gap-3 min-w-0">

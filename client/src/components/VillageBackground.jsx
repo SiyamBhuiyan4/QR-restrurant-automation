@@ -71,7 +71,7 @@ function KashClump({ x, y, s, delay }) {
   );
 }
 
-export default function VillageBackground() {
+export default function VillageBackground({ paused = false }) {
   const rootRef = useRef(null);
 
   // Depth: pointer (desktop) or phone tilt (where allowed without a prompt) nudges the
@@ -124,7 +124,7 @@ export default function VillageBackground() {
   }, []);
 
   return (
-    <div ref={rootRef} className="vb-root" aria-hidden="true">
+    <div ref={rootRef} className={`vb-root${paused ? ' is-paused' : ''}`} aria-hidden="true">
       <svg className="vb-svg" viewBox="0 0 1200 860" preserveAspectRatio="xMidYMax slice">
         <defs>
           <linearGradient id="vb-sky" x1="0" y1="0" x2="0" y2="1">

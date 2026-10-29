@@ -74,6 +74,22 @@ export default defineConfig({
             },
           },
           {
+            // Dish photos hosted on the Telegram CDN: keep them on the device after the first view
+            urlPattern: ({ url, request }) => url.hostname === 'api.telegram.org' && url.pathname.startsWith('/file/') && request.destination === 'image',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'telegram-images-cache',
+              expiration: {
+                maxEntries: 80,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+                purgeOnQuotaError: true, // opaque cross-origin responses count heavily against quota
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
             // Cache images from external CDNs (Unsplash) with CacheFirst (30 days expiration)
             urlPattern: /^https:\/\/(?:images\.unsplash\.com|source\.unsplash\.com)\/.*/i,
             handler: 'CacheFirst',

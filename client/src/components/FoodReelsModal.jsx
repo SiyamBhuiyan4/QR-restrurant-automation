@@ -13,6 +13,7 @@ import {
   ChefHat,
   ChevronUp,
   ChevronDown,
+  ChevronLeft,
   Send,
   Plus,
   Minus,
@@ -345,22 +346,25 @@ export default function FoodReelsModal({
   onClose,
   enterDir = 'left',
   menuItems = [],
+  funReels = [],
   onAddToCart,
   initialDishId = null,
   tableNumber = null
 }) {
-  // Combine real menu items marked for reels + demo food reels
+  // Feed = dishes the admin marked "Show in Reels" (with Add to Order) mixed with the admin's
+  // stand-alone fun reels (no order bar). Demo reels only fill in when neither exists.
   const activeReels = useMemo(() => {
     const list = [];
 
-    // Filter menu items that have a making_video_url and are allowed in reels (show_in_reels !== 0 and !== false)
     if (Array.isArray(menuItems) && menuItems.length > 0) {
       menuItems.forEach((item) => {
         const vidUrl = item.making_video_url || item.makingVideoUrl || item.videoUrl;
-        const isReelAllowed = item.show_in_reels === undefined || item.show_in_reels === 1 || item.show_in_reels === true || item.is_reel === 1;
+        const flag = item.showInReels !== undefined ? item.showInReels : item.show_in_reels;
+        const isReelAllowed = flag === undefined || flag === 1 || flag === true || item.is_reel === 1;
 
         if (vidUrl && isReelAllowed) {
           list.push({
+            kind: 'product',
             id: `item-${item.id}`,
             dishId: item.id,
             name: item.name || item.title,
@@ -387,8 +391,35 @@ export default function FoodReelsModal({
       });
     }
 
-    // If fewer dishes have reels, supplement with rich demo reels
-    if (list.length < DEMO_FOOD_REELS.length) {
+    const fun = (Array.isArray(funReels) ? funReels : [])
+      .filter((r) => r && r.videoUrl)
+      .map((r) => ({
+        kind: 'fun',
+        id: `fun-${r._id}`,
+        name: r.title,
+        category: 'Reel',
+        videoUrl: r.videoUrl,
+        poster: r.posterUrl || '',
+        caption: r.caption || '',
+        description: r.caption || '',
+        initialLikes: 300 + (String(r._id).charCodeAt(0) % 9) * 70,
+        initialComments: []
+      }));
+
+    if (list.length > 0 || fun.length > 0) {
+      // One fun reel after every three dish reels, the rest at the end
+      const mixed = [];
+      let f = 0;
+      list.forEach((reel, i) => {
+        mixed.push(reel);
+        if ((i + 1) % 3 === 0 && f < fun.length) mixed.push(fun[f++]);
+      });
+      while (f < fun.length) mixed.push(fun[f++]);
+      return mixed;
+    }
+
+    // Nothing set up yet: show the built-in demo dish reels
+    {
       DEMO_FOOD_REELS.forEach((demo) => {
         if (!list.some((r) => String(r.dishId) === String(demo.dishId) || r.name === demo.name)) {
           const matchedItem = menuItems.find((m) => String(m.id) === String(demo.dishId) || (m.name && m.name.toLowerCase().includes(demo.name.toLowerCase().split(' ')[0])));
@@ -408,7 +439,9 @@ export default function FoodReelsModal({
     }
 
     return list.length > 0 ? list : DEMO_FOOD_REELS;
-  }, [menuItems]);
+  }, [menuItems, funReels]);
+
+  const isFunReel = (reel) => reel?.kind === 'fun';
 
   // Current reel index (synced with scroll position)
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -591,15 +624,62 @@ export default function FoodReelsModal({
   const tapTimeoutRefs = useRef({});
   const wheelLockedRef = useRef(false);
 
-  // Scroll to a specific reel index smoothly
-  const scrollToReel = useCallback((targetIndex) => {
+  const scrollAnimRef = useRef(0);
+  const lastWheelTimeRef = useRef(0);
+
+  // Glide to a reel with an eased rAF animation. Snap is switched off while gliding so the
+  // browser's own snapping can't fight the animation, then restored once it lands.
+  const scrollToReel = useCallback((targetIndex, { instant = false } = {}) => {
+    const container = scrollContainerRef.current;
     const bounded = Math.max(0, Math.min(targetIndex, activeReels.length - 1));
     const el = reelElementsRef.current[bounded];
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setCurrentIndex(bounded);
+    if (!container || !el) return;
+    setCurrentIndex(bounded);
+
+    cancelAnimationFrame(scrollAnimRef.current);
+    const from = container.scrollTop;
+    const to = el.offsetTop;
+    const distance = to - from;
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (instant || reduceMotion || Math.abs(distance) < 2) {
+      container.scrollTop = to;
+      return;
     }
+
+    const duration = Math.min(620, 380 + Math.abs(distance) * 0.12);
+    const ease = (t) => 1 - Math.pow(1 - t, 4); // easeOutQuart: quick start, soft landing
+    const start = performance.now();
+    container.style.scrollSnapType = 'none';
+    container.style.scrollBehavior = 'auto';
+
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      container.scrollTop = from + distance * ease(t);
+      if (t < 1) {
+        scrollAnimRef.current = requestAnimationFrame(step);
+      } else {
+        container.style.scrollSnapType = '';
+        container.style.scrollBehavior = '';
+        scrollAnimRef.current = 0;
+      }
+    };
+    scrollAnimRef.current = requestAnimationFrame(step);
   }, [activeReels.length]);
+
+  useEffect(() => () => cancelAnimationFrame(scrollAnimRef.current), []);
+
+  // Mouse wheel / trackpad: stop the native scroll inside the feed so only our glide moves it
+  // (non-passive so preventDefault works; navigation itself is handled by handleWheel)
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const container = scrollContainerRef.current;
+    if (!container) return undefined;
+    const block = (e) => {
+      if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) e.preventDefault();
+    };
+    container.addEventListener('wheel', block, { passive: false });
+    return () => container.removeEventListener('wheel', block);
+  }, [isOpen]);
 
   // Jump to initial dish if specified
   useEffect(() => {
@@ -607,8 +687,8 @@ export default function FoodReelsModal({
       const idx = activeReels.findIndex((r) => String(r.dishId) === String(initialDishId));
       if (idx !== -1) {
         setTimeout(() => {
-          scrollToReel(idx);
-        }, 120);
+          scrollToReel(idx, { instant: true });
+        }, 60);
       }
     }
   }, [isOpen, initialDishId, activeReels, scrollToReel]);
@@ -622,7 +702,7 @@ export default function FoodReelsModal({
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
+          if (entry.isIntersecting && !scrollAnimRef.current) {
             const idx = Number(entry.target.getAttribute('data-index'));
             if (!isNaN(idx)) {
               setCurrentIndex(idx);
@@ -649,31 +729,27 @@ export default function FoodReelsModal({
     setOrderQuantity(1);
     setAddedSuccess(false);
 
+    // Only touch videos that are actually playing or were played (seeking all of them on every
+    // change stalls the decoder and makes the swipe stutter)
     videoRefs.current.forEach((videoEl, idx) => {
-      if (!videoEl) return;
-      if (idx === currentIndex) {
-        videoEl.currentTime = 0;
-        videoEl.muted = isMuted;
-        const playPromise = videoEl.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              setPlayingMap((prev) => ({ ...prev, [idx]: true }));
-            })
-            .catch(() => {
-              // Browser autoplay blocked -> force mute and replay
-              videoEl.muted = true;
-              setIsMuted(true);
-              videoEl.play().catch(() => {});
-              setPlayingMap((prev) => ({ ...prev, [idx]: true }));
-            });
-        }
-      } else {
-        videoEl.pause();
-        videoEl.currentTime = 0;
-        setPlayingMap((prev) => ({ ...prev, [idx]: false }));
-      }
+      if (!videoEl || idx === currentIndex) return;
+      if (!videoEl.paused) videoEl.pause();
+      if (videoEl.currentTime > 0) videoEl.currentTime = 0;
     });
+    setPlayingMap({ [currentIndex]: true });
+
+    const videoEl = videoRefs.current[currentIndex];
+    if (!videoEl) return;
+    videoEl.muted = isMuted;
+    const playPromise = videoEl.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Browser autoplay blocked -> force mute and replay
+        videoEl.muted = true;
+        setIsMuted(true);
+        videoEl.play().catch(() => {});
+      });
+    }
   }, [currentIndex, isMuted]);
 
   // Sync mute state across all video tags
@@ -706,19 +782,18 @@ export default function FoodReelsModal({
       return;
     }
 
-    // Vertical reel scroll
-    if (absY > 25) {
-      if (!wheelLockedRef.current) {
-        wheelLockedRef.current = true;
-        if (e.deltaY > 0) {
-          scrollToReel(currentIndex + 1);
-        } else {
-          scrollToReel(currentIndex - 1);
-        }
-        setTimeout(() => {
-          wheelLockedRef.current = false;
-        }, 400);
-      }
+    // Vertical reel scroll: one flick = one reel. Trackpad momentum keeps sending wheel events
+    // for a while, so the next reel is only allowed after the wheel has gone quiet.
+    const now = Date.now();
+    const quietFor = now - lastWheelTimeRef.current;
+    lastWheelTimeRef.current = now;
+    if (absY < 4 || absY < absX) return;
+    if (quietFor < 220 && wheelLockedRef.current) return;
+    if (absY > 12 && !scrollAnimRef.current) {
+      wheelLockedRef.current = true;
+      scrollToReel(currentIndex + (e.deltaY > 0 ? 1 : -1));
+    } else if (quietFor >= 220) {
+      wheelLockedRef.current = false;
     }
   }, [showComments, showIngredients, currentIndex, scrollToReel, handleSmoothClose]);
 
@@ -977,61 +1052,63 @@ export default function FoodReelsModal({
         }`}
       >
         
-        {/* ── Fixed Top Header ── */}
-        <header className="absolute top-0 inset-x-0 z-30 p-3.5 flex items-center justify-between pointer-events-auto">
-          {/* Back to Menu (Swipe Left or Click) & Live Indicator */}
-          <div className="flex items-center gap-2">
+        {/* ── Fixed Top Header: story-style progress, back, title, sound ── */}
+        <header className="absolute top-0 inset-x-0 z-30 px-3 pt-2.5 pb-2 pointer-events-auto">
+          <div className="flex items-center gap-1 h-[3px] mb-2.5" aria-hidden="true">
+            {activeReels.length <= 24 ? (
+              activeReels.map((reel, i) => (
+                <span
+                  key={reel.id || i}
+                  className={`flex-1 h-full rounded-full transition-colors duration-300 ${
+                    i <= currentIndex ? 'bg-white/90' : 'bg-white/25'
+                  }`}
+                />
+              ))
+            ) : (
+              <span className="relative flex-1 h-full rounded-full bg-white/25 overflow-hidden">
+                <span
+                  className="absolute inset-y-0 left-0 bg-white/90 rounded-full transition-[width] duration-300"
+                  style={{ width: `${((currentIndex + 1) / activeReels.length) * 100}%` }}
+                />
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-[2.5rem_1fr_2.5rem] items-center">
             <button
               type="button"
               onClick={() => handleSmoothClose('right')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white transition hover:bg-white/25 active:scale-95 cursor-pointer shadow-lg text-xs font-bold"
-              title="Swipe left or right, or click, to return to the Food Menu"
+              className="reel-header-btn"
+              aria-label="Back to menu"
+              title="Back to menu"
             >
-              <span className="text-sm">⇦</span>
-              <span className="font-extrabold tracking-wide">Menu</span>
-              <span className="text-[10px] text-white/60 hidden sm:inline">• ⇆ Swipe</span>
+              <ChevronLeft className="w-5 h-5 -ml-px" strokeWidth={2.4} />
             </button>
 
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white shadow-lg">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-              </span>
-              <span className="text-[10px] text-white/70 font-mono">
-                {currentIndex + 1}/{activeReels.length}
-              </span>
+            <div className="text-center leading-tight min-w-0">
+              <div className="text-[15px] font-semibold text-white tracking-tight drop-shadow">Food Reels</div>
+              <div className="text-[11px] font-medium text-white/65 tabular-nums">
+                {currentIndex + 1} of {activeReels.length}
+              </div>
             </div>
-          </div>
 
-          {/* Quick Header Controls: Sound & Close */}
-          <div className="flex items-center gap-2">
-            {/* Sound Toggle Button */}
             <button
               type="button"
               onClick={() => setIsMuted((prev) => !prev)}
-              className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-white/20 active:scale-95 cursor-pointer shadow-lg"
-              title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
+              className="reel-header-btn justify-self-end"
+              aria-label={isMuted ? 'Unmute sound' : 'Mute sound'}
+              title={isMuted ? 'Unmute sound' : 'Mute sound'}
             >
-              {isMuted ? <VolumeX className="w-4 h-4 text-white/80" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-            </button>
-
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={() => handleSmoothClose('right')}
-              className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-white/20 hover:scale-105 active:scale-95 cursor-pointer shadow-lg"
-              title="Close Food Reels (or swipe left / right)"
-            >
-              <X className="w-5 h-5" />
+              {isMuted ? <VolumeX className="w-[18px] h-[18px]" /> : <Volume2 className="w-[18px] h-[18px]" />}
             </button>
           </div>
         </header>
 
-        {/* ── Visual Swipe Left Tutorial Toast on First Open ── */}
+        {/* ── Swipe hint on open ── */}
         {showBackTutorial && (
-          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-fadeIn bg-black/85 backdrop-blur-md border border-white/25 text-white px-3.5 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-2 shadow-2xl">
-            <span className="animate-swipe-both text-sm" aria-hidden="true">⇆</span>
-            <span>Swipe left or right to go back to the menu</span>
+          <div className="absolute top-[4.75rem] left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-fadeIn bg-black/55 backdrop-blur-md border border-white/10 text-white/90 px-3 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 whitespace-nowrap">
+            <span className="animate-swipe-both" aria-hidden="true">⇆</span>
+            <span>Swipe sideways to return to the menu</span>
           </div>
         )}
 
@@ -1066,7 +1143,7 @@ export default function FoodReelsModal({
                     playsInline
                     loop
                     muted={isMuted}
-                    preload="auto"
+                    preload={Math.abs(index - currentIndex) <= 1 ? 'auto' : 'none'}
                     className={`reel-video ${isCurrentSlide && showIngredients ? 'is-blurred' : ''}`}
                   />
 
@@ -1135,6 +1212,7 @@ export default function FoodReelsModal({
                   </div>
 
                   {/* Ingredients Button (Blurs video to reveal recipe) */}
+                  {!isFunReel(reel) && (
                   <div className="flex flex-col items-center">
                     <button
                       type="button"
@@ -1148,6 +1226,7 @@ export default function FoodReelsModal({
                       Recipe
                     </span>
                   </div>
+                  )}
 
                   {/* Share Button */}
                   <div className="flex flex-col items-center">
@@ -1166,10 +1245,16 @@ export default function FoodReelsModal({
                 </div>
 
                 {/* 4. Bottom Info Area (Dish Details, Chef Note, Tags) */}
-                <div className="absolute bottom-24 inset-x-0 p-4 z-20 pointer-events-none text-left">
+                <div className={`absolute ${isFunReel(reel) ? 'bottom-4' : 'bottom-24'} inset-x-0 p-4 z-20 pointer-events-none text-left`}>
                   <div className="max-w-[78%] pointer-events-auto">
                     {/* Tags Bar */}
                     <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                      {isFunReel(reel) ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/15 text-white border border-white/20 backdrop-blur-sm">
+                          From our kitchen
+                        </span>
+                      ) : (
+                      <>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-600/90 text-white shadow-xs">
                         {reel.category}
                       </span>
@@ -1189,6 +1274,8 @@ export default function FoodReelsModal({
                         <Clock className="w-3 h-3 text-stone-400" />
                         <span>{reel.prepTime}</span>
                       </span>
+                      </>
+                      )}
 
                       {/* Voice Read Aloud (Narrator Button) */}
                       <button
@@ -1266,6 +1353,7 @@ export default function FoodReelsModal({
                     })()}
 
                     {/* Quick Ingredients Pill Trigger */}
+                    {!isFunReel(reel) && (
                     <button
                       type="button"
                       onClick={() => setShowIngredients(true)}
@@ -1274,6 +1362,7 @@ export default function FoodReelsModal({
                       <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                       <span>Tap to inspect fresh ingredients &amp; cooking notes</span>
                     </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1281,29 +1370,8 @@ export default function FoodReelsModal({
           })}
         </div>
 
-        {/* ── Desktop Quick Up / Down Arrows ── */}
-        <div className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 flex-col gap-2 z-20 pointer-events-auto">
-          <button
-            type="button"
-            onClick={() => scrollToReel(currentIndex - 1)}
-            disabled={currentIndex === 0}
-            className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/90 hover:text-white hover:bg-black/80 flex items-center justify-center transition cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
-            title="Previous Reel (Arrow Up)"
-          >
-            <ChevronUp className="w-5 h-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollToReel(currentIndex + 1)}
-            disabled={currentIndex === activeReels.length - 1}
-            className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/90 hover:text-white hover:bg-black/80 flex items-center justify-center transition cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
-            title="Next Reel (Arrow Down)"
-          >
-            <ChevronDown className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* ── Fixed Bottom "Add to Order" Sticky Bar ── */}
+        {/* ── Fixed Bottom "Add to Order" Sticky Bar (dish reels only) ── */}
+        {!isFunReel(currentReel) && (
         <footer className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black via-black/90 to-transparent z-30 pointer-events-auto">
           <div className="flex items-center gap-2">
             {/* Quantity Stepper */}
@@ -1355,6 +1423,7 @@ export default function FoodReelsModal({
             </button>
           </div>
         </footer>
+        )}
 
         {/* ── Blurred Video Recipe & Ingredients Card Overlay ── */}
         {showIngredients && (
@@ -1550,6 +1619,32 @@ export default function FoodReelsModal({
         )}
 
       </div>
+
+      {/* ── Desktop Up / Down arrows: beside the phone frame, never over the reel's own buttons ── */}
+      {!isExiting && (
+        <div className="hidden sm:flex absolute top-1/2 -translate-y-1/2 left-[calc(50%+228px)] flex-col gap-2 z-20 animate-fadeIn">
+          <button
+            type="button"
+            onClick={() => scrollToReel(currentIndex - 1)}
+            disabled={currentIndex === 0}
+            className="reel-header-btn disabled:opacity-30 disabled:pointer-events-none"
+            aria-label="Previous reel"
+            title="Previous reel (↑)"
+          >
+            <ChevronUp className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollToReel(currentIndex + 1)}
+            disabled={currentIndex === activeReels.length - 1}
+            className="reel-header-btn disabled:opacity-30 disabled:pointer-events-none"
+            aria-label="Next reel"
+            title="Next reel (↓)"
+          >
+            <ChevronDown className="w-5 h-5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

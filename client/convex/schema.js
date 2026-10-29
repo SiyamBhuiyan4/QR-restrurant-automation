@@ -18,12 +18,26 @@ export default defineSchema({
     imageUrl: v.string(),
     images: v.optional(v.array(v.string())),
     makingVideoUrl: v.optional(v.string()),
+    // Admin's choice: show this dish's video in the customer Reels feed (with Add to Order)
+    showInReels: v.optional(v.boolean()),
+    reelCaption: v.optional(v.string()),
     isVeg: v.boolean(),
     isSpicy: v.boolean(),
     isAvailable: v.boolean(),
   })
     .index("by_category", ["categorySlug"])
     .index("by_availability", ["isAvailable"]),
+
+  // Stand-alone Reels (fun / behind-the-scenes clips, not linked to a dish: no Add to Order)
+  reels: defineTable({
+    title: v.string(),
+    caption: v.string(),
+    videoUrl: v.string(),
+    posterUrl: v.optional(v.string()),
+    telegramFileId: v.optional(v.string()),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+  }).index("by_created_at", ["createdAt"]),
 
   orders: defineTable({
     orderNumber: v.string(),
