@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
 import { permanentMediaUrl } from '../utils/mediaUrl';
+import { prefetchVideos } from '../utils/videoCache';
 import '../styles/food-reels.css';
 
 // Curated high-res streaming demo food reels if dishes don't have custom videos
@@ -682,6 +683,16 @@ export default function FoodReelsModal({
     return () => container.removeEventListener('wheel', block);
   }, [isOpen]);
 
+  // Keep the 5 reels around the one playing ready on the phone: this one first, then the
+  // next and previous, then two away. Scrolling either way moves the window along.
+  useEffect(() => {
+    if (!isOpen || activeReels.length === 0) return;
+    const order = [0, 1, -1, 2, -2]
+      .map((d) => currentIndex + d)
+      .filter((i) => i >= 0 && i < activeReels.length);
+    prefetchVideos(order.map((i) => activeReels[i].videoUrl), { priority: true });
+  }, [isOpen, currentIndex, activeReels]);
+
   // Jump to initial dish if specified
   useEffect(() => {
     if (isOpen && initialDishId && activeReels.length > 0) {
@@ -1144,7 +1155,7 @@ export default function FoodReelsModal({
                     playsInline
                     loop
                     muted={isMuted}
-                    preload={index >= currentIndex - 1 && index <= currentIndex + 3 ? 'auto' : 'none'}
+                    preload={Math.abs(index - currentIndex) <= 2 ? 'auto' : 'none'}
                     className={`reel-video ${isCurrentSlide && showIngredients ? 'is-blurred' : ''}`}
                   />
 

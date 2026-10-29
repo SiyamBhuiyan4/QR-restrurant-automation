@@ -43,6 +43,25 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
         runtimeCaching: [
           {
+            // Menu & reel videos (same-origin /videos/* and /api/tg/* Telegram links). The page
+            // downloads them whole into this cache (src/utils/videoCache.js); the worker then
+            // serves the <video> element's byte ranges from the phone instead of the network.
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && /\.(?:mp4|webm|mov|m4v)$/i.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'menu-videos',
+              rangeRequests: true,
+              cacheableResponse: {
+                statuses: [200],
+              },
+              expiration: {
+                maxEntries: 80,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+                purgeOnQuotaError: true,
+              },
+            },
+          },
+          {
             // Cache static media and font assets with CacheFirst strategy
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico|woff|woff2)$/i,
             handler: 'CacheFirst',

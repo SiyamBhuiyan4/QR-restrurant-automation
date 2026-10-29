@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { startVisibleVideos } from '../utils/visibleVideos';
+import { startCardReveal } from '../utils/cardReveal';
 import { 
   Plus, 
   Minus, 
@@ -32,6 +33,8 @@ const thumb = (url) => (typeof url === 'string' && url.includes('images.unsplash
 
 // Dish videos play only while on screen (see utils/visibleVideos.js)
 startVisibleVideos();
+// Cards glide in as they scroll into view (see utils/cardReveal.js)
+startCardReveal();
 
 // Reads the OS "reduce motion" preference; guarded so it is safe outside the browser
 const prefersReducedMotion = () =>

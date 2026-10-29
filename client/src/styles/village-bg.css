@@ -1,5 +1,6 @@
 /* Village background behind the customer menu (see VillageBackground.jsx).
-   Only transform/opacity animate; everything else is drawn once. */
+   A still scene: drawn once on its own GPU layer and never repainted. The keyframes
+   below are kept for reference but switched off at the end of this file. */
 
 .vb-root {
   position: fixed;
@@ -9,6 +10,8 @@
   background: #081d29;
   overflow: hidden;
   contain: strict;
+  transform: translateZ(0);
+  will-change: transform;
 }
 .vb-svg {
   width: 100%;
@@ -148,4 +151,14 @@
   .vb-kash-left { translate: 370px 0; }
   .vb-kash-right { translate: -360px 0; }
   .vb-sunwrap { translate: -130px 0; }
+}
+
+/* Still scene: no motion at all (every animation repaints the whole full-screen SVG) */
+.vb-root,
+.vb-root * {
+  animation: none !important;
+}
+.vb-seed { opacity: 0.6; }
+@media (pointer: coarse), (max-width: 640px) {
+  .vb-seed { opacity: 0; }
 }

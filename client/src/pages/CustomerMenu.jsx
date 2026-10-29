@@ -3,6 +3,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
 import { permanentMediaUrl } from '../utils/mediaUrl.js';
+import { prefetchVideos } from '../utils/videoCache.js';
 import { useRestaurant } from '../context/RestaurantContext';
 import { getCachedMenu } from '../db/indexedDb.js';
 import Navbar from '../components/Navbar';
@@ -1829,6 +1830,20 @@ export default function CustomerMenu({
     return DEFAULT_MENU_ITEMS;
   }, [storedMenuItems, propMenuItems, convexFormattedItems]);
 
+  // Download every menu video to the phone once, in the background after the menu is up,
+  // so cards (and reels) play from the device instead of streaming (see utils/videoCache.js)
+  useEffect(() => {
+    if (!Array.isArray(allMenuItems) || allMenuItems.length === 0) return undefined;
+    const urls = allMenuItems.map((item) => item.videoUrl || item.making_video_url || item.makingVideoUrl);
+    const start = () => prefetchVideos(urls);
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(start, { timeout: 3000 });
+      return () => window.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(start, 1500);
+    return () => clearTimeout(t);
+  }, [allMenuItems]);
+
   // Filtered menu items
   const filteredItems = useMemo(() => {
     return allMenuItems.filter((dish) => {
@@ -1963,35 +1978,59 @@ export default function CustomerMenu({
     return () => observer.disconnect();
   }, [categorizedSections, selectedCategory, filteredItems.length]);
 
-  // Scroll spy to highlight active CategoryBar pill when in 'All' mode
+  // Scroll spy to highlight active CategoryBar pill when in 'All' mode.
+  // Section positions are measured once (and on resize), and the check runs at most once per
+  // frame, so scrolling never forces the browser to re-measure the page.
   useEffect(() => {
-    if (selectedCategory !== 'All') return;
+    if (selectedCategory !== 'All') return undefined;
 
-    const handleScroll = () => {
-      const scrollPos = window.scrollY + 180;
+    let bounds = [];
+    let frame = 0;
+    let last = null;
+    const measure = () => {
+      bounds = categorizedSections
+        .map((section) => {
+          const el = document.getElementById(`cat-section-${section.categoryKey}`);
+          if (!el) return null;
+          const top = el.getBoundingClientRect().top + window.scrollY;
+          return { id: section.canonicalId, top, bottom: top + el.offsetHeight };
+        })
+        .filter(Boolean);
+    };
+    const update = () => {
+      frame = 0;
+      const y = window.scrollY;
       let currentId = 'All';
-
-      for (const section of categorizedSections) {
-        const el = document.getElementById(`cat-section-${section.categoryKey}`);
-        if (el) {
-          const top = el.offsetTop;
-          const height = el.offsetHeight;
-          if (scrollPos >= top && scrollPos < top + height) {
-            currentId = section.canonicalId;
-            break;
-          }
-        }
+      if (y >= 220) {
+        const pos = y + 180;
+        const hit = bounds.find((b) => pos >= b.top && pos < b.bottom);
+        if (hit) currentId = hit.id;
       }
-
-      if (window.scrollY < 220) {
-        currentId = 'All';
+      if (currentId !== last) {
+        last = currentId;
+        setActiveScrollCategory(currentId);
       }
-
-      setActiveScrollCategory(currentId);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    const onResize = () => {
+      measure();
+      onScroll();
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    measure();
+    update();
+    // Images/videos can change section heights after load; re-measure once things settle
+    const settle = setTimeout(onResize, 1500);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+    return () => {
+      clearTimeout(settle);
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+    };
   }, [selectedCategory, categorizedSections]);
 
   // Smooth scroll or cleanly filter when CategoryBar pills are clicked
@@ -2097,7 +2136,7 @@ export default function CustomerMenu({
       style={{ overflowX: 'clip' }}
     >
       {/* Village at dusk: trees, grazing cow, kash flowers in the wind (light SVG + CSS) */}
-      <VillageBackground paused={isReelsOpen} />
+      <VillageBackground />
 
       {/* Menu stage: slides out sideways when Reels open, and back in when they close */}
       <div

@@ -1,6 +1,6 @@
 /**
- * Plays every <video data-play-when-visible> that is on screen (or about to be) and pauses
- * it once it is well off screen. Paired with preload="none", videos nobody can see are
+ * Plays every <video data-play-when-visible> that is on screen and pauses it once it
+ * scrolls away. Paired with preload="none", videos nobody can see are
  * neither downloaded nor decoded. One shared IntersectionObserver; a MutationObserver picks
  * up videos added later.
  */
@@ -25,8 +25,8 @@ export function startVisibleVideos() {
         }
       }
     },
-    // Start a little before a card scrolls in, so it is already playing when it appears
-    { rootMargin: '300px 0px', threshold: 0 }
+    // Only cards actually on screen play (the files are already on the phone, see videoCache.js)
+    { rootMargin: '0px', threshold: 0.15 }
   );
 
   const watched = new WeakSet();

@@ -1,14 +1,13 @@
-import { useEffect, useRef } from 'react';
 import '../styles/village-bg.css';
 
 /**
  * VillageBackground: a calm Bengal village at dusk behind the customer menu.
- * Palm and banyan trees, a cow grazing, kash flowers and wildflowers swaying in the
- * wind, kash seeds drifting across, a few birds.
+ * Palm and banyan trees, a cow grazing, kash flowers and wildflowers, kash seeds and
+ * a few birds.
  *
- * Light by design: one inline SVG drawn once; only a handful of groups animate, and
- * only with CSS transform/opacity. Animations pause while the page scrolls, when the
- * tab is hidden, and for people who prefer reduced motion.
+ * A still picture: one inline SVG drawn once on its own GPU layer, so scrolling and
+ * everything on top of it never make it repaint. (The motion was removed to keep the
+ * menu smooth on phones.)
  */
 
 // Kash clumps: x position, base y, scale, sway delay (s)
@@ -71,60 +70,9 @@ function KashClump({ x, y, s, delay }) {
   );
 }
 
-export default function VillageBackground({ paused = false }) {
-  const rootRef = useRef(null);
-
-  // Depth: pointer (desktop) or phone tilt (where allowed without a prompt) nudges the
-  // camera; nearer layers move more. Updates are batched to one per animation frame.
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
-    let tx = 0, ty = 0, frame = 0;
-    const apply = () => {
-      frame = 0;
-      root.style.setProperty('--vb-x', tx.toFixed(3));
-      root.style.setProperty('--vb-y', ty.toFixed(3));
-    };
-    const queue = () => { if (!frame) frame = requestAnimationFrame(apply); };
-    const onPointer = (e) => {
-      tx = (e.clientX / window.innerWidth) * 2 - 1;
-      ty = (e.clientY / window.innerHeight) * 2 - 1;
-      queue();
-    };
-    const onTilt = (e) => {
-      if (e.gamma == null || e.beta == null) return;
-      tx = Math.max(-1, Math.min(1, e.gamma / 25));
-      ty = Math.max(-1, Math.min(1, (e.beta - 45) / 25));
-      queue();
-    };
-    window.addEventListener('pointermove', onPointer, { passive: true });
-    window.addEventListener('deviceorientation', onTilt, { passive: true });
-    return () => {
-      window.removeEventListener('pointermove', onPointer);
-      window.removeEventListener('deviceorientation', onTilt);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, []);
-
-  // Pause all animation while scrolling (the menu is what people look at then)
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return undefined;
-    let timer = 0;
-    const onScroll = () => {
-      root.classList.add('is-still');
-      clearTimeout(timer);
-      timer = setTimeout(() => root.classList.remove('is-still'), 200);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
-    return () => {
-      window.removeEventListener('scroll', onScroll, { capture: true });
-      clearTimeout(timer);
-    };
-  }, []);
-
+export default function VillageBackground() {
   return (
-    <div ref={rootRef} className={`vb-root${paused ? ' is-paused' : ''}`} aria-hidden="true">
+    <div className="vb-root" aria-hidden="true">
       <svg className="vb-svg" viewBox="0 0 1200 860" preserveAspectRatio="xMidYMax slice">
         <defs>
           <linearGradient id="vb-sky" x1="0" y1="0" x2="0" y2="1">
