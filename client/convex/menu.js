@@ -213,7 +213,7 @@ export const seedMenu = mutation({
       categoryMap[cat.slug] = id;
     }
 
-    const defaultVideoReel = "/videos/reel-chef.mp4";
+    const defaultVideoReel = "/videos/reel-chef-480.mp4";
 
     const defaultItems = [
       {
@@ -380,7 +380,7 @@ export const repairMediaUrls = mutation({
     for (const item of items) {
       if (!item.makingVideoUrl || item.makingVideoUrl.includes("mixkit.co")) {
         await ctx.db.patch(item._id, {
-          makingVideoUrl: "/videos/reel-chef.mp4",
+          makingVideoUrl: "/videos/reel-chef-480.mp4",
         });
         updatedCount++;
       }

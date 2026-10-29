@@ -12,8 +12,12 @@ const CONVEX_TG_RE = /^https:\/\/[^/]+\.convex\.site\/telegram-media\/([A-Za-z0-
 
 export const telegramMediaUrl = (fileId, ext) => `${MEDIA_BASE}/api/tg/${fileId}.${ext}`;
 
+// The bundled demo video moved to a lighter 480p file; menus saved on phones still hold the old link
+const LEGACY_DEMO_VIDEO_RE = /\/videos\/reel-chef\.mp4$/;
+
 export function permanentMediaUrl(url) {
   if (typeof url !== 'string') return url;
+  if (LEGACY_DEMO_VIDEO_RE.test(url)) return url.replace(LEGACY_DEMO_VIDEO_RE, '/videos/reel-chef-480.mp4');
   const m = url.match(CONVEX_TG_RE);
   return m ? telegramMediaUrl(m[1], m[2].toLowerCase()) : url;
 }
