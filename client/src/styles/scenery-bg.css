@@ -12,47 +12,56 @@
   transform: translateZ(0);
 }
 
-.scenery-bg__img {
+/* Blurred copy of the photo filling the rest of the screen (a tiny pre-blurred file,
+   stretched, so there is no live blur filter to render) */
+.scenery-bg__fill {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  /* Phones (portrait): the full scene, a little below centre so the bridge sits mid-screen */
-  object-position: 50% 55%;
+  inset: -4%;
+  background-size: cover;
+  background-position: center;
+  filter: saturate(1.15) brightness(0.62);
 }
 
-/* Darker at the top (header) and bottom (cart bar), lighter through the middle so the
-   scene shows; a gentle vignette keeps the eye on the menu cards */
+/* The full photo, never cropped: as big as fits, centred */
+.scenery-bg__img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+  box-shadow: 0 0 80px 30px rgba(3, 14, 20, 0.45);
+}
+
+/* Darker behind the header and the bottom bar, light over the photo itself */
 .scenery-bg__shade {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(3, 14, 20, 0.45) 100%),
-    linear-gradient(
-      to bottom,
-      rgba(3, 14, 20, 0.62) 0%,
-      rgba(3, 14, 20, 0.28) 22%,
-      rgba(3, 14, 20, 0.22) 55%,
-      rgba(3, 14, 20, 0.55) 100%
-    );
+  background: linear-gradient(
+    to bottom,
+    rgba(3, 14, 20, 0.55) 0%,
+    rgba(3, 14, 20, 0.18) 18%,
+    rgba(3, 14, 20, 0.12) 60%,
+    rgba(3, 14, 20, 0.45) 100%
+  );
 }
 
-/* Wide screens: a landscape slice with the mountains, lake and old town; a touch more shade
-   since the slice is mostly busy rooftops behind the headings */
-@media (min-aspect-ratio: 1/1) {
-  .scenery-bg__img {
-    object-position: 50% 24%;
-  }
-  .scenery-bg__shade {
-    background:
-      radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(3, 14, 20, 0.5) 100%),
-      linear-gradient(
-        to bottom,
-        rgba(3, 14, 20, 0.55) 0%,
-        rgba(3, 14, 20, 0.32) 25%,
-        rgba(3, 14, 20, 0.36) 60%,
-        rgba(3, 14, 20, 0.6) 100%
-      );
-  }
+/* Light theme: dark text sits on the photo, so a soft cream veil instead of the dark shade */
+[data-theme="light"] .scenery-bg__fill {
+  filter: saturate(1.05) brightness(1.05);
+}
+[data-theme="light"] .scenery-bg__img {
+  box-shadow: 0 0 80px 30px rgba(247, 243, 232, 0.5);
+}
+[data-theme="light"] .scenery-bg__shade {
+  background: linear-gradient(
+    to bottom,
+    rgba(247, 243, 232, 0.78) 0%,
+    rgba(247, 243, 232, 0.55) 25%,
+    rgba(247, 243, 232, 0.5) 60%,
+    rgba(247, 243, 232, 0.7) 100%
+  );
 }
