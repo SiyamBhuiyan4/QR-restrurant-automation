@@ -10,9 +10,22 @@ export function startVisibleVideos() {
   if (started || typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
   started = true;
 
-  // Phones choke when several videos decode at once, so only the few most-visible cards play.
-  const MAX_PLAYING = 2;
+  // Phones choke when several videos decode at once, so only the most-visible card plays there
+  // (two on larger screens), and none on data-saver or slow connections (the photo shows instead).
+  const conn = navigator.connection || {};
+  const lowData = conn.saveData === true || /(^|-)2g|3g/.test(conn.effectiveType || '');
+  const isPhone = window.matchMedia?.('(pointer: coarse), (max-width: 640px)').matches;
+  const MAX_PLAYING = lowData ? 0 : isPhone ? 1 : 2;
   const ratios = new Map();
+
+  // Wait until scrolling settles before starting videos, so flinging through the menu stays light
+  let scrolling = false;
+  let scrollTimer = 0;
+  window.addEventListener('scroll', () => {
+    scrolling = true;
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => { scrolling = false; refresh(); }, 180);
+  }, { passive: true, capture: true });
 
   const refresh = () => {
     const ranked = [...ratios.entries()]
@@ -28,6 +41,7 @@ export function startVisibleVideos() {
         video.pause();
       }
     }
+    if (scrolling) return;
     for (const video of ranked) {
       if (video.preload === 'none') video.preload = 'auto';
       if (video.paused) {

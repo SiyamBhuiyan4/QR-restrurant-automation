@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
@@ -6,10 +6,16 @@ import { useRestaurant } from '../context/RestaurantContext';
 import { getCachedMenu } from '../db/indexedDb.js';
 import Navbar from '../components/Navbar';
 import CategoryBar from '../components/CategoryBar';
-import CartDrawer from '../components/CartDrawer';
-import FoodDetailModal from '../components/FoodDetailModal';
-import FoodReelsModal from '../components/FoodReelsModal';
 import GuestChat from '../components/GuestChat';
+
+// Heavy overlays load right after the menu is on screen (the service worker then keeps them),
+// so the first paint only carries what the menu itself needs.
+const loadCartDrawer = () => import('../components/CartDrawer');
+const loadFoodDetailModal = () => import('../components/FoodDetailModal');
+const loadFoodReelsModal = () => import('../components/FoodReelsModal');
+const CartDrawer = lazy(loadCartDrawer);
+const FoodDetailModal = lazy(loadFoodDetailModal);
+const FoodReelsModal = lazy(loadFoodReelsModal);
 import VillageBackground from '../components/VillageBackground';
 import MenuItemCard from '../components/MenuItemCard';
 import '../styles/customer-hero.css';
@@ -909,6 +915,19 @@ export default function CustomerMenu({
   const [swipeDir, setSwipeDir] = useState('left');
   const [menuEnterDir, setMenuEnterDir] = useState(null);
   const lastReelsToggleTime = useRef(0);
+
+  // Overlays (cart, dish details, reels) mount once the browser is idle after the menu shows,
+  // or immediately if the customer opens one first.
+  const [overlaysReady, setOverlaysReady] = useState(false);
+  useEffect(() => {
+    const ready = () => setOverlaysReady(true);
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(ready, { timeout: 2500 });
+      return () => window.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(ready, 1200);
+    return () => clearTimeout(t);
+  }, []);
 
   const openReels = useCallback((dir = 'left', dishId = null) => {
     lastReelsToggleTime.current = Date.now();
@@ -2064,6 +2083,13 @@ export default function CustomerMenu({
     setIsCartOpen(false);
   };
 
+  const anyOverlayOpen = isReelsOpen || isCartOpen || !!selectedDishModal;
+  // Once mounted, overlays stay mounted (keeps their exit animations and state)
+  useEffect(() => {
+    if (anyOverlayOpen) setOverlaysReady(true);
+  }, [anyOverlayOpen]);
+  const showOverlays = overlaysReady || anyOverlayOpen;
+
   return (
     <div 
       className="min-h-screen bg-transparent text-slate-100 pb-32 selection:bg-[#0284c7] selection:text-white relative"
@@ -2584,6 +2610,8 @@ export default function CustomerMenu({
       {/* Guest chat with the restaurant (table staff + manager) */}
       <GuestChat tableNumber={tableNumber} raised={cartSummary.totalCount > 0} hidden={isCartOpen || !!selectedDishModal} />
 
+      {showOverlays && (
+      <Suspense fallback={null}>
       {/* Cart & Voice Customization Drawer */}
       <CartDrawer
         isOpen={isCartOpen}
@@ -2664,6 +2692,8 @@ export default function CustomerMenu({
           showToast(`Added ${item.name || item.title} to order! 🌟`);
         }}
       />
+      </Suspense>
+      )}
 
       {/* Table Selection Modal (Dark Noir Glass Theme) */}
       {isTableModalOpen && (

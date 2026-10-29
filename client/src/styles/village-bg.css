@@ -105,6 +105,13 @@
   .vb-seed { opacity: 0.6; }
 }
 
+/* Phones: keep the sky, trees, birds and cow moving, but rest the many small seeds and kash
+   blades (each one repaints the whole scene every frame) */
+@media (pointer: coarse), (max-width: 640px) {
+  .vb-seed { animation: none; opacity: 0; }
+  .vb-sway--kash { animation: none; }
+}
+
 /* ---------------------------------------------------------------------------
    Depth (2.5D parallax). Each layer shifts by its depth:
    - transform: camera offset from pointer / phone tilt (--vb-x, --vb-y in -1..1)
