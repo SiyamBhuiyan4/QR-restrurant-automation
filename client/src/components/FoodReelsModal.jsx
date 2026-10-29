@@ -627,7 +627,7 @@ export default function FoodReelsModal({
   const wheelLockedRef = useRef(false);
 
   const scrollAnimRef = useRef(0);
-  const lastWheelTimeRef = useRef(0);
+  const wheelGestureRef = useRef({ sum: 0, lastTime: 0, lastMag: 0, locked: false, firedAt: 0 });
 
   // Glide to a reel with an eased rAF animation. Snap is switched off while gliding so the
   // browser's own snapping can't fight the animation, then restored once it lands.
@@ -794,18 +794,31 @@ export default function FoodReelsModal({
       return;
     }
 
-    // Vertical reel scroll: one flick = one reel. Trackpad momentum keeps sending wheel events
-    // for a while, so the next reel is only allowed after the wheel has gone quiet.
+    // Vertical reel scroll: one swipe = one reel.
+    // - A gentle trackpad swipe sends many small steps, so steps add up until ~50px.
+    // - After a flick the trackpad keeps "coasting" (momentum events that only get smaller), so
+    //   further reels are blocked until the wheel goes quiet OR the speed rises again, which
+    //   means a fresh swipe has started.
+    if (absY < absX) return;
     const now = Date.now();
-    const quietFor = now - lastWheelTimeRef.current;
-    lastWheelTimeRef.current = now;
-    if (absY < 4 || absY < absX) return;
-    if (quietFor < 220 && wheelLockedRef.current) return;
-    if (absY > 12 && !scrollAnimRef.current) {
-      wheelLockedRef.current = true;
-      scrollToReel(currentIndex + (e.deltaY > 0 ? 1 : -1));
-    } else if (quietFor >= 220) {
-      wheelLockedRef.current = false;
+    const w = wheelGestureRef.current;
+    const quietFor = now - w.lastTime;
+    const dir = Math.sign(e.deltaY);
+    const freshSwipe = w.locked && now - w.firedAt > 250 && absY > w.lastMag * 1.6 + 4;
+    if (quietFor > 180 || freshSwipe) {
+      w.locked = false;
+      w.sum = 0;
+    }
+    if (dir !== Math.sign(w.sum)) w.sum = 0;
+    w.lastTime = now;
+    w.lastMag = absY;
+    if (w.locked || !dir) return;
+    w.sum += e.deltaY;
+    if (Math.abs(w.sum) >= 50) {
+      w.locked = true;
+      w.firedAt = now;
+      w.sum = 0;
+      scrollToReel(currentIndex + dir);
     }
   }, [showComments, showIngredients, currentIndex, scrollToReel, handleSmoothClose]);
 
