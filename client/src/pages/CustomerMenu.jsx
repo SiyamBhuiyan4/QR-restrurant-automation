@@ -903,6 +903,7 @@ export default function CustomerMenu({
   const [showSwipeTutorial, setShowSwipeTutorial] = useState(false);
   const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
   const mouseStartRef = useRef({ x: 0, y: 0, isDown: false });
+  const lastReelsToggleTime = useRef(0);
 
   // ── Global Horizontal Gesture & Trackpad Swipe Listener (To Open Food Reels) ──
   useEffect(() => {
@@ -917,6 +918,8 @@ export default function CustomerMenu({
     // 1. Laptop Trackpad (2-finger / 3-finger horizontal swipe produces wheel events with deltaX)
     const handleGlobalWheel = (e) => {
       if (isReelsOpen || isGestureLocked) return;
+      // Cooldown after closing reels to prevent residual momentum from immediately re-opening
+      if (Date.now() - lastReelsToggleTime.current < 750) return;
 
       const target = e.target;
       if (target && target.closest && (
@@ -932,8 +935,9 @@ export default function CustomerMenu({
       const absY = Math.abs(e.deltaY);
 
       // Horizontal trackpad gesture detection: horizontal delta dominant over vertical delta
-      if (absX > 25 && absX > absY * 1.1) {
+      if (absX > 28 && absX > absY * 1.2) {
         isGestureLocked = true;
+        lastReelsToggleTime.current = Date.now();
         setIsReelsOpen(true);
         setTimeout(() => {
           isGestureLocked = false;
@@ -2602,6 +2606,7 @@ export default function CustomerMenu({
       <FoodReelsModal
         isOpen={isReelsOpen}
         onClose={() => {
+          lastReelsToggleTime.current = Date.now();
           setIsReelsOpen(false);
           setReelsInitialDishId(null);
         }}

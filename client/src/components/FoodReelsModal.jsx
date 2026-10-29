@@ -29,7 +29,6 @@ import {
   Trash2
 } from 'lucide-react';
 import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
-import VillageBackground from './VillageBackground';
 import '../styles/food-reels.css';
 
 // Curated high-res streaming demo food reels if dishes don't have custom videos
@@ -461,46 +460,30 @@ export default function FoodReelsModal({
   // Swipe Left Tutorial Pill when Reels opens
   const [showBackTutorial, setShowBackTutorial] = useState(false);
 
-  // Ultra-Smooth 2-Way Horizontal Slide & Swap Physics State
-  const [shouldRender, setShouldRender] = useState(isOpen);
-  const [slideState, setSlideState] = useState(isOpen ? 'entered' : 'closed');
-  const isClosingRef = useRef(false);
-
-  const triggerClose = useCallback((direction = 'left') => {
-    if (isClosingRef.current) return;
-    isClosingRef.current = true;
-    setSlideState(direction === 'left' ? 'exiting-left' : 'exiting-right');
-    setTimeout(() => {
-      setShouldRender(false);
-      setSlideState('closed');
-      isClosingRef.current = false;
-      onClose();
-    }, 420);
-  }, [onClose]);
+  // Smooth exit state & opening momentum protection
+  const [isExiting, setIsExiting] = useState(false);
+  const mountTimeRef = useRef(0);
 
   useEffect(() => {
     if (isOpen) {
-      isClosingRef.current = false;
-      setShouldRender(true);
-      setSlideState('entering');
-      const frame = requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setSlideState('entered');
-        });
-      });
-      return () => cancelAnimationFrame(frame);
-    } else if (shouldRender && !isClosingRef.current) {
-      triggerClose('right');
-    }
-  }, [isOpen, shouldRender, triggerClose]);
-
-  useEffect(() => {
-    if (isOpen) {
+      setIsExiting(false);
+      mountTimeRef.current = Date.now();
       setShowBackTutorial(true);
       const timer = setTimeout(() => setShowBackTutorial(false), 3500);
       return () => clearTimeout(timer);
+    } else {
+      setIsExiting(false);
     }
   }, [isOpen]);
+
+  const handleSmoothClose = useCallback(() => {
+    if (isExiting) return;
+    setIsExiting(true);
+    setTimeout(() => {
+      setIsExiting(false);
+      onClose();
+    }, 320);
+  }, [isExiting, onClose]);
 
   // Facebook-Style 2-Line Caption Expand / Scroll State
   const [expandedCaptions, setExpandedCaptions] = useState({});
@@ -703,14 +686,15 @@ export default function FoodReelsModal({
     const absX = Math.abs(e.deltaX);
     const absY = Math.abs(e.deltaY);
 
-    // Trackpad horizontal swipe (2 or 3 fingers) -> Ultra-Smooth Exit back to Menu
-    if (absX > 25 && absX > absY * 1.1) {
+    // Trackpad horizontal swipe:
+    // Only detect if at least 700ms have passed since opening, so momentum from opening swipe doesn't immediately close reels!
+    if (Date.now() - mountTimeRef.current > 700 && absX > 28 && absX > absY * 1.2) {
       if (!wheelLockedRef.current) {
         wheelLockedRef.current = true;
-        triggerClose(e.deltaX > 0 ? 'left' : 'right');
+        handleSmoothClose();
         setTimeout(() => {
           wheelLockedRef.current = false;
-        }, 600);
+        }, 800);
       }
       return;
     }
@@ -729,7 +713,7 @@ export default function FoodReelsModal({
         }, 400);
       }
     }
-  }, [showComments, showIngredients, currentIndex, scrollToReel, triggerClose]);
+  }, [showComments, showIngredients, currentIndex, scrollToReel, handleSmoothClose]);
 
   // Global window listeners for wheel, touch swipe-left, and mouse drag while Food Reels is open
   useEffect(() => {
@@ -754,14 +738,13 @@ export default function FoodReelsModal({
 
     const onTouchEnd = (e) => {
       if (showComments || showIngredients) return;
+      if (Date.now() - mountTimeRef.current < 400) return;
       if (e.changedTouches && e.changedTouches[0]) {
         const deltaX = e.changedTouches[0].clientX - touchStartX;
         const deltaY = e.changedTouches[0].clientY - touchStartY;
-        // Swipe left (customer swipes left or right to return to menu)
+        // Swipe left -> Smoothly close and return to menu
         if (deltaX < -45 && Math.abs(deltaY) < 120) {
-          triggerClose('left');
-        } else if (deltaX > 80 && Math.abs(deltaY) < 120) {
-          triggerClose('right');
+          handleSmoothClose();
         }
       }
     };
@@ -782,11 +765,10 @@ export default function FoodReelsModal({
     const onMouseUp = (e) => {
       if (!isMouseDown || showComments || showIngredients) return;
       isMouseDown = false;
+      if (Date.now() - mountTimeRef.current < 400) return;
       const deltaX = e.clientX - mouseStartX;
       if (deltaX < -55) {
-        triggerClose('left');
-      } else if (deltaX > 75) {
-        triggerClose('right');
+        handleSmoothClose();
       }
     };
 
@@ -803,20 +785,16 @@ export default function FoodReelsModal({
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
     };
-  }, [isOpen, handleWheel, showComments, showIngredients, triggerClose]);
+  }, [isOpen, handleWheel, showComments, showIngredients, handleSmoothClose]);
 
   // Keyboard navigation (ArrowDown / ArrowUp / ArrowLeft / Space / Mute / Escape)
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
-      if (e.key === 'ArrowLeft') {
+      if (e.key === 'ArrowLeft' || e.key === 'Escape') {
         if (showIngredients) setShowIngredients(false);
         else if (showComments) setShowComments(false);
-        else triggerClose('left');
-      } else if (e.key === 'Escape') {
-        if (showIngredients) setShowIngredients(false);
-        else if (showComments) setShowComments(false);
-        else triggerClose('right');
+        else handleSmoothClose();
       } else if (e.key === 'ArrowDown' || e.key === 'j') {
         e.preventDefault();
         scrollToReel(currentIndex + 1);
@@ -832,7 +810,7 @@ export default function FoodReelsModal({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, showIngredients, showComments, currentIndex, scrollToReel, triggerClose]);
+  }, [isOpen, showIngredients, showComments, currentIndex, scrollToReel, handleSmoothClose]);
 
   // Toggle Play / Pause on video tap
   const togglePlayPause = (idx) => {
@@ -971,7 +949,7 @@ export default function FoodReelsModal({
     }, 2000);
   };
 
-  if (!shouldRender) return null;
+  if (!isOpen && !isExiting) return null;
 
   // Active reel specific states
   const currentReelKey = String(currentReel.dishId || currentReel.id);
@@ -979,25 +957,12 @@ export default function FoodReelsModal({
   const activeComments = commentsMap[currentReelKey] || currentReel.initialComments || [];
 
   return (
-    <div className={`reels-modal-overlay bg-[#0a0a0f]/75 backdrop-blur-md p-0 sm:p-3 select-none ${
-      slideState === 'entering' ? 'is-entering' : slideState === 'entered' ? 'is-entered' : 'is-exiting'
-    }`}>
-      {/* ── Same Village Background as Customer Menu ── */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-90">
-        <VillageBackground />
-      </div>
-
-      {/* ── 9:16 Canvas Phone Frame with ultra-smooth 2-way swap physics ── */}
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-0 sm:p-3 select-none animate-fadeIn">
+      {/* 9:16 Canvas Phone Frame with silky hardware-accelerated slide swap physics */}
       <div 
         onWheel={handleWheel}
-        className={`reels-slide-panel relative z-10 w-full h-full sm:max-w-[425px] sm:h-[94vh] sm:max-h-[880px] sm:rounded-3xl overflow-hidden bg-black shadow-2xl border-0 sm:border sm:border-white/15 flex flex-col ${
-          slideState === 'entering' 
-            ? 'is-entering' 
-            : slideState === 'entered' 
-              ? 'is-entered' 
-              : slideState === 'exiting-left' 
-                ? 'is-exiting-left' 
-                : 'is-exiting-right'
+        className={`relative z-10 w-full h-full sm:max-w-[425px] sm:h-[94vh] sm:max-h-[880px] sm:rounded-3xl overflow-hidden bg-black shadow-2xl border-0 sm:border sm:border-white/15 flex flex-col ${
+          isExiting ? 'animate-reel-slide-out' : 'animate-reel-slide-in'
         }`}
       >
         
@@ -1007,7 +972,7 @@ export default function FoodReelsModal({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => triggerClose('left')}
+              onClick={handleSmoothClose}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white transition hover:bg-white/25 active:scale-95 cursor-pointer shadow-lg text-xs font-bold"
               title="Swipe left or click to return to Food Menu"
             >
@@ -1042,7 +1007,7 @@ export default function FoodReelsModal({
             {/* Close Button */}
             <button
               type="button"
-              onClick={() => triggerClose('right')}
+              onClick={handleSmoothClose}
               className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-white/20 hover:scale-105 active:scale-95 cursor-pointer shadow-lg"
               title="Close Food Reels (or Swipe Left)"
             >
