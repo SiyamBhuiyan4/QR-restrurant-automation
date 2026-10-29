@@ -12,20 +12,19 @@ const CONVEX_TG_RE = /^https:\/\/[^/]+\.convex\.site\/telegram-media\/([A-Za-z0-
 
 export const telegramMediaUrl = (fileId, ext) => `${MEDIA_BASE}/api/tg/${fileId}.${ext}`;
 
-// The bundled demo video moved to a lighter 480p file; menus saved on phones still hold the old link
-const LEGACY_DEMO_VIDEO_RE = /\/videos\/reel-chef\.mp4$/;
+// Every earlier copy of the bundled demo video (reel-chef.mp4 and its 480p / 360p versions) is
+// now the one 360p demo clip; menus saved on phones or in the database still hold the old links
+const OLD_DEMO_VIDEO_RE = /\/videos\/reel-chef(?:-480|-360)?\.mp4$/;
+const DEMO_VIDEO = '/videos/demo-dish-360.mp4';
 
-// Menu cards are small and always muted, so they play a lighter 360p copy of the bundled demo
-// video; Reels and dish details keep the 480p one. Other videos are used as they are.
-const DEMO_VIDEO_480_RE = /\/videos\/reel-chef-480\.mp4$/;
+// Menu cards play the same file as Reels and dish details (the demo clip is already 360p)
 export function cardVideoUrl(url) {
-  if (typeof url !== 'string') return url;
-  return permanentMediaUrl(url).replace(DEMO_VIDEO_480_RE, '/videos/reel-chef-360.mp4');
+  return permanentMediaUrl(url);
 }
 
 export function permanentMediaUrl(url) {
   if (typeof url !== 'string') return url;
-  if (LEGACY_DEMO_VIDEO_RE.test(url)) return url.replace(LEGACY_DEMO_VIDEO_RE, '/videos/reel-chef-480.mp4');
+  if (OLD_DEMO_VIDEO_RE.test(url)) return url.replace(OLD_DEMO_VIDEO_RE, DEMO_VIDEO);
   const m = url.match(CONVEX_TG_RE);
   return m ? telegramMediaUrl(m[1], m[2].toLowerCase()) : url;
 }

@@ -62,16 +62,16 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: true,
     isPopular: true,
     prepTime: '15 min',
-    image: '/videos/reel-chef-480.mp4',
-    imageUrl: '/videos/reel-chef-480.mp4',
+    image: '/videos/demo-dish-360.mp4',
+    imageUrl: '/videos/demo-dish-360.mp4',
     images: [
       'https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     reel_caption: 'Wok-tossed straight out of the hot peanut oil! 🔥🌶️ Double-dusted crispy organic wings glazed with authentic Minangkabau chili balado, torn kaffir lime leaf, shallot confit, and natural palm sugar.\n\nCrisp on the outside, juicy on the inside with a spicy-tangy kick that builds with every bite!\n\n#SpicyWings #BaladoWings #ChefTanvir #StreetFoodGourmet #CrispyChicken #HotEats',
     ingredients: ['Crispy Farm Wings', 'Authentic Red Balado Paste', 'Kaffir Lime Leaf', 'Shallot Confit', 'Palm Sugar']
   },
@@ -92,9 +92,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Golden Fried Wings', 'Handmade Lemonade Glaze', 'Meyer Lemon Slices', 'Wildflower Honey', 'White Sesame Seeds']
   },
   {
@@ -114,9 +114,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1585109649139-366815a0d713?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Yukon Gold Potatoes', 'White Truffle Oil', 'Aged Reggiano Parmesan', 'Fresh Flat Parsley', 'Sea Salt Flakes', 'Roasted Garlic Aioli']
   },
   {
@@ -135,9 +135,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Farm Fresh Wings', 'Fiery Cayenne Glaze', 'Wisconsin Blue Cheese Dip', 'Crisp Celery Sticks', 'Garlic Butter']
   },
   {
@@ -154,9 +154,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1619535860434-ba1d8fa12536?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Artisanal Sourdough', 'Roasted Garlic Butter', 'Fior di Latte Mozzarella', 'Oregano', 'Virgin Olive Oil']
   },
   {
@@ -172,9 +172,9 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Hand-Rolled Wheat Wrappers', 'Seasoned Chicken Mince', 'Fresh Ginger', 'Spring Onion', 'Chili-Soy Dip']
   },
 
@@ -195,9 +195,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1504973960431-1c467e159aa4?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Prime Angus Ribeye Cut', 'Herb Garlic Confit Butter', 'Rosemary Roasted Baby Potatoes', 'Charred Asparagus', 'Flaky Maldon Salt']
   },
   {
@@ -215,9 +215,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Free-Range Half Chicken', 'African Bird Eye Peri-Peri', 'Smoked Sweet Paprika', 'Charred Key Lime', 'Garlic Herb Glaze']
   },
   {
@@ -234,9 +234,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Wild Atlantic Salmon Fillet', 'Fresh Sautéed Asparagus', 'Heirloom Cherry Tomatoes', 'Saffron Dill Velouté', 'Lemon Zest']
   },
   {
@@ -253,9 +253,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Italian Arborio Rice', 'Dried Porcini & Shiitake Stock', 'White Truffle Essence', 'Aged Pecorino Romano', 'Fresh Thyme']
   },
 
@@ -275,9 +275,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['San Marzano Tomatoes', 'Fresh Buffalo Mozzarella', 'Sweet Genovese Basil', 'Extra Virgin Olive Oil', 'Aged Sea Salt']
   },
   {
@@ -297,9 +297,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Foraged Wild Mushrooms', 'Fontina Cheese', 'Thyme Ricotta', 'Shaved Black Truffle', 'Garlic Confit']
   },
   {
@@ -319,9 +319,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Cup & Char Pepperoni', 'Whole Milk Mozzarella', 'San Marzano Tomato Sauce', 'Calabrian Hot Honey', 'Crushed Red Pepper']
   },
   {
@@ -338,9 +338,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['24-Month Prosciutto di Parma', 'Creamy Burrata', 'Baby Arugula', 'Shaved Parmigiano-Reggiano', 'Aged Modena Balsamic Glaze']
   },
 
@@ -362,9 +362,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Double Angus Beef Patties', 'Melted American Sharp Cheese', 'Slow Caramelized Onions', 'Dill Pickles', 'Signature Truffle Mayo', 'Brioche Bun']
   },
   {
@@ -384,9 +384,9 @@ const DEFAULT_MENU_ITEMS = [
       'https://images.unsplash.com/photo-1521305916504-4a1121188589?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Spiced Angus Beef Patty', 'Grilled Pickled Jalapeños', 'Melted Pepper Jack Cheese', 'Crispy Onion Strings', 'Habanero Lava Aioli']
   },
   {
@@ -402,9 +402,9 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1520072959219-c595dc870360?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['100% Plant-Based Patty', 'Vegan Aged Cheddar', 'Butterhead Lettuce', 'Ripe Vine Tomato', 'Avocado Chimichurri', 'Potato Bun']
   },
 
@@ -425,9 +425,9 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Cuban White Rum', 'Fresh Spearmint', 'Tahitian Lime Wedges', 'Organic Cane Syrup', 'Club Soda']
   },
   {
@@ -446,9 +446,9 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Kentucky Bourbon Whiskey', 'Angostura Bitters', 'Demerara Raw Sugar', 'Flamed Orange Peel', 'Luxardo Cherry']
   },
   {
@@ -467,9 +467,9 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Dark Roast Espresso', 'Single-Estate Vodka', 'Kahlua Coffee Liqueur', 'Vanilla Bean Infusion', 'Whole Coffee Beans']
   },
   {
@@ -487,9 +487,9 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1545438102-799c3991ffb2?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Botanical Dry Gin', 'Mediterranean Tonic', 'Juniper Berries', 'Dehydrated Citrus Wheel', 'Fresh Garden Rosemary']
   },
   {
@@ -508,9 +508,9 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Garden Spearmint', 'Tahitian Fresh Lime', 'Blue Agave Syrup', 'San Pellegrino Sparkling Mineral Water']
   },
   {
@@ -528,9 +528,9 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Ruby Red Grapefruit', 'Blood Orange Juice', 'Meyer Lemon', 'Sprig of Rosemary', 'Pure Cane Sugar']
   },
   {
@@ -547,9 +547,9 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Eureka Fresh Lemons', 'Organic Blue Agave', 'Garden Mint Sprigs', 'Sparkling San Pellegrino', 'Crushed Ice']
   },
   {
@@ -566,9 +566,9 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1536935338788-846bb9981813?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Fresh Cold-Pressed Ginger', 'Key Lime Juice', 'Subtle Bird Chili Kiss', 'Club Soda', 'Raw Turbinado Sugar']
   },
 
@@ -588,9 +588,9 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Valrhona Dark Chocolate', 'Pasture-Raised Eggs', 'Dutch Cocoa Powder', 'Bourbon Crème Anglaise', 'Powdered Confectioner Sugar']
   },
   {
@@ -608,9 +608,9 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['70% Belgian Dark Chocolate', 'European Sweet Butter', 'Madagascar Bourbon Vanilla Gelato', 'Dutch Cocoa Dust', 'Fresh Raspberries']
   },
   {
@@ -627,9 +627,9 @@ const DEFAULT_MENU_ITEMS = [
     images: [
       'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80'
     ],
-    videoUrl: '/videos/reel-chef-480.mp4',
-    makingVideoUrl: '/videos/reel-chef-480.mp4',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    videoUrl: '/videos/demo-dish-360.mp4',
+    makingVideoUrl: '/videos/demo-dish-360.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     ingredients: ['Savoiardi Ladyfingers', 'Italian Mascarpone Cream', 'Single Origin Dark Espresso', 'Marsala Wine Hint', 'Raw Dutch Cocoa Dust']
   }
 ];
@@ -753,7 +753,7 @@ export const normalizeDishItem = (item, defaultCategory = 'Mains') => {
   // Identify if image candidate is actually a 360° video (e.g. uploaded directly as the primary dish media)
   const isExplicitImageVideo = isVideoMediaUrl(explicitImage);
   const resolvedVideo = (!explicitVideo || (typeof explicitVideo === 'string' && explicitVideo.includes('mixkit.co')))
-    ? (isExplicitImageVideo ? explicitImage : (Array.isArray(item.videos) && item.videos[0]) || '/videos/reel-chef-480.mp4')
+    ? (isExplicitImageVideo ? explicitImage : (Array.isArray(item.videos) && item.videos[0]) || '/videos/demo-dish-360.mp4')
     : explicitVideo;
 
   // Primary culinary photo for dish thumbnails and posters
@@ -1814,34 +1814,40 @@ export default function CustomerMenu({
     return () => observer.disconnect();
   }, [categorizedSections, selectedCategory, filteredItems.length]);
 
-  // Scroll spy to highlight active CategoryBar pill when in 'All' mode.
-  // Section positions are measured once (and on resize), and the check runs at most once per
-  // frame, so scrolling never forces the browser to re-measure the page.
+  // The customer scrolling by hand (after a pill tap) hands the highlight back to the scroll spy
+  const RELEASE_EVENTS = ['wheel', 'touchstart', 'keydown', 'mousedown'];
+
+  // Scroll spy: highlight the CategoryBar pill for the section under the sticky bar ('All' mode).
+  // Positions are read live each frame (only a handful of sections), because cards drawn on
+  // demand change section heights while scrolling. While a pill tap is gliding the page, the
+  // spy waits (until the customer scrolls by hand), so the highlight goes straight to the tapped
+  // category instead of hopping through every section on the way.
+  const spyPausedUntilRef = useRef(0);
   useEffect(() => {
     if (selectedCategory !== 'All') return undefined;
 
-    let bounds = [];
+    const sections = categorizedSections.map((section) => {
+      const pill = categoriesList.find((c) => c.id !== 'All' && getCategoryMetadata(c.id).key === section.categoryKey);
+      return { key: section.categoryKey, id: pill ? pill.id : section.canonicalId };
+    });
     let frame = 0;
     let last = null;
-    const measure = () => {
-      bounds = categorizedSections
-        .map((section) => {
-          const el = document.getElementById(`cat-section-${section.categoryKey}`);
-          if (!el) return null;
-          const top = el.getBoundingClientRect().top + window.scrollY;
-          // Report the category bar's own id for this section (its raw category name)
-          const pill = categoriesList.find((c) => c.id !== 'All' && getCategoryMetadata(c.id).key === section.categoryKey);
-          return { id: pill ? pill.id : section.canonicalId, top, bottom: top + el.offsetHeight };
-        })
-        .filter(Boolean);
-    };
     const update = () => {
       frame = 0;
-      const y = window.scrollY;
-      // A section counts once it reaches the area just under the sticky header + categories
-      const pos = y + 170;
-      const hit = bounds.find((b) => pos >= b.top && pos < b.bottom);
-      const currentId = hit ? hit.id : 'All';
+      if (performance.now() < spyPausedUntilRef.current) return;
+      // A section counts once its top passes just below the sticky category bar
+      const bar = document.querySelector('.menu-cat-sticky');
+      const line = (bar ? bar.getBoundingClientRect().bottom : 120) + 24;
+      let currentId = 'All';
+      for (const s of sections) {
+        const el = document.getElementById(`cat-section-${s.key}`);
+        if (el && el.getBoundingClientRect().top <= line) currentId = s.id;
+      }
+      // At the very bottom the last sections can't reach the line: the last one counts
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      if (atBottom && sections.length) currentId = sections[sections.length - 1].id;
+      // At the top of the page nothing has been scrolled to yet
+      if (window.scrollY < 40) currentId = 'All';
       if (currentId !== last) {
         last = currentId;
         setActiveScrollCategory(currentId);
@@ -1850,22 +1856,14 @@ export default function CustomerMenu({
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
     };
-    const onResize = () => {
-      measure();
-      onScroll();
-    };
 
-    measure();
     update();
-    // Images/videos can change section heights after load; re-measure once things settle
-    const settle = setTimeout(onResize, 1500);
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onResize, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
     return () => {
-      clearTimeout(settle);
       if (frame) cancelAnimationFrame(frame);
       window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onResize);
+      window.removeEventListener('resize', onScroll);
     };
   }, [selectedCategory, categorizedSections, categoriesList]);
 
@@ -1886,9 +1884,16 @@ export default function CustomerMenu({
     const sectionEl = document.getElementById(`cat-section-${meta.key}`);
 
     if (selectedCategory === 'All' && sectionEl) {
-      // Smooth scroll directly to that category section
-      sectionEl.scrollIntoView({ behavior: 'smooth' });
+      // Glide to that section; the highlight moves there now and the scroll spy waits until
+      // the glide has finished
       setActiveScrollCategory(catId);
+      spyPausedUntilRef.current = Infinity;
+      const release = () => {
+        spyPausedUntilRef.current = 0;
+        RELEASE_EVENTS.forEach((ev) => window.removeEventListener(ev, release));
+      };
+      RELEASE_EVENTS.forEach((ev) => window.addEventListener(ev, release, { passive: true }));
+      sectionEl.scrollIntoView({ behavior: 'smooth' });
     } else {
       // Cleanly filter to that category
       setSelectedCategory(catId);

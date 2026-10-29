@@ -32,6 +32,7 @@ import {
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import VoiceRecorder from './VoiceRecorder';
+import { permanentMediaUrl } from '../utils/mediaUrl';
 import '../styles/food-detail.css';
 
 /**
@@ -395,8 +396,8 @@ export default function FoodDetailModal({
   const isVideoField = (u) => typeof u === 'string' && (/\.(mp4|webm|mov|ogg|m4v)(\?.*)?$/i.test(u) || u.includes('/videos/') || u.includes('/video/') || u.includes('video_note') || u.includes('sendvideo') || u.includes('video/mp4'));
   const rawVideo = dish?.makingVideoUrl || dish?.making_video_url || dish?.videoUrl || dish?.video_url || (isVideoField(dish?.image) ? dish?.image : null) || (isVideoField(dish?.imageUrl) ? dish?.imageUrl : null);
   const videoUrl = rawVideo && typeof rawVideo === 'string' && !rawVideo.includes('mixkit.co')
-    ? rawVideo
-    : '/videos/reel-chef-480.mp4';
+    ? permanentMediaUrl(rawVideo)
+    : '/videos/demo-dish-360.mp4';
 
   // Sync initial quantity & prefilled author on open
   useEffect(() => {

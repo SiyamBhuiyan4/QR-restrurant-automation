@@ -50,11 +50,11 @@ export const isVideoUrl = (url) => {
 
 // 1-Click 360° Angular Profile Video Preset Clips
 export const PRESET_360_VIDEOS = [
-  { label: '360° Wagyu Smash Burger', url: '/videos/reel-chef-480.mp4' },
-  { label: '360° Sizzling Ribeye Steak', url: '/videos/reel-chef-480.mp4' },
-  { label: '360° Truffle Tagliatelle', url: '/videos/reel-chef-480.mp4' },
-  { label: '360° Molten Lava Dessert', url: '/videos/reel-chef-480.mp4' },
-  { label: '360° Chef Culinary Fire', url: '/videos/reel-chef-480.mp4' }
+  { label: '360° Wagyu Smash Burger', url: '/videos/demo-dish-360.mp4' },
+  { label: '360° Sizzling Ribeye Steak', url: '/videos/demo-dish-360.mp4' },
+  { label: '360° Truffle Tagliatelle', url: '/videos/demo-dish-360.mp4' },
+  { label: '360° Molten Lava Dessert', url: '/videos/demo-dish-360.mp4' },
+  { label: '360° Chef Culinary Fire', url: '/videos/demo-dish-360.mp4' }
 ];
 
 // Initial fallback sample menu in case server is fresh or offline
@@ -67,7 +67,7 @@ const INITIAL_SAMPLE_DISHES = [
     price: 15.99,
     description: 'Brioche bun, grilled portobello, aged gruyere cheese, black truffle aioli, arugula.',
     image_url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
-    making_video_url: '/videos/reel-chef-480.mp4',
+    making_video_url: '/videos/demo-dish-360.mp4',
     is_veg: 1,
     is_spicy: 0,
     is_available: 1
@@ -2058,7 +2058,7 @@ export default function MenuManager({ className = '' }) {
                           type="url"
                           value={formData.making_video_url}
                           onChange={(e) => handleMakingVideoUrlChange(e.target.value)}
-                          placeholder="e.g. /videos/reel-chef-480.mp4 or Telegram video link..."
+                          placeholder="e.g. /videos/demo-dish-360.mp4 or Telegram video link..."
                           className="admin-dark-input w-full font-mono text-xs placeholder-[var(--adm-text-muted)]"
                           style={{
                             backgroundColor: 'var(--adm-surface-2)',
