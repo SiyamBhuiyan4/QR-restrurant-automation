@@ -29,6 +29,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
+import VillageBackground from './VillageBackground';
 import '../styles/food-reels.css';
 
 // Curated high-res streaming demo food reels if dishes don't have custom videos
@@ -457,6 +458,50 @@ export default function FoodReelsModal({
   const [addedSuccess, setAddedSuccess] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
 
+  // Swipe Left Tutorial Pill when Reels opens
+  const [showBackTutorial, setShowBackTutorial] = useState(false);
+
+  // Ultra-Smooth 2-Way Horizontal Slide & Swap Physics State
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [slideState, setSlideState] = useState(isOpen ? 'entered' : 'closed');
+  const isClosingRef = useRef(false);
+
+  const triggerClose = useCallback((direction = 'left') => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    setSlideState(direction === 'left' ? 'exiting-left' : 'exiting-right');
+    setTimeout(() => {
+      setShouldRender(false);
+      setSlideState('closed');
+      isClosingRef.current = false;
+      onClose();
+    }, 420);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      isClosingRef.current = false;
+      setShouldRender(true);
+      setSlideState('entering');
+      const frame = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setSlideState('entered');
+        });
+      });
+      return () => cancelAnimationFrame(frame);
+    } else if (shouldRender && !isClosingRef.current) {
+      triggerClose('right');
+    }
+  }, [isOpen, shouldRender, triggerClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShowBackTutorial(true);
+      const timer = setTimeout(() => setShowBackTutorial(false), 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
   // Facebook-Style 2-Line Caption Expand / Scroll State
   const [expandedCaptions, setExpandedCaptions] = useState({});
 
@@ -649,10 +694,29 @@ export default function FoodReelsModal({
     });
   }, [isMuted]);
 
-  // Mouse wheel scroll with smooth spring snapping (for laptop trackpad & mouse wheel)
-  const handleWheel = (e) => {
+  // Wheel event handler:
+  // - Laptop Trackpad Horizontal Swipe (2 or 3 fingers) -> Smoothly Close Food Reels and return to Food Menu
+  // - Vertical Reel Scroll -> Navigate to Next / Previous Reel
+  const handleWheel = useCallback((e) => {
     if (showComments || showIngredients) return;
-    if (Math.abs(e.deltaY) > 25) {
+
+    const absX = Math.abs(e.deltaX);
+    const absY = Math.abs(e.deltaY);
+
+    // Trackpad horizontal swipe (2 or 3 fingers) -> Ultra-Smooth Exit back to Menu
+    if (absX > 25 && absX > absY * 1.1) {
+      if (!wheelLockedRef.current) {
+        wheelLockedRef.current = true;
+        triggerClose(e.deltaX > 0 ? 'left' : 'right');
+        setTimeout(() => {
+          wheelLockedRef.current = false;
+        }, 600);
+      }
+      return;
+    }
+
+    // Vertical reel scroll
+    if (absY > 25) {
       if (!wheelLockedRef.current) {
         wheelLockedRef.current = true;
         if (e.deltaY > 0) {
@@ -665,16 +729,94 @@ export default function FoodReelsModal({
         }, 400);
       }
     }
-  };
+  }, [showComments, showIngredients, currentIndex, scrollToReel, triggerClose]);
 
-  // Keyboard navigation (ArrowDown / ArrowUp / Space / Mute)
+  // Global window listeners for wheel, touch swipe-left, and mouse drag while Food Reels is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let mouseStartX = 0;
+    let isMouseDown = false;
+
+    const onWindowWheel = (e) => {
+      handleWheel(e);
+    };
+
+    const onTouchStart = (e) => {
+      if (showComments || showIngredients) return;
+      if (e.touches && e.touches[0]) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    };
+
+    const onTouchEnd = (e) => {
+      if (showComments || showIngredients) return;
+      if (e.changedTouches && e.changedTouches[0]) {
+        const deltaX = e.changedTouches[0].clientX - touchStartX;
+        const deltaY = e.changedTouches[0].clientY - touchStartY;
+        // Swipe left (customer swipes left or right to return to menu)
+        if (deltaX < -45 && Math.abs(deltaY) < 120) {
+          triggerClose('left');
+        } else if (deltaX > 80 && Math.abs(deltaY) < 120) {
+          triggerClose('right');
+        }
+      }
+    };
+
+    const onMouseDown = (e) => {
+      if (showComments || showIngredients) return;
+      if (e.target && e.target.closest && (
+        e.target.closest('button') || 
+        e.target.closest('input') || 
+        e.target.closest('textarea')
+      )) {
+        return;
+      }
+      mouseStartX = e.clientX;
+      isMouseDown = true;
+    };
+
+    const onMouseUp = (e) => {
+      if (!isMouseDown || showComments || showIngredients) return;
+      isMouseDown = false;
+      const deltaX = e.clientX - mouseStartX;
+      if (deltaX < -55) {
+        triggerClose('left');
+      } else if (deltaX > 75) {
+        triggerClose('right');
+      }
+    };
+
+    window.addEventListener('wheel', onWindowWheel, { passive: true });
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    window.addEventListener('mousedown', onMouseDown, { passive: true });
+    window.addEventListener('mouseup', onMouseUp, { passive: true });
+
+    return () => {
+      window.removeEventListener('wheel', onWindowWheel);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isOpen, handleWheel, showComments, showIngredients, triggerClose]);
+
+  // Keyboard navigation (ArrowDown / ArrowUp / ArrowLeft / Space / Mute / Escape)
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'ArrowLeft') {
         if (showIngredients) setShowIngredients(false);
         else if (showComments) setShowComments(false);
-        else onClose();
+        else triggerClose('left');
+      } else if (e.key === 'Escape') {
+        if (showIngredients) setShowIngredients(false);
+        else if (showComments) setShowComments(false);
+        else triggerClose('right');
       } else if (e.key === 'ArrowDown' || e.key === 'j') {
         e.preventDefault();
         scrollToReel(currentIndex + 1);
@@ -690,7 +832,7 @@ export default function FoodReelsModal({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, showIngredients, showComments, currentIndex, scrollToReel, onClose]);
+  }, [isOpen, showIngredients, showComments, currentIndex, scrollToReel, triggerClose]);
 
   // Toggle Play / Pause on video tap
   const togglePlayPause = (idx) => {
@@ -829,7 +971,7 @@ export default function FoodReelsModal({
     }, 2000);
   };
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   // Active reel specific states
   const currentReelKey = String(currentReel.dishId || currentReel.id);
@@ -837,25 +979,52 @@ export default function FoodReelsModal({
   const activeComments = commentsMap[currentReelKey] || currentReel.initialComments || [];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 sm:bg-black/90 backdrop-blur-md flex items-center justify-center p-0 sm:p-3 select-none animate-fadeIn">
-      {/* 9:16 Canvas Phone Frame */}
+    <div className={`reels-modal-overlay bg-[#0a0a0f]/75 backdrop-blur-md p-0 sm:p-3 select-none ${
+      slideState === 'entering' ? 'is-entering' : slideState === 'entered' ? 'is-entered' : 'is-exiting'
+    }`}>
+      {/* ── Same Village Background as Customer Menu ── */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-90">
+        <VillageBackground />
+      </div>
+
+      {/* ── 9:16 Canvas Phone Frame with ultra-smooth 2-way swap physics ── */}
       <div 
         onWheel={handleWheel}
-        className="relative w-full h-full sm:max-w-[425px] sm:h-[94vh] sm:max-h-[880px] sm:rounded-3xl overflow-hidden bg-black shadow-2xl border-0 sm:border sm:border-white/10 flex flex-col"
+        className={`reels-slide-panel relative z-10 w-full h-full sm:max-w-[425px] sm:h-[94vh] sm:max-h-[880px] sm:rounded-3xl overflow-hidden bg-black shadow-2xl border-0 sm:border sm:border-white/15 flex flex-col ${
+          slideState === 'entering' 
+            ? 'is-entering' 
+            : slideState === 'entered' 
+              ? 'is-entered' 
+              : slideState === 'exiting-left' 
+                ? 'is-exiting-left' 
+                : 'is-exiting-right'
+        }`}
       >
         
         {/* ── Fixed Top Header ── */}
         <header className="absolute top-0 inset-x-0 z-30 p-3.5 flex items-center justify-between pointer-events-auto">
-          {/* Brand & Live Indicator */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white shadow-lg">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-            </span>
-            <span className="font-extrabold text-xs tracking-wide">Food Reels</span>
-            <span className="text-[10px] text-white/50 font-mono">
-              {currentIndex + 1}/{activeReels.length}
-            </span>
+          {/* Back to Menu (Swipe Left or Click) & Live Indicator */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => triggerClose('left')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white transition hover:bg-white/25 active:scale-95 cursor-pointer shadow-lg text-xs font-bold"
+              title="Swipe left or click to return to Food Menu"
+            >
+              <span className="text-sm">⇦</span>
+              <span className="font-extrabold tracking-wide">Menu</span>
+              <span className="text-[10px] text-white/60 hidden sm:inline">• 👈 Swipe Left</span>
+            </button>
+
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white shadow-lg">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+              </span>
+              <span className="text-[10px] text-white/70 font-mono">
+                {currentIndex + 1}/{activeReels.length}
+              </span>
+            </div>
           </div>
 
           {/* Quick Header Controls: Sound & Close */}
@@ -873,14 +1042,22 @@ export default function FoodReelsModal({
             {/* Close Button */}
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => triggerClose('right')}
               className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-white/20 hover:scale-105 active:scale-95 cursor-pointer shadow-lg"
-              title="Close Food Reels"
+              title="Close Food Reels (or Swipe Left)"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </header>
+
+        {/* ── Visual Swipe Left Tutorial Toast on First Open ── */}
+        {showBackTutorial && (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-fadeIn bg-black/85 backdrop-blur-md border border-white/25 text-white px-3.5 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-2 shadow-2xl">
+            <span className="animate-swipe-left-hand text-sm">👈</span>
+            <span>Swipe Left (or Trackpad Horizontal) to return to Food Menu</span>
+          </div>
+        )}
 
         {/* ── Native Vertical Snap-Scroll Reel Feed ── */}
         <div

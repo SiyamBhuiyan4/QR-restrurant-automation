@@ -904,6 +904,120 @@ export default function CustomerMenu({
   const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
   const mouseStartRef = useRef({ x: 0, y: 0, isDown: false });
 
+  // ── Global Horizontal Gesture & Trackpad Swipe Listener (To Open Food Reels) ──
+  useEffect(() => {
+    if (isReelsOpen) return;
+
+    let isGestureLocked = false;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let mouseStartX = 0;
+    let isMouseDown = false;
+
+    // 1. Laptop Trackpad (2-finger / 3-finger horizontal swipe produces wheel events with deltaX)
+    const handleGlobalWheel = (e) => {
+      if (isReelsOpen || isGestureLocked) return;
+
+      const target = e.target;
+      if (target && target.closest && (
+        target.closest('input') || 
+        target.closest('textarea') || 
+        target.closest('.category-bar-scroll') ||
+        target.closest('[data-no-reels-swipe]')
+      )) {
+        return;
+      }
+
+      const absX = Math.abs(e.deltaX);
+      const absY = Math.abs(e.deltaY);
+
+      // Horizontal trackpad gesture detection: horizontal delta dominant over vertical delta
+      if (absX > 25 && absX > absY * 1.1) {
+        isGestureLocked = true;
+        setIsReelsOpen(true);
+        setTimeout(() => {
+          isGestureLocked = false;
+        }, 800);
+      }
+    };
+
+    // 2. Global Touch Swipe (Mobile or Touch Laptop)
+    const handleGlobalTouchStart = (e) => {
+      if (isReelsOpen || !e.touches || !e.touches[0]) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    };
+
+    const handleGlobalTouchEnd = (e) => {
+      if (isReelsOpen || !e.changedTouches || !e.changedTouches[0]) return;
+      const target = e.target;
+      if (target && target.closest && (
+        target.closest('input') || 
+        target.closest('textarea') || 
+        target.closest('[data-no-reels-swipe]')
+      )) {
+        return;
+      }
+
+      const deltaX = e.changedTouches[0].clientX - touchStartX;
+      const deltaY = e.changedTouches[0].clientY - touchStartY;
+
+      // Horizontal swipe (swipe right across screen or swipe from right edge)
+      if ((deltaX > 50 || deltaX < -65) && Math.abs(deltaY) < 110) {
+        setIsReelsOpen(true);
+      }
+    };
+
+    // 3. Trackpad 3-finger drag or Mouse drag
+    const handleGlobalMouseDown = (e) => {
+      if (isReelsOpen) return;
+      if (e.target && e.target.closest && (
+        e.target.closest('button') || 
+        e.target.closest('input') || 
+        e.target.closest('textarea') || 
+        e.target.closest('a')
+      )) {
+        return;
+      }
+      mouseStartX = e.clientX;
+      isMouseDown = true;
+    };
+
+    const handleGlobalMouseUp = (e) => {
+      if (isReelsOpen || !isMouseDown) return;
+      isMouseDown = false;
+      const deltaX = e.clientX - mouseStartX;
+      if (Math.abs(deltaX) > 70) {
+        setIsReelsOpen(true);
+      }
+    };
+
+    // 4. Keyboard Arrow Right
+    const handleGlobalKeyDown = (e) => {
+      if (isReelsOpen) return;
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+      if (e.key === 'ArrowRight') {
+        setIsReelsOpen(true);
+      }
+    };
+
+    window.addEventListener('wheel', handleGlobalWheel, { passive: true });
+    window.addEventListener('touchstart', handleGlobalTouchStart, { passive: true });
+    window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true });
+    window.addEventListener('mousedown', handleGlobalMouseDown, { passive: true });
+    window.addEventListener('mouseup', handleGlobalMouseUp, { passive: true });
+    window.addEventListener('keydown', handleGlobalKeyDown);
+
+    return () => {
+      window.removeEventListener('wheel', handleGlobalWheel);
+      window.removeEventListener('touchstart', handleGlobalTouchStart);
+      window.removeEventListener('touchend', handleGlobalTouchEnd);
+      window.removeEventListener('mousedown', handleGlobalMouseDown);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [isReelsOpen]);
+
   const handleTouchStart = (e) => {
     if (isReelsOpen) return;
     if (e.touches && e.touches[0]) {
@@ -916,8 +1030,8 @@ export default function CustomerMenu({
     if (e.changedTouches && e.changedTouches[0]) {
       const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
       const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;
-      // Responsive horizontal swipe detection (swipe right or swipe from right side)
-      if ((deltaX > 50 || deltaX < -65) && Math.abs(deltaY) < 95) {
+      // Responsive horizontal swipe detection
+      if ((deltaX > 45 || deltaX < -55) && Math.abs(deltaY) < 100) {
         setIsReelsOpen(true);
       }
     }
@@ -933,7 +1047,7 @@ export default function CustomerMenu({
     mouseStartRef.current.isDown = false;
     const deltaX = e.clientX - mouseStartRef.current.x;
     const deltaY = e.clientY - mouseStartRef.current.y;
-    if ((deltaX > 60 || deltaX < -70) && Math.abs(deltaY) < 95) {
+    if ((deltaX > 50 || deltaX < -60) && Math.abs(deltaY) < 100) {
       setIsReelsOpen(true);
     }
   };
@@ -2645,12 +2759,12 @@ export default function CustomerMenu({
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onClick={() => {
-          // Educate the customer that swiping is required!
+          // Educate the customer on both mobile swipe & laptop 2-3 finger trackpad gesture
           setShowSwipeTutorial(true);
-          setTimeout(() => setShowSwipeTutorial(false), 3500);
+          setTimeout(() => setShowSwipeTutorial(false), 4000);
         }}
         className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center select-none animate-edge-tab cursor-grab active:cursor-grabbing"
-        title="Swipe your finger across your screen to watch live Food Reels!"
+        title="Swipe right on screen or swipe horizontally with 2/3 fingers on laptop trackpad to watch live Food Reels!"
       >
         <div className="bg-gradient-to-l from-rose-600 via-[#FF5A26] to-[#FF7A45] text-white pl-3.5 pr-2.5 py-3 rounded-l-2xl shadow-2xl border-y border-l border-white/25 flex items-center gap-2 backdrop-blur-md">
           {/* Pulsing live dot */}
@@ -2669,6 +2783,9 @@ export default function CustomerMenu({
               <span>Swipe Right</span>
               <span className="animate-swipe-hand inline-block">👉</span>
             </span>
+            <span className="text-[8.5px] text-white/70 font-semibold leading-tight hidden sm:block">
+              (2–3 Fingers on Trackpad)
+            </span>
           </div>
         </div>
       </div>
@@ -2680,7 +2797,7 @@ export default function CustomerMenu({
           <div className="text-left">
             <div className="font-black text-amber-300">Swipe Right to Open Reels!</div>
             <div className="text-[11px] text-zinc-300 font-medium">
-              Drag your finger across the screen to watch Facebook-style Food Reels 🎬
+              Swipe across screen on mobile, or swipe horizontally with 2–3 fingers on laptop trackpad 🎬
             </div>
           </div>
         </div>
