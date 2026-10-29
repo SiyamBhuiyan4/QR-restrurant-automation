@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { MessageCircle, X, Send } from 'lucide-react';
+import { MessageCircle, X, Send, Mic, Trash2, Play, Pause, Volume2 } from 'lucide-react';
 import { api } from '../convexApi';
 import { sendGuestChatToTelegramChannel } from '../services/telegramClient';
+import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
 
 const GUEST_KEY = 'smartdine_guest_id';
 const GUEST_CHAT_PREFIX = 'smartdine_guest_chat_';
@@ -61,6 +62,66 @@ function errorText(err) {
   return 'Message not sent. Check your connection and try again.';
 }
 
+/** Audio Voice Note Player for guest & staff messages */
+function VoiceBubble({ audioUrl, isFromGuest }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2.5 py-1 select-none">
+      <audio
+        ref={audioRef}
+        src={audioUrl}
+        onEnded={() => setIsPlaying(false)}
+        onPause={() => setIsPlaying(false)}
+        onError={() => setIsPlaying(false)}
+      />
+      <button
+        type="button"
+        onClick={togglePlay}
+        className={`w-8 h-8 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer shadow-sm ${
+          isFromGuest ? 'bg-white text-[#FF5A26]' : 'bg-[#FF5A26] text-white'
+        }`}
+        aria-label={isPlaying ? 'Pause voice message' : 'Play voice message'}
+      >
+        {isPlaying ? (
+          <Pause className="w-4 h-4 fill-current" />
+        ) : (
+          <Play className="w-4 h-4 fill-current translate-x-0.5" />
+        )}
+      </button>
+      <div className="flex-1 min-w-[130px]">
+        <div className="flex items-center gap-1 h-3.5 mb-0.5">
+          <div className={`w-1 h-2 rounded-full ${isPlaying ? 'bg-white animate-pulse' : 'bg-current opacity-60'}`} />
+          <div className={`w-1 h-3.5 rounded-full ${isPlaying ? 'bg-white' : 'bg-current opacity-80'}`} />
+          <div className={`w-1 h-1.5 rounded-full ${isPlaying ? 'bg-white animate-pulse' : 'bg-current opacity-50'}`} />
+          <div className={`w-1 h-4 rounded-full ${isPlaying ? 'bg-white' : 'bg-current opacity-90'}`} />
+          <div className={`w-1 h-2.5 rounded-full ${isPlaying ? 'bg-white animate-pulse' : 'bg-current opacity-70'}`} />
+          <div className={`w-1 h-3.5 rounded-full ${isPlaying ? 'bg-white' : 'bg-current opacity-85'}`} />
+          <div className={`w-1 h-1.5 rounded-full ${isPlaying ? 'bg-white animate-pulse' : 'bg-current opacity-40'}`} />
+          <div className={`w-1 h-3 rounded-full ${isPlaying ? 'bg-white' : 'bg-current opacity-75'}`} />
+        </div>
+        <span className="text-[10px] font-bold opacity-80 block tracking-wide">
+          {isPlaying ? 'Playing Audio…' : '🎤 Voice Note'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Guest chat with the restaurant. Messages go to the staff covering this table and the
  * manager; replies always show as "Management".
@@ -80,6 +141,53 @@ export default function GuestChat({ tableNumber, raised = false, hidden = false 
   const [error, setError] = useState('');
   const [localMessages, setLocalMessages] = useState(() => loadLocalChat(table));
   const endRef = useRef(null);
+
+  // Customer Voice Recording Hook
+  const {
+    isRecording,
+    recordingTime,
+    audioBlob,
+    startRecording,
+    stopRecording,
+    resetRecording
+  } = useVoiceRecorder({ maxDuration: 30 });
+
+  const sendVoiceOnStopRef = useRef(false);
+
+  // Handle Voice Note Sending
+  const handleSendVoiceClick = () => {
+    sendVoiceOnStopRef.current = true;
+    stopRecording();
+  };
+
+  useEffect(() => {
+    if (audioBlob && sendVoiceOnStopRef.current) {
+      sendVoiceOnStopRef.current = false;
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Data = reader.result;
+        const newMsg = {
+          _id: `guest_voice_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          fromGuest: true,
+          text: '🎤 Voice Message',
+          audioUrl: base64Data,
+          isVoice: true,
+          createdAt: Date.now()
+        };
+
+        const currentLocal = loadLocalChat(table);
+        const updatedLocal = [...currentLocal, newMsg];
+        saveLocalChat(table, updatedLocal);
+        setLocalMessages(updatedLocal);
+        resetRecording();
+
+        try {
+          sendGuestChatToTelegramChannel(table, '🎤 Customer sent a Voice Message from Table #' + table).catch(() => {});
+        } catch (_) {}
+      };
+      reader.readAsDataURL(audioBlob);
+    }
+  }, [audioBlob, table, resetRecording]);
 
   // Sync local conversation cache when table changes
   useEffect(() => {
@@ -247,7 +355,11 @@ export default function GuestChat({ tableNumber, raised = false, hidden = false 
                     }`}
                   >
                     {!m.fromGuest && <div className="text-[10px] font-bold text-[#FF8A5B] mb-0.5">Management</div>}
-                    <p className="whitespace-pre-wrap break-words">{m.text}</p>
+                    {m.isVoice || m.audioUrl ? (
+                      <VoiceBubble audioUrl={m.audioUrl} isFromGuest={m.fromGuest} />
+                    ) : (
+                      <p className="whitespace-pre-wrap break-words">{m.text}</p>
+                    )}
                     <div className={`text-[10px] mt-1 ${m.fromGuest ? 'text-white/75 text-right' : 'text-zinc-400'}`}>{timeLabel(m.createdAt)}</div>
                   </div>
                 </div>
@@ -255,27 +367,75 @@ export default function GuestChat({ tableNumber, raised = false, hidden = false 
               <div ref={endRef} />
             </div>
 
-            <form onSubmit={handleSend} className="border-t border-zinc-800 px-4 pt-3 pb-4">
+            <div className="border-t border-zinc-800 px-4 pt-3 pb-4">
               {error && <p className="text-[11px] text-rose-400 mb-2">{error}</p>}
-              <div className="flex items-center gap-2">
-                <input
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  maxLength={500}
-                  placeholder="Type a message…"
-                  aria-label="Message"
-                  className="flex-1 min-w-0 bg-[#0a0a0c] border border-zinc-800 focus:border-[#FF5A26]/60 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 outline-none"
-                />
-                <button
-                  type="submit"
-                  disabled={!draft.trim() || sending}
-                  aria-label="Send"
-                  className="shrink-0 w-11 h-11 rounded-xl flame-gradient-btn text-white flex items-center justify-center disabled:opacity-40 active:scale-95"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </div>
-            </form>
+              
+              {isRecording ? (
+                /* Live Voice Recording Bar */
+                <div className="flex items-center justify-between gap-2.5 bg-rose-950/40 border border-rose-500/40 rounded-2xl px-3.5 py-2.5 animate-fadeIn">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+                    </span>
+                    <span className="text-xs font-bold text-rose-300">Recording Voice…</span>
+                    <span className="text-xs font-mono text-zinc-300 font-bold bg-black/40 px-2 py-0.5 rounded-md">
+                      {recordingTime}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={resetRecording}
+                      className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer"
+                      title="Cancel Recording"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSendVoiceClick}
+                      className="px-3 py-2 rounded-xl flame-gradient-btn text-white text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Send Voice</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Standard Message & Voice Mic Input */
+                <form onSubmit={handleSend} className="flex items-center gap-2">
+                  <input
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    maxLength={500}
+                    placeholder="Type a message or tap mic…"
+                    aria-label="Message"
+                    className="flex-1 min-w-0 bg-[#0a0a0c] border border-zinc-800 focus:border-[#FF5A26]/60 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 outline-none"
+                  />
+
+                  {/* Customer Voice Message Button */}
+                  <button
+                    type="button"
+                    onClick={startRecording}
+                    className="shrink-0 w-11 h-11 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-[#FF5A26] border border-zinc-700/60 flex items-center justify-center transition active:scale-95 cursor-pointer"
+                    title="Record and send voice message to restaurant"
+                  >
+                    <Mic className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={!draft.trim() || sending}
+                    aria-label="Send"
+                    className="shrink-0 w-11 h-11 rounded-xl flame-gradient-btn text-white flex items-center justify-center disabled:opacity-40 active:scale-95 cursor-pointer"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
         </div>
       )}

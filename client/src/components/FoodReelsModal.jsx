@@ -24,8 +24,11 @@ import {
   ThumbsUp,
   ArrowRight,
   Smile,
-  Info
+  Info,
+  Mic,
+  Trash2
 } from 'lucide-react';
+import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
 import '../styles/food-reels.css';
 
 // Curated high-res streaming demo food reels if dishes don't have custom videos
@@ -280,6 +283,63 @@ export const DEMO_FOOD_REELS = [
   }
 ];
 
+/** Audio Player for Voice Reviews in Reels */
+function ReelVoiceCommentPlayer({ audioUrl }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  const toggle = (e) => {
+    e.stopPropagation();
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2.5 mt-2 p-2 rounded-xl bg-white/10 border border-white/15 select-none">
+      <audio
+        ref={audioRef}
+        src={audioUrl}
+        onEnded={() => setIsPlaying(false)}
+        onPause={() => setIsPlaying(false)}
+        onError={() => setIsPlaying(false)}
+      />
+      <button
+        type="button"
+        onClick={toggle}
+        className="w-8 h-8 rounded-full bg-gradient-to-r from-[#FF5A26] via-rose-500 to-amber-500 text-white flex items-center justify-center transition active:scale-95 cursor-pointer shadow-md shrink-0"
+        aria-label={isPlaying ? 'Pause voice comment' : 'Play voice comment'}
+      >
+        {isPlaying ? (
+          <Pause className="w-3.5 h-3.5 fill-current" />
+        ) : (
+          <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
+        )}
+      </button>
+      <div className="flex-1 min-w-[100px]">
+        <div className="flex items-center gap-1 h-3 mb-0.5">
+          <span className={`w-1 h-2 rounded-full ${isPlaying ? 'bg-[#FF5A26] animate-pulse' : 'bg-white/40'}`} />
+          <span className={`w-1 h-3 rounded-full ${isPlaying ? 'bg-[#FF5A26]' : 'bg-white/60'}`} />
+          <span className={`w-1 h-1.5 rounded-full ${isPlaying ? 'bg-[#FF5A26] animate-pulse' : 'bg-white/30'}`} />
+          <span className={`w-1 h-3.5 rounded-full ${isPlaying ? 'bg-[#FF5A26]' : 'bg-white/70'}`} />
+          <span className={`w-1 h-2 rounded-full ${isPlaying ? 'bg-[#FF5A26] animate-pulse' : 'bg-white/50'}`} />
+          <span className={`w-1 h-3 rounded-full ${isPlaying ? 'bg-[#FF5A26]' : 'bg-white/60'}`} />
+        </div>
+        <span className="text-[10px] font-bold text-amber-300 block tracking-wide">
+          {isPlaying ? 'Playing Voice Review…' : '🎤 Tap to Listen'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function FoodReelsModal({
   isOpen,
   onClose,
@@ -404,6 +464,88 @@ export default function FoodReelsModal({
       [idx]: !prev[idx]
     }));
   };
+
+  // Text-to-Speech (Voice Read / Listen Aloud) State
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const toggleSpeakCaption = (textToSpeak) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const cleanText = (textToSpeak || '').replace(/#\w+/g, '').replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim();
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  }, [currentIndex, isOpen]);
+
+  // Customer Voice Comment Recording Hook
+  const {
+    isRecording: isRecordingVoiceComment,
+    recordingTime: voiceCommentTime,
+    audioBlob: voiceCommentBlob,
+    startRecording: startVoiceComment,
+    stopRecording: stopVoiceComment,
+    resetRecording: resetVoiceComment
+  } = useVoiceRecorder({ maxDuration: 20 });
+
+  const sendVoiceCommentOnStop = useRef(false);
+
+  const handleSendVoiceComment = () => {
+    sendVoiceCommentOnStop.current = true;
+    stopVoiceComment();
+  };
+
+  useEffect(() => {
+    if (voiceCommentBlob && sendVoiceCommentOnStop.current && currentReel) {
+      sendVoiceCommentOnStop.current = false;
+      const reelKey = String(currentReel.dishId || currentReel.id);
+      const author = guestAuthorName.trim() || (tableNumber ? `Table #${tableNumber} Diner` : 'Anonymous Foodie');
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Data = reader.result;
+        const newVoiceComment = {
+          id: `anon-voice-${Date.now()}`,
+          author,
+          text: '🎤 Voice Review',
+          audioUrl: base64Data,
+          isVoice: true,
+          time: 'Just now',
+          likes: 1
+        };
+
+        setCommentsMap((prev) => {
+          const existing = prev[reelKey] || currentReel.initialComments || [];
+          const updatedList = [newVoiceComment, ...existing];
+          const nextMap = { ...prev, [reelKey]: updatedList };
+          try {
+            localStorage.setItem('smartdine_reels_comments', JSON.stringify(nextMap));
+          } catch (_) {}
+          return nextMap;
+        });
+
+        resetVoiceComment();
+      };
+      reader.readAsDataURL(voiceCommentBlob);
+    }
+  }, [voiceCommentBlob, currentReel, guestAuthorName, tableNumber, resetVoiceComment]);
 
   // DOM Refs
   const scrollContainerRef = useRef(null);
@@ -894,6 +1036,25 @@ export default function FoodReelsModal({
                         <Clock className="w-3 h-3 text-stone-400" />
                         <span>{reel.prepTime}</span>
                       </span>
+
+                      {/* Voice Read Aloud (Narrator Button) */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const speechText = `${reel.name}. ${reel.caption || reel.description || reel.chefNote || ''}`;
+                          toggleSpeakCaption(speechText);
+                        }}
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border transition flex items-center gap-1 cursor-pointer shadow-md ${
+                          isSpeaking && currentIndex === index
+                            ? 'bg-amber-400 text-black border-amber-300 animate-pulse'
+                            : 'bg-black/50 text-amber-300 border-amber-400/40 hover:bg-black/75'
+                        }`}
+                        title="Listen to story read aloud"
+                      >
+                        <Volume2 className="w-3 h-3" />
+                        <span>{isSpeaking && currentIndex === index ? 'Reading…' : 'Voice Read 🔊'}</span>
+                      </button>
                     </div>
 
                     {/* Dish Title */}
@@ -1141,14 +1302,15 @@ export default function FoodReelsModal({
                           <span className="text-[10px] text-stone-500">{c.time}</span>
                         </div>
                         <p className="text-stone-300 font-medium leading-relaxed">{c.text}</p>
+                        {c.audioUrl && <ReelVoiceCommentPlayer audioUrl={c.audioUrl} />}
                       </div>
                     </div>
                   ))
                 )}
               </div>
 
-              {/* Anonymous Comment Form */}
-              <form onSubmit={handleAddComment} className="pt-2 border-t border-white/10 space-y-2">
+              {/* Anonymous Comment Form with Voice Comment option */}
+              <div className="pt-2 border-t border-white/10 space-y-2">
                 <input
                   type="text"
                   value={guestAuthorName}
@@ -1156,24 +1318,72 @@ export default function FoodReelsModal({
                   placeholder="Your Name / Handle (Optional - Defaults to Anonymous Diner)"
                   className="w-full px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#FF5A26]"
                 />
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newCommentText}
-                    onChange={(e) => setNewCommentText(e.target.value)}
-                    placeholder="Add an anonymous comment..."
-                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#FF5A26]"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!newCommentText.trim()}
-                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-amber-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-40 transition active:scale-95"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Post</span>
-                  </button>
-                </div>
-              </form>
+
+                {isRecordingVoiceComment ? (
+                  /* Recording Voice Comment Bar */
+                  <div className="flex items-center justify-between gap-2 bg-rose-950/50 border border-rose-500/50 rounded-xl px-3 py-2 animate-fadeIn">
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                      </span>
+                      <span className="text-xs font-bold text-rose-300">Recording Voice…</span>
+                      <span className="text-xs font-mono text-white bg-black/40 px-1.5 py-0.5 rounded font-bold">
+                        {voiceCommentTime}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={resetVoiceComment}
+                        className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-stone-300 cursor-pointer"
+                        title="Cancel"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSendVoiceComment}
+                        className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#FF5A26] to-amber-500 text-white font-bold text-xs flex items-center gap-1 shadow-sm active:scale-95 cursor-pointer"
+                      >
+                        <Send className="w-3 h-3" />
+                        <span>Post Voice</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Text & Mic Comment Form */
+                  <form onSubmit={handleAddComment} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newCommentText}
+                      onChange={(e) => setNewCommentText(e.target.value)}
+                      placeholder="Add an anonymous comment or record voice..."
+                      className="flex-1 px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-stone-400 focus:outline-none focus:border-[#FF5A26]"
+                    />
+                    
+                    {/* Record Voice Comment Button */}
+                    <button
+                      type="button"
+                      onClick={startVoiceComment}
+                      className="px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-stone-200 hover:text-rose-400 border border-white/15 text-xs flex items-center justify-center transition active:scale-95 cursor-pointer"
+                      title="Record and post a voice comment"
+                    >
+                      <Mic className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={!newCommentText.trim()}
+                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-amber-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-40 transition active:scale-95"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Post</span>
+                    </button>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
         )}
