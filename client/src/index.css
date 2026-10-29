@@ -752,3 +752,15 @@ header[data-hidden="false"] {
   animation: none !important;
 }
 .customer-still .animate-edge-tab { transform: translateY(-50%); }
+
+/* Menu <-> Reels pager (hooks/useMenuReelsSwipe.js): the menu is parked off screen while Reels
+   are open. While a swipe is in progress the hook positions both screens inline. */
+.menu-pager.is-away {
+  transform: translate3d(-100%, 0, 0);
+  visibility: hidden;
+}
+/* A two-finger sideways swipe pages Menu <-> Reels instead of browser back/forward */
+html,
+body {
+  overscroll-behavior-x: none;
+}

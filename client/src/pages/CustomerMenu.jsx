@@ -19,6 +19,7 @@ const CartDrawer = lazy(loadCartDrawer);
 const FoodDetailModal = lazy(loadFoodDetailModal);
 const FoodReelsModal = lazy(loadFoodReelsModal);
 import VillageBackground from '../components/VillageBackground';
+import useMenuReelsSwipe from '../hooks/useMenuReelsSwipe';
 import MenuItemCard from '../components/MenuItemCard';
 import '../styles/customer-hero.css';
 import '../styles/customer-menu-sections.css';
@@ -871,15 +872,14 @@ export default function CustomerMenu({
   // 2. Interactive Food Details & Multimedia Modal
   const [selectedDishModal, setSelectedDishModal] = useState(null);
 
-  // 2.5 Food Reels & Gesture Navigation: a horizontal swipe in either direction swaps Menu <-> Reels.
-  // swipeDir is the direction the content travels ('left' | 'right'), so the menu leaves the
-  // way the finger moved and the reels follow in from the opposite edge (and vice versa on return).
+  // 2.5 Food Reels: Menu <-> Reels pager that follows the finger (see hooks/useMenuReelsSwipe.js).
+  // reelsPresent keeps the Reels overlay mounted while it is being dragged in or out.
   const [isReelsOpen, setIsReelsOpen] = useState(false);
+  const [reelsPresent, setReelsPresent] = useState(false);
   const [reelsInitialDishId, setReelsInitialDishId] = useState(null);
   const [showSwipeTutorial, setShowSwipeTutorial] = useState(false);
-  const [swipeDir, setSwipeDir] = useState('left');
-  const [menuEnterDir, setMenuEnterDir] = useState(null);
-  const lastReelsToggleTime = useRef(0);
+  const menuPagerRef = useRef(null);
+  const reelsPagerRef = useRef(null);
 
   // Overlays (cart, dish details, reels) mount once the browser is idle after the menu shows,
   // or immediately if the customer opens one first.
@@ -894,23 +894,6 @@ export default function CustomerMenu({
     return () => clearTimeout(t);
   }, []);
 
-  const openReels = useCallback((dir = 'left', dishId = null) => {
-    lastReelsToggleTime.current = Date.now();
-    setShowSwipeTutorial(false);
-    setMenuEnterDir(null);
-    setSwipeDir(dir);
-    setReelsInitialDishId(dishId);
-    setIsReelsOpen(true);
-  }, []);
-
-  // Menu slides back in from the side opposite to the swipe, then drops its transform so the
-  // sticky navbar and fixed overlays behave normally again.
-  useEffect(() => {
-    if (!menuEnterDir) return undefined;
-    const t = setTimeout(() => setMenuEnterDir(null), 480);
-    return () => clearTimeout(t);
-  }, [menuEnterDir]);
-
   // First-visit coach mark explaining the two-way swipe (shown once per device)
   useEffect(() => {
     let seen = false;
@@ -923,123 +906,6 @@ export default function CustomerMenu({
     const hide = setTimeout(() => setShowSwipeTutorial(false), 7200);
     return () => { clearTimeout(show); clearTimeout(hide); };
   }, []);
-
-  // ── Global Horizontal Gesture & Trackpad Swipe Listener (To Open Food Reels) ──
-  useEffect(() => {
-    if (isReelsOpen) return;
-
-    let isGestureLocked = false;
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let mouseStartX = 0;
-    let isMouseDown = false;
-
-    // 1. Laptop Trackpad (2-finger / 3-finger horizontal swipe produces wheel events with deltaX)
-    const handleGlobalWheel = (e) => {
-      if (isReelsOpen || isGestureLocked) return;
-      // Cooldown after closing reels to prevent residual momentum from immediately re-opening
-      if (Date.now() - lastReelsToggleTime.current < 750) return;
-
-      const target = e.target;
-      if (target && target.closest && (
-        target.closest('input') || 
-        target.closest('textarea') || 
-        target.closest('.category-bar-scroll') ||
-        target.closest('[data-no-reels-swipe]')
-      )) {
-        return;
-      }
-
-      const absX = Math.abs(e.deltaX);
-      const absY = Math.abs(e.deltaY);
-
-      // Horizontal trackpad gesture detection: horizontal delta dominant over vertical delta
-      if (absX > 28 && absX > absY * 1.2) {
-        isGestureLocked = true;
-        // Natural scrolling: fingers moving left produce a positive deltaX
-        openReels(e.deltaX > 0 ? 'left' : 'right');
-        setTimeout(() => {
-          isGestureLocked = false;
-        }, 800);
-      }
-    };
-
-    // 2. Global Touch Swipe (Mobile or Touch Laptop)
-    const handleGlobalTouchStart = (e) => {
-      if (isReelsOpen || !e.touches || !e.touches[0]) return;
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-    };
-
-    const handleGlobalTouchEnd = (e) => {
-      if (isReelsOpen || !e.changedTouches || !e.changedTouches[0]) return;
-      const target = e.target;
-      if (target && target.closest && (
-        target.closest('input') || 
-        target.closest('textarea') || 
-        target.closest('.category-bar-scroll') ||
-        target.closest('[data-no-reels-swipe]')
-      )) {
-        return;
-      }
-
-      const deltaX = e.changedTouches[0].clientX - touchStartX;
-      const deltaY = e.changedTouches[0].clientY - touchStartY;
-
-      // Horizontal swipe either way, as long as it is clearly more sideways than vertical
-      if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3) {
-        openReels(deltaX < 0 ? 'left' : 'right');
-      }
-    };
-
-    // 3. Trackpad 3-finger drag or Mouse drag
-    const handleGlobalMouseDown = (e) => {
-      if (isReelsOpen) return;
-      if (e.target && e.target.closest && (
-        e.target.closest('button') || 
-        e.target.closest('input') || 
-        e.target.closest('textarea') || 
-        e.target.closest('a')
-      )) {
-        return;
-      }
-      mouseStartX = e.clientX;
-      isMouseDown = true;
-    };
-
-    const handleGlobalMouseUp = (e) => {
-      if (isReelsOpen || !isMouseDown) return;
-      isMouseDown = false;
-      const deltaX = e.clientX - mouseStartX;
-      if (Math.abs(deltaX) > 70) {
-        openReels(deltaX < 0 ? 'left' : 'right');
-      }
-    };
-
-    // 4. Keyboard Arrow Left / Right
-    const handleGlobalKeyDown = (e) => {
-      if (isReelsOpen) return;
-      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-      if (e.key === 'ArrowRight') openReels('left');
-      else if (e.key === 'ArrowLeft') openReels('right');
-    };
-
-    window.addEventListener('wheel', handleGlobalWheel, { passive: true });
-    window.addEventListener('touchstart', handleGlobalTouchStart, { passive: true });
-    window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true });
-    window.addEventListener('mousedown', handleGlobalMouseDown, { passive: true });
-    window.addEventListener('mouseup', handleGlobalMouseUp, { passive: true });
-    window.addEventListener('keydown', handleGlobalKeyDown);
-
-    return () => {
-      window.removeEventListener('wheel', handleGlobalWheel);
-      window.removeEventListener('touchstart', handleGlobalTouchStart);
-      window.removeEventListener('touchend', handleGlobalTouchEnd);
-      window.removeEventListener('mousedown', handleGlobalMouseDown);
-      window.removeEventListener('mouseup', handleGlobalMouseUp);
-      window.removeEventListener('keydown', handleGlobalKeyDown);
-    };
-  }, [isReelsOpen, openReels]);
 
   // 3. Live Customer Order Status Tracking
   const [activeOrder, setActiveOrder] = useState(() => {
@@ -2090,7 +1956,41 @@ export default function CustomerMenu({
     setIsCartOpen(false);
   };
 
-  const anyOverlayOpen = isReelsOpen || isCartOpen || !!selectedDishModal;
+  const pager = useMenuReelsSwipe({
+    isOpen: isReelsOpen,
+    setOpen: setIsReelsOpen,
+    setReelsPresent,
+    menuRef: menuPagerRef,
+    reelsRef: reelsPagerRef,
+    enabled: !isCartOpen && !selectedDishModal && !isTableModalOpen && !orderSuccessModal
+  });
+
+  // side -1: Reels come in from the right (menu moves left); +1: from the left
+  const openReels = (side = -1, dishId = null) => {
+    setShowSwipeTutorial(false);
+    setReelsInitialDishId(dishId);
+    pager.open(side);
+  };
+
+  // Keyboard on the menu: → / ← open Reels (inside Reels the modal handles the keys)
+  const openReelsRef = useRef(openReels);
+  openReelsRef.current = openReels;
+  useEffect(() => {
+    if (isReelsOpen) return undefined;
+    const onKey = (e) => {
+      if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      if (e.key === 'ArrowRight') openReelsRef.current(-1);
+      else if (e.key === 'ArrowLeft') openReelsRef.current(1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isReelsOpen]);
+
+  useEffect(() => {
+    if (!isReelsOpen) setReelsInitialDishId(null);
+  }, [isReelsOpen]);
+
+  const anyOverlayOpen = isReelsOpen || reelsPresent || isCartOpen || !!selectedDishModal;
   // Once mounted, overlays stay mounted (keeps their exit animations and state)
   useEffect(() => {
     if (anyOverlayOpen) setOverlaysReady(true);
@@ -2105,15 +2005,10 @@ export default function CustomerMenu({
       {/* Village at dusk: trees, grazing cow, kash flowers in the wind (light SVG + CSS) */}
       <VillageBackground />
 
-      {/* Menu stage: slides out sideways when Reels open, and back in when they close */}
+      {/* Menu stage: the pager moves it sideways with the finger; parked off screen while Reels are open */}
       <div
-        className={
-          isReelsOpen
-            ? `menu-swap-stage swap-out-to-${swipeDir}`
-            : menuEnterDir
-              ? `menu-swap-stage swap-in-from-${menuEnterDir === 'left' ? 'right' : 'left'}`
-              : ''
-        }
+        ref={menuPagerRef}
+        className={`menu-pager${isReelsOpen ? ' is-away' : ''}`}
         aria-hidden={isReelsOpen || undefined}
       >
       {/* 1. Header Navigation */}
@@ -2647,7 +2542,7 @@ export default function CustomerMenu({
         cartQuantity={selectedDishModal && cart[selectedDishModal.id] ? cart[selectedDishModal.id].quantity : 0}
         onOpenReels={(dish) => {
           setSelectedDishModal(null);
-          openReels('left', dish?.id || null);
+          openReels(-1, dish?.id || null);
         }}
         onAddToCart={(item, qty, note, voiceUrl) => {
           setCart((prev) => {
@@ -2670,14 +2565,10 @@ export default function CustomerMenu({
 
       {/* FB / Instagram Style Full Functional Food Reels with Anonymous Comments & 1-Tap Order */}
       <FoodReelsModal
+        present={reelsPresent || isReelsOpen}
         isOpen={isReelsOpen}
-        enterDir={swipeDir}
-        onClose={(dir = 'right') => {
-          lastReelsToggleTime.current = Date.now();
-          setMenuEnterDir(dir);
-          setIsReelsOpen(false);
-          setReelsInitialDishId(null);
-        }}
+        rootRef={reelsPagerRef}
+        onRequestClose={(dir = 'right') => pager.close(dir === 'left' ? -1 : 1)}
         menuItems={allMenuItems}
         funReels={funReels || []}
         initialDishId={reelsInitialDishId}

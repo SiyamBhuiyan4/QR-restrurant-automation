@@ -482,3 +482,14 @@
 .reel-header-btn:active {
   transform: scale(0.92);
 }
+
+/* Reels overlay at rest: off to the side and hidden until open (the pager moves it inline
+   while it is being dragged in or out) */
+.reels-pager {
+  transform: translate3d(100%, 0, 0);
+  visibility: hidden;
+}
+.reels-pager.is-open {
+  transform: none;
+  visibility: visible;
+}

@@ -359,8 +359,9 @@ function dishPhoto(item) {
 
 export default function FoodReelsModal({
   isOpen,
-  onClose,
-  enterDir = 'left',
+  present = false,
+  rootRef,
+  onRequestClose,
   menuItems = [],
   funReels = [],
   onAddToCart,
@@ -512,19 +513,8 @@ export default function FoodReelsModal({
   // Swipe Left Tutorial Pill when Reels opens
   const [showBackTutorial, setShowBackTutorial] = useState(false);
 
-  // Smooth exit state & opening momentum protection.
-  // exitDir is the direction the reels travel away ('left' | 'right'); the parent is told at the
-  // same moment so the menu slides in alongside instead of waiting for the reels to finish.
-  const [isExiting, setIsExiting] = useState(false);
-  const [exitDir, setExitDir] = useState('right');
-  const mountTimeRef = useRef(0);
-  const exitTimerRef = useRef(null);
-
   useEffect(() => {
     if (isOpen) {
-      clearTimeout(exitTimerRef.current);
-      setIsExiting(false);
-      mountTimeRef.current = Date.now();
       setShowBackTutorial(true);
       const timer = setTimeout(() => setShowBackTutorial(false), 3500);
       return () => clearTimeout(timer);
@@ -532,15 +522,11 @@ export default function FoodReelsModal({
     return undefined;
   }, [isOpen]);
 
-  useEffect(() => () => clearTimeout(exitTimerRef.current), []);
-
+  // Back to the menu: the parent's pager slides both screens (dir = the way the reels travel).
+  // Sideways swipes themselves are handled by that pager (hooks/useMenuReelsSwipe.js).
   const handleSmoothClose = useCallback((dir = 'right') => {
-    if (isExiting || !isOpen) return;
-    setExitDir(dir);
-    setIsExiting(true);
-    onClose(dir);
-    exitTimerRef.current = setTimeout(() => setIsExiting(false), 440);
-  }, [isExiting, isOpen, onClose]);
+    if (isOpen) onRequestClose?.(dir);
+  }, [isOpen, onRequestClose]);
 
   // Facebook-Style 2-Line Caption Expand / Scroll State
   const [expandedCaptions, setExpandedCaptions] = useState({});
@@ -760,6 +746,12 @@ export default function FoodReelsModal({
     setOrderQuantity(1);
     setAddedSuccess(false);
 
+    // Nothing plays while the reels are only being dragged in, or have left
+    if (!isOpen) {
+      videoRefs.current.forEach((v) => { if (v && !v.paused) v.pause(); });
+      return;
+    }
+
     // Only touch videos that are actually playing or were played (seeking all of them on every
     // change stalls the decoder and makes the swipe stutter)
     videoRefs.current.forEach((videoEl, idx) => {
@@ -781,7 +773,7 @@ export default function FoodReelsModal({
         videoEl.play().catch(() => {});
       });
     }
-  }, [currentIndex, isMuted]);
+  }, [currentIndex, isMuted, isOpen]);
 
   // Sync mute state across all video tags
   useEffect(() => {
@@ -798,20 +790,6 @@ export default function FoodReelsModal({
 
     const absX = Math.abs(e.deltaX);
     const absY = Math.abs(e.deltaY);
-
-    // Trackpad horizontal swipe:
-    // Only detect if at least 700ms have passed since opening, so momentum from opening swipe doesn't immediately close reels!
-    if (Date.now() - mountTimeRef.current > 700 && absX > 28 && absX > absY * 1.2) {
-      if (!wheelLockedRef.current) {
-        wheelLockedRef.current = true;
-        // Natural scrolling: fingers moving left produce a positive deltaX
-        handleSmoothClose(e.deltaX > 0 ? 'left' : 'right');
-        setTimeout(() => {
-          wheelLockedRef.current = false;
-        }, 800);
-      }
-      return;
-    }
 
     // Vertical reel scroll: one swipe = one reel.
     // - A gentle trackpad swipe sends many small steps, so steps add up until ~50px.
@@ -839,79 +817,15 @@ export default function FoodReelsModal({
       w.sum = 0;
       scrollToReel(currentIndex + dir);
     }
-  }, [showComments, showIngredients, currentIndex, scrollToReel, handleSmoothClose]);
+  }, [showComments, showIngredients, currentIndex, scrollToReel]);
 
-  // Global window listeners for wheel, touch swipe-left, and mouse drag while Food Reels is open
+  // Vertical wheel / trackpad scrolling while Food Reels is open
   useEffect(() => {
-    if (!isOpen) return;
-
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let mouseStartX = 0;
-    let isMouseDown = false;
-
-    const onWindowWheel = (e) => {
-      handleWheel(e);
-    };
-
-    const onTouchStart = (e) => {
-      if (showComments || showIngredients) return;
-      if (e.touches && e.touches[0]) {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-      }
-    };
-
-    const onTouchEnd = (e) => {
-      if (showComments || showIngredients) return;
-      if (Date.now() - mountTimeRef.current < 400) return;
-      if (e.changedTouches && e.changedTouches[0]) {
-        const deltaX = e.changedTouches[0].clientX - touchStartX;
-        const deltaY = e.changedTouches[0].clientY - touchStartY;
-        // Swipe left or right -> slide back to the menu in the same direction
-        if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3) {
-          handleSmoothClose(deltaX < 0 ? 'left' : 'right');
-        }
-      }
-    };
-
-    const onMouseDown = (e) => {
-      if (showComments || showIngredients) return;
-      if (e.target && e.target.closest && (
-        e.target.closest('button') || 
-        e.target.closest('input') || 
-        e.target.closest('textarea')
-      )) {
-        return;
-      }
-      mouseStartX = e.clientX;
-      isMouseDown = true;
-    };
-
-    const onMouseUp = (e) => {
-      if (!isMouseDown || showComments || showIngredients) return;
-      isMouseDown = false;
-      if (Date.now() - mountTimeRef.current < 400) return;
-      const deltaX = e.clientX - mouseStartX;
-      if (Math.abs(deltaX) > 55) {
-        handleSmoothClose(deltaX < 0 ? 'left' : 'right');
-      }
-    };
-
+    if (!isOpen) return undefined;
+    const onWindowWheel = (e) => handleWheel(e);
     window.addEventListener('wheel', onWindowWheel, { passive: true });
-    window.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchend', onTouchEnd, { passive: true });
-    window.addEventListener('mousedown', onMouseDown, { passive: true });
-    window.addEventListener('mouseup', onMouseUp, { passive: true });
-
-    return () => {
-      window.removeEventListener('wheel', onWindowWheel);
-      window.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchend', onTouchEnd);
-      window.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-  }, [isOpen, handleWheel, showComments, showIngredients, handleSmoothClose]);
+    return () => window.removeEventListener('wheel', onWindowWheel);
+  }, [isOpen, handleWheel]);
 
   // Keyboard navigation (ArrowDown / ArrowUp / ArrowLeft / Space / Mute / Escape)
   useEffect(() => {
@@ -1075,7 +989,7 @@ export default function FoodReelsModal({
     }, 2000);
   };
 
-  if (!isOpen && !isExiting) return null;
+  if (!present && !isOpen) return null;
 
   // Active reel specific states
   const currentReelKey = String(currentReel.dishId || currentReel.id);
@@ -1084,16 +998,13 @@ export default function FoodReelsModal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-3 select-none ${isExiting ? 'pointer-events-none' : ''}`}
+      ref={rootRef}
+      className={`reels-pager fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-3 select-none ${isOpen ? 'is-open' : ''}`}
       style={{ overflow: 'hidden' }}
     >
-      {/* 9:16 Canvas Phone Frame: slides in/out sideways over the same village background as the menu */}
+      {/* 9:16 Canvas Phone Frame over the same village background as the menu; the pager slides it */}
       <div 
-        className={`relative z-10 w-full h-full sm:max-w-[425px] sm:h-[94vh] sm:max-h-[880px] sm:rounded-3xl overflow-hidden bg-black shadow-2xl border-0 sm:border sm:border-white/15 flex flex-col ${
-          isExiting
-            ? `swap-out-to-${exitDir}`
-            : `swap-in-from-${enterDir === 'left' ? 'right' : 'left'}`
-        }`}
+        className="relative z-10 w-full h-full sm:max-w-[425px] sm:h-[94vh] sm:max-h-[880px] sm:rounded-3xl overflow-hidden bg-black shadow-2xl border-0 sm:border sm:border-white/15 flex flex-col"
       >
         
         {/* ── Fixed Top Header: story-style progress, back, title, sound ── */}
@@ -1679,7 +1590,7 @@ export default function FoodReelsModal({
       </div>
 
       {/* ── Desktop Up / Down arrows: beside the phone frame, never over the reel's own buttons ── */}
-      {!isExiting && (
+      {isOpen && (
         <div className="hidden sm:flex absolute top-1/2 -translate-y-1/2 left-[calc(50%+228px)] flex-col gap-2 z-20 animate-fadeIn">
           <button
             type="button"
