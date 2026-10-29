@@ -221,7 +221,7 @@ export default function Navbar({
                   title="Set your table"
                 >
                   <span className="text-base leading-none">🍽️</span>
-                  <span className="whitespace-nowrap">Set Table</span>
+                  <span className="whitespace-nowrap"><span className="hidden min-[420px]:inline">Set </span>Table</span>
                 </button>
               )}
 
@@ -232,7 +232,7 @@ export default function Navbar({
                 aria-label="Light mode"
                 aria-pressed={isLight}
                 title={isLight ? "Switch to dark mode" : "Switch to light mode"}
-                className="inline-flex items-center justify-center h-11 w-11 shrink-0 rounded-xl border border-amber-500/40 text-amber-300 bg-emerald-950/60 hover:bg-emerald-900/60 active:scale-95 transition-[background-color,transform] duration-200 cursor-pointer motion-reduce:transition-none motion-reduce:active:scale-100"
+                className="hidden min-[420px]:inline-flex items-center justify-center h-11 w-11 shrink-0 rounded-xl border border-amber-500/40 text-amber-300 bg-emerald-950/60 hover:bg-emerald-900/60 active:scale-95 transition-[background-color,transform] duration-200 cursor-pointer motion-reduce:transition-none motion-reduce:active:scale-100"
               >
                 {isLight ? <Moon className="w-5 h-5" aria-hidden="true" /> : <Sun className="w-5 h-5" aria-hidden="true" />}
               </button>

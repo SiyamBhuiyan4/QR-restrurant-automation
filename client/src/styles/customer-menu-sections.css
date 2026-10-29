@@ -147,6 +147,7 @@
   color: #34d399; /* Green price from screenshot */
   letter-spacing: -0.01em;
   line-height: 1;
+  white-space: nowrap;
 }
 
 /* Dietary & Rating Chips */
@@ -458,4 +459,10 @@ html[data-theme="light"] .plate-note-btn {
   background: #f7f3e8;
   border-color: rgba(138, 109, 22, 0.35);
   color: #7a5f10;
+}
+
+/* Phones: two cards per row leave little room, so keep the essentials tidy */
+@media (max-width: 640px) {
+  .plate-chip--rating { display: none; }
+  .plate-card__title { font-size: 0.95rem; line-height: 1.25; }
 }

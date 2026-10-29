@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspens
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
-import { permanentMediaUrl, cardVideoUrl } from '../utils/mediaUrl.js';
+import { permanentMediaUrl, cardVideoUrl, isPlaceholderVideo } from '../utils/mediaUrl.js';
 import { prefetchVideos } from '../utils/videoCache.js';
 import { useRestaurant } from '../context/RestaurantContext';
 import { getCachedMenu } from '../db/indexedDb.js';
@@ -89,8 +89,7 @@ const DEFAULT_MENU_ITEMS = [
     image: 'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=900&auto=format&fit=crop&q=80',
     images: [
       'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -108,9 +107,8 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: false,
     isPopular: true,
     prepTime: '10 min',
-    image: 'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1585109649139-366815a0d713?w=900&auto=format&fit=crop&q=80'
@@ -134,9 +132,7 @@ const DEFAULT_MENU_ITEMS = [
     image: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80',
     images: [
       'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -152,11 +148,9 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: true,
     isSpicy: false,
     prepTime: '8 min',
-    image: 'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1619535860434-ba1d8fa12536?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1619535860434-ba1d8fa12536?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1509722747041-616f39b57569?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
@@ -166,24 +160,21 @@ const DEFAULT_MENU_ITEMS = [
   },
   {
     id: 'starter-4',
-    name: 'Crispy Salt & Pepper Calamari',
-    description: 'Tender Monterey squid lightly crusted with five-spice sea salt, served with lemon wedges and house tartar.',
+    name: 'Steamed Chicken Dumplings',
+    description: 'Hand-folded dumplings filled with seasoned chicken, ginger and spring onion, steamed and served with a chili-soy dipping sauce.',
     price: 11.50,
     category: 'Appetizers',
     isVeg: false,
     isSpicy: false,
     prepTime: '12 min',
-    image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
     making_video_url: '/videos/reel-chef-480.mp4',
-    ingredients: ['Monterey Squid Rings', 'Five-Spice Sea Salt', 'Fresh Lemon Wedges', 'House Pickled Tartar', 'Micro Greens']
+    ingredients: ['Hand-Rolled Wheat Wrappers', 'Seasoned Chicken Mince', 'Fresh Ginger', 'Spring Onion', 'Chili-Soy Dip']
   },
 
   // Mains
@@ -200,7 +191,6 @@ const DEFAULT_MENU_ITEMS = [
     image: 'https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80',
     images: [
       'https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1504973960431-1c467e159aa4?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=900&auto=format&fit=crop&q=80'
     ],
@@ -222,9 +212,7 @@ const DEFAULT_MENU_ITEMS = [
     image: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=900&auto=format&fit=crop&q=80',
     images: [
       'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -243,9 +231,7 @@ const DEFAULT_MENU_ITEMS = [
     image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=900&auto=format&fit=crop&q=80',
     images: [
       'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -264,9 +250,7 @@ const DEFAULT_MENU_ITEMS = [
     image: 'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=900&auto=format&fit=crop&q=80',
     images: [
       'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -285,12 +269,10 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: false,
     isPopular: true,
     prepTime: '12 min',
-    image: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -350,12 +332,10 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: false,
     isSpicy: false,
     prepTime: '14 min',
-    image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -417,11 +397,8 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: true,
     isSpicy: false,
     prepTime: '12 min',
-    image: 'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1520072959219-c595dc870360?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1520072959219-c595dc870360?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
@@ -443,9 +420,8 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: false,
     isPopular: true,
     prepTime: '4 min',
-    image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
@@ -476,8 +452,8 @@ const DEFAULT_MENU_ITEMS = [
   },
   {
     id: 'cocktail-espresso-martini',
-    name: 'Espresso Martini',
-    description: 'Fresh pulled dark espresso vigorously shaken with premium vodka, coffee liqueur, and dark cocoa dust.',
+    name: 'Classic Citrus Martini',
+    description: 'Chilled premium vodka shaken with fresh orange and lime, finished with a citrus twist.',
     price: 13.50,
     priceK: '72 K',
     category: 'Beverages',
@@ -486,9 +462,9 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: false,
     isPopular: true,
     prepTime: '5 min',
-    image: 'https://images.unsplash.com/photo-1545438102-799c3991ffb2?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1545438102-799c3991ffb2?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -506,9 +482,9 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: true,
     isSpicy: false,
     prepTime: '3 min',
-    image: 'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1545438102-799c3991ffb2?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1545438102-799c3991ffb2?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -527,9 +503,9 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: false,
     isPopular: true,
     prepTime: '3 min',
-    image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -547,9 +523,9 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: true,
     isSpicy: false,
     prepTime: '3 min',
-    image: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -558,20 +534,17 @@ const DEFAULT_MENU_ITEMS = [
   },
   {
     id: 'beverage-1',
-    name: 'Signature Sparkling Lemonade',
-    description: 'Freshly squeezed lemons with organic agave syrup, crushed mint, and sparkling mineral water.',
+    name: 'Sparkling Watermelon Lemonade',
+    description: 'Fresh watermelon and squeezed lemon over crushed ice, topped with sparkling water and a slice of lime.',
     price: 4.50,
     priceK: '28 K',
     category: 'Beverages',
     isVeg: true,
     isSpicy: false,
     prepTime: '3 min',
-    image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -588,11 +561,8 @@ const DEFAULT_MENU_ITEMS = [
     isVeg: true,
     isSpicy: true,
     prepTime: '4 min',
-    image: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1536935338788-846bb9981813?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1536935338788-846bb9981813?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
@@ -604,8 +574,8 @@ const DEFAULT_MENU_ITEMS = [
   // Desserts
   {
     id: 'dessert-souffle',
-    name: 'Chocolate Soufflé',
-    description: 'Classic French chocolate soufflé puffed to airy perfection, with a warm liquid chocolate center and bourbon crème anglaise.',
+    name: 'Fudge Chocolate Brownie',
+    description: 'Dense, gooey dark-chocolate brownie with a crackled top, served warm with a dusting of cocoa.',
     price: 9.50,
     priceK: '50 K',
     category: 'Desserts',
@@ -613,9 +583,8 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: false,
     isPopular: true,
     prepTime: '15 min',
-    image: 'https://images.unsplash.com/photo-1579372786545-d24232daf58c?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1579372786545-d24232daf58c?w=900&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
@@ -634,12 +603,9 @@ const DEFAULT_MENU_ITEMS = [
     isSpicy: false,
     isPopular: true,
     prepTime: '10 min',
-    image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -658,10 +624,7 @@ const DEFAULT_MENU_ITEMS = [
     prepTime: '5 min',
     image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1534432182912-63863115e106?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80'
     ],
     videoUrl: '/videos/reel-chef-480.mp4',
     makingVideoUrl: '/videos/reel-chef-480.mp4',
@@ -796,7 +759,7 @@ export const normalizeDishItem = (item, defaultCategory = 'Mains') => {
     if (nonVideo) resolvedImage = permanentMediaUrl(nonVideo);
   }
   if (!resolvedImage) {
-    resolvedImage = 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80';
+    resolvedImage = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80';
   }
 
   // Build images array
@@ -1835,7 +1798,10 @@ export default function CustomerMenu({
   useEffect(() => {
     if (!Array.isArray(allMenuItems) || allMenuItems.length === 0) return undefined;
     // Cache the files the cards actually play (the 360p copy where there is one)
-    const urls = allMenuItems.map((item) => cardVideoUrl(item.videoUrl || item.making_video_url || item.makingVideoUrl));
+    const urls = allMenuItems
+      .map((item) => item.videoUrl || item.making_video_url || item.makingVideoUrl)
+      .filter((url) => url && !isPlaceholderVideo(url))
+      .map(cardVideoUrl);
     const start = () => prefetchVideos(urls);
     if (typeof window.requestIdleCallback === 'function') {
       const id = window.requestIdleCallback(start, { timeout: 3000 });
@@ -2512,7 +2478,7 @@ export default function CustomerMenu({
                           <p className="text-xs text-slate-400">{section.subtitle}</p>
                         </div>
                       </div>
-                      <span className="text-xs font-bold text-amber-400 bg-slate-900/80 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
+                      <span className="shrink-0 whitespace-nowrap text-xs font-bold text-amber-400 bg-slate-900/80 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
                         {section.items.length} {section.items.length === 1 ? 'dish' : 'dishes'}
                       </span>
                     </div>
@@ -2870,7 +2836,7 @@ export default function CustomerMenu({
             setShowSwipeTutorial(true);
             setTimeout(() => setShowSwipeTutorial(false), 5000);
           }}
-          className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center select-none animate-edge-tab cursor-pointer"
+          className="fixed right-0 top-1/2 -translate-y-1/2 z-40 hidden sm:flex items-center select-none animate-edge-tab cursor-pointer"
           title="Swipe left or right anywhere (or 2 fingers sideways on a trackpad) to watch Food Reels"
         >
           <div className="bg-gradient-to-l from-rose-600 via-[#FF5A26] to-[#FF7A45] text-white pl-3 pr-2.5 py-2.5 rounded-l-2xl shadow-2xl border-y border-l border-white/25 flex items-center gap-2">

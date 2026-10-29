@@ -32,68 +32,53 @@ import {
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import VoiceRecorder from './VoiceRecorder';
+import { isPlaceholderVideo } from '../utils/mediaUrl';
 import '../styles/food-detail.css';
 
 /**
- * Curated gourmet angles matching food categories and dish keywords to guarantee
- * rich 3-4 photo carousel experience for every dish!
+ * Extra photos by kind of food, used to fill out a dish's photo carousel. Every pool holds
+ * only photos of that kind of food, so a dish never borrows an unrelated picture.
  */
 export const FOOD_ANGLE_POOLS = {
   // Starters & Sides
   fries: [
-    'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1585109649139-366815a0d713?w=900&auto=format&fit=crop&q=80'
   ],
   wings: [
     'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=900&auto=format&fit=crop&q=80'
   ],
   bread: [
-    'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1619535860434-ba1d8fa12536?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1509722747041-616f39b57569?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=900&auto=format&fit=crop&q=80'
   ],
-  calamari: [
-    'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
+  dumpling: [
     'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=900&auto=format&fit=crop&q=80'
   ],
   // Mains
   steak: [
     'https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1504973960431-1c467e159aa4?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=900&auto=format&fit=crop&q=80'
   ],
   chicken: [
     'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=900&auto=format&fit=crop&q=80'
   ],
   salmon: [
     'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=900&auto=format&fit=crop&q=80'
   ],
   pasta: [
-    'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=900&auto=format&fit=crop&q=80'
   ],
   risotto: [
     'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=900&auto=format&fit=crop&q=80'
   ],
   // Burgers
   burger: [
@@ -109,16 +94,11 @@ export const FOOD_ANGLE_POOLS = {
     'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80'
   ],
   vegan: [
-    'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1520072959219-c595dc870360?w=900&auto=format&fit=crop&q=80'
   ],
   // Beverages
   lemonade: [
-    'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1556881286-fc6915169721?w=900&auto=format&fit=crop&q=80'
   ],
   beverages: [
@@ -130,32 +110,25 @@ export const FOOD_ANGLE_POOLS = {
   // Desserts
   chocolate: [
     'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&auto=format&fit=crop&q=80'
   ],
   tiramisu: [
-    'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1534432182912-63863115e106?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80'
   ],
   desserts: [
     'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=900&auto=format&fit=crop&q=80'
   ],
   starters: [
-    'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=900&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1619535860434-ba1d8fa12536?w=900&auto=format&fit=crop&q=80'
   ],
   mains: [
     'https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=900&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1504973960431-1c467e159aa4?w=900&auto=format&fit=crop&q=80'
+    'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=900&auto=format&fit=crop&q=80'
   ]
 };
 
@@ -186,7 +159,7 @@ export function resolveDishPhotos(dish) {
   let matchedPool = null;
 
   const keywordOrder = [
-    'fries', 'wing', 'calamari', 'bread', 'bruschetta',
+    'fries', 'wing', 'dumpling', 'bread', 'bruschetta',
     'steak', 'ribeye', 'salmon', 'fish', 'chicken', 'peri',
     'risotto', 'pasta', 'tagliatelle',
     'jalapeno', 'spicy burger', 'vegan', 'plant', 'burger', 'smash',
@@ -199,7 +172,7 @@ export function resolveDishPhotos(dish) {
     if (text.includes(kw)) {
       if (kw === 'fries') matchedPool = FOOD_ANGLE_POOLS.fries;
       else if (kw === 'wing') matchedPool = FOOD_ANGLE_POOLS.wings;
-      else if (kw === 'calamari') matchedPool = FOOD_ANGLE_POOLS.calamari;
+      else if (kw === 'dumpling') matchedPool = FOOD_ANGLE_POOLS.dumpling;
       else if (kw === 'bread' || kw === 'bruschetta') matchedPool = FOOD_ANGLE_POOLS.bread;
       else if (kw === 'steak' || kw === 'ribeye') matchedPool = FOOD_ANGLE_POOLS.steak;
       else if (kw === 'salmon' || kw === 'fish') matchedPool = FOOD_ANGLE_POOLS.salmon;
@@ -419,12 +392,13 @@ export default function FoodDetailModal({
     return resolveDishPhotos(dish);
   }, [dish]);
 
-  // Kitchen video reel URL (always fallback to local self-hosted reel-chef-480.mp4 if mixkit or empty)
+  // Kitchen video: only the dish's own video. No video, no kitchen-reel section (the bundled
+  // demo clip is not food, so it is never shown as a dish's video).
   const isVideoField = (u) => typeof u === 'string' && (/\.(mp4|webm|mov|ogg|m4v)(\?.*)?$/i.test(u) || u.includes('/videos/') || u.includes('/video/') || u.includes('video_note') || u.includes('sendvideo') || u.includes('video/mp4'));
   const rawVideo = dish?.makingVideoUrl || dish?.making_video_url || dish?.videoUrl || dish?.video_url || (isVideoField(dish?.image) ? dish?.image : null) || (isVideoField(dish?.imageUrl) ? dish?.imageUrl : null);
-  const videoUrl = rawVideo && typeof rawVideo === 'string' && !rawVideo.includes('mixkit.co')
+  const videoUrl = rawVideo && typeof rawVideo === 'string' && !rawVideo.includes('mixkit.co') && !isPlaceholderVideo(rawVideo)
     ? rawVideo
-    : '/videos/reel-chef-480.mp4';
+    : null;
 
   // Sync initial quantity & prefilled author on open
   useEffect(() => {
@@ -969,6 +943,7 @@ export default function FoodDetailModal({
           {/* ----------------------------------------------------------------
               DEDICATED CHEF'S KITCHEN REEL IN SCROLLABLE BODY
              ---------------------------------------------------------------- */}
+          {videoUrl && (
           <div className="p-4 sm:p-5 space-y-3 bg-[#0b0f19] border-t border-emerald-500/20 fdm-d5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -1114,6 +1089,7 @@ export default function FoodDetailModal({
               </div>
             </div>
           </div>
+          )}
 
           {/* ----------------------------------------------------------------
               5. Chef Customization & Voice Notes

@@ -30,7 +30,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
-import { permanentMediaUrl } from '../utils/mediaUrl';
+import { permanentMediaUrl, isPlaceholderVideo } from '../utils/mediaUrl';
 import { prefetchVideos } from '../utils/videoCache';
 import '../styles/food-reels.css';
 
@@ -343,6 +343,20 @@ function ReelVoiceCommentPlayer({ audioUrl }) {
   );
 }
 
+// First real photo of a dish (some dishes keep their video in the image fields)
+const VIDEO_FILE_RE = /\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i;
+function dishPhoto(item) {
+  const candidates = [
+    item.image_url,
+    item.imageUrl,
+    item.image,
+    ...(Array.isArray(item.images) ? item.images : []),
+    item.poster,
+  ];
+  return candidates.find((u) => typeof u === 'string' && u.trim() && !VIDEO_FILE_RE.test(u) && !u.includes('/videos/'))
+    || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80';
+}
+
 export default function FoodReelsModal({
   isOpen,
   onClose,
@@ -373,7 +387,7 @@ export default function FoodReelsModal({
             category: item.category_name || item.category || 'Kitchen Specials',
             price: Number(item.price) || 0,
             videoUrl: vidUrl,
-            poster: item.image_url || item.imageUrl || item.image || '',
+            poster: dishPhoto(item),
             description: item.description || 'Chef special culinary creation.',
             chefNote: item.chefNote || 'Prepared fresh upon order by our kitchen team.',
             caption: item.reel_caption || item.caption || item.description || item.chefNote || '',
@@ -444,6 +458,8 @@ export default function FoodReelsModal({
   }, [menuItems, funReels]);
 
   const isFunReel = (reel) => reel?.kind === 'fun';
+  // Dishes without their own video (only the demo placeholder) are shown as a full-screen photo
+  const isPhotoReel = (reel) => !reel?.videoUrl || isPlaceholderVideo(reel.videoUrl);
 
   // Current reel index (synced with scroll position)
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -690,7 +706,10 @@ export default function FoodReelsModal({
     const order = [0, 1, -1, 2, -2]
       .map((d) => currentIndex + d)
       .filter((i) => i >= 0 && i < activeReels.length);
-    prefetchVideos(order.map((i) => activeReels[i].videoUrl), { priority: true });
+    prefetchVideos(
+      order.map((i) => activeReels[i]).filter((r) => !isPhotoReel(r)).map((r) => r.videoUrl),
+      { priority: true }
+    );
   }, [isOpen, currentIndex, activeReels]);
 
   // Jump to initial dish if specified
@@ -1120,6 +1139,7 @@ export default function FoodReelsModal({
             <button
               type="button"
               onClick={() => setIsMuted((prev) => !prev)}
+              style={isPhotoReel(currentReel) ? { visibility: 'hidden' } : undefined}
               className="reel-header-btn justify-self-end"
               aria-label={isMuted ? 'Unmute sound' : 'Mute sound'}
               title={isMuted ? 'Unmute sound' : 'Mute sound'}
@@ -1161,16 +1181,28 @@ export default function FoodReelsModal({
                   className="reel-video-wrapper cursor-pointer"
                   onClick={(e) => handleSlideTap(e, index)}
                 >
-                  <video
-                    ref={(el) => (videoRefs.current[index] = el)}
-                    src={reel.videoUrl}
-                    poster={reel.poster}
-                    playsInline
-                    loop
-                    muted={isMuted}
-                    preload={Math.abs(index - currentIndex) <= 2 ? 'auto' : 'none'}
-                    className={`reel-video ${isCurrentSlide && showIngredients ? 'is-blurred' : ''}`}
-                  />
+                  {isPhotoReel(reel) ? (
+                    <img
+                      ref={() => (videoRefs.current[index] = null)}
+                      src={reel.poster}
+                      alt={reel.name}
+                      loading={Math.abs(index - currentIndex) <= 2 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      className={`reel-video ${isCurrentSlide && showIngredients ? 'is-blurred' : ''}`}
+                    />
+                  ) : (
+                    <video
+                      ref={(el) => (videoRefs.current[index] = el)}
+                      src={reel.videoUrl}
+                      poster={reel.poster}
+                      playsInline
+                      loop
+                      muted={isMuted}
+                      preload={Math.abs(index - currentIndex) <= 2 ? 'auto' : 'none'}
+                      className={`reel-video ${isCurrentSlide && showIngredients ? 'is-blurred' : ''}`}
+                    />
+                  )}
 
                   {/* Central Play / Pause Icon Flash */}
                   {playIconFlash && playIconFlash.idx === index && (
@@ -1337,19 +1369,20 @@ export default function FoodReelsModal({
                         <div className="mt-1 relative pointer-events-auto">
                           {!isExpanded ? (
                             <div className="text-xs text-stone-200 leading-relaxed font-normal drop-shadow-md">
-                              <span className="line-clamp-2 inline">
+                              {/* Two lines, then "more" (line-clamp needs block display) */}
+                              <p className="line-clamp-2">
                                 {captionText}
-                              </span>
-                              {captionText.length > 60 && (
+                              </p>
+                              {captionText.length > 90 && (
                                 <button
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     toggleCaptionExpand(index);
                                   }}
-                                  className="inline-block ml-1.5 font-black text-white text-xs hover:text-amber-300 hover:underline cursor-pointer bg-black/50 backdrop-blur-xs px-1.5 py-0.5 rounded shadow-xs"
+                                  className="mt-0.5 font-semibold text-white/90 text-xs hover:text-white cursor-pointer"
                                 >
-                                  ...see more
+                                  more
                                 </button>
                               )}
                             </div>

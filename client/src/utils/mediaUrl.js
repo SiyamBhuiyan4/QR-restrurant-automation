@@ -15,6 +15,11 @@ export const telegramMediaUrl = (fileId, ext) => `${MEDIA_BASE}/api/tg/${fileId}
 // The bundled demo video moved to a lighter 480p file; menus saved on phones still hold the old link
 const LEGACY_DEMO_VIDEO_RE = /\/videos\/reel-chef\.mp4$/;
 
+// The bundled demo clip (any of its sizes) is a placeholder, not food: it is never shown as a
+// dish's own video. Dishes without a real video show their photo instead.
+const PLACEHOLDER_VIDEO_RE = /\/videos\/reel-chef(?:-480|-360)?\.mp4$/;
+export const isPlaceholderVideo = (url) => typeof url === 'string' && PLACEHOLDER_VIDEO_RE.test(url);
+
 // Menu cards are small and always muted, so they play a lighter 360p copy of the bundled demo
 // video; Reels and dish details keep the 480p one. Other videos are used as they are.
 const DEMO_VIDEO_480_RE = /\/videos\/reel-chef-480\.mp4$/;

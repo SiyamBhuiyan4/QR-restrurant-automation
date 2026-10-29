@@ -84,8 +84,9 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 280px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 45%, rgba(0, 0, 0, 0.2) 75%, transparent 100%);
+  /* Tall, soft shade so the dish name and caption stay readable on any photo */
+  height: 62%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.78) 30%, rgba(0, 0, 0, 0.45) 60%, transparent 100%);
   pointer-events: none;
   z-index: 10;
 }

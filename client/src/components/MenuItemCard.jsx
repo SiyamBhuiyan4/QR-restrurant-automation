@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { startVisibleVideos } from '../utils/visibleVideos';
 import { startCardReveal } from '../utils/cardReveal';
-import { cardVideoUrl } from '../utils/mediaUrl';
+import { cardVideoUrl, isPlaceholderVideo } from '../utils/mediaUrl';
 import { 
   Plus, 
   Minus, 
@@ -159,8 +159,12 @@ export default function MenuItemCard({
     item.images,
     item.videos,
   ]);
-  // Cards play the light 360p copy where one exists (see utils/mediaUrl.js)
-  const dishVideo = useMemo(() => cardVideoUrl(rawDishVideo), [rawDishVideo]);
+  // Only the dish's own video plays on the card (light 360p copy where one exists); the demo
+  // placeholder clip is never shown as food, so those cards show the dish photo
+  const dishVideo = useMemo(
+    () => (rawDishVideo && !isPlaceholderVideo(rawDishVideo) ? cardVideoUrl(rawDishVideo) : null),
+    [rawDishVideo]
+  );
 
   const hasVideo = Boolean(dishVideo);
   const [isVideoMode, setIsVideoMode] = useState(Boolean(dishVideo));
@@ -189,11 +193,11 @@ export default function MenuItemCard({
 
     let found = candidateImages.find(u => u && typeof u === 'string' && u.trim().length > 0);
     if (!found) {
-      found = 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80';
+      found = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80';
     }
 
     if (found.includes('photo-1604909052743')) {
-      return 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80';
+      return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80';
     }
     return found;
   }, [item.image, item.imageUrl, item.image_url, item.images, item.poster, item.posterUrl, item.thumbnail]);
@@ -206,7 +210,7 @@ export default function MenuItemCard({
     if (safeDishImage && !isVideoUrl(safeDishImage) && !imgs.includes(safeDishImage)) {
       imgs.unshift(safeDishImage);
     }
-    imgs = imgs.map((u) => (typeof u === 'string' && u.includes('photo-1604909052743') ? 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=900&auto=format&fit=crop&q=80' : u));
+    imgs = imgs.map((u) => (typeof u === 'string' && u.includes('photo-1604909052743') ? 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80' : u));
     return imgs.length > 0 ? imgs : [safeDishImage];
   }, [item.images, safeDishImage]);
 
@@ -911,7 +915,7 @@ export default function MenuItemCard({
 
           {/* Details: Title and Short Description */}
           <div className="plate-card__body">
-            <h3 className="plate-card__title line-clamp-1">
+            <h3 className="plate-card__title line-clamp-2">
               {dishTitle}
             </h3>
 
@@ -938,12 +942,13 @@ export default function MenuItemCard({
 
           {/* Footer: Prep Time & Ordering Controls */}
           <div className="plate-card__foot">
-            <div className="flex items-center gap-1 text-[11px] text-[#f5efe0]/65 font-medium">
-              <Clock className="w-3 h-3 text-[#d4af37]" />
+            {/* Prep time: hidden on phones (two cards per row), shown on the dish page */}
+            <div className="hidden min-[480px]:flex items-center gap-1 text-[11px] text-[#f5efe0]/65 font-medium whitespace-nowrap min-w-0">
+              <Clock className="w-3 h-3 text-[#d4af37] shrink-0" />
               <span>{item.prepTime || '10 min'}</span>
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0 ml-auto">
               {isAvailable && (
                 <button
                   type="button"
