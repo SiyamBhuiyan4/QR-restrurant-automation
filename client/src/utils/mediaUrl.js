@@ -15,6 +15,14 @@ export const telegramMediaUrl = (fileId, ext) => `${MEDIA_BASE}/api/tg/${fileId}
 // The bundled demo video moved to a lighter 480p file; menus saved on phones still hold the old link
 const LEGACY_DEMO_VIDEO_RE = /\/videos\/reel-chef\.mp4$/;
 
+// Menu cards are small and always muted, so they play a lighter 360p copy of the bundled demo
+// video; Reels and dish details keep the 480p one. Other videos are used as they are.
+const DEMO_VIDEO_480_RE = /\/videos\/reel-chef-480\.mp4$/;
+export function cardVideoUrl(url) {
+  if (typeof url !== 'string') return url;
+  return permanentMediaUrl(url).replace(DEMO_VIDEO_480_RE, '/videos/reel-chef-360.mp4');
+}
+
 export function permanentMediaUrl(url) {
   if (typeof url !== 'string') return url;
   if (LEGACY_DEMO_VIDEO_RE.test(url)) return url.replace(LEGACY_DEMO_VIDEO_RE, '/videos/reel-chef-480.mp4');

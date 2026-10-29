@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { startVisibleVideos } from '../utils/visibleVideos';
 import { startCardReveal } from '../utils/cardReveal';
+import { cardVideoUrl } from '../utils/mediaUrl';
 import { 
   Plus, 
   Minus, 
@@ -106,7 +107,7 @@ export default function MenuItemCard({
   const isSpicy = item.isSpicy === true || item.spicy === true || (Array.isArray(item.tags) && item.tags.some(t => /spic/i.test(t)));
   const isAvailable = item.isAvailable !== false && item.outOfStock !== true && item.available !== false;
   // 1. Direct 360° Food Profile Video & Media URL Resolution
-  const dishVideo = useMemo(() => {
+  const rawDishVideo = useMemo(() => {
     // a) Explicit video attributes
     const explicitCandidates = [
       item.videoUrl,
@@ -158,6 +159,8 @@ export default function MenuItemCard({
     item.images,
     item.videos,
   ]);
+  // Cards play the light 360p copy where one exists (see utils/mediaUrl.js)
+  const dishVideo = useMemo(() => cardVideoUrl(rawDishVideo), [rawDishVideo]);
 
   const hasVideo = Boolean(dishVideo);
   const [isVideoMode, setIsVideoMode] = useState(Boolean(dishVideo));

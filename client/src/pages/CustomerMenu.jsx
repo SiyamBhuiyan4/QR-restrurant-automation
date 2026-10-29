@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspens
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
-import { permanentMediaUrl } from '../utils/mediaUrl.js';
+import { permanentMediaUrl, cardVideoUrl } from '../utils/mediaUrl.js';
 import { prefetchVideos } from '../utils/videoCache.js';
 import { useRestaurant } from '../context/RestaurantContext';
 import { getCachedMenu } from '../db/indexedDb.js';
@@ -1834,7 +1834,8 @@ export default function CustomerMenu({
   // so cards (and reels) play from the device instead of streaming (see utils/videoCache.js)
   useEffect(() => {
     if (!Array.isArray(allMenuItems) || allMenuItems.length === 0) return undefined;
-    const urls = allMenuItems.map((item) => item.videoUrl || item.making_video_url || item.makingVideoUrl);
+    // Cache the files the cards actually play (the 360p copy where there is one)
+    const urls = allMenuItems.map((item) => cardVideoUrl(item.videoUrl || item.making_video_url || item.makingVideoUrl));
     const start = () => prefetchVideos(urls);
     if (typeof window.requestIdleCallback === 'function') {
       const id = window.requestIdleCallback(start, { timeout: 3000 });
