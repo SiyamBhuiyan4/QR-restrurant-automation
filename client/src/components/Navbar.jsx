@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UtensilsCrossed, Bell, BellRing, Wifi, WifiOff, CheckCircle2, Sun, Moon, ShoppingBag } from 'lucide-react';
+import { UtensilsCrossed, Bell, BellRing, WifiOff, CheckCircle2, Sun, Moon, ShoppingBag } from 'lucide-react';
 import CallWaiterModal from './CallWaiterModal';
 import useTheme from '../hooks/useTheme';
 
@@ -176,33 +176,18 @@ export default function Navbar({
             {/* Right: Table Badge, Call Waiter, Order Cart & Network Badge */}
             <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
 
-              {/* Network Status Badge */}
-              <div
-                role="status"
-                aria-label={isOnline ? 'Online' : 'Offline Mode'}
-                className={`max-[399px]:hidden inline-flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-full text-xs font-semibold border transition-colors duration-300 ${
-                  isOnline
-                    ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
-                    : 'bg-[#c8442b]/15 text-[#f5efe0] border-[#c8442b]/50 animate-pulse motion-reduce:animate-none'
-                }`}
-                title={isOnline ? 'System is online and connected' : 'Operating in offline local-first mode'}
-              >
-                {isOnline ? (
-                  <>
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
-                    </span>
-                    <Wifi className="w-3.5 h-3.5 hidden sm:inline" />
-                    <span className="hidden sm:inline text-[11px] font-semibold tracking-tight">Online</span>
-                  </>
-                ) : (
-                  <>
-                    <WifiOff className="w-3.5 h-3.5 text-[#c8442b]" />
-                    <span className="hidden sm:inline text-[11px] font-semibold tracking-tight">Offline Mode</span>
-                  </>
-                )}
-              </div>
+              {/* Only shown when the connection drops (orders are queued and sent later) */}
+              {!isOnline && (
+                <div
+                  role="status"
+                  aria-label="Offline"
+                  className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full text-xs font-semibold border bg-[#c8442b]/15 text-[#f5efe0] border-[#c8442b]/50"
+                  title="You're offline. Orders are saved and sent when the connection is back."
+                >
+                  <WifiOff className="w-3.5 h-3.5 text-[#c8442b]" />
+                  <span className="hidden sm:inline text-[11px] font-semibold tracking-tight">Offline</span>
+                </div>
+              )}
 
               {/* Table Badge: static label once a table is known (set via QR link) */}
               {tableNumber ? (

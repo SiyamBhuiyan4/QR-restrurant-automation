@@ -11,7 +11,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
  *   categories
  * - Active pill auto-centering on selection
  * - Gold count badges per category
- * - Optional category icons / emojis
  * - Left/right desktop quick navigation controls
  */
 
@@ -88,46 +87,17 @@ export default function CategoryBar({
     }
   };
 
-  // Category icons
-  const defaultCategoryIcons = {
-    all: '✨',
-    starters: '🥗',
-    appetizers: '🫒',
-    mains: '🥩',
-    entrees: '🍽️',
-    burgers: '🍔',
-    pizza: '🍕',
-    pasta: '🍝',
-    seafood: '🐟',
-    fish: '🦞',
-    grill: '🔥',
-    salads: '🥗',
-    soups: '🍲',
-    beverages: '🥂',
-    drinks: '🍹',
-    cocktails: '🍸',
-    wine: '🍷',
-    coffee: '☕',
-    desserts: '🍰',
-    sweets: '🍨',
-    specials: '⭐',
-    combos: '🍱',
-    sides: '🍟',
-    vegan: '🌱',
-    vegetarian: '🥑'
-  };
-
   return (
     <div
-      className={`relative w-full bg-[#0b0f19]/90 border-b border-emerald-500/20 py-2.5 ${className}`}
+      className={`relative w-full rounded-2xl bg-[#06140e]/85 backdrop-blur-md border border-white/10 shadow-lg py-1.5 ${className}`}
     >
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 relative flex items-center min-w-0">
+      <div className="px-1.5 relative flex items-center min-w-0">
 
         {/* Left Scroll Button (Desktop / larger screens) */}
         <button
           type="button"
           onClick={() => scrollByAmount(-220)}
-          className="hidden md:flex items-center justify-center w-11 h-11 rounded-full bg-slate-800/90 border border-emerald-500/30 shadow-md text-emerald-400 hover:text-white hover:bg-emerald-600 hover:border-emerald-500 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 mr-1.5 z-10 cursor-pointer"
+          className="hidden md:flex items-center justify-center w-9 h-9 rounded-full text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 mr-1.5 z-10 cursor-pointer"
           aria-label="Scroll left"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -143,7 +113,7 @@ export default function CategoryBar({
           {indicator && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute left-0 top-0 rounded-full border-[1.5px] border-emerald-400 bg-gradient-to-r from-emerald-600 to-teal-600 shadow-[0_0_14px_rgba(16,185,129,0.45)] transition-[transform,width,height] duration-300 ease-out motion-reduce:transition-none"
+              className="pointer-events-none absolute left-0 top-0 rounded-full bg-emerald-600 transition-[transform,width,height] duration-300 ease-out motion-reduce:transition-none"
               style={{
                 width: indicator.width,
                 height: indicator.height,
@@ -156,7 +126,6 @@ export default function CategoryBar({
             const isObject = typeof category === 'object' && category !== null;
             const categoryId = isObject ? (category.id || category.name) : category;
             const categoryName = isObject ? category.name : category;
-            const customIcon = isObject ? category.icon : null;
 
             const isSelected = String(activeKey).toLowerCase() === String(categoryId).toLowerCase();
 
@@ -165,9 +134,8 @@ export default function CategoryBar({
               ? category.count
               : categoryCounts[categoryName] ?? categoryCounts[categoryId];
 
-            // Resolve icon: explicit icon > default map > fallback
-            const lowerName = String(categoryName).toLowerCase();
-            const icon = customIcon || defaultCategoryIcons[lowerName] || '🍽️';
+            // 'SPECIAL STEAK' -> 'Special Steak'
+            const displayName = String(categoryName).toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
             return (
               <button
@@ -176,25 +144,15 @@ export default function CategoryBar({
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => onSelectCategory && onSelectCategory(categoryId)}
-                className={`group relative z-10 inline-flex items-center gap-2 h-11 min-h-11 px-3.5 sm:px-4 rounded-full text-xs sm:text-sm font-semibold tracking-tight text-slate-100 [text-shadow:0_1px_3px_rgba(0,0,0,0.85)] transition-[color,background-color,border-color,transform] duration-300 ease-out shrink-0 select-none cursor-pointer active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${
+                className={`group relative z-10 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-sm tracking-tight transition-[color,background-color] duration-200 ease-out shrink-0 select-none cursor-pointer active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${
                   isSelected
-                    ? 'border border-transparent text-white font-bold'
-                    : 'bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 hover:-translate-y-px motion-reduce:hover:translate-y-0 text-slate-200'
+                    ? 'text-white font-semibold'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5 font-medium'
                 }`}
               >
-                <span className="text-base leading-none transition-transform duration-200 group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100">
-                  {icon}
-                </span>
-                <span className="whitespace-nowrap font-medium tracking-tight">
-                  {categoryName}
-                </span>
-
+                <span className="whitespace-nowrap">{displayName}</span>
                 {count !== undefined && (
-                  <span
-                    className={`ml-0.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold font-mono leading-none transition-colors duration-300 ${
-                      isSelected ? 'bg-amber-400 text-slate-950 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-slate-700 text-slate-300 group-hover:bg-emerald-500/20 group-hover:text-emerald-300'
-                    }`}
-                  >
+                  <span className={`text-[11px] tabular-nums ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
                     {count}
                   </span>
                 )}
@@ -207,7 +165,7 @@ export default function CategoryBar({
         <button
           type="button"
           onClick={() => scrollByAmount(220)}
-          className="hidden md:flex items-center justify-center w-11 h-11 rounded-full bg-slate-800/90 border border-emerald-500/30 shadow-md text-emerald-400 hover:text-white hover:bg-emerald-600 hover:border-emerald-500 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 ml-1.5 z-10 cursor-pointer"
+          className="hidden md:flex items-center justify-center w-9 h-9 rounded-full text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 ml-1.5 z-10 cursor-pointer"
           aria-label="Scroll right"
         >
           <ChevronRight className="w-4 h-4" />

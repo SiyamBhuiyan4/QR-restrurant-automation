@@ -680,6 +680,9 @@ export const CANONICAL_CATEGORIES = [
   }
 ];
 
+// 'SPECIAL STEAK' -> 'Special Steak'
+const titleCase = (text) => String(text || '').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+
 export const getCategoryMetadata = (categoryName = '') => {
   const lower = String(categoryName).toLowerCase().trim();
   if (lower.includes('start') || lower.includes('appetiz')) return CANONICAL_CATEGORIES[0];
@@ -1826,19 +1829,19 @@ export default function CustomerMenu({
           const el = document.getElementById(`cat-section-${section.categoryKey}`);
           if (!el) return null;
           const top = el.getBoundingClientRect().top + window.scrollY;
-          return { id: section.canonicalId, top, bottom: top + el.offsetHeight };
+          // Report the category bar's own id for this section (its raw category name)
+          const pill = categoriesList.find((c) => c.id !== 'All' && getCategoryMetadata(c.id).key === section.categoryKey);
+          return { id: pill ? pill.id : section.canonicalId, top, bottom: top + el.offsetHeight };
         })
         .filter(Boolean);
     };
     const update = () => {
       frame = 0;
       const y = window.scrollY;
-      let currentId = 'All';
-      if (y >= 220) {
-        const pos = y + 180;
-        const hit = bounds.find((b) => pos >= b.top && pos < b.bottom);
-        if (hit) currentId = hit.id;
-      }
+      // A section counts once it reaches the area just under the sticky header + categories
+      const pos = y + 170;
+      const hit = bounds.find((b) => pos >= b.top && pos < b.bottom);
+      const currentId = hit ? hit.id : 'All';
       if (currentId !== last) {
         last = currentId;
         setActiveScrollCategory(currentId);
@@ -1864,13 +1867,13 @@ export default function CustomerMenu({
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
     };
-  }, [selectedCategory, categorizedSections]);
+  }, [selectedCategory, categorizedSections, categoriesList]);
 
   // Smooth scroll or cleanly filter when CategoryBar pills are clicked
   const handleSelectCategory = (catId) => {
     if (catId === 'All') {
       setSelectedCategory('All');
-      const root = document.getElementById('menu-content-root');
+      const root = document.getElementById('menu-food-grid');
       if (root) {
         root.scrollIntoView({ behavior: 'smooth' });
       } else {
@@ -1889,7 +1892,7 @@ export default function CustomerMenu({
     } else {
       // Cleanly filter to that category
       setSelectedCategory(catId);
-      const root = document.getElementById('menu-content-root');
+      const root = document.getElementById('menu-food-grid');
       if (root) {
         root.scrollIntoView({ behavior: 'smooth' });
       }
@@ -2040,28 +2043,6 @@ export default function CustomerMenu({
 
       {/* Main Container: Dedicated 3D Interactive Restaurant Menu Book */}
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 pt-2 pb-16 relative z-10 flex flex-col items-center">
-
-        {/* ── CUSTOMER REELS GESTURE TIP BANNER ── */}
-        <div 
-          onClick={() => {
-            setShowSwipeTutorial(true);
-            setTimeout(() => setShowSwipeTutorial(false), 3500);
-          }}
-          className="w-full max-w-5xl mb-3 py-2 px-3.5 sm:px-4 rounded-2xl bg-gradient-to-r from-rose-950/70 via-zinc-900/85 to-amber-950/80 border border-[#FF5A26]/35 text-white flex items-center justify-between gap-2 shadow-lg select-none cursor-pointer hover:border-[#FF5A26]/60 transition"
-        >
-          <div className="flex items-center gap-2.5 text-xs sm:text-sm font-bold">
-            <span className="swipe-hint-track shrink-0" aria-hidden="true">
-              <span className="swipe-hint-dot" />
-            </span>
-            <span>
-              <strong className="text-amber-300">Swipe left or right</strong> anywhere to watch our <strong className="text-rose-400">Food Reels</strong>
-            </span>
-          </div>
-          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-300/90 bg-black/40 px-2.5 py-0.5 rounded-full border border-white/10 shrink-0 flex items-center gap-1">
-            <span aria-hidden="true">⇆</span>
-            <span>Reels</span>
-          </span>
-        </div>
 
         {/* ── REAL-TIME STAFF DISPATCH MESSAGE BANNER ── */}
         {activeStaffMessage && (
@@ -2265,116 +2246,90 @@ export default function CustomerMenu({
             A La Carte Dishes Grid (Matching Screenshot Plate Aesthetic)
             ===================================================================== */}
         <section id="menu-food-grid" className="w-full max-w-7xl pt-4 sm:pt-6 pb-12 scroll-mt-24">
-          {/* Section Divider & Heading */}
-          <div className="text-center mb-7">
-            <div className="inline-flex items-center gap-3 text-amber-400 text-xs font-bold tracking-[0.22em] uppercase mb-2">
-              <span className="opacity-60">✦ ─────</span>
-              <span>À LA CARTE SELECTION</span>
-              <span className="opacity-60">───── ✦</span>
-            </div>
-            <h2 className="text-2xl sm:text-4xl font-normal text-white tracking-tight [font-family:Playfair_Display,Georgia,serif]">
-              Chef's Culinary Creations
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto mt-2 font-normal">
-              Freshly prepared to order. Tap any dish for 360° views and culinary details, or add directly to your dining order.
-            </p>
-          </div>
-
-          {/* Category Bar for quick navigation */}
-          <div className="mb-6">
+          {/* Categories: stick under the header while scrolling; the highlighted one follows the
+              section on screen */}
+          <div className="menu-cat-sticky">
             <CategoryBar
               categories={categoriesList}
-              selectedCategory={selectedCategory}
+              selectedCategory={selectedCategory === 'All' ? activeScrollCategory : selectedCategory}
               onSelectCategory={(catId) => handleSelectCategory(catId)}
               categoryCounts={categoryCounts}
             />
           </div>
 
-          {/* Search & Dietary Filters Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-8 px-1">
-            <div className="relative flex-1 min-w-[220px] max-w-md">
+          {/* Search, dietary filters and Reels */}
+          <div className="flex flex-wrap items-center gap-2 mt-4 mb-7 px-1">
+            <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-md">
               <input
-                type="text"
+                type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search dishes, ingredients..."
-                className="w-full pl-9 pr-9 py-2 text-xs sm:text-sm rounded-full bg-slate-900/80 border border-slate-700/80 text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition shadow-inner"
+                placeholder="Search the menu"
+                aria-label="Search the menu"
+                className="w-full h-10 pl-9 pr-9 text-sm rounded-full bg-slate-900/80 border border-slate-700/80 text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition"
               />
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+                  aria-label="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setVegOnlyFilter((v) => !v)}
+              aria-pressed={vegOnlyFilter}
+              className={`menu-filter-chip ${vegOnlyFilter ? 'is-on is-veg' : ''}`}
+            >
+              <Leaf className="w-3.5 h-3.5" />
+              <span>Veg</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSpicyFilter((v) => !v)}
+              aria-pressed={spicyFilter}
+              className={`menu-filter-chip ${spicyFilter ? 'is-on is-spicy' : ''}`}
+            >
+              <Flame className="w-3.5 h-3.5" />
+              <span>Spicy</span>
+            </button>
+            {(searchQuery || vegOnlyFilter || spicyFilter) && (
               <button
                 type="button"
-                onClick={() => setVegOnlyFilter((v) => !v)}
-                className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-                  vegOnlyFilter
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : 'bg-slate-800/80 text-slate-200 border border-slate-700 hover:border-emerald-500/50'
-                }`}
+                onClick={() => {
+                  setSearchQuery('');
+                  setVegOnlyFilter(false);
+                  setSpicyFilter(false);
+                }}
+                className="text-xs text-slate-300 hover:text-white font-semibold underline underline-offset-2 px-1 cursor-pointer"
               >
-                <Leaf className="w-3.5 h-3.5" />
-                <span>Veg Only</span>
+                Clear
               </button>
+            )}
 
-              <button
-                type="button"
-                onClick={() => setSpicyFilter((s) => !s)}
-                className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-                  spicyFilter
-                    ? 'bg-rose-600 text-white shadow-md'
-                    : 'bg-slate-800/80 text-slate-200 border border-slate-700 hover:border-emerald-500/50'
-                }`}
-              >
-                <Flame className="w-3.5 h-3.5" />
-                <span>Spicy</span>
-              </button>
-
-              {(searchQuery || vegOnlyFilter || spicyFilter) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setVegOnlyFilter(false);
-                    setSpicyFilter(false);
-                  }}
-                  className="text-xs text-amber-400 hover:text-amber-300 font-semibold underline underline-offset-2 ml-1 cursor-pointer"
-                >
-                  Reset
-                </button>
-              )}
-            </div>
+            <button type="button" onClick={() => openReels(-1)} className="menu-reels-btn ml-auto">
+              <Film className="w-4 h-4" />
+              <span>Reels</span>
+            </button>
           </div>
 
           {/* Dishes Presentation (Grid matching screenshot style) */}
           {filteredItems.length > 0 ? (
             selectedCategory === 'All' && !searchQuery && !vegOnlyFilter && !spicyFilter ? (
               // Grouped by Category with Section Titles
-              <div className="space-y-12">
+              <div className="space-y-10">
                 {categorizedSections.map((section) => (
-                  <div key={section.categoryKey} id={`cat-section-${section.categoryKey}`} className="space-y-4 scroll-mt-28">
-                    {/* Category Title Banner */}
-                    <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl sm:text-2xl">{section.icon}</span>
-                        <div>
-                          <h3 className="text-lg sm:text-2xl font-normal text-white tracking-tight [font-family:Playfair_Display,Georgia,serif]">
-                            {section.title}
-                          </h3>
-                          <p className="text-xs text-slate-400">{section.subtitle}</p>
-                        </div>
-                      </div>
-                      <span className="shrink-0 whitespace-nowrap text-xs font-bold text-amber-400 bg-slate-900/80 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
-                        {section.items.length} {section.items.length === 1 ? 'dish' : 'dishes'}
+                  <div key={section.categoryKey} id={`cat-section-${section.categoryKey}`} className="space-y-4 scroll-mt-40">
+                    <div className="menu-section-head">
+                      <h3 className="menu-section-title">{titleCase(section.title)}</h3>
+                      <span className="menu-section-count">
+                        {section.items.length} {section.items.length === 1 ? 'item' : 'items'}
                       </span>
                     </div>
 
@@ -2405,12 +2360,12 @@ export default function CustomerMenu({
             ) : (
               // Filtered / Searched Single Grid
               <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
-                  <h3 className="text-lg sm:text-2xl font-normal text-white tracking-tight [font-family:Playfair_Display,Georgia,serif]">
-                    {selectedCategory === 'All' ? 'Search Results' : (getCategoryMetadata(selectedCategory).title || selectedCategory)}
+                <div className="menu-section-head">
+                  <h3 className="menu-section-title">
+                    {selectedCategory === 'All' ? 'Results' : titleCase(getCategoryMetadata(selectedCategory).title || selectedCategory)}
                   </h3>
-                  <span className="text-xs font-bold text-amber-400 bg-slate-900/80 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
-                    {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'}
+                  <span className="menu-section-count">
+                    {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
                   </span>
                 </div>
 
@@ -2443,10 +2398,10 @@ export default function CustomerMenu({
                 <UtensilsCrossed className="w-8 h-8 stroke-[1.8]" />
               </div>
               <h3 className="font-normal text-white text-xl mb-1 [font-family:Playfair_Display,Georgia,serif]">
-                No matching dishes found
+                No dishes found
               </h3>
               <p className="text-xs sm:text-sm text-slate-400 mb-5 leading-relaxed">
-                Try adjusting your search query or reset dietary filters to view all chef-crafted menu choices.
+                Try another search or clear the filters.
               </p>
               <button
                 type="button"
@@ -2458,7 +2413,7 @@ export default function CustomerMenu({
                 }}
                 className="min-h-11 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer"
               >
-                Reset All Filters
+                Show full menu
               </button>
             </div>
           )}
@@ -2718,36 +2673,6 @@ export default function CustomerMenu({
             </button>
           </div>
         </div>
-      )}
-
-      {/* ── Food Reels edge tab: tells the customer a sideways swipe opens Reels (tap shows the guide) ── */}
-      {!isReelsOpen && (
-        <button
-          type="button"
-          onClick={() => {
-            setShowSwipeTutorial(true);
-            setTimeout(() => setShowSwipeTutorial(false), 5000);
-          }}
-          className="fixed right-0 top-1/2 -translate-y-1/2 z-40 hidden sm:flex items-center select-none animate-edge-tab cursor-pointer"
-          title="Swipe left or right anywhere (or 2 fingers sideways on a trackpad) to watch Food Reels"
-        >
-          <div className="bg-gradient-to-l from-rose-600 via-[#FF5A26] to-[#FF7A45] text-white pl-3 pr-2.5 py-2.5 rounded-l-2xl shadow-2xl border-y border-l border-white/25 flex items-center gap-2">
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
-            </span>
-            <Film className="w-4 h-4 text-white stroke-[2.2] shrink-0" />
-            <div className="flex flex-col text-left">
-              <span className="text-[11px] font-black uppercase tracking-wider text-amber-200 leading-tight">
-                Reels
-              </span>
-              <span className="text-[10px] font-bold text-white/90 flex items-center gap-1 leading-tight">
-                <span className="animate-swipe-both inline-block" aria-hidden="true">⇆</span>
-                <span>Swipe</span>
-              </span>
-            </div>
-          </div>
-        </button>
       )}
 
       {/* ── Two-way swipe guide (first visit, or when the customer taps a hint) ── */}

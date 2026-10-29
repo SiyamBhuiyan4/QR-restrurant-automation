@@ -12,28 +12,22 @@
   transform: translateZ(0);
 }
 
-/* Blurred copy of the photo filling the rest of the screen (a tiny pre-blurred file,
-   stretched, so there is no live blur filter to render) */
-.scenery-bg__fill {
-  position: absolute;
-  inset: -4%;
-  background-size: cover;
-  background-position: center;
-  filter: saturate(1.15) brightness(0.62);
-}
-
-/* The full photo, never cropped: as big as fits, centred */
+/* The photo covers the whole screen */
 .scenery-bg__img {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  transform: translate(-50%, -50%);
-  object-fit: contain;
-  box-shadow: 0 0 80px 30px rgba(3, 14, 20, 0.45);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Phones: the full scene, the bridge around mid-screen */
+  object-position: 50% 55%;
+}
+
+/* Wide screens: a landscape slice with the mountains, lake and old town */
+@media (min-aspect-ratio: 1/1) {
+  .scenery-bg__img {
+    object-position: 50% 30%;
+  }
 }
 
 /* Darker behind the header and the bottom bar, light over the photo itself */
@@ -50,12 +44,6 @@
 }
 
 /* Light theme: dark text sits on the photo, so a soft cream veil instead of the dark shade */
-[data-theme="light"] .scenery-bg__fill {
-  filter: saturate(1.05) brightness(1.05);
-}
-[data-theme="light"] .scenery-bg__img {
-  box-shadow: 0 0 80px 30px rgba(247, 243, 232, 0.5);
-}
 [data-theme="light"] .scenery-bg__shade {
   background: linear-gradient(
     to bottom,

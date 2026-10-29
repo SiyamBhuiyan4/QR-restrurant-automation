@@ -82,12 +82,9 @@
 }
 
 /* ==========================================================================
-   Plate Card Component (Fine Dining Dish Grid below Menu Book)
-   Matches screenshot aesthetic:
-   - Green price at top (e.g. 14.00 $)
-   - Centered circular overhead food plate/bowl
-   - Refined typography and elegant spacing
-   - Responsive 4-column layout on desktop, 2-column on mobile
+   Dish card (customer menu grid)
+   Photo on top, then name, two-line description, and price beside the Add button.
+   Two cards per row on phones, up to four on desktop.
    ========================================================================== */
 
 .plate-card {
@@ -95,128 +92,65 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  /* Card panel: deep emerald & dark slate blend */
-  background: linear-gradient(180deg, rgba(6, 20, 14, 0.85) 0%, rgba(15, 61, 42, 0.5) 60%, rgba(6, 20, 14, 0.92) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  border-radius: 1.25rem;
-  padding: 1.15rem 1rem 1rem;
-  box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.6), 0 0 20px -5px rgba(212, 175, 55, 0.12), inset 0 1px 0 rgba(240, 210, 122, 0.12);
-  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
-              box-shadow 320ms ease,
-              border-color 320ms ease;
+  background: rgba(6, 20, 14, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 10px 28px -12px rgba(0, 0, 0, 0.7);
+  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 260ms ease,
+              border-color 260ms ease;
   overflow: hidden;
   cursor: pointer;
   /* Keep each card's repaints inside the card (playing videos otherwise repaint the page) */
   contain: layout paint;
-  /* Cards far off screen are skipped entirely until you scroll near them; `auto` remembers
-     each card's real height once drawn, so the page doesn't jump */
+  /* Cards far off screen are skipped until you scroll near them; `auto` remembers each
+     card's real height once drawn, so the page doesn't jump */
   content-visibility: auto;
-  contain-intrinsic-size: auto 400px;
+  contain-intrinsic-size: auto 320px;
 }
 
 .plate-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(212, 175, 55, 0.8);
-  box-shadow: 0 20px 42px -10px rgba(0, 0, 0, 0.8), 0 0 32px -4px rgba(212, 175, 55, 0.25);
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 18px 36px -14px rgba(0, 0, 0, 0.8);
 }
 
 .plate-card--unavailable {
-  opacity: 0.65;
+  opacity: 0.6;
 }
-
 .plate-card--unavailable:hover {
   transform: none;
-}
-
-/* Top bar: Green Price & Badges */
-.plate-card__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  position: relative;
-  z-index: 2;
-}
-
-.plate-card__price {
-  font-size: 1.125rem;
-  font-weight: 800;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  color: #34d399; /* Green price from screenshot */
-  letter-spacing: -0.01em;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-/* Dietary & Rating Chips */
-.plate-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.15rem 0.45rem;
-  border-radius: 9999px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.plate-chip--veg {
-  background: rgba(16, 185, 129, 0.18);
-  color: #6ee7b7;
-  border: 1px solid rgba(16, 185, 129, 0.4);
-}
-
-.plate-chip--spicy {
-  background: rgba(239, 68, 68, 0.18);
-  color: #fca5a5;
-  border: 1px solid rgba(239, 68, 68, 0.4);
-}
-
-.plate-chip--rating {
-  background: rgba(0, 0, 0, 0.4);
-  color: #f0d27a;
-  border: 1px solid rgba(212, 175, 55, 0.35);
-}
-
-/* Centered Circular Plate / Bowl */
-.plate-card__media {
-  position: relative;
-  width: 100%;
-  height: 0;
-  padding-bottom: 75%; /* 4:3 box, fixed height so tall photos cannot stretch it */
-  flex-shrink: 0;
-  margin: 0.6rem auto 1rem;
 }
 
 /* Scroll-in glide (utils/cardReveal.js adds these classes, then removes them) */
 .plate-card.card-reveal {
   opacity: 0;
-  translate: 0 28px;
+  translate: 0 24px;
 }
 .plate-card.card-reveal.is-in {
   opacity: 1;
   translate: 0 0;
-  transition: opacity 650ms cubic-bezier(0.2, 0.8, 0.2, 1),
-              translate 750ms cubic-bezier(0.2, 0.8, 0.2, 1),
-              transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
-              box-shadow 320ms ease,
-              border-color 320ms ease;
+  transition: opacity 550ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              translate 650ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 260ms ease,
+              border-color 260ms ease;
+}
+
+/* Photo: full card width, 4:3 */
+.plate-card__media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  flex-shrink: 0;
 }
 
 .plate-card__dish-circle {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 1rem;
   overflow: hidden;
-  background: #ffffff;
-  border: 3px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 14px 28px -8px rgba(0, 0, 0, 0.55),
-              0 0 0 1px rgba(212, 175, 55, 0.35);
-  /* Own GPU layer, so the rounded clip around a playing video is done by the compositor */
+  background: #0b1f17;
+  /* Own GPU layer, so the clip around a playing video is done by the compositor */
   isolation: isolate;
   transform: translateZ(0);
 }
@@ -229,9 +163,8 @@
   transform: translateZ(0) scale(1);
   transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-
 .plate-card:hover .plate-card__img {
-  transform: translateZ(0) scale(1.08);
+  transform: translateZ(0) scale(1.05);
 }
 
 .plate-card__fallback {
@@ -241,228 +174,301 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #032038;
+  background: #0b1f17;
   color: #e0f2fe;
   padding: 0.5rem;
   text-align: center;
 }
 
-/* Body: Title, Description */
+/* Veg / spicy tags over the photo */
+.plate-card__tags {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 5;
+  display: flex;
+  gap: 0.3rem;
+}
+
+.plate-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.2;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.plate-chip--veg {
+  color: #86efac;
+}
+.plate-chip--spicy {
+  color: #fca5a5;
+}
+
+/* Body */
 .plate-card__body {
-  position: relative;
-  z-index: 2;
-  margin-bottom: 0.75rem;
+  padding: 0.8rem 0.9rem 0;
+  flex: 1;
 }
 
 .plate-card__title {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #f5efe0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #f8f5ec;
   line-height: 1.3;
-  margin-bottom: 0.35rem;
-  transition: color 240ms ease;
-}
-
-.plate-card:hover .plate-card__title {
-  color: #f0d27a;
+  letter-spacing: -0.01em;
 }
 
 .plate-card__desc {
-  font-size: 0.75rem;
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
   line-height: 1.45;
-  color: rgba(245, 239, 224, 0.68);
-  min-height: 2.2rem;
+  color: rgba(248, 245, 236, 0.62);
 }
 
 .plate-card__note {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  margin-top: 0.4rem;
+  margin-top: 0.45rem;
   padding: 0.15rem 0.5rem;
   border-radius: 9999px;
-  background: rgba(15, 61, 42, 0.7);
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  color: #f0d27a;
-  font-size: 0.65rem;
-  font-weight: 500;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(248, 245, 236, 0.8);
+  font-size: 0.68rem;
   max-width: 100%;
 }
 
-/* Footer: Prep Time & Actions */
+/* Footer: price + Add */
 .plate-card__foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(212, 175, 55, 0.22);
-  margin-top: auto;
-  position: relative;
-  z-index: 2;
+  padding: 0.75rem 0.9rem 0.9rem;
 }
 
-.plate-note-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 9999px;
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  background: rgba(15, 61, 42, 0.6);
-  color: #f0d27a;
-  cursor: pointer;
-  transition: all 180ms ease;
-}
-
-.plate-note-btn:hover {
-  background: rgba(212, 175, 55, 0.25);
-  border-color: #d4af37;
-  color: #ffffff;
-}
-
-.plate-note-btn--active {
-  background: rgba(212, 175, 55, 0.35);
-  border-color: #d4af37;
-  color: #ffffff;
+.plate-card__price {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f8f5ec;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .plate-order-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.45rem 1rem;
+  gap: 0.25rem;
+  height: 34px;
+  padding: 0 0.9rem;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 60%, #047857 100%);
-  color: #ffffff;
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  box-shadow: 0 4px 14px -3px rgba(16, 185, 129, 0.6);
+  background: #10b981;
+  color: #04120c;
+  font-size: 0.8rem;
+  font-weight: 700;
   cursor: pointer;
   border: none;
-  transition: all 180ms ease;
+  transition: background-color 160ms ease, transform 120ms ease;
 }
-
 .plate-order-btn:hover {
-  filter: brightness(1.12);
-  transform: scale(1.03);
-  box-shadow: 0 6px 18px -3px rgba(16, 185, 129, 0.5);
+  background: #34d399;
 }
-
 .plate-order-btn:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 
-/* Stepper for quantity */
 .plate-stepper {
   display: inline-flex;
   align-items: center;
-  background: rgba(15, 61, 42, 0.85);
-  border: 1px solid rgba(212, 175, 55, 0.5);
+  height: 34px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.45);
   border-radius: 9999px;
-  padding: 0.15rem;
-  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.6);
+  padding: 0 0.15rem;
 }
 
 .plate-stepper__btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 9999px;
   border: none;
   background: transparent;
-  color: #7dd3fc;
+  color: #6ee7b7;
   cursor: pointer;
-  transition: all 140ms ease;
+  transition: background-color 140ms ease;
 }
-
 .plate-stepper__btn:hover {
-  background: rgba(56, 189, 248, 0.25);
-  color: #ffffff;
+  background: rgba(16, 185, 129, 0.25);
 }
 
 .plate-stepper__count {
-  min-width: 1.5rem;
+  min-width: 1.4rem;
   text-align: center;
-  font-size: 0.8rem;
-  font-weight: 800;
+  font-size: 0.85rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: #f0f9ff;
+  color: #f8f5ec;
 }
 
-/* Light Theme Overrides */
-html[data-theme="light"] .plate-card {
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid #e5e0d3;
-  box-shadow: 0 6px 20px -6px rgba(15, 61, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-html[data-theme="light"] .plate-card:hover {
-  border-color: rgba(138, 109, 22, 0.55);
-  box-shadow: 0 16px 32px -8px rgba(15, 61, 42, 0.14);
-}
-
-html[data-theme="light"] .plate-card__price {
-  color: #15803d; /* Vibrant bold green in light theme like screenshot */
-}
-
-html[data-theme="light"] .plate-card__title {
-  color: #0f3d2a;
-}
-
-html[data-theme="light"] .plate-card:hover .plate-card__title {
-  color: #7a5f10;
-}
-
-html[data-theme="light"] .plate-card__desc {
-  color: rgba(15, 61, 42, 0.72);
-}
-
-html[data-theme="light"] .plate-card__foot {
-  border-top-color: rgba(15, 61, 42, 0.12);
-}
-
-html[data-theme="light"] .plate-card__dish-circle {
-  border-color: #f7f3e8;
-  box-shadow: 0 10px 24px -8px rgba(15, 61, 42, 0.16);
-}
-
-html[data-theme="light"] .plate-chip--rating {
-  background: #f7f3e8;
-  color: #7a5f10;
-  border-color: rgba(138, 109, 22, 0.3);
-}
-
-html[data-theme="light"] .plate-stepper {
-  background: #f7f3e8;
-  border-color: rgba(138, 109, 22, 0.45);
-}
-
-html[data-theme="light"] .plate-stepper__count {
-  color: #0f3d2a;
-}
-
-html[data-theme="light"] .plate-stepper__btn {
-  color: #7a5f10;
-}
-
-html[data-theme="light"] .plate-stepper__btn:hover {
-  background: rgba(212, 175, 55, 0.2);
-}
-
-html[data-theme="light"] .plate-note-btn {
-  background: #f7f3e8;
-  border-color: rgba(138, 109, 22, 0.35);
-  color: #7a5f10;
-}
-
-/* Phones: two cards per row leave little room, so keep the essentials tidy */
+/* Phones: two cards per row */
 @media (max-width: 640px) {
-  .plate-chip--rating { display: none; }
-  .plate-card__title { font-size: 0.95rem; line-height: 1.25; }
+  .plate-card__body { padding: 0.65rem 0.7rem 0; }
+  .plate-card__title { font-size: 0.9rem; }
+  .plate-card__desc { font-size: 0.74rem; }
+  .plate-card__foot { padding: 0.6rem 0.7rem 0.7rem; }
+  .plate-card__price { font-size: 0.92rem; }
+  .plate-order-btn { height: 32px; padding: 0 0.7rem; }
+}
+
+/* Light theme */
+html[data-theme="light"] .plate-card {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(15, 61, 42, 0.1);
+  box-shadow: 0 8px 22px -10px rgba(15, 61, 42, 0.18);
+}
+html[data-theme="light"] .plate-card:hover {
+  border-color: rgba(15, 61, 42, 0.2);
+}
+html[data-theme="light"] .plate-card__title,
+html[data-theme="light"] .plate-card__price,
+html[data-theme="light"] .plate-stepper__count {
+  color: #10241b;
+}
+html[data-theme="light"] .plate-card__desc {
+  color: rgba(16, 36, 27, 0.65);
+}
+html[data-theme="light"] .plate-card__note {
+  background: rgba(15, 61, 42, 0.07);
+  color: #10241b;
+}
+html[data-theme="light"] .plate-order-btn {
+  background: #047857;
+  color: #ffffff;
+}
+html[data-theme="light"] .plate-order-btn:hover {
+  background: #065f46;
+}
+html[data-theme="light"] .plate-stepper__btn {
+  color: #047857;
+}
+
+/* ==========================================================================
+   Menu page structure: sticky categories, section headings, filters, Reels
+   ========================================================================== */
+
+/* Sticks under the header; when the header slides away on scroll down it moves up to the top */
+.menu-cat-sticky {
+  position: sticky;
+  top: 72px;
+  z-index: 30;
+  transition: top 300ms ease-in-out;
+}
+header[data-hidden="true"] ~ main .menu-cat-sticky {
+  top: 8px;
+}
+
+.menu-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0 0.25rem 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.menu-section-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+}
+.menu-section-count {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+}
+@media (min-width: 640px) {
+  .menu-section-title { font-size: 1.75rem; }
+}
+
+.menu-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 40px;
+  padding: 0 0.9rem;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  background: rgba(6, 20, 14, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.menu-filter-chip:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.menu-filter-chip.is-on.is-veg {
+  background: #059669;
+  border-color: #059669;
+  color: #fff;
+}
+.menu-filter-chip.is-on.is-spicy {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+.menu-reels-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 40px;
+  padding: 0 1rem;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #f43f5e, #f97316);
+  box-shadow: 0 6px 18px -6px rgba(244, 63, 94, 0.6);
+  cursor: pointer;
+  transition: filter 160ms ease, transform 120ms ease;
+}
+.menu-reels-btn:hover {
+  filter: brightness(1.08);
+}
+.menu-reels-btn:active {
+  transform: scale(0.96);
+}
+
+html[data-theme="light"] .menu-section-head {
+  border-bottom-color: rgba(15, 61, 42, 0.15);
+}
+html[data-theme="light"] .menu-section-title {
+  color: #10241b;
+  text-shadow: none;
+}
+html[data-theme="light"] .menu-section-count {
+  color: rgba(16, 36, 27, 0.7);
+  text-shadow: none;
+}
+html[data-theme="light"] .menu-filter-chip {
+  background: rgba(255, 255, 255, 0.9);
+  color: #10241b;
+  border-color: rgba(15, 61, 42, 0.15);
 }
