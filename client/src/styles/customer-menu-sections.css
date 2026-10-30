@@ -472,3 +472,88 @@ html[data-theme="light"] .menu-filter-chip {
   color: #10241b;
   border-color: rgba(15, 61, 42, 0.15);
 }
+
+/* ── Live order tracker: four steps close together on the left ── */
+.order-tracker {
+  display: flex;
+  flex-direction: column;
+}
+.order-steps {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 0.9rem;
+  width: 22rem;
+  max-width: 100%;
+}
+/* Wider screens: steps beside the title, one short row */
+@media (min-width: 640px) {
+  .order-tracker {
+    flex-direction: row;
+    align-items: center;
+    gap: 1.75rem;
+  }
+  .order-steps {
+    margin-top: 0;
+  }
+}
+.order-step {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+/* Line joining this step to the previous one, through the middle of the dots */
+.order-step__line {
+  position: absolute;
+  top: 17px;
+  right: 50%;
+  width: 100%;
+  height: 3px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.14);
+  transition: background-color 400ms ease;
+}
+.order-step__line.is-filled {
+  background: #10b981;
+}
+.order-step__dot {
+  position: relative;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1c2a24;
+  color: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  transition: background-color 300ms ease, color 300ms ease, box-shadow 300ms ease;
+}
+.order-step.is-done .order-step__dot {
+  background: #10b981;
+  border-color: #10b981;
+  color: #04120c;
+}
+.order-step.is-current .order-step__dot {
+  background: #ff5a26;
+  border-color: #ff5a26;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 90, 38, 0.25);
+}
+.order-step__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+}
+.order-step.is-done .order-step__label {
+  color: rgba(255, 255, 255, 0.85);
+}
+.order-step.is-current .order-step__label {
+  color: #ff8a5c;
+  font-weight: 700;
+}

@@ -2168,84 +2168,54 @@ export default function CustomerMenu({
           </div>
         )}
 
-        {/* Live Customer Order Status Tracker (only if active order) */}
-        {activeOrder && activeOrder.status !== 'served' && (
-          <div className="w-full max-w-5xl mb-4 bg-[#0b0b0e]/45 border border-[#FF5A26]/35 ring-1 ring-[#FF5A26]/20 rounded-3xl p-5 sm:p-6 shadow-lg animate-fadeIn">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/80">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] flex items-center justify-center font-black text-xs shadow-2xs">
+        {/* Live order tracker (only while an order is active): the four steps sit together on the
+            left, close enough to read at a glance */}
+        {activeOrder && activeOrder.status !== 'served' && (() => {
+          const steps = [
+            { id: 'pending', label: 'Received', icon: CheckCircle2 },
+            { id: 'preparing', label: 'Cooking', icon: ChefHat },
+            { id: 'ready', label: 'Plated', icon: BellRing },
+            { id: 'served', label: 'Served', icon: UtensilsCrossed }
+          ];
+          const currentIndex = Math.max(0, steps.findIndex((s) => s.id === (activeOrder.status || 'pending')));
+
+          return (
+            <div className="w-full max-w-7xl mb-4">
+            <div className="order-tracker w-fit max-w-full rounded-2xl bg-[#06140e]/85 backdrop-blur-md border border-white/10 shadow-lg p-4 animate-fadeIn">
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] flex items-center justify-center font-black text-xs shrink-0">
                   {tableNumber ? `T${tableNumber}` : 'ORD'}
                 </div>
-                <div>
-                  <h4 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                <div className="min-w-0">
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
                     <span>Live Kitchen Tracker</span>
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" aria-hidden="true" />
                   </h4>
-                  <span className="text-[11px] text-zinc-400 font-medium">
-                    Order #{activeOrder.orderId || activeOrder.orderNumber || 'Active'} &bull; Table {tableNumber || activeOrder.tableNumber}
+                  <span className="text-xs text-slate-400">
+                    #{activeOrder.orderId || activeOrder.orderNumber || 'Active'} · Table {tableNumber || activeOrder.tableNumber}
                   </span>
                 </div>
               </div>
-              <div className="text-right">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-emerald-300 bg-emerald-950/80 border border-emerald-500/40 shadow-xs">
-                  {activeOrder.status === 'preparing' ? '🔥 Cooking in Kitchen' : activeOrder.status === 'ready' ? '🛎️ Ready to Serve' : '⏳ Order Received'}
-                </span>
-              </div>
+
+              <ol className="order-steps" aria-label="Order progress">
+                {steps.map((step, idx) => {
+                  const state = idx < currentIndex ? 'done' : idx === currentIndex ? 'current' : 'todo';
+                  const StepIcon = step.icon;
+                  return (
+                    <li key={step.id} className={`order-step is-${state}`} aria-current={state === 'current' ? 'step' : undefined}>
+                      {idx > 0 && <span className={`order-step__line ${idx <= currentIndex ? 'is-filled' : ''}`} aria-hidden="true" />}
+                      <span className="order-step__dot">
+                        <StepIcon className="w-4 h-4" />
+                      </span>
+                      <span className="order-step__label">{step.label}</span>
+                    </li>
+                  );
+                })}
+              </ol>
             </div>
-
-            {/* Stepper Progress Bar */}
-            {(() => {
-              const stepOrder = ['pending', 'preparing', 'ready', 'served'];
-              const currentIndex = Math.max(0, stepOrder.indexOf(activeOrder.status || 'pending'));
-              const progressPercent = (currentIndex / (stepOrder.length - 1)) * 100;
-
-              return (
-                <div className="relative pt-2 pb-1">
-                  <div className="absolute top-6 left-8 right-8 h-1 bg-zinc-800 -translate-y-1/2 z-0 rounded-full" />
-                  <div
-                    className="absolute top-6 left-8 h-1 bg-gradient-to-r from-[#FF5A26] via-[#FF7A45] to-emerald-400 -translate-y-1/2 z-0 rounded-full transition-all duration-700 shadow-xs"
-                    style={{ width: `calc((100% - 4rem) * ${progressPercent / 100})` }}
-                  />
-
-                  <div className="relative z-10 grid grid-cols-4 gap-2 text-center">
-                    {[
-                      { id: 'pending', label: 'Received', icon: CheckCircle2 },
-                      { id: 'preparing', label: 'Cooking', icon: ChefHat },
-                      { id: 'ready', label: 'Plated', icon: BellRing },
-                      { id: 'served', label: 'Served', icon: UtensilsCrossed }
-                    ].map((step, idx) => {
-                      const isCompleted = currentIndex >= idx;
-                      const isCurrent = currentIndex === idx;
-                      const StepIcon = step.icon;
-
-                      return (
-                        <div key={step.id} className="flex flex-col items-center">
-                          <div
-                            className={`w-9 h-9 rounded-full flex items-center justify-center text-xs transition-all duration-300 ${
-                              isCurrent
-                                ? 'flame-gradient-btn text-white ring-4 ring-[#FF5A26]/30 font-bold scale-110 shadow-lg shadow-[#FF5A26]/40'
-                                : isCompleted
-                                ? 'bg-emerald-600 text-white font-medium shadow-md shadow-emerald-600/25'
-                                : 'bg-zinc-800/90 text-zinc-500 border border-zinc-700'
-                            }`}
-                          >
-                            <StepIcon className="w-4 h-4" />
-                          </div>
-                          <span className={`text-[11px] mt-1.5 font-bold tracking-tight ${isCurrent ? 'text-[#FF7A45] font-extrabold' : isCompleted ? 'text-stone-300' : 'text-stone-500'}`}>
-                            {step.label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        )}
+            </div>
+          );
+        })()}
 
         {/* =====================================================================
             A La Carte Dishes Grid (Matching Screenshot Plate Aesthetic)
