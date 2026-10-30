@@ -2180,7 +2180,26 @@ export default function CustomerMenu({
           const currentIndex = Math.max(0, steps.findIndex((s) => s.id === (activeOrder.status || 'pending')));
 
           return (
-            <div className="w-full max-w-7xl mb-4">
+            <>
+            {/* Wide screens: just the steps, standing in the empty strip left of the menu */}
+            <ol className="order-rail" aria-label="Order progress">
+              {steps.map((step, idx) => {
+                const state = idx < currentIndex ? 'done' : idx === currentIndex ? 'current' : 'todo';
+                const StepIcon = step.icon;
+                return (
+                  <li key={step.id} className={`order-step is-${state}`} aria-current={state === 'current' ? 'step' : undefined}>
+                    {idx > 0 && <span className={`order-step__line ${idx <= currentIndex ? 'is-filled' : ''}`} aria-hidden="true" />}
+                    <span className="order-step__dot">
+                      <StepIcon className="w-4 h-4" />
+                    </span>
+                    <span className="order-step__label">{step.label}</span>
+                  </li>
+                );
+              })}
+            </ol>
+
+            {/* Phones and narrower screens: compact card above the menu */}
+            <div className="order-tracker-wrap w-full max-w-7xl mb-4">
             <div className="order-tracker w-fit max-w-full rounded-2xl bg-[#06140e]/85 backdrop-blur-md border border-white/10 shadow-lg p-4 animate-fadeIn">
               <div className="flex items-center gap-3 shrink-0">
                 <div className="w-9 h-9 rounded-xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] flex items-center justify-center font-black text-xs shrink-0">
@@ -2214,6 +2233,7 @@ export default function CustomerMenu({
               </ol>
             </div>
             </div>
+            </>
           );
         })()}
 

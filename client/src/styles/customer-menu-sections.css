@@ -557,3 +557,48 @@ html[data-theme="light"] .menu-filter-chip {
   color: #ff8a5c;
   font-weight: 700;
 }
+
+/* Wide screens (empty strip beside the menu): the steps stand vertically in the middle of the
+   left strip and stay put while scrolling; the card above the menu is hidden.
+   The menu is 80rem wide with 1.5rem padding, so the strip is (100vw - 80rem) / 2 + 1.5rem. */
+.order-rail {
+  display: none;
+}
+@media (min-width: 1400px) {
+  .order-tracker-wrap {
+    display: none;
+  }
+  .order-rail {
+    --rail-w: 76px;
+    position: fixed;
+    top: 50%;
+    left: calc(((100vw - 80rem) / 2 + 1.5rem - var(--rail-w)) / 2);
+    z-index: 20;
+    width: var(--rail-w);
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.6rem;
+    padding: 0.9rem 0;
+    border-radius: 9999px;
+    background: rgba(6, 20, 14, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.7);
+  }
+  /* Short vertical line in the gap between the step above (its label) and this dot */
+  .order-rail .order-step__line {
+    top: auto;
+    bottom: calc(100% + 5px);
+    right: auto;
+    left: 50%;
+    width: 3px;
+    height: calc(1.6rem - 10px);
+    transform: translateX(-50%);
+  }
+  .order-rail .order-step__label {
+    font-size: 0.68rem;
+  }
+}
