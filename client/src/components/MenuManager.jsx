@@ -29,10 +29,15 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
 import { getCachedMenu, cacheMenu } from '../db/indexedDb.js';
-import { uploadMediaToTelegram, publishMenuSnapshotToTelegram } from '../services/telegramClient.js';
+import { publishMenuSnapshotToTelegram } from '../services/telegramClient.js';
+import { uploadMediaWithWebCopies } from '../services/videoUpload.js';
 import '../styles/admin.css';
 
 // Helper to detect whether a media URL or file points to a video
+// Upload progress text: videos are first converted to 480p / 360p copies, then sent
+const uploadStatusText = (p) =>
+  !p ? 'Uploading…' : p.stage === 'converting' ? `Converting video ${Math.round(p.progress * 100)}%` : 'Uploading to Telegram…';
+
 export const isVideoUrl = (url) => {
   if (!url || typeof url !== 'string') return false;
   const clean = url.trim().toLowerCase();
@@ -219,6 +224,7 @@ export default function MenuManager({ className = '' }) {
   // Telegram Channel Media Upload states & file refs
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(null);
   const [uploadError, setUploadError] = useState('');
   const [isSyncingTelegram, setIsSyncingTelegram] = useState(false);
   const photoInputRef = useRef(null);
@@ -580,7 +586,7 @@ export default function MenuManager({ className = '' }) {
     setUploadingPhoto(true);
     setUploadError('');
     try {
-      const uploadResult = await uploadMediaToTelegram(file);
+      const uploadResult = await uploadMediaWithWebCopies(file);
       const url = uploadResult?.cdnUrl || uploadResult?.url || '';
       const fileId = uploadResult?.fileId || uploadResult?.file_id || '';
       setFormData((prev) => ({
@@ -604,9 +610,10 @@ export default function MenuManager({ className = '' }) {
     if (!file) return;
 
     setUploadingVideo(true);
+    setVideoProgress(null);
     setUploadError('');
     try {
-      const uploadResult = await uploadMediaToTelegram(file);
+      const uploadResult = await uploadMediaWithWebCopies(file, { onProgress: setVideoProgress });
       const url = uploadResult?.cdnUrl || uploadResult?.url || '';
       const fileId = uploadResult?.fileId || uploadResult?.file_id || '';
       // Sync so both image_url and making_video_url recognize the 360° video
@@ -616,12 +623,13 @@ export default function MenuManager({ className = '' }) {
         telegram_video_file_id: fileId,
         image_url: prev.image_url && !isVideoUrl(prev.image_url) ? prev.image_url : url
       }));
-      triggerSuccess('360° Profile Video uploaded to Telegram CDN! 🎥');
+      triggerSuccess('Video uploaded (480p for Reels, 360p for the menu) 🎥');
     } catch (err) {
       console.error('[MenuManager] Telegram video upload failed:', err);
       setUploadError(err.message || 'Failed to upload video to Telegram Channel');
     } finally {
       setUploadingVideo(false);
+      setVideoProgress(null);
       if (e.target) e.target.value = '';
     }
   };
@@ -1897,7 +1905,7 @@ export default function MenuManager({ className = '' }) {
                       ) : (
                         <Video className="w-4 h-4" />
                       )}
-                      <span>{uploadingVideo ? 'Uploading 360° Video...' : '🎥 Upload 360° Profile Video to Telegram'}</span>
+                      <span>{uploadingVideo ? uploadStatusText(videoProgress) : '🎥 Upload 360° Profile Video to Telegram'}</span>
                     </button>
                   </div>
 

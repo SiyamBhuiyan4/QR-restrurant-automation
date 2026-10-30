@@ -1,4 +1,4 @@
-import { telegramMediaUrl } from '../utils/mediaUrl.js';
+import { telegramMediaUrl, withCardVideo } from '../utils/mediaUrl.js';
 import {
   createStaffCredential,
   hasStaffCredentialHash,
@@ -243,7 +243,7 @@ export async function uploadPhotoToTelegram(file) {
  * @param {File|Blob|string} file - Video File, Blob, or base64 data URI
  * @returns {Promise<{ cdnUrl: string, fileId: string, messageId: number, mediaType: 'video', duration: number|null, width: number|null, height: number|null }>}
  */
-export async function uploadVideoToTelegram(file) {
+export async function uploadVideoToTelegram(file, { onProgress, copies = null } = {}) {
   const { token, chatId } = getTelegramConfig();
 
   if (!token || !chatId) {
@@ -254,8 +254,48 @@ export async function uploadVideoToTelegram(file) {
   if (typeof file === 'string' && file.startsWith('data:')) {
     uploadBlob = dataUrlToBlob(file, 'video/mp4');
   }
-
   const fileName = (file && file.name) ? file.name : 'dish-360-video.mp4';
+
+  // `copies` = the 480p (Reels / dish page) and 360p (menu card) versions made before upload
+  // (services/videoUpload.js). Without them the original file goes up as it is.
+  if (copies) {
+    const base = String(fileName).replace(/\.[^.]+$/, '');
+    onProgress?.({ stage: 'uploading', progress: 0 });
+    const reel = await sendVideoFile(token, chatId, copies.reel.blob, `${base}-480p.mp4`);
+    onProgress?.({ stage: 'uploading', progress: 0.6 });
+    // The 360p card copy is a nice-to-have: without it the cards play the 480p copy
+    const card = await sendVideoFile(token, chatId, copies.card.blob, `${base}-360p.mp4`).catch((err) => {
+      console.warn('[TelegramClient] 360p card copy failed to upload:', err);
+      return null;
+    });
+    onProgress?.({ stage: 'uploading', progress: 1 });
+    return {
+      cdnUrl: withCardVideo(reel.cdnUrl, card?.fileId),
+      fileId: reel.fileId,
+      messageId: reel.messageId,
+      mediaType: 'video',
+      duration: reel.videoObj?.duration || null,
+      width: copies.reel.width,
+      height: copies.reel.height
+    };
+  }
+
+  onProgress?.({ stage: 'uploading', progress: 0 });
+  const original = await sendVideoFile(token, chatId, uploadBlob, fileName);
+  onProgress?.({ stage: 'uploading', progress: 1 });
+  return {
+    cdnUrl: original.cdnUrl,
+    fileId: original.fileId,
+    messageId: original.messageId,
+    mediaType: 'video',
+    duration: original.videoObj?.duration || null,
+    width: original.videoObj?.width || null,
+    height: original.videoObj?.height || null
+  };
+}
+
+// Send one video file to the channel and return its permanent link
+async function sendVideoFile(token, chatId, uploadBlob, fileName) {
   const formData = new FormData();
   formData.append('chat_id', chatId);
   formData.append('caption', `🎥 360° Profile Video / Kitchen Reel: ${fileName}`);
@@ -299,15 +339,7 @@ export async function uploadVideoToTelegram(file) {
     cdnUrl = `https://t.me/c/${cleanChannelId}/${data.result.message_id}`;
   }
 
-  return { 
-    cdnUrl,
-    fileId,
-    messageId: data.result?.message_id,
-    mediaType: 'video',
-    duration: videoObj?.duration || null,
-    width: videoObj?.width || null,
-    height: videoObj?.height || null
-  };
+  return { cdnUrl, fileId, messageId: data.result?.message_id, videoObj };
 }
 
 /**
@@ -318,7 +350,7 @@ export async function uploadVideoToTelegram(file) {
  * @param {File|Blob|string} file 
  * @returns {Promise<{ cdnUrl: string, fileId: string, messageId: number, mediaType: 'photo' | 'video' }>}
  */
-export async function uploadMediaToTelegram(file) {
+export async function uploadMediaToTelegram(file, { onProgress, copies } = {}) {
   if (!file) {
     throw new Error('No file provided for upload');
   }
@@ -326,7 +358,7 @@ export async function uploadMediaToTelegram(file) {
   const isVideo = isVideoMedia(file);
 
   if (isVideo) {
-    const result = await uploadVideoToTelegram(file);
+    const result = await uploadVideoToTelegram(file, { onProgress, copies });
     return {
       ...result,
       mediaType: 'video'

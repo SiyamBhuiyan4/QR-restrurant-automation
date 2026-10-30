@@ -3,7 +3,11 @@ import { useQuery, useMutation } from 'convex/react';
 import { Film, Plus, X, Trash2, RefreshCw, Upload, Eye, EyeOff, UtensilsCrossed, Pencil } from 'lucide-react';
 import { api } from '../../convexApi';
 import { getAdminToken } from '../../utils/teamSession';
-import { uploadMediaToTelegram } from '../../services/telegramClient';
+import { uploadMediaWithWebCopies } from '../../services/videoUpload';
+
+// Upload progress text: videos are first converted to 480p / 360p copies, then sent
+const uploadStatusText = (p) =>
+  !p ? 'Uploading…' : p.stage === 'converting' ? `Converting video ${Math.round(p.progress * 100)}%` : 'Uploading to Telegram…';
 
 const EMPTY_FORM = { title: '', caption: '', videoUrl: '', posterUrl: '', telegramFileId: '', isActive: true };
 
@@ -26,6 +30,7 @@ export default function ReelsManager({ onOpenMenu }) {
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const fileRef = useRef(null);
 
@@ -73,9 +78,10 @@ export default function ReelsManager({ onOpenMenu }) {
       return;
     }
     setUploading(true);
+    setProgress(null);
     setFormError('');
     try {
-      const result = await uploadMediaToTelegram(file);
+      const result = await uploadMediaWithWebCopies(file, { onProgress: setProgress });
       const url = result?.cdnUrl || result?.url || '';
       if (!url) throw new Error('Upload finished but no video link came back');
       setForm((prev) => ({ ...prev, videoUrl: url, telegramFileId: result?.fileId || result?.file_id || '' }));
@@ -83,6 +89,7 @@ export default function ReelsManager({ onOpenMenu }) {
       setFormError(err.message || 'Video upload failed. Try again or paste a video link.');
     } finally {
       setUploading(false);
+      setProgress(null);
     }
   };
 
@@ -204,7 +211,7 @@ export default function ReelsManager({ onOpenMenu }) {
                     className="flex flex-col items-center gap-2 text-xs text-[var(--adm-text-muted)] cursor-pointer p-4"
                   >
                     {uploading ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
-                    <span>{uploading ? 'Uploading…' : 'Upload a vertical video'}</span>
+                    <span>{uploading ? uploadStatusText(progress) : 'Upload a vertical video'}</span>
                   </button>
                 )}
                 {form.videoUrl && (
@@ -215,7 +222,7 @@ export default function ReelsManager({ onOpenMenu }) {
                     className="absolute bottom-2 inset-x-2 adm-btn justify-center text-xs"
                   >
                     {uploading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                    {uploading ? 'Uploading…' : 'Replace video'}
+                    {uploading ? uploadStatusText(progress) : 'Replace video'}
                   </button>
                 )}
               </div>

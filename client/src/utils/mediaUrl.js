@@ -17,9 +17,23 @@ export const telegramMediaUrl = (fileId, ext) => `${MEDIA_BASE}/api/tg/${fileId}
 const OLD_DEMO_VIDEO_RE = /\/videos\/reel-chef(?:-480|-360)?\.mp4$/;
 const DEMO_VIDEO = '/videos/demo-dish-360.mp4';
 
-// Menu cards play the same file as Reels and dish details (the demo clip is already 360p)
+// Uploaded videos are saved as one link: the 480p copy (Reels, dish page) with the 360p card
+// copy's Telegram file id attached as ?sd=<file_id>. /api/tg ignores the query, so the link
+// plays the 480p copy anywhere; menu cards ask cardVideoUrl() for the 360p one.
+const FILE_ID_RE = /^[A-Za-z0-9_-]{10,200}$/;
+
+export function withCardVideo(url, cardFileId) {
+  if (!url || !cardFileId || !FILE_ID_RE.test(cardFileId)) return url;
+  return `${url}${url.includes('?') ? '&' : '?'}sd=${cardFileId}`;
+}
+
+// The file menu cards play: the 360p copy when there is one, otherwise the video itself
+// (the bundled demo clip is already 360p)
 export function cardVideoUrl(url) {
-  return permanentMediaUrl(url);
+  const full = permanentMediaUrl(url);
+  if (typeof full !== 'string') return full;
+  const sd = full.match(/[?&]sd=([A-Za-z0-9_-]{10,200})(?:&|$)/);
+  return sd ? telegramMediaUrl(sd[1], 'mp4') : full;
 }
 
 export function permanentMediaUrl(url) {
