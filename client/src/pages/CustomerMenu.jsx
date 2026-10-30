@@ -681,6 +681,25 @@ export const CANONICAL_CATEGORIES = [
   }
 ];
 
+// Embers thrown off where a window edge rubs the order-step rail: sideways distance, upward
+// kick, fall, size (px), flight time and start delay (s)
+const RAIL_EMBERS = [
+  { x: -46, lift: 30, fall: 40, size: 3, t: 0.95, delay: 0 },
+  { x: 40, lift: 26, fall: 46, size: 4, t: 1.05, delay: 0.08 },
+  { x: -22, lift: 38, fall: 30, size: 2, t: 0.8, delay: 0.16 },
+  { x: 28, lift: 34, fall: 36, size: 3, t: 0.9, delay: 0.22 },
+  { x: -60, lift: 18, fall: 54, size: 2, t: 1.1, delay: 0.3 },
+  { x: 58, lift: 20, fall: 50, size: 3, t: 1.0, delay: 0.36 },
+  { x: -12, lift: 44, fall: 26, size: 2, t: 0.75, delay: 0.42 },
+  { x: 14, lift: 42, fall: 30, size: 3, t: 0.85, delay: 0.5 },
+  { x: -36, lift: 24, fall: 48, size: 4, t: 1.0, delay: 0.56 },
+  { x: 48, lift: 30, fall: 42, size: 2, t: 0.95, delay: 0.62 },
+  { x: -52, lift: 36, fall: 38, size: 2, t: 1.05, delay: 0.7 },
+  { x: 34, lift: 16, fall: 56, size: 3, t: 1.1, delay: 0.76 },
+  { x: -26, lift: 28, fall: 44, size: 3, t: 0.9, delay: 0.84 },
+  { x: 20, lift: 36, fall: 34, size: 2, t: 0.8, delay: 0.9 }
+];
+
 // 'SPECIAL STEAK' -> 'Special Steak'
 const titleCase = (text) => String(text || '').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -2205,8 +2224,25 @@ export default function CustomerMenu({
                 );
               })}
               {/* Friction sparks where a window edge is pushing the rail */}
-              <span className="order-rail__friction order-rail__friction--top" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span>
-              <span className="order-rail__friction order-rail__friction--bottom" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span>
+              {['top', 'bottom'].map((edge) => (
+                <span key={edge} className={`order-rail__friction order-rail__friction--${edge}`} aria-hidden="true">
+                  {RAIL_EMBERS.map((e, i) => (
+                    <i
+                      key={i}
+                      style={{
+                        '--x': `${e.x}px`,
+                        // Top edge: kicked up then falling past the contact point; bottom edge: thrown
+                        // down and falling further
+                        '--y1': `${edge === 'top' ? -e.lift : e.lift * 0.35}px`,
+                        '--y2': `${edge === 'top' ? e.fall : e.fall + e.lift}px`,
+                        '--size': `${e.size}px`,
+                        '--t': `${e.t}s`,
+                        animationDelay: `${e.delay}s`
+                      }}
+                    />
+                  ))}
+                </span>
+              ))}
             </ol>
 
             {/* Phones and narrower screens: compact card above the menu */}

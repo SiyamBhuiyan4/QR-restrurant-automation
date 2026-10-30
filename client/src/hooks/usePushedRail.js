@@ -17,7 +17,7 @@ import { useEffect } from 'react';
  */
 const TOP_EDGE = 80; // clear of the sticky header
 const BOTTOM_EDGE = 16;
-const PUSH_HOLD_MS = 140; // sparks stay this long after the last push
+const PUSH_HOLD_MS = 450; // sparks keep flying this long after the last push
 
 export default function usePushedRail(ref, enabled) {
   useEffect(() => {
