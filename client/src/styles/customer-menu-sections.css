@@ -571,11 +571,12 @@ html[data-theme="light"] .menu-filter-chip {
   .order-rail {
     --rail-w: 76px;
     position: fixed;
-    top: 50%;
+    /* Placed by hooks/usePushedRail.js; this is just the start (middle of the screen) */
+    top: 0;
     left: calc(((100vw - 80rem) / 2 + 1.5rem - var(--rail-w)) / 2);
     z-index: 20;
     width: var(--rail-w);
-    transform: translateY(-50%);
+    transform: translateY(calc(50vh - 50%));
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -641,6 +642,74 @@ html[data-theme="light"] .menu-filter-chip {
 @media (prefers-reduced-motion: reduce) {
   .order-step.is-current .order-step__dot,
   .order-step__sparks i {
+    animation: none;
+  }
+}
+
+/* Friction sparks: while a window edge pushes the rail, short bright streaks fan out from the
+   point of contact (top centre when pushed down, bottom centre when pushed up) */
+.order-rail__friction {
+  display: none;
+}
+@media (min-width: 1400px) {
+  .order-rail__friction {
+    display: block;
+    position: absolute;
+    left: 50%;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+  }
+  .order-rail__friction--top { top: 0; --dir: 0deg; }
+  .order-rail__friction--bottom { bottom: 0; --dir: 180deg; }
+
+  /* Hot spot where the rail rubs the edge */
+  .order-rail__friction::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: -3px;
+    width: 40px;
+    height: 6px;
+    border-radius: 9999px;
+    background: radial-gradient(ellipse at center, rgba(255, 220, 170, 0.95), rgba(255, 120, 50, 0.4) 45%, transparent 70%);
+    opacity: 0;
+    transition: opacity 180ms ease;
+  }
+  .order-rail.is-pushed-top .order-rail__friction--top::before,
+  .order-rail.is-pushed-bottom .order-rail__friction--bottom::before {
+    opacity: 1;
+  }
+
+  .order-rail__friction i {
+    position: absolute;
+    left: -1px;
+    top: -4px;
+    width: 2px;
+    height: 8px;
+    border-radius: 9999px;
+    background: linear-gradient(to top, rgba(255, 140, 60, 0), #ffb36b 40%, #fff3d6);
+    opacity: 0;
+    transform-origin: 50% 100%;
+  }
+  .order-rail.is-pushed-top .order-rail__friction--top i,
+  .order-rail.is-pushed-bottom .order-rail__friction--bottom i {
+    animation: railFriction 0.42s ease-out infinite;
+  }
+  .order-rail__friction i:nth-child(1) { --a: -68deg; --d: 16px; animation-delay: 0s; }
+  .order-rail__friction i:nth-child(2) { --a: 62deg; --d: 18px; animation-delay: 0.07s; }
+  .order-rail__friction i:nth-child(3) { --a: -38deg; --d: 13px; animation-delay: 0.14s; }
+  .order-rail__friction i:nth-child(4) { --a: 40deg; --d: 15px; animation-delay: 0.21s; }
+  .order-rail__friction i:nth-child(5) { --a: -82deg; --d: 20px; animation-delay: 0.28s; }
+  .order-rail__friction i:nth-child(6) { --a: 80deg; --d: 19px; animation-delay: 0.35s; }
+}
+@keyframes railFriction {
+  0% { opacity: 1; transform: rotate(calc(var(--dir) + var(--a))) translateY(0) scaleY(0.5); }
+  100% { opacity: 0; transform: rotate(calc(var(--dir) + var(--a))) translateY(calc(var(--d) * -1)) scaleY(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .order-rail.is-pushed-top .order-rail__friction--top i,
+  .order-rail.is-pushed-bottom .order-rail__friction--bottom i {
     animation: none;
   }
 }

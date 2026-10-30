@@ -20,7 +20,7 @@ const FoodDetailModal = lazy(loadFoodDetailModal);
 const FoodReelsModal = lazy(loadFoodReelsModal);
 import SceneryBackground from '../components/SceneryBackground';
 import useMenuReelsSwipe from '../hooks/useMenuReelsSwipe';
-import useLazyFollow from '../hooks/useLazyFollow';
+import usePushedRail from '../hooks/usePushedRail';
 import MenuItemCard from '../components/MenuItemCard';
 import '../styles/customer-hero.css';
 import '../styles/customer-menu-sections.css';
@@ -912,7 +912,7 @@ export default function CustomerMenu({
   }, []);
 
   // 3. Live Customer Order Status Tracking
-  // Wide-screen order-step rail: moves with the page, then glides back to the middle
+  // Wide-screen order-step rail: rests on the page; the window's edges push it along (with sparks)
   const orderRailRef = useRef(null);
 
   const [activeOrder, setActiveOrder] = useState(() => {
@@ -923,7 +923,7 @@ export default function CustomerMenu({
       return null;
     }
   });
-  useLazyFollow(orderRailRef, Boolean(activeOrder && activeOrder.status !== 'served'));
+  usePushedRail(orderRailRef, Boolean(activeOrder && activeOrder.status !== 'served'));
 
   // 4. Network state
   const [isOnline, setIsOnline] = useState(
@@ -2204,6 +2204,9 @@ export default function CustomerMenu({
                   </li>
                 );
               })}
+              {/* Friction sparks where a window edge is pushing the rail */}
+              <span className="order-rail__friction order-rail__friction--top" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span>
+              <span className="order-rail__friction order-rail__friction--bottom" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span>
             </ol>
 
             {/* Phones and narrower screens: compact card above the menu */}
