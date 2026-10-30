@@ -602,3 +602,45 @@ html[data-theme="light"] .menu-filter-chip {
     font-size: 0.68rem;
   }
 }
+
+/* Current step: a soft breathing glow and a few tiny sparks drifting up and fading.
+   Transform / opacity only for the sparks, so they never repaint the page. */
+.order-step.is-current .order-step__dot {
+  animation: orderGlow 2.4s ease-in-out infinite;
+}
+@keyframes orderGlow {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(255, 90, 38, 0.22), 0 0 10px 0 rgba(255, 120, 60, 0.25); }
+  50% { box-shadow: 0 0 0 5px rgba(255, 90, 38, 0.3), 0 0 18px 2px rgba(255, 150, 80, 0.4); }
+}
+.order-step__sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.order-step__sparks i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: #ffd2a8;
+  box-shadow: 0 0 4px 1px rgba(255, 170, 100, 0.8);
+  opacity: 0;
+  animation: orderSpark 2.6s ease-out infinite;
+}
+.order-step__sparks i:nth-child(1) { --sx: -14px; --sy: -22px; animation-delay: 0s; }
+.order-step__sparks i:nth-child(2) { --sx: 15px; --sy: -18px; animation-delay: 0.65s; }
+.order-step__sparks i:nth-child(3) { --sx: -8px; --sy: -26px; animation-delay: 1.3s; width: 2px; height: 2px; }
+.order-step__sparks i:nth-child(4) { --sx: 10px; --sy: -27px; animation-delay: 1.95s; width: 2px; height: 2px; }
+@keyframes orderSpark {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+  20% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .order-step.is-current .order-step__dot,
+  .order-step__sparks i {
+    animation: none;
+  }
+}

@@ -20,6 +20,7 @@ const FoodDetailModal = lazy(loadFoodDetailModal);
 const FoodReelsModal = lazy(loadFoodReelsModal);
 import SceneryBackground from '../components/SceneryBackground';
 import useMenuReelsSwipe from '../hooks/useMenuReelsSwipe';
+import useLazyFollow from '../hooks/useLazyFollow';
 import MenuItemCard from '../components/MenuItemCard';
 import '../styles/customer-hero.css';
 import '../styles/customer-menu-sections.css';
@@ -911,6 +912,9 @@ export default function CustomerMenu({
   }, []);
 
   // 3. Live Customer Order Status Tracking
+  // Wide-screen order-step rail: moves with the page, then glides back to the middle
+  const orderRailRef = useRef(null);
+
   const [activeOrder, setActiveOrder] = useState(() => {
     try {
       const saved = localStorage.getItem('smartdine_active_order');
@@ -919,6 +923,7 @@ export default function CustomerMenu({
       return null;
     }
   });
+  useLazyFollow(orderRailRef, Boolean(activeOrder && activeOrder.status !== 'served'));
 
   // 4. Network state
   const [isOnline, setIsOnline] = useState(
@@ -2182,7 +2187,7 @@ export default function CustomerMenu({
           return (
             <>
             {/* Wide screens: just the steps, standing in the empty strip left of the menu */}
-            <ol className="order-rail" aria-label="Order progress">
+            <ol ref={orderRailRef} className="order-rail" aria-label="Order progress">
               {steps.map((step, idx) => {
                 const state = idx < currentIndex ? 'done' : idx === currentIndex ? 'current' : 'todo';
                 const StepIcon = step.icon;
@@ -2191,6 +2196,9 @@ export default function CustomerMenu({
                     {idx > 0 && <span className={`order-step__line ${idx <= currentIndex ? 'is-filled' : ''}`} aria-hidden="true" />}
                     <span className="order-step__dot">
                       <StepIcon className="w-4 h-4" />
+                      {state === 'current' && (
+                        <span className="order-step__sparks" aria-hidden="true"><i /><i /><i /><i /></span>
+                      )}
                     </span>
                     <span className="order-step__label">{step.label}</span>
                   </li>
@@ -2225,6 +2233,9 @@ export default function CustomerMenu({
                       {idx > 0 && <span className={`order-step__line ${idx <= currentIndex ? 'is-filled' : ''}`} aria-hidden="true" />}
                       <span className="order-step__dot">
                         <StepIcon className="w-4 h-4" />
+                        {state === 'current' && (
+                          <span className="order-step__sparks" aria-hidden="true"><i /><i /><i /><i /></span>
+                        )}
                       </span>
                       <span className="order-step__label">{step.label}</span>
                     </li>
