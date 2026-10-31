@@ -1,6 +1,6 @@
-import { mutation, query, internalMutation } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server.js";
 import { v, ConvexError } from "convex/values";
-import { hasKitchenAccess } from "./team";
+import { hasKitchenAccess } from "./team.js";
 
 /**
  * One message system for the whole restaurant.

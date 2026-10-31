@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { useSocket, useSocketListener } from '../../context/SocketContext';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation } from '../../db/telegramDb';
 import { mapConvexOrders } from '../../utils/convexOrders.js';
 import { api } from '../../convexApi';
 import TableSecurityModal, { TableSecurityModal as PasscodeConfirmDialog } from './TableSecurityModal';

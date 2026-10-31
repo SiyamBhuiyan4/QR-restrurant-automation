@@ -1,4 +1,4 @@
-import { internalMutation } from "./_generated/server";
+import { internalMutation } from "./_generated/server.js";
 
 // Express seed menu (server/seed.js) ported to Convex.
 // Inserts only when BOTH categories and menuItems are empty, so it never

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation } from '../../db/telegramDb';
 import { BellRing, Check, MessageSquare, UtensilsCrossed, Timer } from 'lucide-react';
 import { api } from '../../convexApi';
 import { timeAgo, errorText, STATUS_STYLE } from './staffUtils';

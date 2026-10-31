@@ -20,7 +20,7 @@ import {
 import { Wifi, WifiOff, RefreshCw, CheckCircle2, AlertCircle, Clock, X } from 'lucide-react';
 import { convex } from '../convexClient.js';
 import { api } from '../convexApi';
-import { uploadVoiceBlob } from '../utils/voiceUpload.js';
+import { sendVoiceNoteToTelegram } from '../services/telegramClient.js';
 
 export const NetworkContext = createContext(null);
 
@@ -46,9 +46,14 @@ async function submitOrderToConvex(p) {
   };
   const blob = p.voiceBlob instanceof Blob ? p.voiceBlob : p.voiceNote instanceof Blob ? p.voiceNote : null;
   if (blob) {
-    args.voiceStorageId = await uploadVoiceBlob(blob, (a) => convex.mutation(api.orders.generateUploadUrl, a));
-  } else if (typeof p.voiceNote === 'string' && p.voiceNote) {
-    args.voiceNoteUrl = p.voiceNote;
+    // Voice notes go to the Telegram channel like all other media; if that fails the error
+    // propagates so the order stays in the offline queue and is retried with its Blob
+    const voice = await sendVoiceNoteToTelegram(blob, { tableNumber: args.tableNumber });
+    if (!voice?.success || !voice.cdnUrl) throw new Error(voice?.error || 'Voice note upload failed');
+    args.voiceNoteUrl = voice.cdnUrl;
+  } else if (p.voiceNoteUrl || (typeof p.voiceNote === 'string' && p.voiceNote)) {
+    // Already uploaded to Telegram by the cart
+    args.voiceNoteUrl = p.voiceNoteUrl || p.voiceNote;
   }
   return convex.mutation(api.orders.createOrder, args);
 }

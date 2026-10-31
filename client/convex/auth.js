@@ -1,5 +1,5 @@
-import { action, internalMutation } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { action, internalMutation } from "./_generated/server.js";
+import { internal } from "./_generated/api.js";
 import { v } from "convex/values";
 
 /**

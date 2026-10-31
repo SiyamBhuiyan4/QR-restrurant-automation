@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from 'convex/react';
+import { useQuery } from '../../db/telegramDb';
 import {
   History, Search, ChefHat, ClipboardList, AlertTriangle, LogIn, LogOut, ConciergeBell, UserCog, KeyRound, X
 } from 'lucide-react';

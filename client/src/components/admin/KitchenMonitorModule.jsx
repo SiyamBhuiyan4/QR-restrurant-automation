@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from 'convex/react';
+import { useQuery } from '../../db/telegramDb';
 import { Users, Activity, Circle, ChefHat, ConciergeBell, ShieldCheck, KeyRound } from 'lucide-react';
 import { api } from '../../convexApi';
 import { getAdminToken } from '../../utils/teamSession';

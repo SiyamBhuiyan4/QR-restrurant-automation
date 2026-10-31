@@ -1,6 +1,6 @@
 import { httpRouter } from "convex/server";
-import { httpAction } from "./_generated/server";
-import { isValidFileId, resolveFilePath } from "./media";
+import { httpAction } from "./_generated/server.js";
+import { isValidFileId, resolveFilePath } from "./media.js";
 
 const http = httpRouter();
 

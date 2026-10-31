@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation } from '../db/telegramDb';
 import { ChefHat, Lock, User, Eye, EyeOff, LogOut, AlertTriangle, ArrowRight, LayoutGrid, X, Inbox } from 'lucide-react';
 import { api } from '../convexApi';
 import { staffLogin, staffLogout, getStaffToken } from '../utils/teamSession';

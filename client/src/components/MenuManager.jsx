@@ -25,7 +25,7 @@ import {
   Upload,
   FolderPlus
 } from 'lucide-react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation } from '../db/telegramDb';
 import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
 import { getCachedMenu, cacheMenu } from '../db/indexedDb.js';

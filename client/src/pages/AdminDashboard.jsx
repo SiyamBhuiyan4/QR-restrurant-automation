@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation } from '../db/telegramDb';
 import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
 import { useSocket } from '../context/SocketContext';
@@ -233,7 +233,7 @@ export default function AdminDashboard({ className = '' }) {
   // Live restaurant stats (Convex subscription) and a manual refresh that re-reads them
   let liveStats = undefined;
   try {
-    liveStats = useQuery(api.orders.getStats, {});
+    liveStats = useQuery(api.stats.getStats, {});
   } catch (_) {}
 
   useEffect(() => {
@@ -248,7 +248,7 @@ export default function AdminDashboard({ className = '' }) {
     if (!isSilent) setIsRefreshing(true);
 
     try {
-      const s = await convex.query(api.orders.getStats, {});
+      const s = await convex.query(api.stats.getStats, {});
       setServerStats(s);
       setIsOfflineMode(false);
     } catch (err) {

@@ -1,6 +1,6 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation } from "./_generated/server.js";
 import { v, ConvexError } from "convex/values";
-import { requireAdmin } from "./team";
+import { requireAdmin } from "./team.js";
 
 // Stand-alone Reels: fun / behind-the-scenes clips the admin posts that are not tied to a
 // dish, so the customer feed shows them without an Add to Order bar.

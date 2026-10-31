@@ -26,7 +26,7 @@ import {
 import AudioPlayer from '../components/AudioPlayer.jsx';
 import SocketContext, { resolveServerUrl } from '../context/SocketContext.jsx';
 import { io } from 'socket.io-client';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation } from '../db/telegramDb';
 import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
 import { mapConvexOrders } from '../utils/convexOrders.js';

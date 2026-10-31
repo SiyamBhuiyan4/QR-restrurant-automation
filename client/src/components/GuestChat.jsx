@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation } from '../db/telegramDb';
 import { MessageCircle, X, Send, Mic, Trash2, Play, Pause, Volume2 } from 'lucide-react';
 import { api } from '../convexApi';
 import { sendGuestChatToTelegramChannel } from '../services/telegramClient';

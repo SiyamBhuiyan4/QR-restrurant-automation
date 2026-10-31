@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation } from '../../db/telegramDb';
 import { MessageSquare, X, Send, AlertTriangle, ArrowLeft, ShieldCheck, Users, Search } from 'lucide-react';
 import { api } from '../../convexApi';
 import { timeAgo, errorText } from './staffUtils';

@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation } from "./_generated/server.js";
 import { v, ConvexError } from "convex/values";
 
 const CORRECTION_TYPES = ["void", "discount", "void_request"];

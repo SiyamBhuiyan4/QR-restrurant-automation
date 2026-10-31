@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import { useRestaurant } from '../context/RestaurantContext';
-import { useMutation } from 'convex/react';
+import { useMutation } from '../db/telegramDb';
 import { api } from '../convexApi';
 import { sendWaiterCallToTelegramChannel } from '../services/telegramClient';
 import { enqueueWaiterCall } from '../db/indexedDb.js';

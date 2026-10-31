@@ -29,7 +29,7 @@ import {
   Maximize2,
   RotateCcw
 } from 'lucide-react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation } from '../db/telegramDb';
 import { api } from '../convexApi';
 import VoiceRecorder from './VoiceRecorder';
 import { permanentMediaUrl } from '../utils/mediaUrl';

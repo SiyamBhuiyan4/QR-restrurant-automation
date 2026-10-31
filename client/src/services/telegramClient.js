@@ -472,14 +472,8 @@ export async function sendVoiceNoteToTelegram(voiceBlob, { tableNumber = 'N/A', 
 
     const voiceObj = data.result?.voice || data.result?.audio || data.result?.document;
     const fileId = voiceObj ? voiceObj.file_id : null;
-    let cdnUrl = '';
-    if (fileId) {
-      try {
-        cdnUrl = await resolveTelegramFileUrl(fileId);
-      } catch (err) {
-        console.warn('[TelegramClient] Failed to resolve voice CDN path:', err.message);
-      }
-    }
+    // Permanent link (Telegram's own download links expire after about an hour)
+    let cdnUrl = fileId ? telegramMediaUrl(fileId, defaultExt) : '';
 
     if (!cdnUrl && data.result?.message_id) {
       const cleanChannelId = String(chatId).replace(/^-100/, '');

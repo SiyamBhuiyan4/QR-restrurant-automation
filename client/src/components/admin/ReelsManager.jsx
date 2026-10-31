@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation } from '../../db/telegramDb';
 import { Film, Plus, X, Trash2, RefreshCw, Upload, Eye, EyeOff, UtensilsCrossed, Pencil } from 'lucide-react';
 import { api } from '../../convexApi';
 import { getAdminToken } from '../../utils/teamSession';

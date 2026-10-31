@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery } from 'convex/react';
+import { useQuery } from '../../db/telegramDb';
 import { api } from '../../convexApi';
 import { appUrl } from '../../utils/appUrls';
 import {

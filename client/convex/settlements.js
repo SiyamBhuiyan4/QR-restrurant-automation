@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { mutation } from "./_generated/server.js";
 import { v, ConvexError } from "convex/values";
 
 function cleanText(value, max) {

@@ -23,11 +23,8 @@ import {
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useNetwork } from '../context/NetworkContext';
-import { useMutation } from 'convex/react';
-import { api } from '../convexApi';
 import { enqueueOrder as idbEnqueueOrder } from '../db/indexedDb.js';
 import VoiceRecorder from './VoiceRecorder';
-import { uploadVoiceBlob } from '../utils/voiceUpload.js';
 import { sendOrderToTelegramChannel, sendVoiceNoteToTelegram } from '../services/telegramClient';
 
 const TAX_RATE = 0.05; // 5% Estimated Tax
@@ -174,18 +171,6 @@ export default function CartDrawer({
   } catch (_) {
     networkCtx = null;
   }
-
-  // Convex Cloud order mutation
-  let createConvexOrder = null;
-  try {
-    createConvexOrder = useMutation(api.orders.createOrder);
-  } catch (_) {}
-
-  // Convex file-storage upload URL mutation (voice notes are uploaded as blobs)
-  let generateUploadUrl = null;
-  try {
-    generateUploadUrl = useMutation(api.orders.generateUploadUrl);
-  } catch (_) {}
 
   // Resolve Drawer Open/Close state
   const isOpen = propIsOpen !== undefined ? propIsOpen : (cartCtx?.isCartOpen ?? false);
@@ -409,37 +394,8 @@ export default function CartDrawer({
         } catch (_) {}
       }
 
-      // 5. Non-blocking Convex background sync (removes blocking reliance on Convex)
-      if (createConvexOrder) {
-        (async () => {
-          try {
-            let voiceStorageId;
-            if (voiceBlob && generateUploadUrl) {
-              try {
-                voiceStorageId = await uploadVoiceBlob(voiceBlob, generateUploadUrl);
-              } catch (uErr) {
-                console.warn('[CartDrawer] Convex voice upload skipped:', uErr);
-              }
-            }
-            await createConvexOrder({
-              tableNumber: Number(finalTable) || 1,
-              items: orderPayload.items.map((i) => ({
-                name: i.name,
-                price: Number(i.price) || 0,
-                quantity: Number(i.quantity) || 1,
-                note: i.note || undefined
-              })),
-              totalAmount: parseFloat(grandTotal.toFixed(2)),
-              generalNote: generalNote.trim() || undefined,
-              voiceStorageId
-            });
-          } catch (convexErr) {
-            console.warn('[CartDrawer] Convex sync skipped (order saved via Telegram + local persistence):', convexErr);
-          }
-        })();
-      }
-
-      // Optional IndexedDB queue fallback for offline sync
+      // 5. Save the order to the database through the network queue (sent now when online,
+      //    kept and retried when offline). One route only, so each order is saved once.
       try {
         if (networkCtx?.submitOrder) {
           networkCtx.submitOrder(orderPayload).catch(() => {});

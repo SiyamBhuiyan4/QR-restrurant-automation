@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { ConvexProvider } from 'convex/react';
+import { ConvexProvider } from './db/telegramDb';
 import { convex } from './convexClient.js';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App.jsx';

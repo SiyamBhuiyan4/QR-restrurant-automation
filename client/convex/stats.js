@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { query } from "./_generated/server.js";
 
 const ACTIVE_ORDER_STATUSES = ["pending", "preparing", "ready"];
 const BASE_STATUSES = ["pending", "preparing", "ready", "served", "completed", "cancelled"];

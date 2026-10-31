@@ -10,7 +10,7 @@ import {
 } from '../data/adminMockData';
 import { useSocket, useSocketListener } from './SocketContext';
 import { verifyAdminPin } from '../utils/adminAuth';
-import { useQuery } from 'convex/react';
+import { useQuery } from '../db/telegramDb';
 import { api } from '../convexApi';
 import {
   fetchStaffMessagesFor,

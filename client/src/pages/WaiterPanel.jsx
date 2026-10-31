@@ -35,7 +35,7 @@ function readShiftHandover() {
 }
 import { useSocket, useSocketListener } from '../context/SocketContext';
 import { useRestaurant, DEFAULT_EMPLOYEE_ROSTER } from '../context/RestaurantContext';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation } from '../db/telegramDb';
 import { api } from '../convexApi';
 import { useShiftClock, formatClockTime } from '../utils/shiftClock';
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery, useMutation, useAction } from 'convex/react';
+import { useQuery, useMutation, useAction } from '../../db/telegramDb';
 import { Users, Plus, X, Trash2, RefreshCw, Copy, Check, ChefHat, Grid3X3, Circle, KeyRound, Pencil, History } from 'lucide-react';
 import StaffHistory from './StaffHistory';
 import { api } from '../../convexApi';

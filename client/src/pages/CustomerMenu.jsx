@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation } from '../db/telegramDb';
 import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
 import { permanentMediaUrl, cardVideoUrl } from '../utils/mediaUrl.js';

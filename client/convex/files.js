@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { mutation } from "./_generated/server.js";
 import { v } from "convex/values";
 
 // Public URL for a file uploaded to Convex storage (dish photos and videos)
