@@ -1,10 +1,9 @@
 import React, { useEffect } from 'react';
-import { QrCode, Wifi, X, Eye, MessageCircle, Check } from 'lucide-react';
+import { QrCode, X, Eye, MessageCircle, Check } from 'lucide-react';
 
 /**
  * "Order from your table" sheet for guests who are only browsing (no table QR scanned).
- * Explains how to unlock ordering and what browsing already includes. The Wi-Fi check is
- * the interface for confirming a guest is inside the restaurant; it is not wired up yet.
+ * Explains how to unlock ordering and what browsing already includes.
  */
 export default function ScanTableSheet({ isOpen, onClose }) {
   useEffect(() => {
@@ -68,23 +67,6 @@ export default function ScanTableSheet({ isOpen, onClose }) {
             <li className="flex items-center gap-2 text-slate-400"><Check className="w-4 h-4 text-slate-500" /> Ordering and dish reviews need a table</li>
           </ul>
         </div>
-
-        <button
-          type="button"
-          disabled
-          className="mt-3 w-full flex items-center gap-3 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-3.5 text-left cursor-not-allowed"
-        >
-          <span className="w-9 h-9 rounded-xl bg-white/[0.06] text-slate-300 flex items-center justify-center shrink-0">
-            <Wifi className="w-4 h-4" />
-          </span>
-          <span className="flex-1 min-w-0">
-            <span className="block text-sm font-medium text-slate-200">Confirm you're at the restaurant</span>
-            <span className="block text-xs text-slate-400">Join the restaurant Wi-Fi to verify your visit</span>
-          </span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-300 bg-amber-400/10 border border-amber-400/25 rounded-full px-2 py-1 shrink-0">
-            Soon
-          </span>
-        </button>
 
         <button
           type="button"
