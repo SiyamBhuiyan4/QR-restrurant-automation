@@ -694,7 +694,7 @@ export default function FoodDetailModal({
              ---------------------------------------------------------------- */}
           <div className="relative bg-[#0b0f19] select-none fdm-hero">
             <div
-              className="relative mx-3 mt-3 sm:mx-4 sm:mt-4 aspect-[16/10] sm:aspect-auto sm:h-[300px] max-h-[34vh] sm:max-h-[300px] overflow-hidden rounded-2xl ring-1 ring-emerald-500/30 shadow-lg shadow-black/50 bg-[#0b0f19] flex items-center justify-center touch-pan-y"
+              className="relative mx-3 mt-3 sm:mx-4 sm:mt-4 aspect-[16/10] sm:aspect-auto sm:h-[340px] max-h-[34vh] sm:max-h-[42vh] overflow-hidden rounded-2xl ring-1 ring-emerald-500/30 shadow-lg shadow-black/50 bg-[#0b0f19] flex items-center justify-center touch-pan-y"
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -737,7 +737,7 @@ export default function FoodDetailModal({
               />
 
               {/* Gradient Vignette */}
-              <div className="absolute inset-0 bg-gradient-to-t from-stone-900/90 via-transparent to-black/30 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-black/30 pointer-events-none" />
 
               {/* Large Floating Chevron Navigation Buttons */}
               {photos.length > 1 && (
@@ -763,36 +763,36 @@ export default function FoodDetailModal({
                   </button>
                 </>
               )}
-
-              {/* Bottom Thumbnail Dock */}
-              {photos.length > 1 && (
-                <div className="absolute bottom-2.5 sm:bottom-3 left-0 right-0 flex justify-center items-center z-20 px-3 pointer-events-none">
-                  <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-stone-950/85 backdrop-blur-md border border-white/15 shadow-2xl pointer-events-auto max-w-full overflow-x-auto scrollbar-none">
-                    {photos.map((img, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedImageIndex(idx);
-                        }}
-                        className={`relative w-12 h-9 sm:w-16 sm:h-11 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer shrink-0 ${
-                          selectedImageIndex === idx
-                            ? 'border-[#d4af37] scale-105 shadow-md shadow-[#d4af37]/40 opacity-100 ring-2 ring-[#f0d27a]/50'
-                            : 'border-white/20 opacity-60 hover:opacity-100 hover:scale-102'
-                        }`}
-                        aria-label={`Jump to photo ${idx + 1}`}
-                      >
-                        <img src={img} alt={`Angle ${idx + 1}`} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                        <span className="absolute bottom-0.5 right-1 text-[9px] font-mono font-bold text-white drop-shadow-md">
-                          {idx + 1}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
+
+            {/* Thumbnail row, below the photo so it never covers the dish */}
+            {photos.length > 1 && (
+              <div className="mx-3 sm:mx-4 mt-2 mb-2 overflow-x-auto scrollbar-none">
+                <div className="flex items-center gap-1.5 sm:gap-2 w-max mx-auto p-1">
+                  {photos.map((img, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImageIndex(idx);
+                      }}
+                      className={`relative w-12 h-9 sm:w-16 sm:h-11 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer shrink-0 ${
+                        selectedImageIndex === idx
+                          ? 'border-[#d4af37] scale-105 shadow-md shadow-[#d4af37]/40 opacity-100 ring-2 ring-[#f0d27a]/50'
+                          : 'border-white/20 opacity-60 hover:opacity-100 hover:scale-102'
+                      }`}
+                      aria-label={`Jump to photo ${idx + 1}`}
+                    >
+                      <img src={img} alt={`Angle ${idx + 1}`} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                      <span className="absolute bottom-0.5 right-1 text-[9px] font-mono font-bold text-white drop-shadow-md">
+                        {idx + 1}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ----------------------------------------------------------------
