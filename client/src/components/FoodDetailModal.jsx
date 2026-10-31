@@ -19,12 +19,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Video,
-  Image as ImageIcon,
   Heart,
   ShieldCheck,
   Send,
   ThumbsUp,
-  UserCheck,
   ChefHat,
   Maximize2,
   RotateCcw
@@ -288,38 +286,7 @@ export default function FoodDetailModal({
     if (!dishId) return;
     try {
       const stored = localStorage.getItem(`smartdine_reviews_${dishId}`);
-      if (stored) {
-        setLocalReviews(JSON.parse(stored));
-      } else {
-        // Initial sample verified reviews so dishes have authentic social proof
-        const defaultReviews = [
-          {
-            author: 'Sophia Martinez',
-            rating: 5,
-            date: 'Yesterday',
-            comment: 'Absolutely phenomenal! Cooked exactly to perfection with balanced seasonings.',
-            verified: true,
-            createdAt: Date.now() - 86400000
-          },
-          {
-            author: 'David Chen',
-            rating: 5,
-            date: '3 days ago',
-            comment: 'One of the best dishes here. The portion size and presentation are top notch!',
-            verified: true,
-            createdAt: Date.now() - 86400000 * 3
-          },
-          {
-            author: 'Marcus Vance',
-            rating: 5,
-            date: 'Last week',
-            comment: 'Incredible taste! Will definitely be ordering this again next time.',
-            verified: true,
-            createdAt: Date.now() - 86400000 * 7
-          }
-        ];
-        setLocalReviews(defaultReviews);
-      }
+      setLocalReviews(stored ? JSON.parse(stored) : []);
     } catch (_) {}
   }, [dishId]);
 
@@ -357,32 +324,12 @@ export default function FoodDetailModal({
       });
     }
 
-    // 3. Fallback sample reviews if completely empty
-    if (list.length === 0) {
-      return [
-        {
-          author: 'Sophia Martinez',
-          rating: 5,
-          date: 'Yesterday',
-          comment: 'Absolutely phenomenal! Cooked exactly to perfection with balanced seasonings.',
-          verified: true
-        },
-        {
-          author: 'David Chen',
-          rating: 5,
-          date: '3 days ago',
-          comment: 'One of the best dishes here. The portion size and presentation are top notch!',
-          verified: true
-        }
-      ];
-    }
-
     return list;
   }, [convexReviews, localReviews]);
 
   // Average Rating
   const averageRating = useMemo(() => {
-    if (!combinedReviews || combinedReviews.length === 0) return '4.9';
+    if (!combinedReviews || combinedReviews.length === 0) return null;
     const sum = combinedReviews.reduce((acc, r) => acc + (r.rating || 5), 0);
     return (sum / combinedReviews.length).toFixed(1);
   }, [combinedReviews]);
@@ -584,7 +531,7 @@ export default function FoodDetailModal({
 
     setIsSubmittingReview(true);
     const newEntry = {
-      author: reviewAuthor.trim() || 'Verified Diner',
+      author: reviewAuthor.trim() || 'Guest',
       rating: reviewRating,
       comment: reviewComment.trim(),
       date: 'Just now',
@@ -780,14 +727,6 @@ export default function FoodDetailModal({
                 </div>
               )}
 
-              {/* Floating Photo Counter Badge */}
-              <div className="absolute top-5 sm:top-6 right-3 sm:right-4 z-20 pointer-events-none">
-                <span className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-amber-200 bg-stone-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-amber-500/30 shadow-lg">
-                  <ImageIcon className="w-3 h-3 text-amber-400" />
-                  <span>Slide {selectedImageIndex + 1} of {photos.length}</span>
-                </span>
-              </div>
-
               {/* Main Slide Photo with Smooth Crossfade */}
               <img
                 key={selectedImageIndex}
@@ -824,11 +763,6 @@ export default function FoodDetailModal({
                   </button>
                 </>
               )}
-
-              {/* Swipe Guidance Pill (Mobile hint) */}
-              <div className="absolute top-11 sm:top-12 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-[10px] text-stone-300 border border-white/10 pointer-events-none sm:hidden">
-                👈 Swipe left/right to browse {photos.length} photos 👉
-              </div>
 
               {/* Bottom Thumbnail Dock */}
               {photos.length > 1 && (
@@ -883,9 +817,14 @@ export default function FoodDetailModal({
                     title="Click to view reviews or write a comment"
                   >
                     <Star className="w-3.5 h-3.5 fill-current text-[#f0d27a]" />
-                    <span>{averageRating} / 5</span>
-                    <span className="text-stone-300 font-normal">({combinedReviews.length} ratings)</span>
-                    <span className="text-[#d4af37] text-[11px] underline ml-1 font-semibold">✍️ Review</span>
+                    {combinedReviews.length > 0 ? (
+                      <>
+                        <span>{averageRating}</span>
+                        <span className="text-stone-300 font-normal">({combinedReviews.length})</span>
+                      </>
+                    ) : (
+                      <span className="font-semibold">Be the first to review</span>
+                    )}
                   </button>
 
                   {dish.prepTime && (
@@ -902,9 +841,6 @@ export default function FoodDetailModal({
                 <span className="text-2xl sm:text-3xl font-serif font-semibold text-[#d4af37] tracking-tight">
                   {currency}{priceNum.toFixed(2)}
                 </span>
-                <span className="block text-[10px] text-[#f0d27a]/70 uppercase font-semibold tracking-widest">
-                  Taxes Included
-                </span>
               </div>
             </div>
 
@@ -920,10 +856,7 @@ export default function FoodDetailModal({
              ---------------------------------------------------------------- */}
           <div className="p-4 sm:p-5 space-y-2.5 bg-[#0a2a1c] border-t border-[#d4af37]/20 fdm-d4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-stone-300 flex items-center justify-between">
-              <span>Fresh Ingredients Profile</span>
-              <span className="fdm-chef-badge text-[11px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 normal-case tracking-normal whitespace-nowrap">
-                100% Chef Selected
-              </span>
+              <span>Ingredients</span>
             </h3>
 
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
@@ -951,14 +884,8 @@ export default function FoodDetailModal({
                 </div>
                 <div>
                   <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white flex items-center gap-2">
-                    <span>Chef&apos;s Kitchen Reel &amp; Cooking Secrets</span>
-                    <span className="fdm-live-badge text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/30 uppercase font-bold whitespace-nowrap">
-                      Live Reel
-                    </span>
+                    <span>From the kitchen</span>
                   </h3>
-                  <p className="text-[11px] text-stone-400">
-                    Watch how Chef freshly prepares {dish.name || dish.title}
-                  </p>
                 </div>
               </div>
 
@@ -970,13 +897,9 @@ export default function FoodDetailModal({
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FF5A26] to-rose-600 text-white border border-rose-500/40 text-xs font-black shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0"
                     title="Watch in full-screen Food Reels with comments"
                   >
-                    <span>Watch in Reels 🎬</span>
+                    <span>Watch in Reels</span>
                   </button>
                 )}
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-bold shadow-xs whitespace-nowrap shrink-0">
-                  <Video className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Kitchen Reel</span>
-                </div>
               </div>
             </div>
 
@@ -1178,8 +1101,9 @@ export default function FoodDetailModal({
               <div>
                 <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-stone-200 flex items-center gap-1.5">
                   <Star className="w-4 h-4 text-[#f0d27a] fill-current" />
-                  <span>Diner Reviews &amp; Comments</span>
+                  <span>Reviews</span>
                 </h3>
+                {combinedReviews.length > 0 && (
                 <div className="flex items-center gap-2 mt-1">
                   <div className="flex items-center text-[#f0d27a]">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -1189,9 +1113,10 @@ export default function FoodDetailModal({
                       />
                     ))}
                   </div>
-                  <span className="text-xs font-bold text-[#f0d27a] font-mono">{averageRating} / 5</span>
-                  <span className="text-[11px] text-stone-400">• {combinedReviews.length} verified ratings</span>
+                  <span className="text-xs font-bold text-[#f0d27a]">{averageRating}</span>
+                  <span className="text-[11px] text-stone-400">· {combinedReviews.length} {combinedReviews.length === 1 ? 'review' : 'reviews'}</span>
                 </div>
+                )}
               </div>
 
               {/* Interactive Write Review / Leave a Comment Button */}
@@ -1200,7 +1125,7 @@ export default function FoodDetailModal({
                 onClick={() => setIsReviewFormOpen(!isReviewFormOpen)}
                 className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl fdm-gold-btn active:scale-95 text-xs font-black shadow-md shadow-[#d4af37]/30 transition-all cursor-pointer"
               >
-                <span>{isReviewFormOpen ? '✖ Close Form' : '✍️ Write Review / Leave a Comment'}</span>
+                <span>{isReviewFormOpen ? 'Close' : 'Write a review'}</span>
               </button>
             </div>
 
@@ -1328,6 +1253,9 @@ export default function FoodDetailModal({
 
             {/* Reviews List */}
             <div className="space-y-2.5">
+              {combinedReviews.length === 0 && !isReviewFormOpen && (
+                <p className="text-xs text-stone-400 py-2">No reviews yet. Tried it? Tell others what you think.</p>
+              )}
               {combinedReviews.map((rev, i) => (
                 <div 
                   key={i} 
@@ -1341,11 +1269,6 @@ export default function FoodDetailModal({
                       <div>
                         <div className="font-bold text-xs text-white flex items-center gap-1.5">
                           <span>{rev.author}</span>
-                          {rev.verified && (
-                            <span className="text-[9px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/20 flex items-center gap-0.5">
-                              <UserCheck className="w-2.5 h-2.5" /> Verified Diner
-                            </span>
-                          )}
                         </div>
                         <div className="text-[10px] text-stone-400">
                           {rev.date || 'Recently'}
@@ -1409,7 +1332,7 @@ export default function FoodDetailModal({
             className={`fdm-cta flex-1 flex items-center justify-center gap-2 py-3 px-4 font-black rounded-xl shadow-xl transition-all cursor-pointer text-sm sm:text-base ${
               isAddedAnimation
                 ? 'bg-emerald-600 text-white scale-95 shadow-emerald-900/50'
-                : 'fdm-gold-btn active:scale-[0.98]'
+                : 'bg-emerald-500 hover:bg-emerald-400 text-[#04120c] active:scale-[0.98]'
             }`}
           >
             <ShoppingBag className={`w-4 h-4 ${isAddedAnimation ? 'animate-bounce' : ''}`} />

@@ -24,7 +24,8 @@ import { sendVoiceNoteToTelegram } from '../services/telegramClient.js';
 
 export const NetworkContext = createContext(null);
 
-const PING_TIMEOUT_MS = 3500;
+// The Telegram-backed database can take a few seconds on a cold start
+const PING_TIMEOUT_MS = 8000;
 
 /**
  * Maps a queued/local order payload onto the orders:createOrder Convex args.
@@ -559,11 +560,12 @@ export function NetworkProvider({ children }) {
       {children}
 
       {/* Global In-App Toast Notifications & Offline Indicator */}
-      <div className="fixed bottom-2 sm:bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0">
+      {/* Top centre, under the header: never covers the cart bar or checkout button */}
+      <div className="fixed top-[76px] left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 max-w-sm w-full pointer-events-none px-4">
         {/* Offline Warning Banner (Always visible when offline or when orders are pending) */}
         {(!isOnline || totalPending > 0) && (
           <div
-            className={`pointer-events-auto rounded-2xl px-3 py-2 sm:p-3.5 shadow-xl border backdrop-blur-md transition-all duration-300 animate-slide-up ${
+            className={`pointer-events-auto rounded-full px-4 py-2 shadow-xl border transition-all duration-300 animate-fadeIn ${
               !isOnline
                 ? 'bg-amber-500/95 text-white border-amber-400 shadow-amber-500/20'
                 : 'bg-neutral-900/95 text-white border-neutral-700 shadow-black/30'
@@ -577,15 +579,12 @@ export function NetworkProvider({ children }) {
                   <Clock className="w-5 h-5 text-emerald-400 shrink-0" />
                 )}
                 <div className="text-xs">
-                  <p className="font-bold leading-tight">
-                    {!isOnline ? 'Offline Mode Active' : `${totalPending} Queued for Kitchen`}
-                  </p>
-                  <p className="hidden sm:block opacity-90 text-[11px] truncate">
-                    {!isOnline
-                      ? totalPending > 0
-                        ? `${totalPending} items stored locally`
-                        : 'Orders safely save to device'
-                      : 'Syncing automatically once confirmed'}
+                  <p className="font-semibold leading-tight">
+                    {isOnline
+                      ? `${totalPending} waiting to send to the kitchen`
+                      : typeof navigator !== 'undefined' && navigator.onLine
+                        ? 'Connecting to the kitchen…'
+                        : "You're offline. Orders are saved and sent automatically."}
                   </p>
                 </div>
               </div>

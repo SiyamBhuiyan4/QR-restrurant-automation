@@ -7,7 +7,7 @@ import { prefetchVideos } from '../utils/videoCache.js';
 import { useRestaurant } from '../context/RestaurantContext';
 import { getCachedMenu } from '../db/indexedDb.js';
 import Navbar from '../components/Navbar';
-import CategoryBar from '../components/CategoryBar';
+import ScrollSpyCategoryBar from '../components/ScrollSpyCategoryBar';
 import GuestChat from '../components/GuestChat';
 
 // Heavy overlays load right after the menu is on screen (the service worker then keeps them),
@@ -878,7 +878,6 @@ export default function CustomerMenu({
   tableFromProp
 }) {
   // 0. Layout View Mode ('showcase' for 1-by-1 alternating editorial, 'grid' for 2-column compact modern, 'list' for horizontal rows)
-  const [activeScrollCategory, setActiveScrollCategory] = useState('All');
 
   // Restaurant Context for table and employee routing
   let restaurant = null;
@@ -926,7 +925,7 @@ export default function CustomerMenu({
       setShowSwipeTutorial(true);
       try { localStorage.setItem('smartdine_swipe_guide_seen', '1'); } catch (_) {}
     }, 1200);
-    const hide = setTimeout(() => setShowSwipeTutorial(false), 7200);
+    const hide = setTimeout(() => setShowSwipeTutorial(false), 4500);
     return () => { clearTimeout(show); clearTimeout(hide); };
   }, []);
 
@@ -1838,58 +1837,11 @@ export default function CustomerMenu({
     return () => observer.disconnect();
   }, [categorizedSections, selectedCategory, filteredItems.length]);
 
-  // The customer scrolling by hand (after a pill tap) hands the highlight back to the scroll spy
-  const RELEASE_EVENTS = ['wheel', 'touchstart', 'keydown', 'mousedown'];
-
-  // Scroll spy: highlight the CategoryBar pill for the section under the sticky bar ('All' mode).
-  // Positions are read live each frame (only a handful of sections), because cards drawn on
-  // demand change section heights while scrolling. While a pill tap is gliding the page, the
-  // spy waits (until the customer scrolls by hand), so the highlight goes straight to the tapped
-  // category instead of hopping through every section on the way.
-  const spyPausedUntilRef = useRef(0);
-  useEffect(() => {
-    if (selectedCategory !== 'All') return undefined;
-
-    const sections = categorizedSections.map((section) => {
-      const pill = categoriesList.find((c) => c.id !== 'All' && getCategoryMetadata(c.id).key === section.categoryKey);
-      return { key: section.categoryKey, id: pill ? pill.id : section.canonicalId };
-    });
-    let frame = 0;
-    let last = null;
-    const update = () => {
-      frame = 0;
-      if (performance.now() < spyPausedUntilRef.current) return;
-      // A section counts once its top passes just below the sticky category bar
-      const bar = document.querySelector('.menu-cat-sticky');
-      const line = (bar ? bar.getBoundingClientRect().bottom : 120) + 24;
-      let currentId = 'All';
-      for (const s of sections) {
-        const el = document.getElementById(`cat-section-${s.key}`);
-        if (el && el.getBoundingClientRect().top <= line) currentId = s.id;
-      }
-      // At the very bottom the last sections can't reach the line: the last one counts
-      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
-      if (atBottom && sections.length) currentId = sections[sections.length - 1].id;
-      // At the top of the page nothing has been scrolled to yet
-      if (window.scrollY < 40) currentId = 'All';
-      if (currentId !== last) {
-        last = currentId;
-        setActiveScrollCategory(currentId);
-      }
-    };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(update);
-    };
-
-    update();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    return () => {
-      if (frame) cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-    };
-  }, [selectedCategory, categorizedSections, categoriesList]);
+  // Category sections in page order, with the category bar's id for each (for its scroll spy)
+  const spySections = useMemo(() => categorizedSections.map((section) => {
+    const pill = categoriesList.find((c) => c.id !== 'All' && getCategoryMetadata(c.id).key === section.categoryKey);
+    return { key: section.categoryKey, id: pill ? pill.id : section.canonicalId };
+  }), [categorizedSections, categoriesList]);
 
   // Smooth scroll or cleanly filter when CategoryBar pills are clicked
   const handleSelectCategory = (catId) => {
@@ -1904,27 +1856,11 @@ export default function CustomerMenu({
       return;
     }
 
-    const meta = getCategoryMetadata(catId);
-    const sectionEl = document.getElementById(`cat-section-${meta.key}`);
-
-    if (selectedCategory === 'All' && sectionEl) {
-      // Glide to that section; the highlight moves there now and the scroll spy waits until
-      // the glide has finished
-      setActiveScrollCategory(catId);
-      spyPausedUntilRef.current = Infinity;
-      const release = () => {
-        spyPausedUntilRef.current = 0;
-        RELEASE_EVENTS.forEach((ev) => window.removeEventListener(ev, release));
-      };
-      RELEASE_EVENTS.forEach((ev) => window.addEventListener(ev, release, { passive: true }));
-      sectionEl.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      // Cleanly filter to that category
-      setSelectedCategory(catId);
-      const root = document.getElementById('menu-food-grid');
-      if (root) {
-        root.scrollIntoView({ behavior: 'smooth' });
-      }
+    // Filter to that category (in 'All' mode the bar glides to the section itself)
+    setSelectedCategory(catId);
+    const root = document.getElementById('menu-food-grid');
+    if (root) {
+      root.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -2247,7 +2183,7 @@ export default function CustomerMenu({
 
             {/* Phones and narrower screens: compact card above the menu */}
             <div className="order-tracker-wrap w-full max-w-7xl mb-4">
-            <div className="order-tracker w-fit max-w-full rounded-2xl bg-[#06140e]/85 backdrop-blur-md border border-white/10 shadow-lg p-4 animate-fadeIn">
+            <div className="order-tracker w-fit max-w-full rounded-2xl bg-[#06140e]/95 border border-white/10 shadow-lg p-4 animate-fadeIn">
               <div className="flex items-center gap-3 shrink-0">
                 <div className="w-9 h-9 rounded-xl bg-[#FF5A26]/15 border border-[#FF5A26]/30 text-[#FF7A45] flex items-center justify-center font-black text-xs shrink-0">
                   {tableNumber ? `T${tableNumber}` : 'ORD'}
@@ -2294,11 +2230,12 @@ export default function CustomerMenu({
           {/* Categories: stick under the header while scrolling; the highlighted one follows the
               section on screen */}
           <div className="menu-cat-sticky">
-            <CategoryBar
+            <ScrollSpyCategoryBar
               categories={categoriesList}
-              selectedCategory={selectedCategory === 'All' ? activeScrollCategory : selectedCategory}
-              onSelectCategory={(catId) => handleSelectCategory(catId)}
               categoryCounts={categoryCounts}
+              selectedCategory={selectedCategory}
+              sections={spySections}
+              onSelectCategory={handleSelectCategory}
             />
           </div>
 
@@ -2720,39 +2657,16 @@ export default function CustomerMenu({
         </div>
       )}
 
-      {/* ── Two-way swipe guide (first visit, or when the customer taps a hint) ── */}
+      {/* First visit: one short hint that a sideways swipe opens Food Reels */}
       {showSwipeTutorial && !isReelsOpen && (
-        <div
-          role="status"
+        <button
+          type="button"
           onClick={() => setShowSwipeTutorial(false)}
-          className="fixed inset-x-0 top-24 z-50 flex justify-center px-4 animate-fadeIn"
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-fadeIn inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#06140e]/95 border border-white/15 shadow-xl text-white text-sm whitespace-nowrap cursor-pointer"
         >
-          <div className="w-full max-w-sm bg-[#161619]/95 backdrop-blur-md text-white rounded-3xl shadow-2xl border border-amber-500/30 ring-1 ring-[#FF5A26]/30 p-4 cursor-pointer">
-            <div className="swipe-guide-demo" aria-hidden="true">
-              <div className="swipe-guide-panes">
-                <div className="swipe-guide-pane swipe-guide-pane--menu">
-                  <span>🍽️</span>
-                  <span>Menu</span>
-                </div>
-                <div className="swipe-guide-pane swipe-guide-pane--reels">
-                  <span>🎬</span>
-                  <span>Reels</span>
-                </div>
-              </div>
-              <span className="swipe-guide-hand">👆</span>
-            </div>
-            <div className="mt-3 text-center">
-              <div className="font-black text-amber-300 text-sm">Swipe sideways to switch</div>
-              <div className="text-[11px] text-zinc-300 font-medium mt-1 leading-relaxed">
-                Swipe <strong className="text-white">left or right</strong> on the menu to watch Food Reels.
-                Swipe either way again to come back to the menu.
-              </div>
-              <div className="text-[10px] text-zinc-500 font-medium mt-1.5 hidden sm:block">
-                On a laptop: two fingers sideways on the trackpad, or the ← → keys
-              </div>
-            </div>
-          </div>
-        </div>
+          <span className="animate-swipe-both inline-block" aria-hidden="true">⇆</span>
+          <span>Swipe sideways for <strong className="text-rose-300">Food Reels</strong></span>
+        </button>
       )}
 
       {/* Toast Notification */}

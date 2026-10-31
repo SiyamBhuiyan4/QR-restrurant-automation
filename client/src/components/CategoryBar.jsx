@@ -89,7 +89,7 @@ export default function CategoryBar({
 
   return (
     <div
-      className={`relative w-full rounded-2xl bg-[#06140e]/85 backdrop-blur-md border border-white/10 shadow-lg py-1.5 ${className}`}
+      className={`relative w-full rounded-2xl bg-[#06140e]/95 border border-white/10 shadow-lg py-1.5 ${className}`}
     >
       <div className="px-1.5 relative flex items-center min-w-0">
 

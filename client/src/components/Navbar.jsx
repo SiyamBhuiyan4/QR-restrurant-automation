@@ -191,7 +191,7 @@ export default function Navbar({
                   title={`Table ${tableNumber}`}
                 >
                   <span className="text-base leading-none">🍽️</span>
-                  <span className="whitespace-nowrap">Table {tableNumber}</span>
+                  <span className="whitespace-nowrap"><span className="hidden min-[420px]:inline">Table </span>{tableNumber}</span>
                 </span>
               ) : (
                 <button
@@ -199,9 +199,10 @@ export default function Navbar({
                   onClick={onChangeTable}
                   className="inline-flex items-center gap-1.5 h-11 min-w-11 px-2.5 sm:px-3 rounded-xl bg-emerald-950/70 hover:bg-emerald-900/60 hover:border-amber-400/60 active:scale-95 text-slate-100 font-bold text-xs sm:text-sm border border-amber-500/35 transition-[background-color,border-color,transform] duration-200 cursor-pointer motion-reduce:transition-none motion-reduce:active:scale-100"
                   title="Set your table"
+                  aria-label="Set your table"
                 >
                   <span className="text-base leading-none">🍽️</span>
-                  <span className="whitespace-nowrap"><span className="hidden min-[420px]:inline">Set </span>Table</span>
+                  <span className="whitespace-nowrap hidden min-[420px]:inline">Set Table</span>
                 </button>
               )}
 
@@ -228,9 +229,10 @@ export default function Navbar({
                 className={`relative inline-flex items-center justify-center gap-1.5 h-11 px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-[transform,box-shadow,background-color] duration-200 active:scale-95 shadow-md cursor-pointer border motion-reduce:transition-none motion-reduce:active:scale-100 shrink-0 ${
                   waiterCalled
                     ? 'bg-emerald-700 text-white border-emerald-400/60 shadow-emerald-900/40 ring-2 ring-emerald-400/50'
-                    : 'bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-500 text-slate-950 font-black border-transparent shadow-amber-500/30 hover:shadow-amber-500/50 hover:brightness-105'
+                    : 'bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold border-transparent shadow-amber-500/20'
                 }`}
                 title="Call Waiter to your table"
+                aria-label="Call waiter"
               >
                 {waiterCalled ? (
                   <>
@@ -242,7 +244,7 @@ export default function Navbar({
                   <>
                     <BellRing className="w-4 h-4 text-slate-950 shrink-0" />
                     <span className="hidden sm:inline">Call Waiter</span>
-                    <span className="sm:hidden font-black">Waiter</span>
+                    <span className="hidden min-[420px]:inline sm:hidden">Waiter</span>
                   </>
                 )}
               </button>

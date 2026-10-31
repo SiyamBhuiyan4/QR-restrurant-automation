@@ -831,7 +831,7 @@ export default function MenuItemCard({
 
   // 3. PLATE CARD VIEW (Matches screenshot: prominent green price at top, centered circular bowl, elegant fine dining borders)
   if (layout === 'plate') {
-    const platePrice = `${priceNum.toFixed(2)} ${currency}`;
+    const platePrice = `${currency}${priceNum.toFixed(2)}`;
 
     return (
       <>
@@ -842,23 +842,11 @@ export default function MenuItemCard({
             !isAvailable ? 'plate-card--unavailable' : ''
           }`}
         >
-          {/* Photo / video */}
+          {/* Photo; the dish video is laid over it only while this card is the one playing
+              (utils/visibleVideos.js), so the menu never holds more than a couple of videos */}
           <div className="plate-card__media">
-            <div className="plate-card__dish-circle">
-              {dishVideo && !videoError ? (
-                <video
-                  src={dishVideo}
-                  poster={thumb(safeDishImage)}
-                  data-play-when-visible
-                  loop
-                  muted
-                  playsInline
-                  preload="none"
-                  referrerPolicy="no-referrer"
-                  onError={() => setVideoError(true)}
-                  className="plate-card__img object-cover w-full h-full"
-                />
-              ) : safeDishImage && !imageError ? (
+            <div className="plate-card__dish-circle" data-card-video={dishVideo || undefined}>
+              {safeDishImage && !imageError ? (
                 <img
                   src={thumb(safeDishImage)}
                   alt={dishTitle}

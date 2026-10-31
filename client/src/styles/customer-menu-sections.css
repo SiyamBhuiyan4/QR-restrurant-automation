@@ -199,9 +199,7 @@
   font-size: 0.65rem;
   font-weight: 700;
   line-height: 1.2;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.72);
 }
 .plate-chip--veg {
   color: #86efac;
@@ -413,10 +411,8 @@ header[data-hidden="true"] ~ main .menu-cat-sticky {
   font-size: 0.82rem;
   font-weight: 600;
   color: #e2e8f0;
-  background: rgba(6, 20, 14, 0.8);
+  background: rgba(6, 20, 14, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   cursor: pointer;
   transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 }
@@ -583,10 +579,8 @@ html[data-theme="light"] .menu-filter-chip {
     gap: 1.6rem;
     padding: 0.9rem 0;
     border-radius: 9999px;
-    background: rgba(6, 20, 14, 0.85);
+    background: rgba(6, 20, 14, 0.94);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.7);
   }
   /* Short vertical line in the gap between the step above (its label) and this dot */
@@ -710,4 +704,19 @@ html[data-theme="light"] .menu-filter-chip {
   .order-rail.is-pushed-bottom .order-rail__friction--bottom i {
     animation: none;
   }
+}
+
+/* Card video laid over the photo while the card is the one playing (utils/visibleVideos.js) */
+.plate-card__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 350ms ease;
+  z-index: 1;
+}
+.plate-card__video.is-ready {
+  opacity: 1;
 }
