@@ -29,6 +29,8 @@ export default function CategoryBar({
   const scrollContainerRef = useRef(null);
   const pillRefs = useRef({});
   const [indicator, setIndicator] = useState(null); // { left, top, width, height }
+  // Which way the pill row can still scroll: drives the arrows and the soft edge fades
+  const [overflow, setOverflow] = useState({ left: false, right: false });
 
   const activeKey =
     typeof selectedCategory === 'object' && selectedCategory !== null
@@ -62,6 +64,23 @@ export default function CategoryBar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeKey]);
 
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return undefined;
+    const check = () => {
+      const left = el.scrollLeft > 2;
+      const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
+      setOverflow((o) => (o.left === left && o.right === right ? o : { left, right }));
+    };
+    check();
+    el.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => {
+      el.removeEventListener('scroll', check);
+      window.removeEventListener('resize', check);
+    };
+  }, [categories.length]);
+
   // Auto-scroll the active pill into the centre of the pill row only.
   // Deliberately NOT scrollIntoView, which would also scroll the whole page.
   useEffect(() => {
@@ -89,7 +108,7 @@ export default function CategoryBar({
 
   return (
     <div
-      className={`relative w-full rounded-2xl bg-[#06140e]/95 border border-white/10 shadow-lg py-1.5 ${className}`}
+      className={`relative w-full rounded-2xl bg-gradient-to-b from-[#0d2219]/95 to-[#06140e]/95 border border-white/[0.08] shadow-[0_10px_30px_-12px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.06)] py-1.5 ${className}`}
     >
       <div className="px-1.5 relative flex items-center min-w-0">
 
@@ -97,7 +116,7 @@ export default function CategoryBar({
         <button
           type="button"
           onClick={() => scrollByAmount(-220)}
-          className="hidden md:flex items-center justify-center w-9 h-9 rounded-full text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 mr-1.5 z-10 cursor-pointer"
+          className={`hidden md:flex items-center justify-center w-8 h-8 rounded-full border border-white/10 bg-white/[0.04] text-slate-200 hover:text-white hover:bg-white/10 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 mr-1 z-10 cursor-pointer ${overflow.left ? '' : 'md:hidden'}`}
           aria-label="Scroll left"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -106,14 +125,21 @@ export default function CategoryBar({
         {/* Scrollable Container */}
         <div
           ref={scrollContainerRef}
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          className="relative flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth motion-reduce:scroll-auto py-1 px-1 w-full min-w-0"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            maskImage: `linear-gradient(to right, ${overflow.left ? 'transparent' : '#000'}, #000 28px, #000 calc(100% - 28px), ${overflow.right ? 'transparent' : '#000'})`,
+            WebkitMaskImage: `linear-gradient(to right, ${overflow.left ? 'transparent' : '#000'}, #000 28px, #000 calc(100% - 28px), ${overflow.right ? 'transparent' : '#000'})`
+          }}
+          className="flex items-center overflow-x-auto no-scrollbar scroll-smooth motion-reduce:scroll-auto py-1 px-1 w-full min-w-0"
         >
+          {/* Centred while everything fits; scrolls from the left edge once it doesn't */}
+          <div className="relative flex items-center gap-1.5 w-max mx-auto">
           {/* Sliding indicator (sits behind the pills) */}
           {indicator && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute left-0 top-0 rounded-full bg-emerald-600 transition-[transform,width,height] duration-300 ease-out motion-reduce:transition-none"
+              className="pointer-events-none absolute left-0 top-0 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600 shadow-[0_6px_18px_-6px_rgba(16,185,129,0.75),inset_0_1px_0_rgba(255,255,255,0.3)] transition-[transform,width,height] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
               style={{
                 width: indicator.width,
                 height: indicator.height,
@@ -144,28 +170,29 @@ export default function CategoryBar({
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => onSelectCategory && onSelectCategory(categoryId)}
-                className={`group relative z-10 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-sm tracking-tight transition-[color,background-color] duration-200 ease-out shrink-0 select-none cursor-pointer active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${
+                className={`group relative z-10 inline-flex items-center gap-1.5 h-9 pl-3.5 pr-2.5 rounded-full text-[13.5px] tracking-tight transition-[color,background-color] duration-200 ease-out shrink-0 select-none cursor-pointer active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${
                   isSelected
                     ? 'text-white font-semibold'
-                    : 'text-slate-300 hover:text-white hover:bg-white/5 font-medium'
+                    : 'text-slate-300 hover:text-white hover:bg-white/[0.06] font-medium'
                 }`}
               >
                 <span className="whitespace-nowrap">{displayName}</span>
                 {count !== undefined && (
-                  <span className={`text-[11px] tabular-nums ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
+                  <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10.5px] font-semibold tabular-nums transition-colors duration-200 ${isSelected ? 'bg-black/20 text-white' : 'bg-white/[0.07] text-slate-400 group-hover:text-slate-200'}`}>
                     {count}
                   </span>
                 )}
               </button>
             );
           })}
+          </div>
         </div>
 
         {/* Right Scroll Button (Desktop / larger screens) */}
         <button
           type="button"
           onClick={() => scrollByAmount(220)}
-          className="hidden md:flex items-center justify-center w-9 h-9 rounded-full text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 ml-1.5 z-10 cursor-pointer"
+          className={`hidden md:flex items-center justify-center w-8 h-8 rounded-full border border-white/10 bg-white/[0.04] text-slate-200 hover:text-white hover:bg-white/10 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 transition-all duration-200 shrink-0 ml-1 z-10 cursor-pointer ${overflow.right ? '' : 'md:hidden'}`}
           aria-label="Scroll right"
         >
           <ChevronRight className="w-4 h-4" />
