@@ -18,7 +18,9 @@ import {
   getCachedMenu
 } from '../db/indexedDb.js';
 import { Wifi, WifiOff, RefreshCw, CheckCircle2, AlertCircle, Clock, X } from 'lucide-react';
+import { ConvexError } from 'convex/values';
 import { convex } from '../convexClient.js';
+import { readSessionToken } from '../utils/tableSession';
 import { api } from '../convexApi';
 import { sendVoiceNoteToTelegram } from '../services/telegramClient.js';
 
@@ -43,7 +45,9 @@ async function submitOrderToConvex(p) {
     tableNumber: Number(p.tableNumber || p.table_number || 1) || 1,
     items,
     totalAmount: Number(p.totalAmount) || 0,
-    generalNote: p.generalNote || undefined
+    generalNote: p.generalNote || undefined,
+    // Proves the guest's table is open; an order queued offline picks up the saved one when sent
+    sessionToken: p.sessionToken || readSessionToken() || undefined
   };
   const blob = p.voiceBlob instanceof Blob ? p.voiceBlob : p.voiceNote instanceof Blob ? p.voiceNote : null;
   if (blob) {
@@ -231,7 +235,13 @@ export function NetworkProvider({ children }) {
           await removePendingOrder(order.localId);
           syncedOrdersCount++;
         } catch (fetchErr) {
-          // Convex unreachable or rejected the order: keep it queued, stop and retry later
+          // The server refused it (table closed): retrying can never work, so drop it
+          if (fetchErr instanceof ConvexError) {
+            await removePendingOrder(order.localId);
+            addToast({ type: 'error', title: 'Order not sent', message: String(fetchErr.data || 'Your table is closed. Scan the QR on your table to order.') });
+            continue;
+          }
+          // Database unreachable: keep it queued, stop and retry later
           console.warn('[NetworkContext] Order sync failed:', fetchErr);
           order.syncAttempts = (order.syncAttempts || 0) + 1;
           order.lastError = fetchErr?.message || 'Convex mutation failed';
@@ -333,6 +343,11 @@ export function NetworkProvider({ children }) {
           });
           return { success: true, offline: false, data };
         } catch (networkErr) {
+          // The server refused the order (table closed): don't queue what can never be accepted
+          if (networkErr instanceof ConvexError) {
+            addToast({ type: 'error', title: 'Order not sent', message: String(networkErr.data || 'Your table is closed. Scan the QR on your table to order.') });
+            return { success: false, rejected: true };
+          }
           console.warn('[NetworkContext] Online submit failed, falling back to offline queue:', networkErr);
           setIsOnline(false);
           setConnectionStatus('offline');

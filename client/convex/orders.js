@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server.js";
 import { v, ConvexError } from "convex/values";
+import { isLive, findSessionByToken } from "./sessionHelpers.js";
 
 const ORDER_STATUSES = ["pending", "preparing", "ready", "served", "completed", "cancelled"];
 
@@ -120,8 +121,14 @@ export const createOrder = mutation({
     voiceNoteUrl: v.optional(v.string()),
     generalNote: v.optional(v.string()),
     totalAmount: v.optional(v.number()), // computed from items when omitted (Express behaviour)
+    sessionToken: v.optional(v.string()), // from scanning the table QR (see sessions.open)
   },
   handler: async (ctx, args) => {
+    // Only a guest whose table is open (QR scanned, bill not yet settled) can order
+    const session = await findSessionByToken(ctx, args.sessionToken);
+    if (!isLive(session) || session.tableNumber !== args.tableNumber) {
+      throw new ConvexError("Your table is closed. Scan the QR code on your table to order.");
+    }
     if (!args.tableNumber || args.tableNumber <= 0 || !Number.isFinite(args.tableNumber)) {
       throw new ConvexError("Valid table number is required");
     }

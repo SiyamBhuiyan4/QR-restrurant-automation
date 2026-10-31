@@ -1,5 +1,6 @@
 import { mutation } from "./_generated/server.js";
 import { v, ConvexError } from "convex/values";
+import { closeTableSessions } from "./sessionHelpers.js";
 
 function cleanText(value, max) {
   return String(value ?? "").trim().slice(0, max);
@@ -52,6 +53,8 @@ export const create = mutation({
       paidAt: paidAtDate.toISOString(),
       createdAt: now,
     });
+    // Paid: the table closes, so the next guest has to scan its QR again
+    await closeTableSessions(ctx, tableNumber, "bill paid");
     return await ctx.db.get(docId);
   },
 });

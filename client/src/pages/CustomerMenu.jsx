@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
-import { useQuery, useMutation } from '../db/telegramDb';
+import { useQuery, useMutation, dbClient } from '../db/telegramDb';
 import { api } from '../convexApi';
 import { convex } from '../convexClient.js';
 import { permanentMediaUrl, cardVideoUrl } from '../utils/mediaUrl.js';
@@ -8,7 +8,7 @@ import { useRestaurant } from '../context/RestaurantContext';
 import { getCachedMenu } from '../db/indexedDb.js';
 import Navbar from '../components/Navbar';
 import ScanTableSheet from '../components/ScanTableSheet';
-import { readTable, saveTable } from '../utils/tableSession';
+import { readTable, readSessionToken, saveTable, saveSession, clearTable } from '../utils/tableSession';
 import ScrollSpyCategoryBar from '../components/ScrollSpyCategoryBar';
 import GuestChat from '../components/GuestChat';
 
@@ -891,7 +891,10 @@ export default function CustomerMenu({
   const [tableNumber, setTableNumber] = useState('');
   const [isTableLocked, setIsTableLocked] = useState(false);
   // Without a scanned table QR the menu is browse-only (no ordering, no dish reviews)
-  const canOrder = isTableLocked && !!tableNumber;
+  // and needs an open table session from the server (see convex/sessions.js)
+  const [sessionToken, setSessionToken] = useState('');
+  const [sessionState, setSessionState] = useState('idle'); // idle | opening | open | failed
+  const canOrder = isTableLocked && !!tableNumber && !!sessionToken;
   const [isScanSheetOpen, setIsScanSheetOpen] = useState(false);
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [customTableInput, setCustomTableInput] = useState('');
@@ -1163,6 +1166,31 @@ export default function CustomerMenu({
     }
   }, [cart]);
 
+  // A scanned table QR opens (or joins) the table's session on the server
+  const openTableSession = useCallback(async (tbl) => {
+    const n = Number(String(tbl).replace(/\D/g, ''));
+    setSessionToken('');
+    if (!n) {
+      setSessionState('failed');
+      return;
+    }
+    setSessionState('opening');
+    try {
+      const res = await dbClient.mutation(api.sessions.open, { tableNumber: n, token: readSessionToken() || undefined });
+      saveSession(String(tbl), res.token);
+      setSessionToken(res.token);
+      setSessionState('open');
+      // The session is saved on the phone; a reload must not reopen a table staff have cleared
+      try {
+        const url = new URL(window.location.href);
+        ['table', 'tableNumber', 't'].forEach((k) => url.searchParams.delete(k));
+        window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+      } catch (_) {}
+    } catch (_) {
+      setSessionState('failed');
+    }
+  }, []);
+
   // Fixed Table QR Code Detection: automatically lock table ID from URL query param
   useEffect(() => {
     if (tableFromProp) {
@@ -1170,6 +1198,7 @@ export default function CustomerMenu({
       setTableNumber(tbl);
       setIsTableLocked(true);
       saveTable(tbl);
+      openTableSession(tbl);
       return;
     }
 
@@ -1181,12 +1210,17 @@ export default function CustomerMenu({
         setTableNumber(urlTable);
         setIsTableLocked(true);
         saveTable(urlTable);
+        openTableSession(urlTable);
       } else {
+        // Coming back without a scan: only a table that still has its session counts
         const storedTable = readTable();
-        if (storedTable) {
+        const storedToken = readSessionToken();
+        if (storedTable && storedToken) {
           setTableNumber(storedTable);
           setIsTableLocked(true);
+          setSessionToken(storedToken);
         } else {
+          if (storedTable) clearTable();
           // Fixed QR workflow: No table prompt popup for customers!
           // We show an unobtrusive notice at the top with a demo override.
           setIsTableLocked(false);
@@ -1213,6 +1247,26 @@ export default function CustomerMenu({
       setToMessage(null);
     }, 4000);
   }, []);
+
+  // Staff cleared the table or the bill was paid: back to browsing until the next scan
+  const sessionCheck = useQuery(api.sessions.check, isTableLocked && sessionToken ? { token: sessionToken } : 'skip');
+  useEffect(() => {
+    if (!sessionCheck || sessionCheck.valid !== false) return;
+    clearTable();
+    setTableNumber('');
+    setIsTableLocked(false);
+    setSessionToken('');
+    setSessionState('idle');
+    showToast('Your table was closed. Scan the QR code on your table to order again.');
+  }, [sessionCheck, showToast]);
+
+  // A scan made while offline opens its session once the connection is back
+  useEffect(() => {
+    if (sessionState !== 'failed' || !tableNumber) return undefined;
+    const retry = () => openTableSession(tableNumber);
+    window.addEventListener('online', retry);
+    return () => window.removeEventListener('online', retry);
+  }, [sessionState, tableNumber, openTableSession]);
 
   // ── Two-Way Staff & Customer Messaging Engine ─────────────────────────────
   const [activeStaffMessage, setActiveStaffMessage] = useState(null);
@@ -2004,16 +2058,29 @@ export default function CustomerMenu({
               <QrCode className="w-[18px] h-[18px]" />
             </span>
             <p className="flex-1 min-w-0 text-xs sm:text-sm text-slate-200 leading-snug">
-              <span className="font-semibold text-white">You're browsing the menu.</span>{' '}
-              <span className="text-slate-300">Scan the QR on your table to order.</span>
+              {sessionState === 'opening' ? (
+                <span className="font-semibold text-white">Opening your table…</span>
+              ) : sessionState === 'failed' ? (
+                <>
+                  <span className="font-semibold text-white">Couldn't open your table.</span>{' '}
+                  <span className="text-slate-300">Check your connection and try again.</span>
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold text-white">You're browsing the menu.</span>{' '}
+                  <span className="text-slate-300">Scan the QR on your table to order.</span>
+                </>
+              )}
             </p>
-            <button
-              type="button"
-              onClick={() => setIsScanSheetOpen(true)}
-              className="shrink-0 h-9 px-3 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] text-xs font-semibold text-white cursor-pointer active:scale-95 transition-all"
-            >
-              How
-            </button>
+            {sessionState !== 'opening' && (
+              <button
+                type="button"
+                onClick={() => (sessionState === 'failed' && tableNumber ? openTableSession(tableNumber) : setIsScanSheetOpen(true))}
+                className="shrink-0 h-9 px-3 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] text-xs font-semibold text-white cursor-pointer active:scale-95 transition-all"
+              >
+                {sessionState === 'failed' ? 'Retry' : 'How'}
+              </button>
+            )}
           </div>
         </div>
       )}

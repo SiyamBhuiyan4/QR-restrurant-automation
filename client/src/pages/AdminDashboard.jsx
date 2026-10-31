@@ -644,6 +644,8 @@ export default function AdminDashboard({ className = '' }) {
                 onUpdateTableStatus={handleUpdateTableStatus}
                 onAdvanceOrderStage={handleAdvanceOrderStage}
                 onResetTable={(tableNum) => {
+                  // Guests at that table have to scan the QR again to order
+                  convex.mutation(api.sessions.adminCloseTable, { adminToken: getAdminToken(), tableNumber: Number(tableNum) }).catch(() => {});
                   setTables(prev => prev.map(t => (t.tableNumber === tableNum ? { ...t, status: TABLE_STATUS.AVAILABLE, currentOrderId: null } : t)));
                 }}
                 onSelectReportsTab={() => handleSelectTab('reports')}

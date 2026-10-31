@@ -250,6 +250,17 @@ export default defineSchema({
     fetchedAt: v.number(),
   }).index("by_file_id", ["fileId"]),
 
+  // A table is open for ordering from a guest's QR scan until staff settle or clear it.
+  tableSessions: defineTable({
+    tableNumber: v.number(),
+    token: v.string(),
+    openedAt: v.number(),
+    closedAt: v.optional(v.number()),
+    closedReason: v.optional(v.string()),
+  })
+    .index("by_token", ["token"])
+    .index("by_table", ["tableNumber"]),
+
   // Global failed admin PIN attempts (single row, key = "global").
   adminAttempts: defineTable({
     key: v.string(),

@@ -12,7 +12,9 @@ export default function StaffTables({ staffToken, guestThreads = [], onOpenChat,
   const tables = useQuery(api.team.staffTables, staffToken ? { staffToken } : 'skip');
   const resolveCall = useMutation(api.team.staffResolveCall);
   const setStatus = useMutation(api.team.staffSetOrderStatus);
+  const closeTable = useMutation(api.sessions.staffCloseTable);
   const [busyId, setBusyId] = useState(null);
+  const [confirmTable, setConfirmTable] = useState(null); // table awaiting a second tap to clear
   const [error, setError] = useState('');
 
   const run = async (id, fn) => {
@@ -66,6 +68,33 @@ export default function StaffTables({ staffToken, guestThreads = [], onOpenChat,
                   <span className="text-[11px] text-slate-400">{openOrders.length} open</span>
                 </div>
               </header>
+
+              {/* Guests ordering from this table: clearing it makes the next guest scan the QR again */}
+              {table.sessionOpen && (
+                <div className="flex items-center justify-between gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-2">
+                  <p className="text-xs text-emerald-200 min-w-0">Guests can order from this table</p>
+                  <button
+                    type="button"
+                    disabled={busyId === `clear-${table.tableNumber}`}
+                    onClick={() => {
+                      if (confirmTable !== table.tableNumber) {
+                        setConfirmTable(table.tableNumber);
+                        setTimeout(() => setConfirmTable((cur) => (cur === table.tableNumber ? null : cur)), 4000);
+                        return;
+                      }
+                      setConfirmTable(null);
+                      run(`clear-${table.tableNumber}`, () => closeTable({ staffToken, tableNumber: table.tableNumber }));
+                    }}
+                    className={`shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold border disabled:opacity-60 ${
+                      confirmTable === table.tableNumber
+                        ? 'bg-rose-500/25 text-rose-100 border-rose-400/50'
+                        : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-100 border-emerald-500/35'
+                    }`}
+                  >
+                    {busyId === `clear-${table.tableNumber}` ? 'Clearing…' : confirmTable === table.tableNumber ? 'Tap again to clear' : 'Clear table'}
+                  </button>
+                </div>
+              )}
 
               {/* Waiter calls */}
               {table.calls.map((call) => (

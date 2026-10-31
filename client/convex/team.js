@@ -1,6 +1,7 @@
 import { action, mutation, query, internalMutation, internalQuery } from "./_generated/server.js";
 import { internal } from "./_generated/api.js";
 import { v, ConvexError } from "convex/values";
+import { findLiveSessionForTable } from "./sessionHelpers.js";
 
 /**
  * Team accounts, logins and the admin monitor.
@@ -139,7 +140,7 @@ async function isAdmin(ctx, adminToken) {
   }
 }
 
-async function loadStaffSession(ctx, staffToken) {
+export async function loadStaffSession(ctx, staffToken) {
   const token = String(staffToken ?? "");
   if (!token) return null;
   const session = await ctx.db
@@ -726,6 +727,7 @@ export const staffTables = query({
         .take(20);
       result.push({
         tableNumber,
+        sessionOpen: !!(await findLiveSessionForTable(ctx, tableNumber)),
         orders: withItems,
         calls: calls.filter((c) => c.status === "pending"),
       });

@@ -23,13 +23,14 @@ import * as orders from '../convex/orders.js';
 import * as reels from '../convex/reels.js';
 import * as reviews from '../convex/reviews.js';
 import * as seed from '../convex/seed.js';
+import * as sessions from '../convex/sessions.js';
 import * as settlements from '../convex/settlements.js';
 import * as staff from '../convex/staff.js';
 import * as stats from '../convex/stats.js';
 import * as team from '../convex/team.js';
 import * as waiter from '../convex/waiter.js';
 
-const MODULES = { auth, chat, corrections, files, media, menu, orders, reels, reviews, seed, settlements, staff, stats, team, waiter };
+const MODULES = { auth, chat, corrections, files, media, menu, orders, reels, reviews, seed, sessions, settlements, staff, stats, team, waiter };
 const QUERY_FRESH_MS = 1500;
 
 export class FunctionError extends Error {
