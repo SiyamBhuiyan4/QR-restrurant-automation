@@ -232,6 +232,7 @@ export default function FoodDetailModal({
   onClose,
   dish,
   cartQuantity = 0,
+  browseOnly = false,
   onAddToCart,
   onUpdateQuantity,
   currency = '$',
@@ -809,7 +810,7 @@ export default function FoodDetailModal({
                   <button
                     type="button"
                     onClick={() => {
-                      setIsReviewFormOpen(true);
+                      if (!browseOnly) setIsReviewFormOpen(true);
                       const el = document.getElementById('reviews-section');
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     }}
@@ -1120,13 +1121,15 @@ export default function FoodDetailModal({
               </div>
 
               {/* Interactive Write Review / Leave a Comment Button */}
-              <button
-                type="button"
-                onClick={() => setIsReviewFormOpen(!isReviewFormOpen)}
-                className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl fdm-gold-btn active:scale-95 text-xs font-black shadow-md shadow-[#d4af37]/30 transition-all cursor-pointer"
-              >
-                <span>{isReviewFormOpen ? 'Close' : 'Write a review'}</span>
-              </button>
+              {!browseOnly && (
+                <button
+                  type="button"
+                  onClick={() => setIsReviewFormOpen(!isReviewFormOpen)}
+                  className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl fdm-gold-btn active:scale-95 text-xs font-black shadow-md shadow-[#d4af37]/30 transition-all cursor-pointer"
+                >
+                  <span>{isReviewFormOpen ? 'Close' : 'Write a review'}</span>
+                </button>
+              )}
             </div>
 
             {/* Success Confirmation Toast */}
@@ -1138,7 +1141,7 @@ export default function FoodDetailModal({
             )}
 
             {/* EXPANDABLE REVIEW / COMMENT FORM */}
-            {isReviewFormOpen && (
+            {!browseOnly && isReviewFormOpen && (
               <form onSubmit={handleSubmitReview} className="p-4 sm:p-5 bg-stone-800/90 rounded-2xl border border-[#d4af37]/35 space-y-3.5 animate-fadeIn shadow-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-stone-700/60">
                   <span className="text-xs font-bold text-stone-200 uppercase tracking-wide">
@@ -1299,6 +1302,22 @@ export default function FoodDetailModal({
         {/* ------------------------------------------------------------------
             7. Prominent Sticky Bottom Bar
            ------------------------------------------------------------------ */}
+        {browseOnly ? (
+          <div className="fdm-footer p-3.5 sm:p-4 bg-[#0b0f19]/95 border-t border-emerald-500/25 flex items-center justify-between gap-3 z-30">
+            <p className="text-xs sm:text-sm text-slate-300 leading-snug">
+              <span className="font-semibold text-slate-100">{currency}{dish?.price}</span>
+              <span className="mx-2 text-slate-600">|</span>
+              Scan the QR on your table to order this dish.
+            </p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="shrink-0 h-11 px-4 rounded-xl bg-white/[0.07] hover:bg-white/10 text-slate-100 text-sm font-semibold cursor-pointer active:scale-95 transition-all"
+            >
+              Close
+            </button>
+          </div>
+        ) : (
         <div className="fdm-footer p-3.5 sm:p-4 bg-[#0b0f19]/95 backdrop-blur-xl border-t border-emerald-500/25 flex items-center gap-3 z-30 shadow-2xl fdm-d6">
           {/* Stepper */}
           <div className="flex items-center bg-[#1e293b] border border-slate-700 rounded-xl p-1 shrink-0">
@@ -1341,6 +1360,7 @@ export default function FoodDetailModal({
             </span>
           </button>
         </div>
+        )}
 
       </div>
     </div>

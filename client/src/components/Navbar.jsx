@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UtensilsCrossed, Bell, BellRing, WifiOff, CheckCircle2, ShoppingBag } from 'lucide-react';
+import { UtensilsCrossed, Bell, BellRing, WifiOff, CheckCircle2, ShoppingBag, QrCode } from 'lucide-react';
 import CallWaiterModal from './CallWaiterModal';
 
 /**
@@ -18,6 +18,8 @@ export default function Navbar({
   onChangeTable,
   cartItemCount = 0,
   onOpenCart,
+  browseOnly = false,
+  onScanTable,
   className = ''
 }) {
   // Network status state (uses prop if supplied, otherwise auto-detects)
@@ -185,7 +187,17 @@ export default function Navbar({
               )}
 
               {/* Table Badge: static label once a table is known (set via QR link) */}
-              {tableNumber ? (
+              {browseOnly ? (
+                <button
+                  type="button"
+                  onClick={onScanTable}
+                  className="inline-flex items-center gap-1.5 h-11 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-[#04120c] font-bold text-xs sm:text-sm transition-[background-color,transform] duration-200 cursor-pointer motion-reduce:transition-none motion-reduce:active:scale-100 shadow-[0_8px_20px_-8px_rgba(16,185,129,0.8)]"
+                  aria-label="Scan your table QR to order"
+                >
+                  <QrCode className="w-4 h-4" />
+                  <span className="whitespace-nowrap">Scan to order</span>
+                </button>
+              ) : tableNumber ? (
                 <span
                   className="inline-flex items-center gap-1.5 h-11 px-2.5 sm:px-3 rounded-xl bg-emerald-950/70 text-slate-100 font-bold text-xs sm:text-sm border border-amber-500/35 select-none"
                   title={`Table ${tableNumber}`}
@@ -207,7 +219,7 @@ export default function Navbar({
               )}
 
               {/* Cart Trigger Button (When items exist in cart) */}
-              {cartItemCount > 0 && (
+              {cartItemCount > 0 && !browseOnly && (
                 <button
                   type="button"
                   onClick={onOpenCart}
@@ -222,7 +234,8 @@ export default function Navbar({
                 </button>
               )}
 
-              {/* Call Waiter Trigger Button */}
+              {/* Call Waiter Trigger Button (needs a table) */}
+              {!browseOnly && (
               <button
                 type="button"
                 onClick={() => setShowWaiterModal(true)}
@@ -248,6 +261,7 @@ export default function Navbar({
                   </>
                 )}
               </button>
+              )}
 
             </div>
           </div>

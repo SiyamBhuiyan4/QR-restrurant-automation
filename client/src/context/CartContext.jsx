@@ -3,7 +3,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 const CartContext = createContext(null);
 
 const CART_STORAGE_KEY = 'smartdine_cart';
-const TABLE_STORAGE_KEY = 'smartdine_table';
+import { readTable, saveTable, clearTable } from '../utils/tableSession';
+
 const NOTE_STORAGE_KEY = 'smartdine_general_note';
 
 /**
@@ -34,10 +35,10 @@ export function CartProvider({ children }) {
       const params = new URLSearchParams(window.location.search);
       const queryTable = params.get('table');
       if (queryTable) {
-        localStorage.setItem(TABLE_STORAGE_KEY, queryTable);
+        saveTable(queryTable);
         return queryTable;
       }
-      return localStorage.getItem(TABLE_STORAGE_KEY) || '';
+      return readTable();
     } catch (_) {
       return '';
     }
@@ -159,11 +160,8 @@ export function CartProvider({ children }) {
     const val = num !== undefined && num !== null ? String(num).trim() : '';
     setTableNumberState(val);
     try {
-      if (val) {
-        localStorage.setItem(TABLE_STORAGE_KEY, val);
-      } else {
-        localStorage.removeItem(TABLE_STORAGE_KEY);
-      }
+      if (val) saveTable(val);
+      else clearTable();
     } catch (_) {}
   }, []);
 

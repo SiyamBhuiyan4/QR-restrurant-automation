@@ -7,6 +7,8 @@ import { prefetchVideos } from '../utils/videoCache.js';
 import { useRestaurant } from '../context/RestaurantContext';
 import { getCachedMenu } from '../db/indexedDb.js';
 import Navbar from '../components/Navbar';
+import ScanTableSheet from '../components/ScanTableSheet';
+import { readTable, saveTable } from '../utils/tableSession';
 import ScrollSpyCategoryBar from '../components/ScrollSpyCategoryBar';
 import GuestChat from '../components/GuestChat';
 
@@ -888,6 +890,9 @@ export default function CustomerMenu({
   // 1. Fixed Table Detection & Locking (No automatic table selection modal)
   const [tableNumber, setTableNumber] = useState('');
   const [isTableLocked, setIsTableLocked] = useState(false);
+  // Without a scanned table QR the menu is browse-only (no ordering, no dish reviews)
+  const canOrder = isTableLocked && !!tableNumber;
+  const [isScanSheetOpen, setIsScanSheetOpen] = useState(false);
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [customTableInput, setCustomTableInput] = useState('');
 
@@ -1164,7 +1169,7 @@ export default function CustomerMenu({
       const tbl = String(tableFromProp);
       setTableNumber(tbl);
       setIsTableLocked(true);
-      localStorage.setItem('smartdine_table', tbl);
+      saveTable(tbl);
       return;
     }
 
@@ -1175,9 +1180,9 @@ export default function CustomerMenu({
       if (urlTable) {
         setTableNumber(urlTable);
         setIsTableLocked(true);
-        localStorage.setItem('smartdine_table', urlTable);
+        saveTable(urlTable);
       } else {
-        const storedTable = localStorage.getItem('smartdine_table');
+        const storedTable = readTable();
         if (storedTable) {
           setTableNumber(storedTable);
           setIsTableLocked(true);
@@ -1196,7 +1201,7 @@ export default function CustomerMenu({
     if (!chosen) return;
     setTableNumber(chosen);
     setIsTableLocked(true);
-    localStorage.setItem('smartdine_table', chosen);
+    saveTable(chosen);
     setIsTableModalOpen(false);
     showToast(`Table locked to Table ${chosen}! 🍽️`);
   };
@@ -1984,10 +1989,34 @@ export default function CustomerMenu({
         tableNumber={tableNumber}
         isOnline={isOnline}
         onCallWaiter={handleWaiterCalled}
-        onChangeTable={() => setIsTableModalOpen(true)}
-        cartItemCount={cartSummary.totalCount}
+        onChangeTable={() => setIsScanSheetOpen(true)}
+        browseOnly={!canOrder}
+        onScanTable={() => setIsScanSheetOpen(true)}
+        cartItemCount={canOrder ? cartSummary.totalCount : 0}
         onOpenCart={() => setIsCartOpen(true)}
       />
+
+      {/* Browse-only notice: shown until a table QR has been scanned */}
+      {!canOrder && (
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 pt-3">
+          <div className="flex items-center gap-3 rounded-2xl bg-[#08190f]/95 border border-emerald-400/25 shadow-[0_10px_30px_-14px_rgba(0,0,0,0.8)] px-3.5 py-2.5">
+            <span className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
+              <QrCode className="w-[18px] h-[18px]" />
+            </span>
+            <p className="flex-1 min-w-0 text-xs sm:text-sm text-slate-200 leading-snug">
+              <span className="font-semibold text-white">You're browsing the menu.</span>{' '}
+              <span className="text-slate-300">Scan the QR on your table to order.</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsScanSheetOpen(true)}
+              className="shrink-0 h-9 px-3 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] text-xs font-semibold text-white cursor-pointer active:scale-95 transition-all"
+            >
+              How
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 2. Offline Notice Banner */}
       {!isOnline && (
@@ -2328,6 +2357,7 @@ export default function CustomerMenu({
                             cartQuantity={inCart ? inCart.quantity : 0}
                             itemNote={inCart ? inCart.note : ''}
                             onAddToCart={handleAddToCart}
+                            browseOnly={!canOrder}
                             onUpdateQuantity={handleUpdateQuantity}
                             onRemoveFromCart={handleRemoveFromCart}
                             onUpdateNote={handleUpdateNote}
@@ -2363,6 +2393,7 @@ export default function CustomerMenu({
                         cartQuantity={inCart ? inCart.quantity : 0}
                         itemNote={inCart ? inCart.note : ''}
                         onAddToCart={handleAddToCart}
+                        browseOnly={!canOrder}
                         onUpdateQuantity={handleUpdateQuantity}
                         onRemoveFromCart={handleRemoveFromCart}
                         onUpdateNote={handleUpdateNote}
@@ -2404,7 +2435,7 @@ export default function CustomerMenu({
       </div>
 
       {/* Floating Bottom Cart Summary Bar */}
-      {cartSummary.totalCount > 0 && !isReelsOpen && (
+      {canOrder && cartSummary.totalCount > 0 && !isReelsOpen && (
         <aside
           aria-label="Order Cart Summary"
           className="fixed bottom-0 left-0 right-0 z-40 p-3 sm:p-4 bg-gradient-to-t from-[#0a0a0c] via-[#0a0a0c]/90 to-transparent pointer-events-none"
@@ -2447,7 +2478,7 @@ export default function CustomerMenu({
       )}
 
       {/* Guest chat with the restaurant (table staff + manager) */}
-      <GuestChat tableNumber={tableNumber} raised={cartSummary.totalCount > 0} hidden={isCartOpen || !!selectedDishModal} />
+      <GuestChat tableNumber={tableNumber} raised={cartSummary.totalCount > 0} hidden={!canOrder || isCartOpen || !!selectedDishModal} />
 
       {showOverlays && (
       <Suspense fallback={null}>
@@ -2477,6 +2508,7 @@ export default function CustomerMenu({
         dish={selectedDishModal}
         onClose={() => setSelectedDishModal(null)}
         cartQuantity={selectedDishModal && cart[selectedDishModal.id] ? cart[selectedDishModal.id].quantity : 0}
+        browseOnly={!canOrder}
         onOpenReels={(dish) => {
           setSelectedDishModal(null);
           openReels(-1, dish?.id || null);
@@ -2511,6 +2543,7 @@ export default function CustomerMenu({
         funReels={funReels || []}
         initialDishId={reelsInitialDishId}
         tableNumber={tableNumber}
+        browseOnly={!canOrder}
         onAddToCart={(item, qty) => {
           setCart((prev) => {
             const existing = prev[item.id];
@@ -2530,6 +2563,8 @@ export default function CustomerMenu({
       />
       </Suspense>
       )}
+
+      <ScanTableSheet isOpen={isScanSheetOpen} onClose={() => setIsScanSheetOpen(false)} />
 
       {/* Table Selection Modal (Dark Noir Glass Theme) */}
       {isTableModalOpen && (

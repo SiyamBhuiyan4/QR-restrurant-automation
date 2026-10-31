@@ -81,6 +81,7 @@ export const isVideoUrl = (url) => {
 export default function MenuItemCard({
   item,
   cartQuantity = 0,
+  browseOnly = false,
   onAddToCart,
   onUpdateQuantity,
   onRemoveFromCart,
@@ -229,7 +230,7 @@ export default function MenuItemCard({
 
   const handleAdd = (e) => {
     e.stopPropagation();
-    if (!isAvailable) return;
+    if (!isAvailable || browseOnly) return;
     if (onAddToCart) {
       onAddToCart(item);
     } else if (onUpdateQuantity) {
@@ -905,7 +906,7 @@ export default function MenuItemCard({
           <div className="plate-card__foot">
             <span className="plate-card__price">{platePrice}</span>
 
-            {!isAvailable ? null : cartQuantity > 0 ? (
+            {!isAvailable || browseOnly ? null : cartQuantity > 0 ? (
               <div className="plate-stepper" onClick={(e) => e.stopPropagation()}>
                 <button type="button" onClick={handleDecrement} className="plate-stepper__btn" aria-label="Decrease quantity">
                   <Minus className="w-3 h-3 stroke-[2.5]" />

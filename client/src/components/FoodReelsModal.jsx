@@ -368,6 +368,7 @@ export default function FoodReelsModal({
   menuItems = [],
   funReels = [],
   onAddToCart,
+  browseOnly = false,
   initialDishId = null,
   tableNumber = null
 }) {
@@ -1174,7 +1175,7 @@ export default function FoodReelsModal({
                       </p>
                     )}
 
-                    {isDish && isCurrentSlide && (
+                    {isDish && isCurrentSlide && !browseOnly && (
                       <button
                         type="button"
                         onClick={handleOrderThisDish}
